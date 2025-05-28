@@ -1,0 +1,53 @@
+<resources>
+    <string name="app_name">Cc 小记</string>
+    
+    <!-- Bottom Navigation -->
+    <string name="nav_home">首页</string>
+    <string name="nav_ledger">记账</string>
+    <string name="nav_todo">待办</string>
+    <string name="nav_habit">习惯</string>
+    <string name="nav_profile">我的</string>
+    
+    <!-- Common -->
+    <string name="save">保存</string>
+    <string name="cancel">取消</string>
+    <string name="delete">删除</string>
+    <string name="edit">编辑</string>
+    <string name="confirm">确认</string>
+    
+    <!-- Ledger -->
+    <string name="add_transaction">记一笔</string>
+    <string name="income">收入</string>
+    <string name="expense">支出</string>
+    <string name="amount_hint">金额</string>
+    <string name="note_hint">备注（可选）</string>
+    <string name="select_category">选择分类</string>
+    <string name="monthly_summary">本月统计</string>
+    
+    <!-- Todo -->
+    <string name="add_task">添加任务</string>
+    <string name="task_title_hint">任务名称</string>
+    <string name="task_due_date">截止日期</string>
+    <string name="task_priority">优先级</string>
+    <string name="priority_high">高</string>
+    <string name="priority_medium">中</string>
+    <string name="priority_low">低</string>
+    
+    <!-- Habit -->
+    <string name="add_habit">创建习惯</string>
+    <string name="habit_name_hint">习惯名称</string>
+    <string name="habit_period">周期</string>
+    <string name="period_daily">每日</string>
+    <string name="period_weekly">每周</string>
+    <string name="period_monthly">每月</string>
+    <string name="check_in">打卡</string>
+    <string name="streak_days">连续 %d 天</string>
+    
+    <!-- Countdown -->
+    <string name="add_countdown">添加倒数日</string>
+    <string name="countdown_title_hint">事件名称</string>
+    <string name="select_date">选择日期</string>
+    <string name="days_left">还有 %d 天</string>
+    <string name="days_passed">已过 %d 天</string>
+    <string name="today">就是今天</string>
+</resources>
