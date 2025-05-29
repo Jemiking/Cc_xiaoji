@@ -14,6 +14,9 @@ interface HabitDao {
     @Query("SELECT * FROM habits WHERE id = :habitId AND isDeleted = 0")
     suspend fun getHabitById(habitId: String): HabitEntity?
     
+    @Query("SELECT * FROM habits WHERE userId = :userId AND (title LIKE :query OR description LIKE :query) AND isDeleted = 0 ORDER BY createdAt ASC")
+    fun searchHabits(userId: String, query: String): Flow<List<HabitEntity>>
+    
     @Query("SELECT * FROM habit_records WHERE habitId = :habitId AND isDeleted = 0 ORDER BY recordDate DESC")
     fun getHabitRecords(habitId: String): Flow<List<HabitRecordEntity>>
     
@@ -22,6 +25,18 @@ interface HabitDao {
     
     @Query("SELECT * FROM habit_records WHERE habitId = :habitId AND recordDate >= :startDate AND recordDate <= :endDate AND isDeleted = 0 ORDER BY recordDate ASC")
     suspend fun getHabitRecordsByDateRange(habitId: String, startDate: Long, endDate: Long): List<HabitRecordEntity>
+    
+    @Query("""
+        SELECT hr.* FROM habit_records hr
+        INNER JOIN habits h ON hr.habitId = h.id
+        WHERE h.userId = :userId 
+        AND hr.recordDate >= :startDate 
+        AND hr.recordDate <= :endDate 
+        AND hr.isDeleted = 0 
+        AND h.isDeleted = 0
+        ORDER BY hr.recordDate ASC
+    """)
+    fun getUserHabitRecordsByDateRange(userId: String, startDate: Long, endDate: Long): Flow<List<HabitRecordEntity>>
     
     @Query("SELECT COUNT(DISTINCT recordDate) FROM habit_records WHERE habitId = :habitId AND recordDate <= :currentDate AND isDeleted = 0")
     suspend fun getTotalDaysCompleted(habitId: String, currentDate: Long): Int

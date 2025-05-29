@@ -18,17 +18,36 @@ class HabitViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HabitUiState())
     val uiState: StateFlow<HabitUiState> = _uiState.asStateFlow()
     
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+    
     init {
-        loadHabits()
+        observeHabitsWithSearch()
         loadCheckedToday()
     }
     
-    private fun loadHabits() {
+    private fun observeHabitsWithSearch() {
         viewModelScope.launch {
-            habitRepository.getHabitsWithStreaks().collect { habits ->
-                _uiState.update { it.copy(habits = habits) }
+            combine(
+                searchQuery,
+                habitRepository.getHabitsWithStreaks()
+            ) { query, allHabits ->
+                if (query.isBlank()) {
+                    allHabits
+                } else {
+                    allHabits.filter { habitWithStreak ->
+                        habitWithStreak.habit.title.contains(query, ignoreCase = true) ||
+                        habitWithStreak.habit.description?.contains(query, ignoreCase = true) == true
+                    }
+                }
+            }.collect { filteredHabits ->
+                _uiState.update { it.copy(habits = filteredHabits) }
             }
         }
+    }
+    
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
     }
     
     private fun loadCheckedToday() {

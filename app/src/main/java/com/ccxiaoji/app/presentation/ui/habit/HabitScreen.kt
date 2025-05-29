@@ -9,6 +9,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.outlined.CheckCircleOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,6 +31,7 @@ fun HabitScreen(
     viewModel: HabitViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var editingHabit by remember { mutableStateOf<HabitWithStreak?>(null) }
     
@@ -51,21 +54,63 @@ fun HabitScreen(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(paddingValues)
         ) {
-            items(uiState.habits) { habitWithStreak ->
-                HabitCard(
-                    habitWithStreak = habitWithStreak,
-                    isCheckedToday = uiState.checkedToday.contains(habitWithStreak.habit.id),
-                    onCheckIn = { viewModel.checkInHabit(habitWithStreak.habit.id) },
-                    onEdit = { editingHabit = habitWithStreak },
-                    onDelete = { viewModel.deleteHabit(habitWithStreak.habit.id) }
-                )
+            // 搜索框
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { viewModel.updateSearchQuery(it) },
+                placeholder = { Text("搜索习惯...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "搜索") },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.updateSearchQuery("") }) {
+                            Icon(Icons.Default.Clear, contentDescription = "清除")
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                singleLine = true
+            )
+            
+            if (uiState.habits.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = if (searchQuery.isNotEmpty()) {
+                            "没有找到匹配的习惯"
+                        } else {
+                            "暂无习惯"
+                        },
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(uiState.habits) { habitWithStreak ->
+                        HabitCard(
+                            habitWithStreak = habitWithStreak,
+                            isCheckedToday = uiState.checkedToday.contains(habitWithStreak.habit.id),
+                            onCheckIn = { viewModel.checkInHabit(habitWithStreak.habit.id) },
+                            onEdit = { editingHabit = habitWithStreak },
+                            onDelete = { viewModel.deleteHabit(habitWithStreak.habit.id) }
+                        )
+                    }
+                }
             }
         }
     }

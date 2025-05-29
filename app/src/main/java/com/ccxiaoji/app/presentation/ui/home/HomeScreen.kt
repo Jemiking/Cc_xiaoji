@@ -77,6 +77,7 @@ fun HomeScreen(
             TodayOverviewCard(
                 todayIncome = uiState.todayIncome,
                 todayExpense = uiState.todayExpense,
+                totalBalance = uiState.totalAccountBalance,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
             

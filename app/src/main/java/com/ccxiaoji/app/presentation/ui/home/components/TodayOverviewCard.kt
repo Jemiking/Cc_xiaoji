@@ -16,6 +16,7 @@ import java.util.Locale
 fun TodayOverviewCard(
     todayIncome: Double,
     todayExpense: Double,
+    totalBalance: Double = 0.0,
     modifier: Modifier = Modifier
 ) {
     val now = LocalDateTime.now()
@@ -76,6 +77,31 @@ fun TodayOverviewCard(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+            
+            if (totalBalance > 0) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Divider()
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // 账户总余额
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "账户总余额",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "¥%.2f".format(totalBalance),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
     }

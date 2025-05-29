@@ -10,6 +10,7 @@ import com.ccxiaoji.app.data.repository.CountdownRepository
 import com.ccxiaoji.app.data.repository.BudgetRepository
 import com.ccxiaoji.app.data.repository.SavingsGoalRepository
 import com.ccxiaoji.app.data.repository.UserRepository
+import com.ccxiaoji.app.data.repository.AccountRepository
 import com.ccxiaoji.app.domain.model.Transaction
 import com.ccxiaoji.app.domain.model.TransactionCategory
 import com.ccxiaoji.app.domain.model.Task
@@ -20,6 +21,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import javax.inject.Inject
@@ -32,7 +34,8 @@ class HomeViewModel @Inject constructor(
     private val countdownRepository: CountdownRepository,
     private val budgetRepository: BudgetRepository,
     private val savingsGoalRepository: SavingsGoalRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val accountRepository: AccountRepository
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -84,15 +87,14 @@ class HomeViewModel @Inject constructor(
         
         viewModelScope.launch {
             // Load habits data
-            habitRepository.getHabitsWithStreaks().collect { habitsWithStreaks ->
-                val activeCount = habitsWithStreaks.size
-                val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-                // TODO: Need to implement getHabitRecords in repository to check today's records
-                val todayCheckedCount = 0 // Placeholder - need to get today's habit records
-                val longestStreak = habitsWithStreaks.maxOfOrNull { it.currentStreak } ?: 0
-                
+            combine(
+                habitRepository.getHabitsWithStreaks(),
+                habitRepository.getTodayCheckedHabitsCount()
+            ) { habitsWithStreaks, todayCheckedCount ->
+                Triple(habitsWithStreaks, todayCheckedCount, habitsWithStreaks.maxOfOrNull { it.currentStreak } ?: 0)
+            }.collect { (habitsWithStreaks, todayCheckedCount, longestStreak) ->
                 _uiState.value = _uiState.value.copy(
-                    activeHabits = activeCount,
+                    activeHabits = habitsWithStreaks.size,
                     todayCheckedHabits = todayCheckedCount,
                     longestHabitStreak = longestStreak,
                     habitStreaks = habitsWithStreaks
@@ -142,6 +144,12 @@ class HomeViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(savingsGoals = goals.take(3))
             }
         }
+        
+        viewModelScope.launch {
+            // Load account balance
+            val totalBalance = accountRepository.getTotalBalance()
+            _uiState.value = _uiState.value.copy(totalAccountBalance = totalBalance)
+        }
     }
 }
 
@@ -161,5 +169,6 @@ data class HomeUiState(
     val budgetAmount: Double = 0.0,
     val budgetSpent: Double = 0.0,
     val budgetUsagePercentage: Float = 0f,
-    val savingsGoals: List<SavingsGoal> = emptyList()
+    val savingsGoals: List<SavingsGoal> = emptyList(),
+    val totalAccountBalance: Double = 0.0
 )

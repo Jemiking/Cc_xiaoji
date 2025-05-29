@@ -31,6 +31,24 @@ class HabitRepository @Inject constructor(
         return getHabits().map { it.size }
     }
     
+    fun getTodayCheckedHabitsCount(): Flow<Int> {
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val todayStart = today.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        
+        return habitDao.getUserHabitRecordsByDateRange(
+            getCurrentUserId(),
+            todayStart,
+            todayStart
+        ).map { records -> 
+            records.distinctBy { it.habitId }.size 
+        }
+    }
+    
+    fun searchHabits(query: String): Flow<List<Habit>> {
+        return habitDao.searchHabits(getCurrentUserId(), "%$query%")
+            .map { entities -> entities.map { it.toDomainModel() } }
+    }
+    
     fun getHabitsWithStreaks(): Flow<List<HabitWithStreak>> {
         return getHabits().map { habits ->
             habits.map { habit ->

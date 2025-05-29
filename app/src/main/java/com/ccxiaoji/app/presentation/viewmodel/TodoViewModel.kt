@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.app.data.repository.TaskRepository
 import com.ccxiaoji.app.domain.model.Task
+import com.ccxiaoji.app.notification.NotificationScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -12,7 +13,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TodoViewModel @Inject constructor(
-    private val taskRepository: TaskRepository
+    private val taskRepository: TaskRepository,
+    private val notificationScheduler: NotificationScheduler
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(TodoUiState())
@@ -112,12 +114,17 @@ class TodoViewModel @Inject constructor(
         priority: Int
     ) {
         viewModelScope.launch {
-            taskRepository.addTask(
+            val task = taskRepository.addTask(
                 title = title,
                 description = description,
                 dueAt = dueAt,
                 priority = priority
             )
+            
+            // 如果任务有截止日期，安排提醒
+            dueAt?.let {
+                notificationScheduler.scheduleTaskReminder(task.id, task.title, it)
+            }
         }
     }
     
@@ -136,6 +143,13 @@ class TodoViewModel @Inject constructor(
                 dueAt = dueAt,
                 priority = priority
             )
+            
+            // 重新安排或取消提醒
+            if (dueAt != null) {
+                notificationScheduler.scheduleTaskReminder(taskId, title, dueAt)
+            } else {
+                notificationScheduler.cancelTaskReminder(taskId)
+            }
         }
     }
     
@@ -148,6 +162,8 @@ class TodoViewModel @Inject constructor(
     fun deleteTask(taskId: String) {
         viewModelScope.launch {
             taskRepository.deleteTask(taskId)
+            // 取消该任务的提醒
+            notificationScheduler.cancelTaskReminder(taskId)
         }
     }
 }

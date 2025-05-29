@@ -12,13 +12,21 @@ import androidx.navigation.compose.rememberNavController
 import com.ccxiaoji.app.presentation.theme.CcXiaoJiTheme
 import com.ccxiaoji.app.presentation.ui.components.BottomNavBar
 import com.ccxiaoji.app.presentation.ui.navigation.NavGraph
+import com.ccxiaoji.app.notification.NotificationScheduler
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    
+    @Inject
+    lateinit var notificationScheduler: NotificationScheduler
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        // 启动每日检查任务
+        notificationScheduler.scheduleDailyCheck()
         setContent {
             CcXiaoJiTheme {
                 val navController = rememberNavController()
