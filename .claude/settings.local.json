@@ -32,5 +32,6 @@
       "Bash(./push_to_github.sh)"
     ],
     "deny": []
-  }
+  },
+  "enableAllProjectMcpServers": false
 }

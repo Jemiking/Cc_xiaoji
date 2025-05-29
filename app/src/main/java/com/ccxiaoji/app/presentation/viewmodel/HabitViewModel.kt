@@ -52,6 +52,28 @@ class HabitViewModel @Inject constructor(
         }
     }
     
+    fun updateHabit(
+        habitId: String,
+        title: String,
+        description: String?,
+        period: String,
+        target: Int,
+        color: String,
+        icon: String?
+    ) {
+        viewModelScope.launch {
+            habitRepository.updateHabit(
+                habitId = habitId,
+                title = title,
+                description = description,
+                period = period,
+                target = target,
+                color = color,
+                icon = icon
+            )
+        }
+    }
+    
     fun checkInHabit(habitId: String) {
         viewModelScope.launch {
             habitRepository.checkInHabit(habitId)

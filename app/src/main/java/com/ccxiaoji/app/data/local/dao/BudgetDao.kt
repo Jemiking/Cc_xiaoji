@@ -37,6 +37,7 @@ interface BudgetDao {
     suspend fun deleteAllBudgetsByUser(userId: String)
 
     // Query to get budget with spent amount
+    @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
     @Query("""
         SELECT b.*, 
         COALESCE(SUM(t.amountCents), 0) as spentAmountCents
@@ -56,6 +57,7 @@ interface BudgetDao {
     suspend fun getBudgetWithSpent(userId: String, year: Int, month: Int, categoryId: String): BudgetWithSpent?
 
     // Query to get total budget with total spent amount
+    @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
     @Query("""
         SELECT b.*, 
         COALESCE(SUM(t.amountCents), 0) as spentAmountCents
@@ -74,6 +76,7 @@ interface BudgetDao {
     suspend fun getTotalBudgetWithSpent(userId: String, year: Int, month: Int): BudgetWithSpent?
 
     // Query to get all budgets with spent amounts for a month
+    @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
     @Query("""
         SELECT b.*, 
         COALESCE(SUM(t.amountCents), 0) as spentAmountCents

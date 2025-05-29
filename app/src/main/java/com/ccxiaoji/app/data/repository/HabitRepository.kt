@@ -76,6 +76,43 @@ class HabitRepository @Inject constructor(
         return entity.toDomainModel()
     }
     
+    suspend fun updateHabit(
+        habitId: String,
+        title: String,
+        description: String? = null,
+        period: String = "daily",
+        target: Int = 1,
+        color: String = "#3A7AFE",
+        icon: String? = null
+    ) {
+        val existingHabit = habitDao.getHabitById(habitId) ?: return
+        
+        val now = System.currentTimeMillis()
+        val updatedHabit = existingHabit.copy(
+            title = title,
+            description = description,
+            period = period,
+            target = target,
+            color = color,
+            icon = icon,
+            updatedAt = now,
+            syncStatus = SyncStatus.PENDING_SYNC
+        )
+        
+        habitDao.updateHabit(updatedHabit)
+        
+        // Log the change for sync
+        logChange("habits", habitId, "UPDATE", mapOf(
+            "id" to habitId,
+            "title" to title,
+            "description" to description,
+            "period" to period,
+            "target" to target,
+            "color" to color,
+            "icon" to icon
+        ))
+    }
+    
     suspend fun checkInHabit(habitId: String, date: LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date) {
         val recordDate = date.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         

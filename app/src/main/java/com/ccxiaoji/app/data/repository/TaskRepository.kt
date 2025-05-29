@@ -30,6 +30,11 @@ class TaskRepository @Inject constructor(
             .map { entities -> entities.map { it.toDomainModel() } }
     }
     
+    fun searchTasks(query: String): Flow<List<Task>> {
+        return taskDao.searchTasks(getCurrentUserId(), "%$query%")
+            .map { entities -> entities.map { it.toDomainModel() } }
+    }
+    
     fun getTodayTasks(): Flow<List<Task>> {
         val todayStart = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
             .date.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
@@ -83,6 +88,37 @@ class TaskRepository @Inject constructor(
             "id" to taskId,
             "completed" to completed,
             "completedAt" to completedAt
+        ))
+    }
+    
+    suspend fun updateTask(
+        taskId: String,
+        title: String,
+        description: String? = null,
+        dueAt: Instant? = null,
+        priority: Int = 0
+    ) {
+        val existingTask = taskDao.getTaskById(taskId) ?: return
+        
+        val now = System.currentTimeMillis()
+        val updatedTask = existingTask.copy(
+            title = title,
+            description = description,
+            dueAt = dueAt?.toEpochMilliseconds(),
+            priority = priority,
+            updatedAt = now,
+            syncStatus = SyncStatus.PENDING_SYNC
+        )
+        
+        taskDao.updateTask(updatedTask)
+        
+        // Log the change for sync
+        logChange("tasks", taskId, "UPDATE", mapOf(
+            "id" to taskId,
+            "title" to title,
+            "description" to description,
+            "dueAt" to dueAt?.toEpochMilliseconds(),
+            "priority" to priority
         ))
     }
     

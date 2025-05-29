@@ -16,6 +16,9 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE userId = :userId AND completed = 1 AND isDeleted = 0 ORDER BY completedAt DESC")
     fun getCompletedTasks(userId: String): Flow<List<TaskEntity>>
     
+    @Query("SELECT * FROM tasks WHERE userId = :userId AND (title LIKE :query OR description LIKE :query) AND isDeleted = 0 ORDER BY priority DESC, CASE WHEN dueAt IS NULL THEN 1 ELSE 0 END, dueAt ASC")
+    fun searchTasks(userId: String, query: String): Flow<List<TaskEntity>>
+    
     @Query("SELECT * FROM tasks WHERE userId = :userId AND dueAt IS NOT NULL AND dueAt <= :timestamp AND completed = 0 AND isDeleted = 0")
     suspend fun getOverdueTasks(userId: String, timestamp: Long): List<TaskEntity>
     

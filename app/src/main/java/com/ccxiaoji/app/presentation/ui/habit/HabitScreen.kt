@@ -7,6 +7,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.outlined.CheckCircleOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,6 +30,7 @@ fun HabitScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
+    var editingHabit by remember { mutableStateOf<HabitWithStreak?>(null) }
     
     Scaffold(
         topBar = {
@@ -60,19 +63,37 @@ fun HabitScreen(
                     habitWithStreak = habitWithStreak,
                     isCheckedToday = uiState.checkedToday.contains(habitWithStreak.habit.id),
                     onCheckIn = { viewModel.checkInHabit(habitWithStreak.habit.id) },
+                    onEdit = { editingHabit = habitWithStreak },
                     onDelete = { viewModel.deleteHabit(habitWithStreak.habit.id) }
                 )
             }
         }
     }
     
-    if (showAddDialog) {
+    if (showAddDialog || editingHabit != null) {
         AddHabitDialog(
-            onDismiss = { showAddDialog = false },
+            onDismiss = { 
+                showAddDialog = false 
+                editingHabit = null
+            },
             onConfirm = { title, description, period, target ->
-                viewModel.addHabit(title, description, period, target)
+                if (editingHabit != null) {
+                    viewModel.updateHabit(
+                        editingHabit!!.habit.id, 
+                        title, 
+                        description, 
+                        period, 
+                        target,
+                        editingHabit!!.habit.color,
+                        editingHabit!!.habit.icon
+                    )
+                } else {
+                    viewModel.addHabit(title, description, period, target)
+                }
                 showAddDialog = false
-            }
+                editingHabit = null
+            },
+            habitWithStreak = editingHabit
         )
     }
 }
@@ -83,6 +104,7 @@ fun HabitCard(
     habitWithStreak: HabitWithStreak,
     isCheckedToday: Boolean,
     onCheckIn: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
     val habit = habitWithStreak.habit
@@ -139,25 +161,50 @@ fun HabitCard(
                     }
                 }
                 
-                // Check-in button
-                IconButton(
-                    onClick = onCheckIn,
-                    enabled = !isCheckedToday
+                // Action buttons
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        imageVector = if (isCheckedToday) {
-                            Icons.Default.CheckCircle
-                        } else {
-                            Icons.Outlined.CheckCircleOutline
-                        },
-                        contentDescription = stringResource(R.string.check_in),
-                        tint = if (isCheckedToday) {
-                            Color(habit.color.removePrefix("#").toLong(16) or 0xFF000000)
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        modifier = Modifier.size(32.dp)
-                    )
+                    // Check-in button
+                    IconButton(
+                        onClick = onCheckIn,
+                        enabled = !isCheckedToday
+                    ) {
+                        Icon(
+                            imageVector = if (isCheckedToday) {
+                                Icons.Default.CheckCircle
+                            } else {
+                                Icons.Outlined.CheckCircleOutline
+                            },
+                            contentDescription = stringResource(R.string.check_in),
+                            tint = if (isCheckedToday) {
+                                Color(habit.color.removePrefix("#").toLong(16) or 0xFF000000)
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                    
+                    // Edit button
+                    IconButton(onClick = onEdit) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "编辑",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    
+                    // Delete button
+                    IconButton(onClick = onDelete) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = stringResource(R.string.delete),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
             }
             
@@ -181,16 +228,18 @@ fun HabitCard(
 @Composable
 fun AddHabitDialog(
     onDismiss: () -> Unit,
-    onConfirm: (title: String, description: String?, period: String, target: Int) -> Unit
+    onConfirm: (title: String, description: String?, period: String, target: Int) -> Unit,
+    habitWithStreak: HabitWithStreak? = null
 ) {
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var period by remember { mutableStateOf("daily") }
-    var target by remember { mutableStateOf("1") }
+    val habit = habitWithStreak?.habit
+    var title by remember { mutableStateOf(habit?.title ?: "") }
+    var description by remember { mutableStateOf(habit?.description ?: "") }
+    var period by remember { mutableStateOf(habit?.period ?: "daily") }
+    var target by remember { mutableStateOf((habit?.target ?: 1).toString()) }
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.add_habit)) },
+        title = { Text(if (habit == null) stringResource(R.string.add_habit) else "编辑习惯") },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp)

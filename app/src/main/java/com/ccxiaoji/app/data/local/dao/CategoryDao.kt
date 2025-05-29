@@ -42,6 +42,7 @@ interface CategoryDao {
     @Query("SELECT COUNT(*) FROM transactions WHERE categoryId = :categoryId AND isDeleted = 0")
     suspend fun getTransactionCountForCategory(categoryId: String): Int
     
+    @SuppressWarnings(RoomWarnings.CURSOR_MISMATCH)
     @Query("""
         SELECT c.*, COUNT(t.id) as transactionCount 
         FROM categories c 
