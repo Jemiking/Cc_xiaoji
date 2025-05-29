@@ -28,6 +28,7 @@ class UserRepository @Inject constructor(
         private val KEY_ACCESS_TOKEN = stringPreferencesKey("access_token")
         private val KEY_REFRESH_TOKEN = stringPreferencesKey("refresh_token")
         private val KEY_LAST_SYNC_TIME = longPreferencesKey("last_sync_time")
+        private val KEY_SERVER_TIME = longPreferencesKey("server_time")
     }
     
     suspend fun login(email: String, password: String): Result<User> {
@@ -105,6 +106,12 @@ class UserRepository @Inject constructor(
     suspend fun updateLastSyncTime(timestamp: Long) {
         dataStore.edit { preferences ->
             preferences[KEY_LAST_SYNC_TIME] = timestamp
+        }
+    }
+    
+    suspend fun updateServerTime(timestamp: Long) {
+        dataStore.edit { preferences ->
+            preferences[KEY_SERVER_TIME] = timestamp
         }
     }
     

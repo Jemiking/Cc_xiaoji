@@ -26,4 +26,7 @@ interface ChangeLogDao {
     
     @Query("DELETE FROM change_log")
     suspend fun deleteAllChanges()
+    
+    @Query("UPDATE change_log SET syncStatus = :syncStatus WHERE tableName = :table AND rowId = :rowId")
+    suspend fun markForResync(table: String, rowId: String, syncStatus: SyncStatus = SyncStatus.PENDING_SYNC)
 }

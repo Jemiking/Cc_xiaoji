@@ -11,7 +11,14 @@ import com.ccxiaoji.app.domain.model.HabitRecord
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.*
+import kotlinx.datetime.DateTimePeriod
+import kotlinx.datetime.TimeZone
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -50,15 +57,58 @@ class HabitRepository @Inject constructor(
     }
     
     fun getHabitsWithStreaks(): Flow<List<HabitWithStreak>> {
-        return getHabits().map { habits ->
-            habits.map { habit ->
-                val currentStreak = habitDao.getCurrentStreak(
-                    habit.id,
-                    Clock.System.now().toEpochMilliseconds()
-                )
-                HabitWithStreak(habit, currentStreak)
+        return getHabits().flatMapLatest { habits ->
+            flow {
+                val habitsWithStreaks = habits.map { habit ->
+                    val now = Clock.System.now()
+                    val currentStreak = habitDao.getCurrentStreak(
+                        habit.id,
+                        now.toEpochMilliseconds()
+                    )
+                    
+                    // Calculate completed count for last 30 days
+                    val thirtyDaysAgo = now.minus(DateTimePeriod(days = 30), TimeZone.currentSystemDefault()).toEpochMilliseconds()
+                    val records = habitDao.getHabitRecordsByDateRangeSync(
+                        habit.id,
+                        thirtyDaysAgo,
+                        now.toEpochMilliseconds()
+                    )
+                    val completedCount = records.size
+                    
+                    // Calculate longest streak
+                    val longestStreak = calculateLongestStreak(habit.id, records)
+                    
+                    HabitWithStreak(habit, currentStreak, completedCount, longestStreak)
+                }
+                emit(habitsWithStreaks)
+            }.flowOn(Dispatchers.IO)
+        }
+    }
+    
+    private fun calculateLongestStreak(habitId: String, records: List<HabitRecordEntity>): Int {
+        if (records.isEmpty()) return 0
+        
+        val sortedDates = records.map { 
+            Instant.fromEpochMilliseconds(it.recordDate)
+                .toLocalDateTime(TimeZone.currentSystemDefault()).date 
+        }.sorted()
+        
+        var maxStreak = 1
+        var currentStreak = 1
+        
+        for (i in 1 until sortedDates.size) {
+            val prevDate = sortedDates[i - 1]
+            val currDate = sortedDates[i]
+            
+            if (prevDate.plus(1, DateTimeUnit.DAY) == currDate) {
+                currentStreak++
+                maxStreak = maxOf(maxStreak, currentStreak)
+            } else {
+                currentStreak = 1
             }
         }
+        
+        return maxStreak
     }
     
     suspend fun createHabit(
@@ -194,7 +244,9 @@ class HabitRepository @Inject constructor(
 
 data class HabitWithStreak(
     val habit: Habit,
-    val currentStreak: Int
+    val currentStreak: Int,
+    val completedCount: Int = 0,
+    val longestStreak: Int = 0
 )
 
 private fun HabitEntity.toDomainModel(): Habit {

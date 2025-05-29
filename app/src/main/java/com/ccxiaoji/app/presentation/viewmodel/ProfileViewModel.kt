@@ -68,6 +68,10 @@ class ProfileViewModel @Inject constructor(
         syncManager.syncNow()
     }
     
+    fun syncData() {
+        syncNow()
+    }
+    
     fun logout() {
         viewModelScope.launch {
             userRepository.logout()

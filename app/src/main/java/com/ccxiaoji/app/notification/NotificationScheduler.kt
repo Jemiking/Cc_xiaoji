@@ -17,6 +17,7 @@ import kotlinx.datetime.plus
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import android.util.Log
 
 @Singleton
 class NotificationScheduler @Inject constructor(
@@ -24,6 +25,7 @@ class NotificationScheduler @Inject constructor(
     private val notificationManager: NotificationManager
 ) {
     companion object {
+        private const val TAG = "CcXiaoJi"
         const val TASK_REMINDER_WORK_TAG = "task_reminder"
         const val HABIT_REMINDER_WORK_TAG = "habit_reminder"
         const val DAILY_CHECK_WORK_TAG = "daily_check"
@@ -123,18 +125,25 @@ class NotificationScheduler @Inject constructor(
     
     // 安排每日检查（用于检查预算等）
     fun scheduleDailyCheck() {
-        val workRequest = PeriodicWorkRequestBuilder<DailyCheckWorker>(
-            1, TimeUnit.DAYS
+        Log.d(TAG, "Scheduling daily check")
+        try {
+            val workRequest = PeriodicWorkRequestBuilder<DailyCheckWorker>(
+                1, TimeUnit.DAYS
         )
             .addTag(DAILY_CHECK_WORK_TAG)
             .build()
         
-        WorkManager.getInstance(context)
-            .enqueueUniquePeriodicWork(
-                "daily_check",
-                ExistingPeriodicWorkPolicy.KEEP,
-                workRequest
-            )
+            WorkManager.getInstance(context)
+                .enqueueUniquePeriodicWork(
+                    "daily_check",
+                    ExistingPeriodicWorkPolicy.KEEP,
+                    workRequest
+                )
+            Log.d(TAG, "Daily check scheduled successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error scheduling daily check", e)
+            throw e
+        }
     }
     
     // 取消所有通知

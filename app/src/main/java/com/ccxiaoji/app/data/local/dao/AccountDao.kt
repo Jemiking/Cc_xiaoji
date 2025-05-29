@@ -44,4 +44,7 @@ interface AccountDao {
             updateAccount(it.copy(isDefault = true, updatedAt = timestamp))
         }
     }
+    
+    @Query("SELECT * FROM accounts WHERE id = :accountId AND isDeleted = 0")
+    fun getAccountByIdSync(accountId: String): AccountEntity?
 }

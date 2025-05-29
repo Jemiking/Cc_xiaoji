@@ -13,21 +13,44 @@ import com.ccxiaoji.app.presentation.theme.CcXiaoJiTheme
 import com.ccxiaoji.app.presentation.ui.components.BottomNavBar
 import com.ccxiaoji.app.presentation.ui.navigation.NavGraph
 import com.ccxiaoji.app.notification.NotificationScheduler
+import com.ccxiaoji.app.data.sync.SyncManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import android.util.Log
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     
+    companion object {
+        private const val TAG = "CcXiaoJi"
+    }
+    
     @Inject
     lateinit var notificationScheduler: NotificationScheduler
+    
+    @Inject
+    lateinit var syncManager: SyncManager
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        Log.d(TAG, "MainActivity onCreate started")
         
-        // 启动每日检查任务
-        notificationScheduler.scheduleDailyCheck()
-        setContent {
+        try {
+            enableEdgeToEdge()
+            Log.d(TAG, "Edge to edge enabled")
+            
+            // 启动每日检查任务
+            Log.d(TAG, "Scheduling daily check")
+            notificationScheduler.scheduleDailyCheck()
+            Log.d(TAG, "Daily check scheduled")
+            
+            // 启动定期同步
+            Log.d(TAG, "Starting periodic sync")
+            syncManager.startPeriodicSync()
+            Log.d(TAG, "Periodic sync started")
+            
+            Log.d(TAG, "Setting content")
+            setContent {
             CcXiaoJiTheme {
                 val navController = rememberNavController()
                 
@@ -43,6 +66,12 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
+            }
+            
+            Log.d(TAG, "MainActivity onCreate completed successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Fatal error in MainActivity onCreate", e)
+            throw e
         }
     }
 }

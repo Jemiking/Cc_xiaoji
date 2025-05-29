@@ -7,21 +7,33 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
+import android.util.Log
 
 @Singleton
 class SyncManager @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
+    companion object {
+        private const val TAG = "CcXiaoJi"
+    }
+    
     private val workManager = WorkManager.getInstance(context)
     
     fun startPeriodicSync() {
+        Log.d(TAG, "Starting periodic sync")
+        try {
         val periodicSyncRequest = SyncWorker.buildPeriodicWorkRequest()
         
-        workManager.enqueueUniquePeriodicWork(
-            SyncWorker.SYNC_WORK_NAME,
-            ExistingPeriodicWorkPolicy.KEEP,
-            periodicSyncRequest
-        )
+            workManager.enqueueUniquePeriodicWork(
+                SyncWorker.SYNC_WORK_NAME,
+                ExistingPeriodicWorkPolicy.KEEP,
+                periodicSyncRequest
+            )
+            Log.d(TAG, "Periodic sync started successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error starting periodic sync", e)
+            throw e
+        }
     }
     
     fun syncNow() {

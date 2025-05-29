@@ -87,6 +87,13 @@ fun ProfileScreen(
                 title = "数据管理",
                 items = listOf(
                     SettingsItem(
+                        icon = Icons.Default.Sync,
+                        title = "数据同步",
+                        subtitle = if (uiState.isSyncing) "同步中..." else "同步数据到云端",
+                        value = uiState.lastSyncTime?.let { "上次同步: $it" },
+                        onClick = { viewModel.syncData() }
+                    ),
+                    SettingsItem(
                         icon = Icons.Default.CloudUpload,
                         title = "数据备份",
                         subtitle = "备份数据到云端",

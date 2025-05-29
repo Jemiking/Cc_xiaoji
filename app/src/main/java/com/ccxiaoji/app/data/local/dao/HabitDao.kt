@@ -26,6 +26,9 @@ interface HabitDao {
     @Query("SELECT * FROM habit_records WHERE habitId = :habitId AND recordDate >= :startDate AND recordDate <= :endDate AND isDeleted = 0 ORDER BY recordDate ASC")
     suspend fun getHabitRecordsByDateRange(habitId: String, startDate: Long, endDate: Long): List<HabitRecordEntity>
     
+    @Query("SELECT * FROM habit_records WHERE habitId = :habitId AND recordDate >= :startDate AND recordDate <= :endDate AND isDeleted = 0 ORDER BY recordDate ASC")
+    fun getHabitRecordsByDateRangeSync(habitId: String, startDate: Long, endDate: Long): List<HabitRecordEntity>
+    
     @Query("""
         SELECT hr.* FROM habit_records hr
         INNER JOIN habits h ON hr.habitId = h.id

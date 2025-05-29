@@ -17,9 +17,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import android.util.Log
 
 @HiltAndroidApp
 class CcXiaoJiApplication : Application(), Configuration.Provider {
+    
+    companion object {
+        private const val TAG = "CcXiaoJi"
+    }
     
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
@@ -35,25 +40,38 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
     
     override fun onCreate() {
         super.onCreate()
+        Log.d(TAG, "Application onCreate started")
         
-        // 确保默认用户存在
-        CoroutineScope(Dispatchers.IO).launch {
-            val defaultUserId = "current_user_id"
-            val existingUser = userDao.getUserById(defaultUserId)
+        try {
+            Log.d(TAG, "Starting database initialization")
             
-            if (existingUser == null) {
-                val defaultUser = UserEntity(
-                    id = defaultUserId,
-                    email = "default@ccxiaoji.com",
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis()
-                )
-                userDao.insertUser(defaultUser)
-            }
-            
-            // 确保默认账户存在
-            val defaultAccount = accountDao.getDefaultAccount(defaultUserId)
-            if (defaultAccount == null) {
+            // 确保默认用户存在
+            CoroutineScope(Dispatchers.IO).launch {
+                Log.d(TAG, "Coroutine launched for database init")
+                try {
+                    val defaultUserId = "current_user_id"
+                    Log.d(TAG, "Checking for existing user: $defaultUserId")
+                    val existingUser = userDao.getUserById(defaultUserId)
+                    
+                    if (existingUser == null) {
+                        Log.d(TAG, "Creating default user")
+                        val defaultUser = UserEntity(
+                            id = defaultUserId,
+                            email = "default@ccxiaoji.com",
+                            createdAt = System.currentTimeMillis(),
+                            updatedAt = System.currentTimeMillis()
+                        )
+                        userDao.insertUser(defaultUser)
+                        Log.d(TAG, "Default user created")
+                    } else {
+                        Log.d(TAG, "Default user already exists")
+                    }
+                    
+                    // 确保默认账户存在
+                    Log.d(TAG, "Checking for default account")
+                    val defaultAccount = accountDao.getDefaultAccount(defaultUserId)
+                    if (defaultAccount == null) {
+                        Log.d(TAG, "Creating default account")
                 val newAccount = AccountEntity(
                     id = java.util.UUID.randomUUID().toString(),
                     userId = defaultUserId,
@@ -65,20 +83,36 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
                     createdAt = System.currentTimeMillis(),
                     updatedAt = System.currentTimeMillis(),
                     syncStatus = SyncStatus.SYNCED
-                )
-                accountDao.insertAccount(newAccount)
+                        )
+                        accountDao.insertAccount(newAccount)
+                        Log.d(TAG, "Default account created")
+                    } else {
+                        Log.d(TAG, "Default account already exists")
+                    }
+                    
+                    // 初始化默认分类
+                    Log.d(TAG, "Initializing default categories")
+                    categoryRepository.initializeDefaultCategories()
+                    Log.d(TAG, "Default categories initialized")
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error during database initialization", e)
+                }
             }
             
-            // 初始化默认分类
-            categoryRepository.initializeDefaultCategories()
-        }
-        
-        // 注册定期交易Worker
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            // 注册定期交易Worker
+            Log.d(TAG, "Registering RecurringTransactionWorker")
+            WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             RecurringTransactionWorker.WORK_NAME,
             ExistingPeriodicWorkPolicy.KEEP,
             RecurringTransactionWorker.createPeriodicWorkRequest()
-        )
+            )
+            Log.d(TAG, "RecurringTransactionWorker registered")
+            
+            Log.d(TAG, "Application onCreate completed successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Fatal error in Application onCreate", e)
+            throw e
+        }
     }
     
     override val workManagerConfiguration: Configuration

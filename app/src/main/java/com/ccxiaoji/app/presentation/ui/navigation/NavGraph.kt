@@ -25,6 +25,9 @@ import com.ccxiaoji.app.presentation.ui.statistics.StatisticsScreen
 import com.ccxiaoji.app.presentation.ui.recurring.RecurringTransactionScreen
 import com.ccxiaoji.app.presentation.ui.savings.SavingsGoalScreen
 import com.ccxiaoji.app.presentation.ui.savings.SavingsGoalDetailScreen
+import com.ccxiaoji.app.presentation.ui.profile.DataExportScreen
+import com.ccxiaoji.app.presentation.ui.profile.ThemeSettingsScreen
+import com.ccxiaoji.app.presentation.ui.profile.NotificationSettingsScreen
 
 @Composable
 fun NavGraph(
@@ -117,7 +120,9 @@ fun NavGraph(
         }
         
         composable(DataExportRoute.route) {
-            PlaceholderScreen(title = "数据导出", navController = navController)
+            DataExportScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
         
         composable(BatchOperationRoute.route) {
@@ -125,11 +130,15 @@ fun NavGraph(
         }
         
         composable(ThemeSettingsRoute.route) {
-            PlaceholderScreen(title = "主题设置", navController = navController)
+            ThemeSettingsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
         
         composable(NotificationSettingsRoute.route) {
-            PlaceholderScreen(title = "通知设置", navController = navController)
+            NotificationSettingsScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
         
         composable(AppLockSettingsRoute.route) {

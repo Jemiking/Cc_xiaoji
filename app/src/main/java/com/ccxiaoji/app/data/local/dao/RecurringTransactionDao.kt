@@ -32,4 +32,7 @@ interface RecurringTransactionDao {
     
     @Query("UPDATE recurring_transactions SET lastExecutionDate = :lastExecutionDate, nextExecutionDate = :nextExecutionDate, updatedAt = :updatedAt WHERE id = :id")
     suspend fun updateExecutionDates(id: String, lastExecutionDate: Long, nextExecutionDate: Long, updatedAt: Long)
+    
+    @Query("SELECT * FROM recurring_transactions WHERE id = :id")
+    fun getRecurringTransactionByIdSync(id: String): RecurringTransactionEntity?
 }

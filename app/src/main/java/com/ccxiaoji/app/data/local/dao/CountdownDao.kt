@@ -47,4 +47,7 @@ interface CountdownDao {
     
     @Query("UPDATE countdowns SET syncStatus = :syncStatus WHERE id IN (:ids)")
     suspend fun updateSyncStatus(ids: List<String>, syncStatus: SyncStatus)
+    
+    @Query("SELECT * FROM countdowns WHERE id = :countdownId AND isDeleted = 0")
+    fun getCountdownByIdSync(countdownId: String): CountdownEntity?
 }

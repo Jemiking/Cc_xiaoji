@@ -52,6 +52,9 @@ interface CategoryDao {
         ORDER BY c.type, c.displayOrder, c.name
     """)
     fun getCategoriesWithTransactionCount(userId: String): Flow<List<CategoryWithCount>>
+    
+    @Query("SELECT * FROM categories WHERE id = :categoryId AND isDeleted = 0")
+    fun getCategoryByIdSync(categoryId: String): CategoryEntity?
 }
 
 data class CategoryWithCount(

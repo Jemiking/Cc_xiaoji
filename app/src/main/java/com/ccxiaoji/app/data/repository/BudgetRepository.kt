@@ -97,6 +97,10 @@ class BudgetRepository @Inject constructor(
             it.spentAmountCents > it.budgetAmountCents
         } ?: false
     }
+    
+    fun getBudgets(userId: String): Flow<List<BudgetEntity>> {
+        return budgetDao.getBudgetsByUser(userId)
+    }
 
     suspend fun checkBudgetAlert(userId: String, year: Int, month: Int, categoryId: String?): Boolean {
         val budget = if (categoryId == null) {

@@ -91,6 +91,9 @@ interface TransactionDao {
         AND c.type = :type
     """)
     suspend fun getTotalByType(userId: String, startTime: Long, endTime: Long, type: String): Int?
+    
+    @Query("SELECT * FROM transactions WHERE id = :transactionId AND isDeleted = 0")
+    fun getTransactionByIdSync(transactionId: String): TransactionEntity?
 }
 
 data class CategoryTotal(

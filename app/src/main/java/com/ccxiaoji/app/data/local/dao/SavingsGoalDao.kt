@@ -55,4 +55,10 @@ interface SavingsGoalDao {
         val currentTime = java.time.LocalDateTime.now().toString()
         updateGoalAmount(contribution.goalId, contribution.amount, currentTime)
     }
+    
+    @Query("SELECT * FROM savings_goals WHERE id = :goalId")
+    fun getSavingsGoalByIdSync(goalId: Long): SavingsGoalEntity?
+    
+    @Query("SELECT * FROM savings_contributions WHERE id = :contributionId")
+    fun getContributionByIdSync(contributionId: Long): SavingsContributionEntity?
 }

@@ -11,6 +11,9 @@ interface BudgetDao {
 
     @Query("SELECT * FROM budgets WHERE userId = :userId AND year = :year AND month = :month AND isDeleted = 0")
     fun getBudgetsByMonth(userId: String, year: Int, month: Int): Flow<List<BudgetEntity>>
+    
+    @Query("SELECT * FROM budgets WHERE userId = :userId AND isDeleted = 0")
+    fun getAllBudgetsByUser(userId: String): Flow<List<BudgetEntity>>
 
     @Query("SELECT * FROM budgets WHERE userId = :userId AND year = :year AND month = :month AND categoryId IS NULL AND isDeleted = 0 LIMIT 1")
     suspend fun getTotalBudget(userId: String, year: Int, month: Int): BudgetEntity?
@@ -94,6 +97,9 @@ interface BudgetDao {
         ORDER BY b.categoryId IS NULL DESC, b.categoryId
     """)
     fun getBudgetsWithSpent(userId: String, year: Int, month: Int): Flow<List<BudgetWithSpent>>
+    
+    @Query("SELECT * FROM budgets WHERE id = :budgetId AND isDeleted = 0")
+    fun getBudgetByIdSync(budgetId: String): BudgetEntity?
 }
 
 data class BudgetWithSpent(

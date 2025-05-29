@@ -11,6 +11,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.outlined.CheckCircleOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,6 +26,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ccxiaoji.app.R
 import com.ccxiaoji.app.data.repository.HabitWithStreak
 import com.ccxiaoji.app.presentation.viewmodel.HabitViewModel
+import com.ccxiaoji.app.presentation.ui.components.charts.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +37,7 @@ fun HabitScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var editingHabit by remember { mutableStateOf<HabitWithStreak?>(null) }
+    var showStatistics by remember { mutableStateOf(false) }
     
     Scaffold(
         topBar = {
@@ -43,14 +47,24 @@ fun HabitScreen(
                         text = stringResource(R.string.nav_habit),
                         style = MaterialTheme.typography.headlineSmall
                     )
+                },
+                actions = {
+                    IconButton(onClick = { showStatistics = !showStatistics }) {
+                        Icon(
+                            imageVector = if (showStatistics) Icons.Default.List else Icons.Default.BarChart,
+                            contentDescription = if (showStatistics) "显示列表" else "显示统计"
+                        )
+                    }
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showAddDialog = true }
-            ) {
-                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_habit))
+            if (!showStatistics) {
+                FloatingActionButton(
+                    onClick = { showAddDialog = true }
+                ) {
+                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_habit))
+                }
             }
         }
     ) { paddingValues ->
@@ -59,6 +73,114 @@ fun HabitScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            if (showStatistics) {
+                // 统计视图
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // 习惯完成率统计
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Text(
+                                    text = "习惯完成率",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                val habitStatistics = uiState.habits.map { habitWithStreak ->
+                                    val habit = habitWithStreak.habit
+                                    val totalDays = when (habit.period) {
+                                        "daily" -> 30
+                                        "weekly" -> 4
+                                        "monthly" -> 1
+                                        else -> 30
+                                    }
+                                    HabitStatistic(
+                                        habitId = habit.id,
+                                        habitName = habit.title,
+                                        totalDays = totalDays,
+                                        completedDays = habitWithStreak.completedCount,
+                                        completionRate = if (totalDays > 0) habitWithStreak.completedCount.toFloat() / totalDays else 0f,
+                                        currentStreak = habitWithStreak.currentStreak,
+                                        longestStreak = habitWithStreak.longestStreak,
+                                        color = Color(habit.color.removePrefix("#").toLong(16) or 0xFF000000)
+                                    )
+                                }
+                                
+                                HabitCompletionRateChart(
+                                    habits = habitStatistics,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
+                    
+                    // 习惯趋势图
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Text(
+                                    text = "习惯趋势",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                // TODO: 从ViewModel获取每日数据
+                                val dailyData = listOf<HabitDailyData>() // 暂时空数据
+                                
+                                HabitTrendChart(
+                                    dailyData = dailyData,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
+                    
+                    // 习惯热力图
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Text(
+                                    text = "习惯热力图",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                // TODO: 从ViewModel获取记录数据
+                                val habitRecords = mapOf<kotlinx.datetime.LocalDate, Int>() // 暂时空数据
+                                
+                                HabitCalendarHeatmap(
+                                    habitRecords = habitRecords,
+                                    totalHabits = uiState.habits.size,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+                        }
+                    }
+                }
+            } else {
+                // 列表视图
             // 搜索框
             OutlinedTextField(
                 value = searchQuery,
@@ -111,6 +233,7 @@ fun HabitScreen(
                         )
                     }
                 }
+            }
             }
         }
     }

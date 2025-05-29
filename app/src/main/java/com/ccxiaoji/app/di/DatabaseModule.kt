@@ -21,14 +21,18 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Singleton
+import android.util.Log
 
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
     
+    private const val TAG = "CcXiaoJi"
+    
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): CcDatabase {
+        Log.d(TAG, "Providing CcDatabase instance")
         return Room.databaseBuilder(
             context,
             CcDatabase::class.java,
@@ -40,8 +44,10 @@ object DatabaseModule {
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
+                    Log.d(TAG, "Database onCreate callback triggered")
                     // 创建默认用户和默认账户
                     CoroutineScope(Dispatchers.IO).launch {
+                        Log.d(TAG, "Initializing default data in database")
                         val currentTime = System.currentTimeMillis()
                         db.execSQL(
                             "INSERT INTO users (id, email, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
@@ -92,6 +98,7 @@ object DatabaseModule {
             })
             .addMigrations(*DatabaseMigrations.getAllMigrations())
             .build()
+            .also { Log.d(TAG, "CcDatabase instance created successfully") }
     }
     
     @Provides

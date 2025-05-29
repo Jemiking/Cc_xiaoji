@@ -54,4 +54,7 @@ interface TaskDao {
     
     @Query("UPDATE tasks SET syncStatus = :syncStatus WHERE id IN (:ids)")
     suspend fun updateSyncStatus(ids: List<String>, syncStatus: SyncStatus)
+    
+    @Query("SELECT * FROM tasks WHERE id = :taskId AND isDeleted = 0")
+    fun getTaskByIdSync(taskId: String): TaskEntity?
 }

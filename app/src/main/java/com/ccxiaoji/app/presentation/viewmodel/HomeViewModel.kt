@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import javax.inject.Inject
+import android.util.Log
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
@@ -38,14 +39,26 @@ class HomeViewModel @Inject constructor(
     private val accountRepository: AccountRepository
 ) : ViewModel() {
     
+    companion object {
+        private const val TAG = "CcXiaoJi"
+    }
+    
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
     
     init {
-        loadDashboardData()
+        Log.d(TAG, "HomeViewModel init started")
+        try {
+            loadDashboardData()
+            Log.d(TAG, "HomeViewModel init completed")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in HomeViewModel init", e)
+            throw e
+        }
     }
     
     private fun loadDashboardData() {
+        Log.d(TAG, "Loading dashboard data")
         viewModelScope.launch {
             // Load monthly expense and today's income/expense
             val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
