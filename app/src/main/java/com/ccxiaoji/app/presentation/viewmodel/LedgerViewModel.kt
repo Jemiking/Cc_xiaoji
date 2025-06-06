@@ -10,7 +10,6 @@ import com.ccxiaoji.app.data.repository.UserRepository
 import com.ccxiaoji.app.domain.model.Account
 import com.ccxiaoji.app.domain.model.Category
 import com.ccxiaoji.app.domain.model.Transaction
-import com.ccxiaoji.app.domain.model.TransactionCategory
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch

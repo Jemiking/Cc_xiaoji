@@ -9,7 +9,6 @@ import com.ccxiaoji.app.data.local.dao.*
 import com.ccxiaoji.app.data.local.entity.CategoryEntity
 import com.ccxiaoji.app.data.local.entity.UserEntity
 import com.ccxiaoji.app.data.local.migrations.DatabaseMigrations
-import com.ccxiaoji.app.data.local.migrations.DatabaseMigrations.MIGRATION_1_2
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -37,9 +36,6 @@ object DatabaseModule {
             CcDatabase::class.java,
             CcDatabase.DATABASE_NAME
         )
-            .addMigrations(MIGRATION_1_2)
-            // TODO: Add more migrations as needed
-            // .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)

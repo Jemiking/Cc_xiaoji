@@ -22,7 +22,7 @@ import com.ccxiaoji.app.data.local.entity.*
         SavingsGoalEntity::class,
         SavingsContributionEntity::class
     ],
-    version = 7,
+    version = 1,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

@@ -13,14 +13,10 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE userId = :userId AND createdAt >= :startTime AND createdAt < :endTime AND isDeleted = 0 ORDER BY createdAt DESC")
     fun getTransactionsByDateRange(userId: String, startTime: Long, endTime: Long): Flow<List<TransactionEntity>>
     
-    @Query("SELECT * FROM transactions WHERE userId = :userId AND category = :category AND isDeleted = 0 ORDER BY createdAt DESC")
-    fun getTransactionsByCategory(userId: String, category: String): Flow<List<TransactionEntity>>
     
     @Query("SELECT SUM(amountCents) FROM transactions WHERE userId = :userId AND createdAt >= :startTime AND createdAt < :endTime AND isDeleted = 0")
     suspend fun getTotalAmountByDateRange(userId: String, startTime: Long, endTime: Long): Int?
     
-    @Query("SELECT category, SUM(amountCents) as total FROM transactions WHERE userId = :userId AND createdAt >= :startTime AND createdAt < :endTime AND isDeleted = 0 AND category IS NOT NULL GROUP BY category")
-    suspend fun getCategoryTotalsByDateRange(userId: String, startTime: Long, endTime: Long): List<CategoryTotal>
     
     @Query("SELECT * FROM transactions WHERE syncStatus != :syncStatus AND isDeleted = 0")
     suspend fun getUnsyncedTransactions(syncStatus: SyncStatus = SyncStatus.SYNCED): List<TransactionEntity>
@@ -45,7 +41,6 @@ interface TransactionDao {
         WHERE userId = :userId 
         AND isDeleted = 0 
         AND (note LIKE '%' || :query || '%' 
-            OR category LIKE '%' || :query || '%'
             OR CAST(amountCents AS TEXT) LIKE '%' || :query || '%')
         ORDER BY createdAt DESC
     """)
@@ -96,10 +91,6 @@ interface TransactionDao {
     fun getTransactionByIdSync(transactionId: String): TransactionEntity?
 }
 
-data class CategoryTotal(
-    val category: String,
-    val total: Int
-)
 
 data class CategoryStatistic(
     val categoryId: String,

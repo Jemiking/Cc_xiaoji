@@ -24,11 +24,18 @@ data class AccountEntity(
     val userId: String,
     val name: String,
     val type: String, // CASH, BANK_CARD, ALIPAY, WECHAT, CREDIT_CARD, OTHER
-    val balanceCents: Long, // Balance in cents
+    val balanceCents: Long, // Balance in cents (for credit cards, negative means debt)
     val currency: String = "CNY",
     val icon: String? = null,
     val color: String? = null,
     val isDefault: Boolean = false,
+    
+    // Credit card specific fields
+    val creditLimitCents: Long? = null, // Credit limit in cents
+    val billingDay: Int? = null, // Day of month for billing (1-28)
+    val paymentDueDay: Int? = null, // Day of month for payment due (1-28)
+    val gracePeriodDays: Int? = null, // Grace period days after billing
+    
     val createdAt: Long,
     val updatedAt: Long,
     val isDeleted: Boolean = false,

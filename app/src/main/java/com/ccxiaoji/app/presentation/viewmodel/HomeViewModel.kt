@@ -12,7 +12,6 @@ import com.ccxiaoji.app.data.repository.SavingsGoalRepository
 import com.ccxiaoji.app.data.repository.UserRepository
 import com.ccxiaoji.app.data.repository.AccountRepository
 import com.ccxiaoji.app.domain.model.Transaction
-import com.ccxiaoji.app.domain.model.TransactionCategory
 import com.ccxiaoji.app.domain.model.Task
 import com.ccxiaoji.app.domain.model.Habit
 import com.ccxiaoji.app.domain.model.Countdown

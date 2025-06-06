@@ -37,7 +37,6 @@ data class TransactionEntity(
     val accountId: String,
     val amountCents: Int,
     val categoryId: String, // 外键引用 categories 表
-    val category: String? = null, // 保留用于向后兼容，将来移除
     val note: String?,
     val createdAt: Long,
     val updatedAt: Long,

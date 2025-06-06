@@ -29,7 +29,6 @@ import com.ccxiaoji.app.domain.model.Account
 import com.ccxiaoji.app.domain.model.Category
 import com.ccxiaoji.app.domain.model.CategoryDetails
 import com.ccxiaoji.app.domain.model.Transaction
-import com.ccxiaoji.app.domain.model.TransactionCategory
 import com.ccxiaoji.app.presentation.ui.components.AccountSelector
 import com.ccxiaoji.app.presentation.ui.ledger.components.LedgerDrawerContent
 import com.ccxiaoji.app.presentation.ui.ledger.components.MonthlyOverviewBar
@@ -486,13 +485,13 @@ fun TransactionItem(
                 }
                 
                 Text(
-                    text = transaction.categoryDetails?.icon ?: transaction.category?.icon ?: "📝",
+                    text = transaction.categoryDetails?.icon ?: "📝",
                     style = MaterialTheme.typography.headlineMedium
                 )
                 
                 Column {
                     Text(
-                        text = transaction.categoryDetails?.name ?: transaction.category?.displayName ?: "未分类",
+                        text = transaction.categoryDetails?.name ?: "未分类",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -514,14 +513,14 @@ fun TransactionItem(
             }
             
             Text(
-                text = if (transaction.categoryDetails?.type == "INCOME" || transaction.category == TransactionCategory.INCOME) {
+                text = if (transaction.categoryDetails?.type == "INCOME") {
                     "+¥%.2f".format(transaction.amountYuan)
                 } else {
                     "-¥%.2f".format(transaction.amountYuan)
                 },
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = if (transaction.categoryDetails?.type == "INCOME" || transaction.category == TransactionCategory.INCOME) {
+                color = if (transaction.categoryDetails?.type == "INCOME") {
                     MaterialTheme.colorScheme.primary
                 } else {
                     MaterialTheme.colorScheme.error
@@ -702,7 +701,7 @@ fun EditTransactionDialog(
     var selectedCategoryId by remember { mutableStateOf(transaction.categoryId) }
     var note by remember { mutableStateOf(transaction.note ?: "") }
     var isIncome by remember { mutableStateOf(
-        transaction.categoryDetails?.type == "INCOME" || transaction.category == TransactionCategory.INCOME
+        transaction.categoryDetails?.type == "INCOME"
     ) }
     
     // Filter categories by type

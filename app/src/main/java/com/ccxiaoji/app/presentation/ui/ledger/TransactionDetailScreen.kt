@@ -14,7 +14,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.ccxiaoji.app.domain.model.Transaction
-import com.ccxiaoji.app.domain.model.TransactionCategory
 import com.ccxiaoji.app.presentation.viewmodel.LedgerViewModel
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toJavaLocalDateTime
@@ -85,7 +84,7 @@ fun TransactionDetailScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = transaction.categoryDetails?.icon ?: transaction.category?.icon ?: "📝",
+                        text = transaction.categoryDetails?.icon ?: "📝",
                         style = MaterialTheme.typography.displayLarge
                     )
                     
@@ -107,7 +106,7 @@ fun TransactionDetailScreen(
                     )
                     
                     Text(
-                        text = transaction.categoryDetails?.name ?: transaction.category?.displayName ?: "其他",
+                        text = transaction.categoryDetails?.name ?: "其他",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
