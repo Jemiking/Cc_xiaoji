@@ -8,6 +8,7 @@ import com.ccxiaoji.app.data.local.dao.TransactionDao
 import com.ccxiaoji.app.data.local.entity.ChangeLogEntity
 import com.ccxiaoji.app.data.sync.SyncStatus
 import com.ccxiaoji.app.data.local.entity.TransactionEntity
+import com.ccxiaoji.app.data.migration.CategoryMigrationHelper
 import com.ccxiaoji.app.domain.model.CategoryDetails
 import com.ccxiaoji.app.domain.model.Transaction
 import com.ccxiaoji.app.domain.model.TransactionCategory
@@ -83,6 +84,20 @@ class TransactionRepository @Inject constructor(
         }
     }
     
+    suspend fun getMonthlyIncomesAndExpenses(year: Int, month: Int): Pair<Int, Int> {
+        val startDate = LocalDate(year, month, 1)
+        val endDate = startDate.plus(1, DateTimeUnit.MONTH)
+        
+        val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val endMillis = endDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        
+        // Use new category-based queries
+        val income = transactionDao.getTotalByType(getCurrentUserId(), startMillis, endMillis, "INCOME") ?: 0
+        val expense = transactionDao.getTotalByType(getCurrentUserId(), startMillis, endMillis, "EXPENSE") ?: 0
+        
+        return income to expense
+    }
+    
     suspend fun addTransaction(
         amountCents: Int,
         categoryId: String,
@@ -97,13 +112,24 @@ class TransactionRepository @Inject constructor(
         val actualAccountId = accountId ?: accountDao.getDefaultAccount(getCurrentUserId())?.id 
             ?: throw IllegalStateException("No default account found")
         
+        // Get category details for compatibility mapping
+        val categoryEntity = categoryDao.getCategoryById(categoryId)
+        
+        // Use migration helper to get compatible enum value
+        val categoryEnum = categoryEntity?.let {
+            CategoryMigrationHelper.getCategoryEnumFromName(
+                it.name, 
+                it.type == "EXPENSE"
+            )
+        }
+        
         val entity = TransactionEntity(
             id = transactionId,
             userId = getCurrentUserId(),
             accountId = actualAccountId,
             amountCents = amountCents,
             categoryId = categoryId,
-            category = null, // Will be deprecated
+            category = categoryEnum, // Set compatible value instead of null
             note = note,
             createdAt = createdAt,
             updatedAt = now,
@@ -113,7 +139,7 @@ class TransactionRepository @Inject constructor(
         transactionDao.insertTransaction(entity)
         
         // Update account balance
-        val category = categoryDao.getCategoryById(categoryId)
+        val category = categoryEntity
         val balanceChange = if (category?.type == "INCOME") amountCents.toLong() else -amountCents.toLong()
         accountDao.updateBalance(actualAccountId, balanceChange, now)
         

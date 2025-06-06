@@ -44,4 +44,40 @@ object CategoryMigrationHelper {
     fun generateCategoryId(userId: String, category: TransactionCategory): String {
         return "default_${userId}_${category.name.lowercase()}"
     }
+    
+    /**
+     * 根据新系统的分类名称获取旧系统的枚举值
+     * @param categoryName 新系统中的分类名称
+     * @param isExpense 是否为支出类型
+     * @return 对应的旧系统枚举值字符串
+     */
+    fun getCategoryEnumFromName(categoryName: String, isExpense: Boolean): String? {
+        return if (isExpense) {
+            when (categoryName) {
+                "餐饮" -> "FOOD"
+                "交通" -> "TRANSPORT"
+                "购物" -> "SHOPPING"
+                "娱乐" -> "ENTERTAINMENT"
+                "医疗" -> "MEDICAL"
+                "教育" -> "EDUCATION"
+                "居住" -> "HOUSING"
+                "水电" -> "UTILITIES"
+                "通讯" -> "COMMUNICATION"
+                "其他" -> "OTHER"
+                else -> "OTHER"
+            }
+        } else {
+            // 收入类型统一映射为 INCOME
+            "INCOME"
+        }
+    }
+    
+    /**
+     * 检查是否需要迁移
+     * @param categoryId 新系统的分类ID
+     * @return 如果有categoryId说明使用了新系统，需要进行迁移
+     */
+    fun needsMigration(categoryId: String?): Boolean {
+        return categoryId != null
+    }
 }

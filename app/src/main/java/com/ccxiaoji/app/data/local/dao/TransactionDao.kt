@@ -19,7 +19,7 @@ interface TransactionDao {
     @Query("SELECT SUM(amountCents) FROM transactions WHERE userId = :userId AND createdAt >= :startTime AND createdAt < :endTime AND isDeleted = 0")
     suspend fun getTotalAmountByDateRange(userId: String, startTime: Long, endTime: Long): Int?
     
-    @Query("SELECT category, SUM(amountCents) as total FROM transactions WHERE userId = :userId AND createdAt >= :startTime AND createdAt < :endTime AND isDeleted = 0 GROUP BY category")
+    @Query("SELECT category, SUM(amountCents) as total FROM transactions WHERE userId = :userId AND createdAt >= :startTime AND createdAt < :endTime AND isDeleted = 0 AND category IS NOT NULL GROUP BY category")
     suspend fun getCategoryTotalsByDateRange(userId: String, startTime: Long, endTime: Long): List<CategoryTotal>
     
     @Query("SELECT * FROM transactions WHERE syncStatus != :syncStatus AND isDeleted = 0")

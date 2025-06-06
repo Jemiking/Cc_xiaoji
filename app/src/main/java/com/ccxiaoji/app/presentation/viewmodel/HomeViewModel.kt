@@ -71,10 +71,10 @@ class HomeViewModel @Inject constructor(
                 now.date
             ).collect { todayTransactions ->
                 val todayIncome = todayTransactions
-                    .filter { it.categoryDetails?.type == "INCOME" || it.category == TransactionCategory.INCOME }
+                    .filter { it.categoryDetails?.type == "INCOME" }
                     .sumOf { it.amountCents }
                 val todayExpense = todayTransactions
-                    .filter { it.categoryDetails?.type == "EXPENSE" || (it.category != null && it.category != TransactionCategory.INCOME) }
+                    .filter { it.categoryDetails?.type == "EXPENSE" }
                     .sumOf { it.amountCents }
                 
                 _uiState.value = _uiState.value.copy(

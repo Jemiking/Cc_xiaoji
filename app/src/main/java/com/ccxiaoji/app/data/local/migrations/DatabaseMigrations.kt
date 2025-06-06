@@ -2,6 +2,7 @@ package com.ccxiaoji.app.data.local.migrations
 
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.ccxiaoji.app.data.local.migration.MIGRATION_6_7
 import java.util.UUID
 
 /**
@@ -327,7 +328,8 @@ object DatabaseMigrations {
             MIGRATION_2_3,
             MIGRATION_3_4,
             MIGRATION_4_5,
-            MIGRATION_5_6
+            MIGRATION_5_6,
+            MIGRATION_6_7
         )
     }
 }

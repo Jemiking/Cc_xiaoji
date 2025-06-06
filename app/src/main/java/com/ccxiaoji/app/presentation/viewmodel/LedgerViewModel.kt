@@ -71,13 +71,12 @@ class LedgerViewModel @Inject constructor(
     private fun loadMonthlySummary() {
         viewModelScope.launch {
             val selectedMonth = _selectedMonth.value
-            val monthlyTotal = transactionRepository.getMonthlyTotal(selectedMonth.year, selectedMonth.monthValue)
-            val categoryTotals = transactionRepository.getCategoryTotalsForMonth(selectedMonth.year, selectedMonth.monthValue)
             
-            // For now, handle both old enum and new category system
-            val income = categoryTotals[TransactionCategory.INCOME] ?: 0
-            val expense = categoryTotals.filterKeys { it != TransactionCategory.INCOME }
-                .values.sum()
+            // Use new method that queries by category type instead of old enum
+            val (income, expense) = transactionRepository.getMonthlyIncomesAndExpenses(
+                selectedMonth.year, 
+                selectedMonth.monthValue
+            )
             
             _uiState.update { 
                 it.copy(
@@ -320,8 +319,8 @@ class LedgerViewModel @Inject constructor(
                     // Filter by transaction type
                     val typeMatch = when (filter.transactionType) {
                         TransactionType.ALL -> true
-                        TransactionType.INCOME -> transaction.categoryDetails?.type == "INCOME" || transaction.category == TransactionCategory.INCOME
-                        TransactionType.EXPENSE -> transaction.categoryDetails?.type == "EXPENSE" || (transaction.category != null && transaction.category != TransactionCategory.INCOME)
+                        TransactionType.INCOME -> transaction.categoryDetails?.type == "INCOME"
+                        TransactionType.EXPENSE -> transaction.categoryDetails?.type == "EXPENSE"
                     }
                     
                     // Filter by categories
@@ -374,10 +373,10 @@ class LedgerViewModel @Inject constructor(
     
     private fun updateFilteredSummary(filteredTransactions: List<Transaction>) {
         val income = filteredTransactions
-            .filter { it.categoryDetails?.type == "INCOME" || it.category == TransactionCategory.INCOME }
+            .filter { it.categoryDetails?.type == "INCOME" }
             .sumOf { it.amountCents }
         val expense = filteredTransactions
-            .filter { it.categoryDetails?.type == "EXPENSE" || (it.category != null && it.category != TransactionCategory.INCOME) }
+            .filter { it.categoryDetails?.type == "EXPENSE" }
             .sumOf { it.amountCents }
             
         _uiState.update { 
@@ -401,8 +400,8 @@ class LedgerViewModel @Inject constructor(
                         id = "all",
                         title = "所有交易",
                         transactions = transactions,
-                        totalIncome = transactions.filter { it.categoryDetails?.type == "INCOME" || it.category == TransactionCategory.INCOME }.sumOf { it.amountCents },
-                        totalExpense = transactions.filter { it.categoryDetails?.type == "EXPENSE" || (it.category != null && it.category != TransactionCategory.INCOME) }.sumOf { it.amountCents }
+                        totalIncome = transactions.filter { it.categoryDetails?.type == "INCOME" }.sumOf { it.amountCents },
+                        totalExpense = transactions.filter { it.categoryDetails?.type == "EXPENSE" }.sumOf { it.amountCents }
                     )
                 )
                 GroupingMode.DAY -> groupTransactionsByDay(transactions)
@@ -451,8 +450,8 @@ class LedgerViewModel @Inject constructor(
                         dayOfWeek
                     } else null,
                     transactions = dayTransactions.sortedByDescending { it.createdAt },
-                    totalIncome = dayTransactions.filter { it.categoryDetails?.type == "INCOME" || it.category == TransactionCategory.INCOME }.sumOf { it.amountCents },
-                    totalExpense = dayTransactions.filter { it.categoryDetails?.type == "EXPENSE" || (it.category != null && it.category != TransactionCategory.INCOME) }.sumOf { it.amountCents }
+                    totalIncome = dayTransactions.filter { it.categoryDetails?.type == "INCOME" }.sumOf { it.amountCents },
+                    totalExpense = dayTransactions.filter { it.categoryDetails?.type == "EXPENSE" }.sumOf { it.amountCents }
                 )
             }
             .sortedByDescending { it.id }
@@ -494,8 +493,8 @@ class LedgerViewModel @Inject constructor(
                     title = title,
                     subtitle = if (year != currentYear) "${year}年" else null,
                     transactions = weekTransactions.sortedByDescending { it.createdAt },
-                    totalIncome = weekTransactions.filter { it.categoryDetails?.type == "INCOME" || it.category == TransactionCategory.INCOME }.sumOf { it.amountCents },
-                    totalExpense = weekTransactions.filter { it.categoryDetails?.type == "EXPENSE" || (it.category != null && it.category != TransactionCategory.INCOME) }.sumOf { it.amountCents }
+                    totalIncome = weekTransactions.filter { it.categoryDetails?.type == "INCOME" }.sumOf { it.amountCents },
+                    totalExpense = weekTransactions.filter { it.categoryDetails?.type == "EXPENSE" }.sumOf { it.amountCents }
                 )
             }
             .sortedByDescending { it.id }
@@ -527,8 +526,8 @@ class LedgerViewModel @Inject constructor(
                     id = monthKey,
                     title = title,
                     transactions = monthTransactions.sortedByDescending { it.createdAt },
-                    totalIncome = monthTransactions.filter { it.categoryDetails?.type == "INCOME" || it.category == TransactionCategory.INCOME }.sumOf { it.amountCents },
-                    totalExpense = monthTransactions.filter { it.categoryDetails?.type == "EXPENSE" || (it.category != null && it.category != TransactionCategory.INCOME) }.sumOf { it.amountCents }
+                    totalIncome = monthTransactions.filter { it.categoryDetails?.type == "INCOME" }.sumOf { it.amountCents },
+                    totalExpense = monthTransactions.filter { it.categoryDetails?.type == "EXPENSE" }.sumOf { it.amountCents }
                 )
             }
             .sortedByDescending { it.id }
@@ -544,8 +543,8 @@ class LedgerViewModel @Inject constructor(
                     id = year.toString(),
                     title = "${year}年",
                     transactions = yearTransactions.sortedByDescending { it.createdAt },
-                    totalIncome = yearTransactions.filter { it.categoryDetails?.type == "INCOME" || it.category == TransactionCategory.INCOME }.sumOf { it.amountCents },
-                    totalExpense = yearTransactions.filter { it.categoryDetails?.type == "EXPENSE" || (it.category != null && it.category != TransactionCategory.INCOME) }.sumOf { it.amountCents }
+                    totalIncome = yearTransactions.filter { it.categoryDetails?.type == "INCOME" }.sumOf { it.amountCents },
+                    totalExpense = yearTransactions.filter { it.categoryDetails?.type == "EXPENSE" }.sumOf { it.amountCents }
                 )
             }
             .sortedByDescending { it.id }

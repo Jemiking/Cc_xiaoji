@@ -92,14 +92,14 @@ fun TransactionDetailScreen(
                     Spacer(modifier = Modifier.height(16.dp))
                     
                     Text(
-                        text = if (transaction.category == TransactionCategory.INCOME) {
+                        text = if (transaction.categoryDetails?.type == "INCOME") {
                             "+¥%.2f".format(transaction.amountYuan)
                         } else {
                             "-¥%.2f".format(transaction.amountYuan)
                         },
                         style = MaterialTheme.typography.displaySmall,
                         fontWeight = FontWeight.Bold,
-                        color = if (transaction.category == TransactionCategory.INCOME) {
+                        color = if (transaction.categoryDetails?.type == "INCOME") {
                             MaterialTheme.colorScheme.primary
                         } else {
                             MaterialTheme.colorScheme.error

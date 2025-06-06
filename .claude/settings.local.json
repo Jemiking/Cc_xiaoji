@@ -29,7 +29,11 @@
       "Bash(git config:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(./push_to_github.sh)"
+      "Bash(./push_to_github.sh)",
+      "Bash(bash gradlew :app:compileDebugKotlin)",
+      "Bash(./compile_and_test.bat)",
+      "Bash(cmd.exe /c compile_and_test.bat)",
+      "Bash(bash:*)"
     ],
     "deny": []
   },

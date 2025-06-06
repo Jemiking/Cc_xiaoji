@@ -7,7 +7,6 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.ccxiaoji.app.data.local.CcDatabase
 import com.ccxiaoji.app.data.local.dao.*
 import com.ccxiaoji.app.data.local.entity.CategoryEntity
-import com.ccxiaoji.app.data.local.entity.CategoryType
 import com.ccxiaoji.app.data.local.entity.UserEntity
 import com.ccxiaoji.app.data.local.migrations.DatabaseMigrations
 import com.ccxiaoji.app.data.local.migrations.DatabaseMigrations.MIGRATION_1_2
@@ -49,13 +48,17 @@ object DatabaseModule {
                     CoroutineScope(Dispatchers.IO).launch {
                         Log.d(TAG, "Initializing default data in database")
                         val currentTime = System.currentTimeMillis()
+                        
+                        // 插入默认用户
                         db.execSQL(
-                            "INSERT INTO users (id, email, createdAt, updatedAt) VALUES (?, ?, ?, ?)",
-                            arrayOf("current_user_id", "default@ccxiaoji.com", currentTime, currentTime)
+                            "INSERT INTO users (id, email, createdAt, updatedAt, isDeleted) VALUES (?, ?, ?, ?, ?)",
+                            arrayOf("current_user_id", "default@ccxiaoji.com", currentTime, currentTime, 0)
                         )
+                        
+                        // 插入默认账户 - 注意 syncStatus 使用字符串 'SYNCED' 而不是数字
                         db.execSQL(
                             "INSERT INTO accounts (id, userId, name, type, balanceCents, currency, isDefault, createdAt, updatedAt, isDeleted, syncStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                            arrayOf("default_account_id", "current_user_id", "现金账户", "CASH", 0L, "CNY", 1, currentTime, currentTime, 0, 0)
+                            arrayOf("default_account_id", "current_user_id", "现金账户", "CASH", 0L, "CNY", 1, currentTime, currentTime, 0, "SYNCED")
                         )
                         
                         // 创建默认分类
@@ -80,19 +83,23 @@ object DatabaseModule {
                             Triple("其他", "💸", "#16A085")
                         )
                         
+                        // 插入支出分类 - 使用 displayOrder 而不是 sortOrder，syncStatus 使用字符串
                         expenseCategories.forEachIndexed { index, (name, icon, color) ->
                             db.execSQL(
-                                "INSERT INTO categories (id, userId, name, icon, color, type, parentId, isSystem, sortOrder, createdAt, updatedAt, isDeleted, syncStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                arrayOf(UUID.randomUUID().toString(), "current_user_id", name, icon, color, CategoryType.EXPENSE.name, null, 1, index, currentTime, currentTime, 0, 0)
+                                "INSERT INTO categories (id, userId, name, type, icon, color, parentId, displayOrder, isSystem, usageCount, createdAt, updatedAt, isDeleted, syncStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                arrayOf(UUID.randomUUID().toString(), "current_user_id", name, "EXPENSE", icon, color, null, index, 1, 0, currentTime, currentTime, 0, "SYNCED")
                             )
                         }
                         
+                        // 插入收入分类 - 使用 displayOrder 而不是 sortOrder，syncStatus 使用字符串
                         incomeCategories.forEachIndexed { index, (name, icon, color) ->
                             db.execSQL(
-                                "INSERT INTO categories (id, userId, name, icon, color, type, parentId, isSystem, sortOrder, createdAt, updatedAt, isDeleted, syncStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                arrayOf(UUID.randomUUID().toString(), "current_user_id", name, icon, color, CategoryType.INCOME.name, null, 1, index, currentTime, currentTime, 0, 0)
+                                "INSERT INTO categories (id, userId, name, type, icon, color, parentId, displayOrder, isSystem, usageCount, createdAt, updatedAt, isDeleted, syncStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                arrayOf(UUID.randomUUID().toString(), "current_user_id", name, "INCOME", icon, color, null, index, 1, 0, currentTime, currentTime, 0, "SYNCED")
                             )
                         }
+                        
+                        Log.d(TAG, "Default data initialization completed")
                     }
                 }
             })

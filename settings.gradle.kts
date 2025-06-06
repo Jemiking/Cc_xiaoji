@@ -1,9 +1,10 @@
 pluginManagement {
     repositories {
-        // 添加阿里云镜像
-        maven { url = uri("https://maven.aliyun.com/repository/public") }
-        maven { url = uri("https://maven.aliyun.com/repository/google") }
+        // 阿里云镜像优先
         maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
+        maven { url = uri("https://maven.aliyun.com/repository/google") }
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
+        // 备用源
         google()
         mavenCentral()
         gradlePluginPortal()
@@ -25,8 +26,5 @@ include(":app")
 
 // Check Java version
 val javaVersion = JavaVersion.current()
-if (javaVersion.majorVersion.toInt() > 11) {
-    println("⚠️ WARNING: Current Java version is $javaVersion")
-    println("⚠️ This project requires Java 11")
-    println("⚠️ Please change Gradle JDK in Android Studio settings")
-}
+println("ℹ️ Current Java version: $javaVersion")
+println("ℹ️ Gradle version 8.9 supports Java 21")
