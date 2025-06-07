@@ -28,6 +28,7 @@ import com.ccxiaoji.app.presentation.ui.savings.SavingsGoalDetailScreen
 import com.ccxiaoji.app.presentation.ui.profile.DataExportScreen
 import com.ccxiaoji.app.presentation.ui.profile.ThemeSettingsScreen
 import com.ccxiaoji.app.presentation.ui.profile.NotificationSettingsScreen
+import com.ccxiaoji.app.presentation.ui.creditcard.CreditCardScreen
 
 @Composable
 fun NavGraph(
@@ -79,6 +80,16 @@ fun NavGraph(
         
         composable(AccountManagementRoute.route) {
             AccountScreen(navController = navController)
+        }
+        
+        composable(CreditCardRoute.route) {
+            CreditCardScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToAccount = { accountId ->
+                    // 导航到账户详情页面（显示该信用卡的交易记录）
+                    navController.navigate(Screen.Ledger.route)
+                }
+            )
         }
         
         composable(CategoryManagementRoute.route) {

@@ -53,8 +53,8 @@ object DatabaseModule {
                         
                         // 插入默认账户 - 注意 syncStatus 使用字符串 'SYNCED' 而不是数字
                         db.execSQL(
-                            "INSERT INTO accounts (id, userId, name, type, balanceCents, currency, isDefault, createdAt, updatedAt, isDeleted, syncStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                            arrayOf("default_account_id", "current_user_id", "现金账户", "CASH", 0L, "CNY", 1, currentTime, currentTime, 0, "SYNCED")
+                            "INSERT INTO accounts (id, userId, name, type, balanceCents, currency, isDefault, creditLimitCents, billingDay, paymentDueDay, gracePeriodDays, createdAt, updatedAt, isDeleted, syncStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            arrayOf("default_account_id", "current_user_id", "现金账户", "CASH", 0L, "CNY", 1, null, null, null, null, currentTime, currentTime, 0, "SYNCED")
                         )
                         
                         // 创建默认分类

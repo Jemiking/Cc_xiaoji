@@ -47,4 +47,27 @@ interface AccountDao {
     
     @Query("SELECT * FROM accounts WHERE id = :accountId AND isDeleted = 0")
     fun getAccountByIdSync(accountId: String): AccountEntity?
+    
+    // Credit card specific queries
+    @Query("SELECT * FROM accounts WHERE userId = :userId AND type = 'CREDIT_CARD' AND isDeleted = 0 ORDER BY createdAt DESC")
+    fun getCreditCardAccounts(userId: String): Flow<List<AccountEntity>>
+    
+    @Query("SELECT * FROM accounts WHERE userId = :userId AND type = 'CREDIT_CARD' AND billingDay = :dayOfMonth AND isDeleted = 0")
+    suspend fun getCreditCardsWithBillingDay(userId: String, dayOfMonth: Int): List<AccountEntity>
+    
+    @Query("SELECT * FROM accounts WHERE userId = :userId AND type = 'CREDIT_CARD' AND paymentDueDay = :dayOfMonth AND isDeleted = 0")
+    suspend fun getCreditCardsWithPaymentDueDay(userId: String, dayOfMonth: Int): List<AccountEntity>
+    
+    @Query("SELECT * FROM accounts WHERE userId = :userId AND type = 'CREDIT_CARD' AND balanceCents < 0 AND isDeleted = 0")
+    suspend fun getCreditCardsWithDebt(userId: String): List<AccountEntity>
+    
+    @Query("UPDATE accounts SET creditLimitCents = :creditLimitCents, billingDay = :billingDay, paymentDueDay = :paymentDueDay, gracePeriodDays = :gracePeriodDays, updatedAt = :timestamp WHERE id = :accountId")
+    suspend fun updateCreditCardInfo(
+        accountId: String,
+        creditLimitCents: Long,
+        billingDay: Int,
+        paymentDueDay: Int,
+        gracePeriodDays: Int,
+        timestamp: Long
+    )
 }

@@ -1,0 +1,171 @@
+package com.ccxiaoji.app.presentation.viewmodel
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.ccxiaoji.app.data.repository.AccountRepository
+import com.ccxiaoji.app.domain.model.Account
+import com.ccxiaoji.app.domain.model.AccountType
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class CreditCardViewModel @Inject constructor(
+    private val accountRepository: AccountRepository
+) : ViewModel() {
+    
+    // UI状态
+    private val _uiState = MutableStateFlow(CreditCardUiState())
+    val uiState: StateFlow<CreditCardUiState> = _uiState.asStateFlow()
+    
+    // 信用卡列表
+    val creditCards: StateFlow<List<Account>> = accountRepository.getCreditCardAccounts()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+    
+    // 添加信用卡
+    fun addCreditCard(
+        name: String,
+        creditLimitYuan: Double,
+        billingDay: Int,
+        paymentDueDay: Int
+    ) {
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(isLoading = true) }
+                
+                accountRepository.createAccount(
+                    name = name,
+                    type = AccountType.CREDIT_CARD,
+                    initialBalanceCents = 0L, // 信用卡初始余额为0
+                    creditLimitCents = (creditLimitYuan * 100).toLong(),
+                    billingDay = billingDay,
+                    paymentDueDay = paymentDueDay,
+                    gracePeriodDays = 3 // 默认3天宽限期
+                )
+                
+                _uiState.update { 
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "信用卡添加成功"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "添加失败：${e.message}"
+                    )
+                }
+            }
+        }
+    }
+    
+    // 更新信用卡信息
+    fun updateCreditCardInfo(
+        accountId: String,
+        creditLimitYuan: Double,
+        billingDay: Int,
+        paymentDueDay: Int
+    ) {
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(isLoading = true) }
+                
+                accountRepository.updateCreditCardInfo(
+                    accountId = accountId,
+                    creditLimitCents = (creditLimitYuan * 100).toLong(),
+                    billingDay = billingDay,
+                    paymentDueDay = paymentDueDay,
+                    gracePeriodDays = 3
+                )
+                
+                _uiState.update { 
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "信用卡信息更新成功"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "更新失败：${e.message}"
+                    )
+                }
+            }
+        }
+    }
+    
+    // 记录还款
+    fun recordPayment(accountId: String, paymentAmountYuan: Double) {
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(isLoading = true) }
+                
+                accountRepository.recordCreditCardPayment(
+                    accountId = accountId,
+                    paymentAmountCents = (paymentAmountYuan * 100).toLong()
+                )
+                
+                _uiState.update { 
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "还款记录成功"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "还款失败：${e.message}"
+                    )
+                }
+            }
+        }
+    }
+    
+    // 获取需要还款提醒的信用卡
+    fun checkPaymentReminders() {
+        viewModelScope.launch {
+            try {
+                val currentDay = java.time.LocalDate.now().dayOfMonth
+                val cardsWithPaymentDue = accountRepository.getCreditCardsWithPaymentDueDay(currentDay)
+                val cardsWithDebt = accountRepository.getCreditCardsWithDebt()
+                
+                val cardsNeedingPayment = cardsWithPaymentDue.intersect(cardsWithDebt.toSet())
+                
+                if (cardsNeedingPayment.isNotEmpty()) {
+                    _uiState.update {
+                        it.copy(
+                            paymentReminders = cardsNeedingPayment.toList()
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                // 静默处理，不影响用户体验
+            }
+        }
+    }
+    
+    // 清除消息
+    fun clearMessage() {
+        _uiState.update {
+            it.copy(
+                successMessage = null,
+                errorMessage = null
+            )
+        }
+    }
+}
+
+data class CreditCardUiState(
+    val isLoading: Boolean = false,
+    val successMessage: String? = null,
+    val errorMessage: String? = null,
+    val paymentReminders: List<Account> = emptyList()
+)

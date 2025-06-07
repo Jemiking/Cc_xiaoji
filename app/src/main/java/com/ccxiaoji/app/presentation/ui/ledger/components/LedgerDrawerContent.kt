@@ -28,6 +28,7 @@ fun LedgerDrawerContent(
     onNavigateToRecurringTransaction: () -> Unit,
     onNavigateToBudget: () -> Unit,
     onNavigateToSavingsGoal: () -> Unit,
+    onNavigateToCreditCard: () -> Unit,
     onCloseDrawer: () -> Unit
 ) {
     Column(
@@ -67,10 +68,18 @@ fun LedgerDrawerContent(
         // 账务管理
         DrawerSectionTitle(title = "账务管理")
         DrawerMenuItem(
-            icon = Icons.Default.CreditCard,
+            icon = Icons.Default.AccountBalanceWallet,
             text = "账户管理",
             onClick = {
                 onNavigateToAccountManagement()
+                onCloseDrawer()
+            }
+        )
+        DrawerMenuItem(
+            icon = Icons.Default.CreditCard,
+            text = "信用卡管理",
+            onClick = {
+                onNavigateToCreditCard()
                 onCloseDrawer()
             }
         )

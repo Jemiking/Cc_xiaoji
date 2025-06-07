@@ -82,6 +82,9 @@ fun LedgerScreen(
                 onNavigateToSavingsGoal = {
                     navController?.navigate(SavingsGoalRoute.route)
                 },
+                onNavigateToCreditCard = {
+                    navController?.navigate(CreditCardRoute.route)
+                },
                 onCloseDrawer = {
                     coroutineScope.launch {
                         drawerState.close()

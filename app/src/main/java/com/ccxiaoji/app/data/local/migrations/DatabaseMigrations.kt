@@ -12,11 +12,10 @@ object DatabaseMigrations {
     
     /**
      * 获取所有迁移路径
-     * 
-     * 当前返回空数组，因为应用从版本1开始，
-     * 没有需要迁移的历史版本。
      */
     fun getAllMigrations(): Array<Migration> {
-        return emptyArray()
+        return arrayOf(
+            MIGRATION_1_2 // Add credit card fields
+        )
     }
 }

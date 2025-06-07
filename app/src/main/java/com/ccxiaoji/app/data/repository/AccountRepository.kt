@@ -45,7 +45,11 @@ class AccountRepository @Inject constructor(
         initialBalanceCents: Long = 0L,
         currency: String = "CNY",
         icon: String? = null,
-        color: String? = null
+        color: String? = null,
+        creditLimitCents: Long? = null,
+        billingDay: Int? = null,
+        paymentDueDay: Int? = null,
+        gracePeriodDays: Int? = null
     ): Account {
         val accountId = UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
@@ -60,6 +64,10 @@ class AccountRepository @Inject constructor(
             icon = icon,
             color = color,
             isDefault = false,
+            creditLimitCents = creditLimitCents,
+            billingDay = billingDay,
+            paymentDueDay = paymentDueDay,
+            gracePeriodDays = gracePeriodDays,
             createdAt = now,
             updatedAt = now,
             syncStatus = SyncStatus.PENDING_SYNC
@@ -135,6 +143,67 @@ class AccountRepository @Inject constructor(
         logChange("accounts", accountId, "DELETE", mapOf("id" to accountId))
     }
     
+    // Credit card specific methods
+    fun getCreditCardAccounts(): Flow<List<Account>> {
+        return accountDao.getCreditCardAccounts(getCurrentUserId())
+            .map { entities -> entities.map { it.toDomainModel() } }
+    }
+    
+    suspend fun getCreditCardsWithBillingDay(dayOfMonth: Int): List<Account> {
+        return accountDao.getCreditCardsWithBillingDay(getCurrentUserId(), dayOfMonth)
+            .map { it.toDomainModel() }
+    }
+    
+    suspend fun getCreditCardsWithPaymentDueDay(dayOfMonth: Int): List<Account> {
+        return accountDao.getCreditCardsWithPaymentDueDay(getCurrentUserId(), dayOfMonth)
+            .map { it.toDomainModel() }
+    }
+    
+    suspend fun getCreditCardsWithDebt(): List<Account> {
+        return accountDao.getCreditCardsWithDebt(getCurrentUserId())
+            .map { it.toDomainModel() }
+    }
+    
+    suspend fun updateCreditCardInfo(
+        accountId: String,
+        creditLimitCents: Long,
+        billingDay: Int,
+        paymentDueDay: Int,
+        gracePeriodDays: Int = 3
+    ) {
+        val now = System.currentTimeMillis()
+        
+        accountDao.updateCreditCardInfo(
+            accountId = accountId,
+            creditLimitCents = creditLimitCents,
+            billingDay = billingDay,
+            paymentDueDay = paymentDueDay,
+            gracePeriodDays = gracePeriodDays,
+            timestamp = now
+        )
+        
+        // Log the change for sync
+        logChange("accounts", accountId, "UPDATE", mapOf(
+            "creditLimitCents" to creditLimitCents,
+            "billingDay" to billingDay,
+            "paymentDueDay" to paymentDueDay,
+            "gracePeriodDays" to gracePeriodDays
+        ))
+    }
+    
+    suspend fun recordCreditCardPayment(accountId: String, paymentAmountCents: Long) {
+        val now = System.currentTimeMillis()
+        
+        // Credit card payment increases the balance (reduces debt)
+        accountDao.updateBalance(accountId, paymentAmountCents, now)
+        
+        // Log the change for sync
+        logChange("accounts", accountId, "PAYMENT", mapOf(
+            "paymentAmount" to paymentAmountCents,
+            "type" to "CREDIT_CARD_PAYMENT"
+        ))
+    }
+    
     private suspend fun logChange(table: String, rowId: String, operation: String, payload: Any) {
         val changeLog = ChangeLogEntity(
             tableName = table,
@@ -162,6 +231,10 @@ private fun AccountEntity.toDomainModel(): Account {
         icon = icon,
         color = color,
         isDefault = isDefault,
+        creditLimitCents = creditLimitCents,
+        billingDay = billingDay,
+        paymentDueDay = paymentDueDay,
+        gracePeriodDays = gracePeriodDays,
         createdAt = Instant.fromEpochMilliseconds(createdAt),
         updatedAt = Instant.fromEpochMilliseconds(updatedAt)
     )
@@ -178,6 +251,10 @@ private fun Account.toEntity(userId: String, updatedAt: Long): AccountEntity {
         icon = icon,
         color = color,
         isDefault = isDefault,
+        creditLimitCents = creditLimitCents,
+        billingDay = billingDay,
+        paymentDueDay = paymentDueDay,
+        gracePeriodDays = gracePeriodDays,
         createdAt = createdAt.toEpochMilliseconds(),
         updatedAt = updatedAt,
         syncStatus = SyncStatus.PENDING_SYNC

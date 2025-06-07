@@ -67,6 +67,10 @@ object AccountManagementRoute {
     const val route = "account_management"
 }
 
+object CreditCardRoute {
+    const val route = "credit_card"
+}
+
 object CategoryManagementRoute {
     const val route = "category_management"
 }

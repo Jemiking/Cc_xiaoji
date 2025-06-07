@@ -11,11 +11,34 @@ data class Account(
     val icon: String? = null,
     val color: String? = null,
     val isDefault: Boolean = false,
+    
+    // Credit card specific fields
+    val creditLimitCents: Long? = null,
+    val billingDay: Int? = null,
+    val paymentDueDay: Int? = null,
+    val gracePeriodDays: Int? = null,
+    
     val createdAt: Instant,
     val updatedAt: Instant
 ) {
     val balanceYuan: Double
         get() = balanceCents / 100.0
+    
+    val creditLimitYuan: Double?
+        get() = creditLimitCents?.let { it / 100.0 }
+    
+    val availableCreditCents: Long?
+        get() = if (type == AccountType.CREDIT_CARD && creditLimitCents != null) {
+            creditLimitCents + balanceCents // balanceCents is negative for debt
+        } else null
+    
+    val availableCreditYuan: Double?
+        get() = availableCreditCents?.let { it / 100.0 }
+    
+    val utilizationRate: Double?
+        get() = if (type == AccountType.CREDIT_CARD && creditLimitCents != null && creditLimitCents > 0) {
+            (-balanceCents.toDouble() / creditLimitCents) * 100
+        } else null
 }
 
 enum class AccountType(val displayName: String, val icon: String) {
