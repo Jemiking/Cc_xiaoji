@@ -28,10 +28,12 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import java.text.NumberFormat
 import java.util.Locale
+import com.ccxiaoji.app.utils.CreditCardDateUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreditCardScreen(
+    navController: androidx.navigation.NavController,
     onNavigateBack: () -> Unit,
     onNavigateToAccount: (String) -> Unit,
     viewModel: CreditCardViewModel = hiltViewModel()
@@ -113,8 +115,8 @@ fun CreditCardScreen(
     if (showAddDialog) {
         AddCreditCardDialog(
             onDismiss = { showAddDialog = false },
-            onConfirm = { name, creditLimit, billingDay, paymentDueDay ->
-                viewModel.addCreditCard(name, creditLimit, billingDay, paymentDueDay)
+            onConfirm = { name, creditLimit, usedAmount, billingDay, paymentDueDay ->
+                viewModel.addCreditCard(name, creditLimit, usedAmount, billingDay, paymentDueDay)
                 showAddDialog = false
             }
         )
@@ -134,8 +136,8 @@ fun CreditCardScreen(
                 viewModel.recordPaymentWithType(card.id, amount, paymentType)
                 selectedCard = null
             },
-            onEdit = { creditLimit, billingDay, paymentDueDay ->
-                viewModel.updateCreditCardInfo(card.id, creditLimit, billingDay, paymentDueDay)
+            onEdit = { creditLimit, usedAmount, billingDay, paymentDueDay ->
+                viewModel.updateCreditCardInfo(card.id, creditLimit, usedAmount, billingDay, paymentDueDay)
                 selectedCard = null
             },
             onNavigateToTransactions = {
@@ -145,6 +147,10 @@ fun CreditCardScreen(
             onViewPaymentHistory = {
                 viewModel.loadPaymentHistory(card.id)
                 showPaymentHistory = true
+            },
+            onViewBills = {
+                navController.navigate("credit_card_bills/${card.id}")
+                selectedCard = null
             }
         )
     }
@@ -301,18 +307,19 @@ fun CreditCardItem(
                 }
                 
                 // 还款状态提示
-                val currentDay = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).dayOfMonth
-                if (card.balanceYuan < 0 && card.paymentDueDay != null) {
-                    val daysUntilDue = if (currentDay <= card.paymentDueDay) {
-                        card.paymentDueDay - currentDay
-                    } else {
-                        // 下个月的还款日
-                        30 - currentDay + card.paymentDueDay
-                    }
+                if (card.balanceYuan < 0 && card.paymentDueDay != null && card.billingDay != null) {
+                    val daysUntilDue = CreditCardDateUtils.calculateDaysUntilPayment(
+                        paymentDueDay = card.paymentDueDay,
+                        billingDay = card.billingDay
+                    )
                     
                     if (daysUntilDue <= 3) {
                         Text(
-                            text = "${daysUntilDue}天内还款",
+                            text = when (daysUntilDue) {
+                                0 -> "今天还款"
+                                1 -> "明天还款"
+                                else -> "${daysUntilDue}天内还款"
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                             fontWeight = FontWeight.Medium

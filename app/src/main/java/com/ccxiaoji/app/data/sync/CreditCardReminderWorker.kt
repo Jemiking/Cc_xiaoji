@@ -14,6 +14,8 @@ import java.text.NumberFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
+import com.ccxiaoji.app.utils.CreditCardDateUtils
+import kotlinx.datetime.*
 
 @HiltWorker
 class CreditCardReminderWorker @AssistedInject constructor(
@@ -33,16 +35,16 @@ class CreditCardReminderWorker @AssistedInject constructor(
                 return@withContext Result.success()
             }
             
-            val today = Calendar.getInstance()
-            val currentDayOfMonth = today.get(Calendar.DAY_OF_MONTH)
-            val currentMonth = today.get(Calendar.MONTH)
-            val currentYear = today.get(Calendar.YEAR)
-            
             creditCardsWithDebt.forEach { creditCard ->
-                creditCard.paymentDueDay?.let { dueDay ->
-                    // Calculate the actual payment due date
-                    val paymentDueDate = calculatePaymentDueDate(dueDay, currentDayOfMonth, currentMonth, currentYear)
-                    val daysUntilDue = calculateDaysUntilDue(today, paymentDueDate)
+                val dueDay = creditCard.paymentDueDay
+                val billingDay = creditCard.billingDay
+                
+                if (dueDay != null && billingDay != null) {
+                    // Calculate days until due using the new utility
+                    val daysUntilDue = CreditCardDateUtils.calculateDaysUntilPayment(
+                        paymentDueDay = dueDay,
+                        billingDay = billingDay
+                    )
                     
                     // Format debt amount
                     val debtAmount = formatCurrency(abs(creditCard.balanceCents))
@@ -86,45 +88,6 @@ class CreditCardReminderWorker @AssistedInject constructor(
         }
     }
     
-    private fun calculatePaymentDueDate(dueDay: Int, currentDay: Int, currentMonth: Int, currentYear: Int): Calendar {
-        val paymentDate = Calendar.getInstance().apply {
-            set(Calendar.YEAR, currentYear)
-            set(Calendar.MONTH, currentMonth)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        
-        // Handle end-of-month edge cases
-        val lastDayOfMonth = paymentDate.getActualMaximum(Calendar.DAY_OF_MONTH)
-        val actualDueDay = minOf(dueDay, lastDayOfMonth)
-        paymentDate.set(Calendar.DAY_OF_MONTH, actualDueDay)
-        
-        // If the due date has already passed this month, calculate for next month
-        if (actualDueDay < currentDay) {
-            paymentDate.add(Calendar.MONTH, 1)
-            // Recalculate for the new month in case it has fewer days
-            val newLastDay = paymentDate.getActualMaximum(Calendar.DAY_OF_MONTH)
-            paymentDate.set(Calendar.DAY_OF_MONTH, minOf(dueDay, newLastDay))
-        }
-        
-        return paymentDate
-    }
-    
-    private fun calculateDaysUntilDue(today: Calendar, dueDate: Calendar): Int {
-        val todayMillis = today.apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-        
-        val dueMillis = dueDate.timeInMillis
-        val diffMillis = dueMillis - todayMillis
-        
-        return TimeUnit.MILLISECONDS.toDays(diffMillis).toInt()
-    }
     
     private fun formatCurrency(amountCents: Long): String {
         val amount = amountCents / 100.0

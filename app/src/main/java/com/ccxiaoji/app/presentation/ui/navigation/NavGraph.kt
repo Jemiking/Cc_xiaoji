@@ -29,6 +29,7 @@ import com.ccxiaoji.app.presentation.ui.profile.DataExportScreen
 import com.ccxiaoji.app.presentation.ui.profile.ThemeSettingsScreen
 import com.ccxiaoji.app.presentation.ui.profile.NotificationSettingsScreen
 import com.ccxiaoji.app.presentation.ui.creditcard.CreditCardScreen
+import com.ccxiaoji.app.presentation.ui.creditcard.CreditCardBillsScreen
 
 @Composable
 fun NavGraph(
@@ -92,12 +93,27 @@ fun NavGraph(
         
         composable(CreditCardRoute.route) {
             CreditCardScreen(
+                navController = navController,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToAccount = { accountId ->
                     // 导航到账户详情页面（显示该信用卡的交易记录）
                     navController.navigate(LedgerWithAccountRoute.createRoute(accountId))
                 }
             )
+        }
+        
+        composable(CreditCardBillsRoute.route) { backStackEntry ->
+            val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
+            CreditCardBillsScreen(
+                accountId = accountId,
+                navController = navController
+            )
+        }
+        
+        composable(CreditCardBillDetailRoute.route) { backStackEntry ->
+            val billId = backStackEntry.arguments?.getString("billId") ?: ""
+            // TODO: 实现账单详情界面
+            PlaceholderScreen(title = "账单详情", navController = navController)
         }
         
         composable(CategoryManagementRoute.route) {

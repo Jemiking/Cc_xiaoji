@@ -12,6 +12,8 @@ import com.ccxiaoji.app.data.sync.SyncStatus
 import com.ccxiaoji.app.data.local.entity.UserEntity
 import com.ccxiaoji.app.data.repository.CategoryRepository
 import com.ccxiaoji.app.data.sync.RecurringTransactionWorker
+import com.ccxiaoji.app.data.sync.CreditCardReminderManager
+import com.ccxiaoji.app.data.sync.CreditCardBillWorker
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +39,9 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
     
     @Inject
     lateinit var categoryRepository: CategoryRepository
+    
+    @Inject
+    lateinit var creditCardReminderManager: CreditCardReminderManager
     
     override fun onCreate() {
         super.onCreate()
@@ -107,6 +112,20 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
             RecurringTransactionWorker.createPeriodicWorkRequest()
             )
             Log.d(TAG, "RecurringTransactionWorker registered")
+            
+            // 启动信用卡提醒服务
+            Log.d(TAG, "Starting CreditCardReminderManager")
+            creditCardReminderManager.startPeriodicReminders()
+            Log.d(TAG, "CreditCardReminderManager started")
+            
+            // 注册信用卡账单生成Worker
+            Log.d(TAG, "Registering CreditCardBillWorker")
+            WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                CreditCardBillWorker.WORK_NAME,
+                ExistingPeriodicWorkPolicy.KEEP,
+                CreditCardBillWorker.createPeriodicWorkRequest()
+            )
+            Log.d(TAG, "CreditCardBillWorker registered")
             
             Log.d(TAG, "Application onCreate completed successfully")
         } catch (e: Exception) {

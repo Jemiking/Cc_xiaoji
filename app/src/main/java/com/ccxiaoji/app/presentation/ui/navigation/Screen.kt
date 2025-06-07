@@ -76,6 +76,16 @@ object CreditCardRoute {
     const val route = "credit_card"
 }
 
+object CreditCardBillsRoute {
+    const val route = "credit_card_bills/{accountId}"
+    fun createRoute(accountId: String) = "credit_card_bills/$accountId"
+}
+
+object CreditCardBillDetailRoute {
+    const val route = "credit_card_bill_detail/{billId}"
+    fun createRoute(billId: String) = "credit_card_bill_detail/$billId"
+}
+
 object CategoryManagementRoute {
     const val route = "category_management"
 }

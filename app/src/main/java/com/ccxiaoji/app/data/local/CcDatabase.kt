@@ -21,9 +21,10 @@ import com.ccxiaoji.app.data.local.entity.*
         RecurringTransactionEntity::class,
         SavingsGoalEntity::class,
         SavingsContributionEntity::class,
-        CreditCardPaymentEntity::class
+        CreditCardPaymentEntity::class,
+        CreditCardBillEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -40,6 +41,7 @@ abstract class CcDatabase : RoomDatabase() {
     abstract fun recurringTransactionDao(): RecurringTransactionDao
     abstract fun savingsGoalDao(): SavingsGoalDao
     abstract fun creditCardPaymentDao(): CreditCardPaymentDao
+    abstract fun creditCardBillDao(): CreditCardBillDao
     
     companion object {
         const val DATABASE_NAME = "cc_xiaoji.db"

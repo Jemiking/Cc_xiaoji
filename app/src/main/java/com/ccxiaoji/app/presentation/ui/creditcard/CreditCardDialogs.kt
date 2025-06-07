@@ -11,16 +11,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ccxiaoji.app.domain.model.Account
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddCreditCardDialog(
     onDismiss: () -> Unit,
-    onConfirm: (name: String, creditLimitYuan: Double, billingDay: Int, paymentDueDay: Int) -> Unit
+    onConfirm: (name: String, creditLimitYuan: Double, usedAmountYuan: Double, billingDay: Int, paymentDueDay: Int) -> Unit
 ) {
     var name by remember { mutableStateOf("") }
     var creditLimit by remember { mutableStateOf("") }
+    var usedAmount by remember { mutableStateOf("") }
     var billingDay by remember { mutableStateOf("") }
     var paymentDueDay by remember { mutableStateOf("") }
     
@@ -50,6 +52,17 @@ fun AddCreditCardDialog(
                     onValueChange = { creditLimit = it.filter { char -> char.isDigit() || char == '.' } },
                     label = { Text("信用额度") },
                     placeholder = { Text("10000") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    suffix = { Text("元") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                OutlinedTextField(
+                    value = usedAmount,
+                    onValueChange = { usedAmount = it.filter { char -> char.isDigit() || char == '.' } },
+                    label = { Text("当前已用额度") },
+                    placeholder = { Text("0") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     suffix = { Text("元") },
@@ -104,11 +117,12 @@ fun AddCreditCardDialog(
             TextButton(
                 onClick = {
                     val limitYuan = creditLimit.toDoubleOrNull() ?: 0.0
+                    val usedYuan = usedAmount.toDoubleOrNull() ?: 0.0
                     val billing = billingDay.toIntOrNull() ?: 1
                     val payment = paymentDueDay.toIntOrNull() ?: 20
                     
                     if (name.isNotBlank() && limitYuan > 0 && billing in 1..28 && payment in 1..28) {
-                        onConfirm(name, limitYuan, billing, payment)
+                        onConfirm(name, limitYuan, usedYuan, billing, payment)
                     }
                 },
                 enabled = name.isNotBlank() && 
@@ -133,9 +147,10 @@ fun CreditCardDetailDialog(
     card: Account,
     onDismiss: () -> Unit,
     onPayment: (amountYuan: Double) -> Unit,
-    onEdit: (creditLimitYuan: Double, billingDay: Int, paymentDueDay: Int) -> Unit,
+    onEdit: (creditLimitYuan: Double, usedAmountYuan: Double, billingDay: Int, paymentDueDay: Int) -> Unit,
     onNavigateToTransactions: () -> Unit,
-    onViewPaymentHistory: () -> Unit
+    onViewPaymentHistory: () -> Unit,
+    onViewBills: () -> Unit
 ) {
     var showPaymentDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -296,13 +311,27 @@ fun CreditCardDetailDialog(
                         }
                     }
                     
-                    OutlinedButton(
-                        onClick = onNavigateToTransactions,
-                        modifier = Modifier.fillMaxWidth()
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(Icons.Default.Receipt, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("查看账单")
+                        OutlinedButton(
+                            onClick = onViewBills,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Receipt, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("账单", fontSize = 14.sp)
+                        }
+                        
+                        OutlinedButton(
+                            onClick = onNavigateToTransactions,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.List, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("交易", fontSize = 14.sp)
+                        }
                     }
                     
                     OutlinedButton(
@@ -349,8 +378,8 @@ fun CreditCardDetailDialog(
         EditCreditCardDialog(
             card = card,
             onDismiss = { showEditDialog = false },
-            onConfirm = { creditLimit, billingDay, paymentDueDay ->
-                onEdit(creditLimit, billingDay, paymentDueDay)
+            onConfirm = { creditLimit, usedAmount, billingDay, paymentDueDay ->
+                onEdit(creditLimit, usedAmount, billingDay, paymentDueDay)
                 showEditDialog = false
             }
         )
@@ -437,9 +466,10 @@ fun PaymentDialog(
 fun EditCreditCardDialog(
     card: Account,
     onDismiss: () -> Unit,
-    onConfirm: (creditLimitYuan: Double, billingDay: Int, paymentDueDay: Int) -> Unit
+    onConfirm: (creditLimitYuan: Double, usedAmountYuan: Double, billingDay: Int, paymentDueDay: Int) -> Unit
 ) {
     var creditLimit by remember { mutableStateOf((card.creditLimitYuan ?: 0.0).toString()) }
+    var usedAmount by remember { mutableStateOf((-card.balanceYuan).toString()) }
     var billingDay by remember { mutableStateOf((card.billingDay ?: 1).toString()) }
     var paymentDueDay by remember { mutableStateOf((card.paymentDueDay ?: 20).toString()) }
     
@@ -459,6 +489,16 @@ fun EditCreditCardDialog(
                     value = creditLimit,
                     onValueChange = { creditLimit = it.filter { char -> char.isDigit() || char == '.' } },
                     label = { Text("信用额度") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    singleLine = true,
+                    suffix = { Text("元") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                OutlinedTextField(
+                    value = usedAmount,
+                    onValueChange = { usedAmount = it.filter { char -> char.isDigit() || char == '.' } },
+                    label = { Text("当前已用额度") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     suffix = { Text("元") },
@@ -505,11 +545,12 @@ fun EditCreditCardDialog(
             TextButton(
                 onClick = {
                     val limitYuan = creditLimit.toDoubleOrNull() ?: 0.0
+                    val usedYuan = usedAmount.toDoubleOrNull() ?: 0.0
                     val billing = billingDay.toIntOrNull() ?: 1
                     val payment = paymentDueDay.toIntOrNull() ?: 20
                     
                     if (limitYuan > 0 && billing in 1..28 && payment in 1..28) {
-                        onConfirm(limitYuan, billing, payment)
+                        onConfirm(limitYuan, usedYuan, billing, payment)
                     }
                 },
                 enabled = (creditLimit.toDoubleOrNull() ?: 0.0) > 0 &&

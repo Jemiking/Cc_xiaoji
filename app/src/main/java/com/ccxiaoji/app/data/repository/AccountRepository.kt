@@ -3,17 +3,25 @@ package com.ccxiaoji.app.data.repository
 import com.ccxiaoji.app.data.local.dao.AccountDao
 import com.ccxiaoji.app.data.local.dao.ChangeLogDao
 import com.ccxiaoji.app.data.local.dao.CreditCardPaymentDao
+import com.ccxiaoji.app.data.local.dao.CreditCardBillDao
+import com.ccxiaoji.app.data.local.dao.TransactionDao
 import com.ccxiaoji.app.data.local.entity.AccountEntity
 import com.ccxiaoji.app.data.local.entity.ChangeLogEntity
 import com.ccxiaoji.app.data.local.entity.CreditCardPaymentEntity
+import com.ccxiaoji.app.data.local.entity.CreditCardBillEntity
 import com.ccxiaoji.app.data.local.entity.PaymentType
 import com.ccxiaoji.app.data.sync.SyncStatus
 import com.ccxiaoji.app.domain.model.Account
 import com.ccxiaoji.app.domain.model.AccountType
+import com.ccxiaoji.app.domain.model.Transaction
+import com.ccxiaoji.app.utils.CreditCardDateUtils
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Instant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -23,6 +31,8 @@ class AccountRepository @Inject constructor(
     private val accountDao: AccountDao,
     private val changeLogDao: ChangeLogDao,
     private val creditCardPaymentDao: CreditCardPaymentDao,
+    private val creditCardBillDao: CreditCardBillDao,
+    private val transactionDao: TransactionDao,
     private val gson: Gson
 ) {
     fun getAccounts(): Flow<List<Account>> {
@@ -318,6 +328,161 @@ class AccountRepository @Inject constructor(
     private fun getCurrentUserId(): String {
         // In a real app, this would get the actual current user ID
         return "current_user_id"
+    }
+    
+    // Credit Card Bill Management Methods
+    
+    /**
+     * 生成信用卡账单
+     */
+    suspend fun generateCreditCardBill(accountId: String) {
+        val account = accountDao.getAccountById(accountId) ?: return
+        if (account.type != "CREDIT_CARD" || account.billingDay == null) return
+        
+        val currentDate = kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val (cycleStart, cycleEnd) = CreditCardDateUtils.calculateCurrentBillingCycle(
+            billingDay = account.billingDay,
+            currentDate = currentDate
+        )
+        
+        // 检查是否已经生成过该周期的账单
+        val cycleStartMillis = cycleStart.toEpochDays().toLong() * 24 * 60 * 60 * 1000
+        val cycleEndMillis = cycleEnd.toEpochDays().toLong() * 24 * 60 * 60 * 1000
+        
+        if (creditCardBillDao.hasBillForPeriod(accountId, cycleStartMillis, cycleEndMillis)) {
+            return // 该周期账单已存在
+        }
+        
+        // 获取上期账单（如果有）
+        val previousBill = creditCardBillDao.getCurrentBill(accountId)
+        val previousBalanceCents = previousBill?.remainingAmountCents ?: 0
+        
+        // 统计本期消费
+        val newChargesCents = transactionDao.getTotalExpenseInBillingCycle(
+            accountId = accountId,
+            startDate = cycleStartMillis,
+            endDate = cycleEndMillis
+        ) ?: 0
+        
+        // 统计本期还款
+        val paymentsCents = creditCardPaymentDao.getPaymentsByAccount(
+            userId = getCurrentUserId(),
+            accountId = accountId
+        ).map { payments ->
+            payments.filter { 
+                it.paymentDate >= cycleStartMillis && 
+                it.paymentDate <= cycleEndMillis 
+            }.sumOf { it.paymentAmountCents }
+        }.first()
+        
+        // 计算账单总额
+        val totalAmountCents = previousBalanceCents + newChargesCents - paymentsCents
+        val minimumPaymentCents = (totalAmountCents * 0.1).toLong() // 默认10%最低还款
+        
+        // 计算还款日
+        val paymentDueDate = if (account.paymentDueDay != null) {
+            CreditCardDateUtils.calculateNextPaymentDate(
+                paymentDueDay = account.paymentDueDay,
+                billingDay = account.billingDay,
+                currentDate = cycleEnd
+            ).toEpochDays().toLong() * 24 * 60 * 60 * 1000
+        } else {
+            cycleEndMillis + (20 * 24 * 60 * 60 * 1000) // 默认账单日后20天
+        }
+        
+        // 创建账单
+        val bill = CreditCardBillEntity(
+            id = UUID.randomUUID().toString(),
+            userId = getCurrentUserId(),
+            accountId = accountId,
+            billStartDate = cycleStartMillis,
+            billEndDate = cycleEndMillis,
+            paymentDueDate = paymentDueDate,
+            totalAmountCents = totalAmountCents,
+            newChargesCents = newChargesCents,
+            previousBalanceCents = previousBalanceCents,
+            paymentsCents = paymentsCents,
+            adjustmentsCents = 0,
+            minimumPaymentCents = minimumPaymentCents,
+            isGenerated = true,
+            isPaid = totalAmountCents <= 0,
+            paidAmountCents = if (totalAmountCents <= 0) totalAmountCents else 0,
+            isOverdue = false,
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+        
+        creditCardBillDao.insert(bill)
+        
+        // 记录变更
+        logChange("credit_card_bills", bill.id, "INSERT", bill)
+    }
+    
+    /**
+     * 获取信用卡当前账单
+     */
+    suspend fun getCurrentCreditCardBill(accountId: String): CreditCardBillEntity? {
+        return creditCardBillDao.getCurrentBill(accountId)
+    }
+    
+    /**
+     * 获取信用卡账单列表
+     */
+    fun getCreditCardBills(accountId: String): Flow<List<CreditCardBillEntity>> {
+        return creditCardBillDao.getBillsByAccount(accountId)
+    }
+    
+    /**
+     * 获取账单周期内的交易
+     */
+    suspend fun getTransactionsForBill(billId: String): List<Transaction> {
+        val bill = creditCardBillDao.getBillById(billId) ?: return emptyList()
+        
+        val transactions = transactionDao.getTransactionsByBillingCycle(
+            accountId = bill.accountId,
+            startDate = bill.billStartDate,
+            endDate = bill.billEndDate
+        )
+        
+        return transactions.map { transactionEntity ->
+            Transaction(
+                id = transactionEntity.id,
+                accountId = transactionEntity.accountId,
+                amountCents = transactionEntity.amountCents,
+                categoryId = transactionEntity.categoryId,
+                categoryDetails = null,
+                note = transactionEntity.note,
+                createdAt = Instant.fromEpochMilliseconds(transactionEntity.createdAt),
+                updatedAt = Instant.fromEpochMilliseconds(transactionEntity.updatedAt)
+            )
+        }
+    }
+    
+    /**
+     * 更新账单支付状态
+     */
+    suspend fun updateBillPaymentStatus(billId: String, paymentAmountCents: Long) {
+        creditCardBillDao.updatePaymentStatus(
+            billId = billId,
+            paymentAmountCents = paymentAmountCents,
+            timestamp = System.currentTimeMillis()
+        )
+        
+        val bill = creditCardBillDao.getBillById(billId)
+        if (bill != null) {
+            logChange("credit_card_bills", billId, "UPDATE", mapOf(
+                "paidAmountCents" to bill.paidAmountCents,
+                "isPaid" to bill.isPaid
+            ))
+        }
+    }
+    
+    /**
+     * 标记逾期账单
+     */
+    suspend fun markOverdueBills(accountId: String) {
+        val currentDate = System.currentTimeMillis()
+        creditCardBillDao.markOverdueBills(accountId, currentDate, currentDate)
     }
 }
 

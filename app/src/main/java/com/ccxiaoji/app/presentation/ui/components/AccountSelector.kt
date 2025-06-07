@@ -26,7 +26,13 @@ fun AccountSelector(
         modifier = modifier
     ) {
         OutlinedTextField(
-            value = selectedAccount?.let { "${it.type.icon} ${it.name}" } ?: "",
+            value = selectedAccount?.let { 
+                if (it.type == com.ccxiaoji.app.domain.model.AccountType.CREDIT_CARD) {
+                    "${it.type.icon} ${it.name} (可用: ¥%.2f)".format(it.availableCreditYuan ?: 0.0)
+                } else {
+                    "${it.type.icon} ${it.name}"
+                }
+            } ?: "",
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
@@ -55,11 +61,21 @@ fun AccountSelector(
                                 Text(text = account.type.icon)
                                 Column {
                                     Text(text = account.name)
-                                    Text(
-                                        text = "¥%.2f".format(account.balanceYuan),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    if (account.type == com.ccxiaoji.app.domain.model.AccountType.CREDIT_CARD) {
+                                        // 信用卡显示可用额度
+                                        Text(
+                                            text = "可用: ¥%.2f".format(account.availableCreditYuan ?: 0.0),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    } else {
+                                        // 普通账户显示余额
+                                        Text(
+                                            text = "¥%.2f".format(account.balanceYuan),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                             if (account.isDefault) {
@@ -120,11 +136,19 @@ fun CompactAccountSelector(
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
-                    Text(
-                        text = "¥%.2f".format(selectedAccount.balanceYuan),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    if (selectedAccount.type == com.ccxiaoji.app.domain.model.AccountType.CREDIT_CARD) {
+                        Text(
+                            text = "可用: ¥%.2f".format(selectedAccount.availableCreditYuan ?: 0.0),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    } else {
+                        Text(
+                            text = "¥%.2f".format(selectedAccount.balanceYuan),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 } else {
                     Text(
                         text = "选择账户",
@@ -154,10 +178,18 @@ fun CompactAccountSelector(
                                 Text(text = account.type.icon)
                                 Text(text = account.name)
                             }
-                            Text(
-                                text = "¥%.2f".format(account.balanceYuan),
-                                style = MaterialTheme.typography.bodySmall
-                            )
+                            if (account.type == com.ccxiaoji.app.domain.model.AccountType.CREDIT_CARD) {
+                                Text(
+                                    text = "可用: ¥%.2f".format(account.availableCreditYuan ?: 0.0),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            } else {
+                                Text(
+                                    text = "¥%.2f".format(account.balanceYuan),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
                         }
                     },
                     onClick = {

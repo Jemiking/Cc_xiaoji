@@ -34,6 +34,7 @@ class CreditCardViewModel @Inject constructor(
     fun addCreditCard(
         name: String,
         creditLimitYuan: Double,
+        usedAmountYuan: Double,
         billingDay: Int,
         paymentDueDay: Int
     ) {
@@ -44,7 +45,7 @@ class CreditCardViewModel @Inject constructor(
                 accountRepository.createAccount(
                     name = name,
                     type = AccountType.CREDIT_CARD,
-                    initialBalanceCents = 0L, // 信用卡初始余额为0
+                    initialBalanceCents = -(usedAmountYuan * 100).toLong(), // 信用卡余额为负数表示欠款
                     creditLimitCents = (creditLimitYuan * 100).toLong(),
                     billingDay = billingDay,
                     paymentDueDay = paymentDueDay,
@@ -72,6 +73,7 @@ class CreditCardViewModel @Inject constructor(
     fun updateCreditCardInfo(
         accountId: String,
         creditLimitYuan: Double,
+        usedAmountYuan: Double,
         billingDay: Int,
         paymentDueDay: Int
     ) {
@@ -79,6 +81,20 @@ class CreditCardViewModel @Inject constructor(
             try {
                 _uiState.update { it.copy(isLoading = true) }
                 
+                // 先获取当前账户信息
+                val currentAccount = accountRepository.getAccountById(accountId)
+                if (currentAccount != null) {
+                    // 计算余额变化（信用卡余额为负数表示欠款）
+                    val newBalanceCents = -(usedAmountYuan * 100).toLong()
+                    val balanceChangeCents = newBalanceCents - currentAccount.balanceCents
+                    
+                    // 更新余额
+                    if (balanceChangeCents != 0L) {
+                        accountRepository.updateBalance(accountId, balanceChangeCents)
+                    }
+                }
+                
+                // 更新信用卡信息
                 accountRepository.updateCreditCardInfo(
                     accountId = accountId,
                     creditLimitCents = (creditLimitYuan * 100).toLong(),

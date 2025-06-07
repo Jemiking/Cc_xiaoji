@@ -16,7 +16,8 @@ object DatabaseMigrations {
     fun getAllMigrations(): Array<Migration> {
         return arrayOf(
             MIGRATION_1_2, // Add credit card fields
-            MIGRATION_2_3  // Add credit card payment history
+            MIGRATION_2_3, // Add credit card payment history
+            MIGRATION_3_4  // Add credit card bill management
         )
     }
 }

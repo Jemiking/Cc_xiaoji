@@ -95,6 +95,37 @@ interface TransactionDao {
     
     @Query("SELECT * FROM transactions WHERE userId = :userId AND accountId = :accountId AND createdAt >= :startTime AND createdAt < :endTime AND isDeleted = 0 ORDER BY createdAt DESC")
     fun getTransactionsByAccountAndDateRange(userId: String, accountId: String, startTime: Long, endTime: Long): Flow<List<TransactionEntity>>
+    
+    // 查询账单周期内的交易
+    @Query("""
+        SELECT * FROM transactions 
+        WHERE accountId = :accountId 
+        AND createdAt >= :startDate 
+        AND createdAt <= :endDate 
+        AND isDeleted = 0 
+        ORDER BY createdAt DESC
+    """)
+    suspend fun getTransactionsByBillingCycle(
+        accountId: String,
+        startDate: Long,
+        endDate: Long
+    ): List<TransactionEntity>
+    
+    // 统计账单周期内的消费总额
+    @Query("""
+        SELECT SUM(t.amountCents) FROM transactions t
+        JOIN categories c ON t.categoryId = c.id
+        WHERE t.accountId = :accountId 
+        AND c.type = 'EXPENSE'
+        AND t.createdAt >= :startDate 
+        AND t.createdAt <= :endDate 
+        AND t.isDeleted = 0
+    """)
+    suspend fun getTotalExpenseInBillingCycle(
+        accountId: String,
+        startDate: Long,
+        endDate: Long
+    ): Long?
 }
 
 

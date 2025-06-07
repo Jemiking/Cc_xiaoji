@@ -139,4 +139,7 @@ object DatabaseModule {
     
     @Provides
     fun provideCreditCardPaymentDao(database: CcDatabase): CreditCardPaymentDao = database.creditCardPaymentDao()
+    
+    @Provides
+    fun provideCreditCardBillDao(database: CcDatabase): CreditCardBillDao = database.creditCardBillDao()
 }
