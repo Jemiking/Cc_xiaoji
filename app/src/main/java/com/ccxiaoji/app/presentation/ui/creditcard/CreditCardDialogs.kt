@@ -134,7 +134,8 @@ fun CreditCardDetailDialog(
     onDismiss: () -> Unit,
     onPayment: (amountYuan: Double) -> Unit,
     onEdit: (creditLimitYuan: Double, billingDay: Int, paymentDueDay: Int) -> Unit,
-    onNavigateToTransactions: () -> Unit
+    onNavigateToTransactions: () -> Unit,
+    onViewPaymentHistory: () -> Unit
 ) {
     var showPaymentDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -302,6 +303,15 @@ fun CreditCardDetailDialog(
                         Icon(Icons.Default.Receipt, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("查看账单")
+                    }
+                    
+                    OutlinedButton(
+                        onClick = onViewPaymentHistory,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.History, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("还款历史")
                     }
                     
                     OutlinedButton(

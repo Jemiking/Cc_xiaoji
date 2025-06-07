@@ -63,6 +63,11 @@ object TransactionDetailRoute {
     fun createRoute(transactionId: String) = "transaction_detail/$transactionId"
 }
 
+object LedgerWithAccountRoute {
+    const val route = "ledger_with_account/{accountId}"
+    fun createRoute(accountId: String) = "ledger_with_account/$accountId"
+}
+
 object AccountManagementRoute {
     const val route = "account_management"
 }

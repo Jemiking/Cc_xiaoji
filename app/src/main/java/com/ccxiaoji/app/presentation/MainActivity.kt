@@ -14,6 +14,7 @@ import com.ccxiaoji.app.presentation.ui.components.BottomNavBar
 import com.ccxiaoji.app.presentation.ui.navigation.NavGraph
 import com.ccxiaoji.app.notification.NotificationScheduler
 import com.ccxiaoji.app.data.sync.SyncManager
+import com.ccxiaoji.app.data.sync.CreditCardReminderManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import android.util.Log
@@ -30,6 +31,9 @@ class MainActivity : ComponentActivity() {
     
     @Inject
     lateinit var syncManager: SyncManager
+    
+    @Inject
+    lateinit var creditCardReminderManager: CreditCardReminderManager
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +52,11 @@ class MainActivity : ComponentActivity() {
             Log.d(TAG, "Starting periodic sync")
             syncManager.startPeriodicSync()
             Log.d(TAG, "Periodic sync started")
+            
+            // 启动信用卡还款提醒
+            Log.d(TAG, "Starting credit card reminders")
+            creditCardReminderManager.startPeriodicReminders()
+            Log.d(TAG, "Credit card reminders started")
             
             Log.d(TAG, "Setting content")
             setContent {

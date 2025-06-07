@@ -175,6 +175,45 @@ class TransactionRepository @Inject constructor(
             .map { entities -> entities.map { it.toDomainModel() } }
     }
     
+    fun getTransactionsByAccount(accountId: String): Flow<List<Transaction>> {
+        return transactionDao.getTransactionsByAccount(getCurrentUserId(), accountId)
+            .map { entities -> 
+                entities.map { entity ->
+                    val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
+                        CategoryDetails(
+                            id = category.id,
+                            name = category.name,
+                            icon = category.icon,
+                            color = category.color,
+                            type = category.type
+                        )
+                    }
+                    entity.toDomainModel(categoryDetails)
+                }
+            }
+    }
+    
+    fun getTransactionsByAccountAndDateRange(accountId: String, startDate: LocalDate, endDate: LocalDate): Flow<List<Transaction>> {
+        val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        
+        return transactionDao.getTransactionsByAccountAndDateRange(getCurrentUserId(), accountId, startMillis, endMillis)
+            .map { entities -> 
+                entities.map { entity ->
+                    val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
+                        CategoryDetails(
+                            id = category.id,
+                            name = category.name,
+                            icon = category.icon,
+                            color = category.color,
+                            type = category.type
+                        )
+                    }
+                    entity.toDomainModel(categoryDetails)
+                }
+            }
+    }
+    
     // Statistics methods
     suspend fun getDailyTotals(startDate: LocalDate, endDate: LocalDate): Map<LocalDate, Pair<Int, Int>> {
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()

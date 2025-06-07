@@ -136,4 +136,7 @@ object DatabaseModule {
     
     @Provides
     fun provideSavingsGoalDao(database: CcDatabase): SavingsGoalDao = database.savingsGoalDao()
+    
+    @Provides
+    fun provideCreditCardPaymentDao(database: CcDatabase): CreditCardPaymentDao = database.creditCardPaymentDao()
 }

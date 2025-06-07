@@ -23,12 +23,14 @@ class NotificationManager @Inject constructor(
         const val CHANNEL_TASK_REMINDER = "task_reminder"
         const val CHANNEL_HABIT_REMINDER = "habit_reminder"
         const val CHANNEL_BUDGET_ALERT = "budget_alert"
+        const val CHANNEL_CREDIT_CARD_REMINDER = "credit_card_reminder"
         const val CHANNEL_GENERAL = "general"
         
         // 通知ID范围
         const val NOTIFICATION_ID_TASK_BASE = 1000
         const val NOTIFICATION_ID_HABIT_BASE = 2000
         const val NOTIFICATION_ID_BUDGET_BASE = 3000
+        const val NOTIFICATION_ID_CREDIT_CARD_BASE = 5000
         const val NOTIFICATION_ID_GENERAL_BASE = 4000
     }
     
@@ -72,6 +74,17 @@ class NotificationManager @Inject constructor(
                 enableVibration(true)
             }
             
+            // 信用卡还款提醒渠道
+            val creditCardChannel = NotificationChannel(
+                CHANNEL_CREDIT_CARD_REMINDER,
+                "信用卡还款提醒",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "信用卡还款到期提醒"
+                enableLights(true)
+                enableVibration(true)
+            }
+            
             // 通用渠道
             val generalChannel = NotificationChannel(
                 CHANNEL_GENERAL,
@@ -82,7 +95,7 @@ class NotificationManager @Inject constructor(
             }
             
             notificationManager.createNotificationChannels(
-                listOf(taskChannel, habitChannel, budgetChannel, generalChannel)
+                listOf(taskChannel, habitChannel, budgetChannel, creditCardChannel, generalChannel)
             )
         }
     }
@@ -176,6 +189,49 @@ class NotificationManager @Inject constructor(
         
         with(NotificationManagerCompat.from(context)) {
             notify(NOTIFICATION_ID_BUDGET_BASE + categoryName.hashCode(), notification)
+        }
+    }
+    
+    // 发送信用卡还款提醒
+    fun sendCreditCardReminder(
+        cardId: String,
+        cardName: String,
+        debtAmount: String,
+        daysUntilDue: Int,
+        paymentDueDay: Int
+    ) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("navigation", "account")
+            putExtra("accountId", cardId)
+        }
+        
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            cardId.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        
+        val (title, message) = when (daysUntilDue) {
+            0 -> "信用卡还款日" to "「$cardName」今天是还款日，需还款 $debtAmount"
+            1 -> "信用卡还款提醒" to "「$cardName」明天（${paymentDueDay}日）是还款日，需还款 $debtAmount"
+            3 -> "信用卡还款提醒" to "「$cardName」还有3天（${paymentDueDay}日）到还款日，需还款 $debtAmount"
+            else -> "信用卡还款提醒" to "「$cardName」还有${daysUntilDue}天到还款日，需还款 $debtAmount"
+        }
+        
+        val notification = NotificationCompat.Builder(context, CHANNEL_CREDIT_CARD_REMINDER)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .build()
+        
+        with(NotificationManagerCompat.from(context)) {
+            notify(NOTIFICATION_ID_CREDIT_CARD_BASE + cardId.hashCode(), notification)
         }
     }
     

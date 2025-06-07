@@ -2,7 +2,10 @@ package com.ccxiaoji.app.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ccxiaoji.app.data.local.entity.CreditCardPaymentEntity
+import com.ccxiaoji.app.data.local.entity.PaymentType
 import com.ccxiaoji.app.data.repository.AccountRepository
+import com.ccxiaoji.app.data.repository.PaymentStats
 import com.ccxiaoji.app.domain.model.Account
 import com.ccxiaoji.app.domain.model.AccountType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -159,6 +162,98 @@ class CreditCardViewModel @Inject constructor(
                 successMessage = null,
                 errorMessage = null
             )
+        }
+    }
+    
+    // Payment History Methods
+    private val _selectedCardPayments = MutableStateFlow<List<CreditCardPaymentEntity>>(emptyList())
+    val selectedCardPayments: StateFlow<List<CreditCardPaymentEntity>> = _selectedCardPayments.asStateFlow()
+    
+    private val _paymentStats = MutableStateFlow<PaymentStats?>(null)
+    val paymentStats: StateFlow<PaymentStats?> = _paymentStats.asStateFlow()
+    
+    fun loadPaymentHistory(accountId: String) {
+        viewModelScope.launch {
+            accountRepository.getCreditCardPayments(accountId)
+                .collect { payments ->
+                    _selectedCardPayments.value = payments
+                }
+        }
+        
+        viewModelScope.launch {
+            try {
+                val stats = accountRepository.getPaymentStats(accountId)
+                _paymentStats.value = stats
+            } catch (e: Exception) {
+                // Handle error silently
+            }
+        }
+    }
+    
+    fun deletePaymentRecord(paymentId: String) {
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(isLoading = true) }
+                
+                accountRepository.deletePaymentRecord(paymentId)
+                
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "还款记录已删除"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "删除失败：${e.message}"
+                    )
+                }
+            }
+        }
+    }
+    
+    fun recordPaymentWithType(
+        accountId: String,
+        paymentAmountYuan: Double,
+        paymentType: PaymentType,
+        note: String? = null
+    ) {
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(isLoading = true) }
+                
+                // Get current debt amount
+                val account = creditCards.value.find { it.id == accountId }
+                val dueAmountCents = if (account != null && account.balanceCents < 0) {
+                    -account.balanceCents
+                } else {
+                    0L
+                }
+                
+                accountRepository.recordCreditCardPaymentWithHistory(
+                    accountId = accountId,
+                    paymentAmountCents = (paymentAmountYuan * 100).toLong(),
+                    paymentType = paymentType,
+                    dueAmountCents = dueAmountCents,
+                    note = note
+                )
+                
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        successMessage = "还款成功"
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "还款失败：${e.message}"
+                    )
+                }
+            }
         }
     }
 }

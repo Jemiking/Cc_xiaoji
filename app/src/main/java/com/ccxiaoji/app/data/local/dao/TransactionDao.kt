@@ -89,6 +89,12 @@ interface TransactionDao {
     
     @Query("SELECT * FROM transactions WHERE id = :transactionId AND isDeleted = 0")
     fun getTransactionByIdSync(transactionId: String): TransactionEntity?
+    
+    @Query("SELECT * FROM transactions WHERE userId = :userId AND accountId = :accountId AND isDeleted = 0 ORDER BY createdAt DESC")
+    fun getTransactionsByAccount(userId: String, accountId: String): Flow<List<TransactionEntity>>
+    
+    @Query("SELECT * FROM transactions WHERE userId = :userId AND accountId = :accountId AND createdAt >= :startTime AND createdAt < :endTime AND isDeleted = 0 ORDER BY createdAt DESC")
+    fun getTransactionsByAccountAndDateRange(userId: String, accountId: String, startTime: Long, endTime: Long): Flow<List<TransactionEntity>>
 }
 
 

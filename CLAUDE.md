@@ -2,6 +2,27 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Important: Development Workflow
+**Claude Code should NOT attempt to compile or build the project after making changes.**
+
+The compilation and testing process will be handled manually by the developer in Android Studio. The workflow is:
+1. Claude Code makes the requested code changes
+2. Developer manually compiles the project in Android Studio
+3. If there are compilation errors or issues, the developer will provide feedback to Claude Code
+4. Claude Code can then make corrections based on the feedback
+
+This approach ensures that:
+- Build errors are properly diagnosed in the actual development environment
+- Claude Code can focus on writing code rather than managing build processes
+- The developer maintains control over the build and testing cycle
+
+## Language Requirement
+**All responses from Claude Code should be in Chinese (中文).** This includes:
+- Code comments and documentation
+- Explanations and descriptions
+- Error messages and feedback
+- Communication with the developer
+
 ## Development Environment Requirements
 - Android Studio Hedgehog | 2023.1.1 or higher
 - JDK 17
@@ -43,9 +64,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Room database version: 1 (reset from version 6, all historical migrations cleared)
 - Schema location: `app/schemas/`
 - When modifying database entities:
-  1. Increment version in `CcDatabase.kt`
-  2. Create a migration in `app/src/main/java/com/ccxiaoji/app/data/local/migrations/`
-  3. Add migration to `DatabaseMigrations.kt`
+    1. Increment version in `CcDatabase.kt`
+    2. Create a migration in `app/src/main/java/com/ccxiaoji/app/data/local/migrations/`
+    3. Add migration to `DatabaseMigrations.kt`
 - Note: The database was reset to v1 as the app hasn't been released yet
 
 ## Architecture Overview
@@ -54,19 +75,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 The project follows a three-layer architecture:
 
 1. **Data Layer** (`data/`)
-   - **Local**: Room database with DAOs and entities
-   - **Remote**: Retrofit APIs for sync functionality
-   - **Repository**: Implements data access abstraction, handles both local and remote data sources
-   - All entities use `SyncStatus` enum for tracking synchronization state
+    - **Local**: Room database with DAOs and entities
+    - **Remote**: Retrofit APIs for sync functionality
+    - **Repository**: Implements data access abstraction, handles both local and remote data sources
+    - All entities use `SyncStatus` enum for tracking synchronization state
 
 2. **Domain Layer** (`domain/`)
-   - **Model**: Business models that are UI-independent
-   - Domain models are separate from database entities
+    - **Model**: Business models that are UI-independent
+    - Domain models are separate from database entities
 
 3. **Presentation Layer** (`presentation/`)
-   - **UI**: Jetpack Compose screens and components
-   - **ViewModel**: State holders using Hilt injection
-   - Navigation managed by `NavGraph.kt` with defined routes
+    - **UI**: Jetpack Compose screens and components
+    - **ViewModel**: State holders using Hilt injection
+    - Navigation managed by `NavGraph.kt` with defined routes
 
 ### Key Architecture Decisions
 

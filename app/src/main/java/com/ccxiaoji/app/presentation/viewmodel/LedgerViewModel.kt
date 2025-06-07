@@ -54,7 +54,14 @@ class LedgerViewModel @Inject constructor(
     
     private fun loadTransactions() {
         viewModelScope.launch {
-            transactionRepository.getTransactions().collect { allTransactions ->
+            val accountId = _uiState.value.activeFilter.accountId
+            val transactionsFlow = if (accountId != null) {
+                transactionRepository.getTransactionsByAccount(accountId)
+            } else {
+                transactionRepository.getTransactions()
+            }
+            
+            transactionsFlow.collect { allTransactions ->
                 // Filter transactions by selected month
                 val filteredByMonth = allTransactions.filter { transaction ->
                     val transactionDate = transaction.createdAt.toLocalDateTime(TimeZone.currentSystemDefault())
@@ -357,7 +364,10 @@ class LedgerViewModel @Inject constructor(
                         kotlinDate >= startDate && kotlinDate <= endDate
                     }
                     
-                    typeMatch && categoryMatch && amountMatch && dateMatch
+                    // Filter by account (already handled in query)
+                    val accountMatch = filter.accountId == null || transaction.accountId == filter.accountId
+                    
+                    typeMatch && categoryMatch && amountMatch && dateMatch && accountMatch
                 }
                 _uiState.update { it.copy(transactions = filtered) }
                 
@@ -389,6 +399,18 @@ class LedgerViewModel @Inject constructor(
     fun setGroupingMode(mode: GroupingMode) {
         _uiState.update { it.copy(groupingMode = mode) }
         updateGroupedTransactions(_uiState.value.transactions)
+    }
+    
+    fun filterByAccount(accountId: String?) {
+        val currentFilter = _uiState.value.activeFilter
+        _uiState.update { 
+            it.copy(activeFilter = currentFilter.copy(accountId = accountId))
+        }
+        if (accountId != null) {
+            applyFilter()
+        } else {
+            clearFilter()
+        }
     }
     
     private fun updateGroupedTransactions(transactions: List<Transaction>) {
@@ -580,7 +602,8 @@ data class TransactionFilter(
     val dateRange: DateRange? = null,
     val minAmount: Double? = null,
     val maxAmount: Double? = null,
-    val transactionType: TransactionType = TransactionType.ALL
+    val transactionType: TransactionType = TransactionType.ALL,
+    val accountId: String? = null
 )
 
 enum class TransactionType {

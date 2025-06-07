@@ -74,9 +74,10 @@ object RepositoryModule {
     fun provideAccountRepository(
         accountDao: AccountDao,
         changeLogDao: ChangeLogDao,
+        creditCardPaymentDao: CreditCardPaymentDao,
         gson: Gson
     ): AccountRepository {
-        return AccountRepository(accountDao, changeLogDao, gson)
+        return AccountRepository(accountDao, changeLogDao, creditCardPaymentDao, gson)
     }
 
     @Provides

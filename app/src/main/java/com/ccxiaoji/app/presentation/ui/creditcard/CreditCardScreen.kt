@@ -21,6 +21,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ccxiaoji.app.domain.model.Account
 import com.ccxiaoji.app.domain.model.AccountType
+import com.ccxiaoji.app.data.local.entity.PaymentType
 import com.ccxiaoji.app.presentation.viewmodel.CreditCardViewModel
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
@@ -37,8 +38,11 @@ fun CreditCardScreen(
 ) {
     val creditCards by viewModel.creditCards.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val paymentHistory by viewModel.selectedCardPayments.collectAsStateWithLifecycle()
+    val paymentStats by viewModel.paymentStats.collectAsStateWithLifecycle()
     var showAddDialog by remember { mutableStateOf(false) }
     var selectedCard by remember { mutableStateOf<Account?>(null) }
+    var showPaymentHistory by remember { mutableStateOf(false) }
     
     Scaffold(
         topBar = {
@@ -122,7 +126,12 @@ fun CreditCardScreen(
             card = card,
             onDismiss = { selectedCard = null },
             onPayment = { amount ->
-                viewModel.recordPayment(card.id, amount)
+                // Determine payment type based on amount
+                val paymentType = when {
+                    amount >= -card.balanceYuan -> PaymentType.FULL
+                    else -> PaymentType.CUSTOM
+                }
+                viewModel.recordPaymentWithType(card.id, amount, paymentType)
                 selectedCard = null
             },
             onEdit = { creditLimit, billingDay, paymentDueDay ->
@@ -132,8 +141,27 @@ fun CreditCardScreen(
             onNavigateToTransactions = {
                 onNavigateToAccount(card.id)
                 selectedCard = null
+            },
+            onViewPaymentHistory = {
+                viewModel.loadPaymentHistory(card.id)
+                showPaymentHistory = true
             }
         )
+    }
+    
+    // 还款历史对话框
+    if (showPaymentHistory) {
+        selectedCard?.let { card ->
+            PaymentHistoryDialog(
+                account = card,
+                payments = paymentHistory,
+                paymentStats = paymentStats,
+                onDismiss = { showPaymentHistory = false },
+                onDeletePayment = { paymentId ->
+                    viewModel.deletePaymentRecord(paymentId)
+                }
+            )
+        }
     }
 }
 

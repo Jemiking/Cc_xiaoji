@@ -2,8 +2,11 @@ package com.ccxiaoji.app.data.repository
 
 import com.ccxiaoji.app.data.local.dao.AccountDao
 import com.ccxiaoji.app.data.local.dao.ChangeLogDao
+import com.ccxiaoji.app.data.local.dao.CreditCardPaymentDao
 import com.ccxiaoji.app.data.local.entity.AccountEntity
 import com.ccxiaoji.app.data.local.entity.ChangeLogEntity
+import com.ccxiaoji.app.data.local.entity.CreditCardPaymentEntity
+import com.ccxiaoji.app.data.local.entity.PaymentType
 import com.ccxiaoji.app.data.sync.SyncStatus
 import com.ccxiaoji.app.domain.model.Account
 import com.ccxiaoji.app.domain.model.AccountType
@@ -19,6 +22,7 @@ import javax.inject.Singleton
 class AccountRepository @Inject constructor(
     private val accountDao: AccountDao,
     private val changeLogDao: ChangeLogDao,
+    private val creditCardPaymentDao: CreditCardPaymentDao,
     private val gson: Gson
 ) {
     fun getAccounts(): Flow<List<Account>> {
@@ -192,16 +196,29 @@ class AccountRepository @Inject constructor(
     }
     
     suspend fun recordCreditCardPayment(accountId: String, paymentAmountCents: Long) {
-        val now = System.currentTimeMillis()
+        // Get current debt amount for this credit card
+        val account = accountDao.getAccountById(accountId)
+        val dueAmountCents = if (account != null && account.balanceCents < 0) {
+            -account.balanceCents
+        } else {
+            0L
+        }
         
-        // Credit card payment increases the balance (reduces debt)
-        accountDao.updateBalance(accountId, paymentAmountCents, now)
+        // Determine payment type
+        val paymentType = when {
+            paymentAmountCents >= dueAmountCents -> PaymentType.FULL
+            paymentAmountCents > 0 -> PaymentType.CUSTOM
+            else -> PaymentType.CUSTOM
+        }
         
-        // Log the change for sync
-        logChange("accounts", accountId, "PAYMENT", mapOf(
-            "paymentAmount" to paymentAmountCents,
-            "type" to "CREDIT_CARD_PAYMENT"
-        ))
+        // Use the new method with payment history
+        recordCreditCardPaymentWithHistory(
+            accountId = accountId,
+            paymentAmountCents = paymentAmountCents,
+            paymentType = paymentType,
+            dueAmountCents = dueAmountCents,
+            note = null
+        )
     }
     
     private suspend fun logChange(table: String, rowId: String, operation: String, payload: Any) {
@@ -215,11 +232,100 @@ class AccountRepository @Inject constructor(
         changeLogDao.insertChange(changeLog)
     }
     
+    // Credit Card Payment History Methods
+    suspend fun recordCreditCardPaymentWithHistory(
+        accountId: String,
+        paymentAmountCents: Long,
+        paymentType: PaymentType,
+        dueAmountCents: Long,
+        note: String? = null
+    ) {
+        val userId = getCurrentUserId()
+        val now = System.currentTimeMillis()
+        
+        // First update the account balance (payment increases balance for credit cards)
+        accountDao.updateBalance(accountId, paymentAmountCents, now)
+        
+        // Get payment due day from account
+        val account = accountDao.getAccountById(accountId)
+        val paymentDueDay = account?.paymentDueDay ?: 0
+        
+        // Check if payment is on time (within grace period)
+        val currentDate = java.time.LocalDate.now()
+        val dueDate = if (currentDate.dayOfMonth > paymentDueDay) {
+            // Due date is in current month
+            currentDate.withDayOfMonth(paymentDueDay)
+        } else {
+            // Due date is in previous month
+            currentDate.minusMonths(1).withDayOfMonth(paymentDueDay)
+        }
+        val gracePeriodDays = account?.gracePeriodDays ?: 3
+        val latestPaymentDate = dueDate.plusDays(gracePeriodDays.toLong())
+        val isOnTime = !currentDate.isAfter(latestPaymentDate)
+        
+        // Create payment record
+        val paymentRecord = CreditCardPaymentEntity(
+            userId = userId,
+            accountId = accountId,
+            paymentAmountCents = paymentAmountCents,
+            paymentType = paymentType,
+            paymentDate = now,
+            dueAmountCents = dueAmountCents,
+            isOnTime = isOnTime,
+            note = note
+        )
+        
+        creditCardPaymentDao.insert(paymentRecord)
+        
+        // Log the change for sync
+        logChange("accounts", accountId, "UPDATE", mapOf(
+            "paymentAmountCents" to paymentAmountCents,
+            "paymentType" to paymentType.name
+        ))
+    }
+    
+    fun getCreditCardPayments(accountId: String): Flow<List<CreditCardPaymentEntity>> {
+        return creditCardPaymentDao.getPaymentsByAccount(getCurrentUserId(), accountId)
+    }
+    
+    suspend fun getPaymentStats(accountId: String): PaymentStats {
+        val userId = getCurrentUserId()
+        val onTimeCount = creditCardPaymentDao.getOnTimePaymentCount(userId, accountId)
+        val totalCount = creditCardPaymentDao.getTotalPaymentCount(userId, accountId)
+        val totalAmountCents = creditCardPaymentDao.getTotalPaymentAmount(userId, accountId) ?: 0L
+        
+        return PaymentStats(
+            onTimeRate = if (totalCount > 0) (onTimeCount.toDouble() / totalCount) * 100 else 0.0,
+            totalPayments = totalCount,
+            totalAmountYuan = totalAmountCents / 100.0
+        )
+    }
+    
+    suspend fun deletePaymentRecord(paymentId: String) {
+        val payment = creditCardPaymentDao.getPaymentById(paymentId)
+        if (payment != null) {
+            // Reverse the balance update
+            accountDao.updateBalance(payment.accountId, -payment.paymentAmountCents, System.currentTimeMillis())
+            
+            // Soft delete the payment record
+            creditCardPaymentDao.softDelete(paymentId)
+            
+            // Log the change
+            logChange("credit_card_payments", paymentId, "DELETE", payment)
+        }
+    }
+    
     private fun getCurrentUserId(): String {
         // In a real app, this would get the actual current user ID
         return "current_user_id"
     }
 }
+
+data class PaymentStats(
+    val onTimeRate: Double,
+    val totalPayments: Int,
+    val totalAmountYuan: Double
+)
 
 private fun AccountEntity.toDomainModel(): Account {
     return Account(

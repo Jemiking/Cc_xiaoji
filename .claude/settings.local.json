@@ -33,7 +33,8 @@
       "Bash(bash gradlew :app:compileDebugKotlin)",
       "Bash(./compile_and_test.bat)",
       "Bash(cmd.exe /c compile_and_test.bat)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(mv:*)"
     ],
     "deny": []
   },

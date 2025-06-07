@@ -16,6 +16,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.Color
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,8 +47,15 @@ import java.time.YearMonth
 @Composable
 fun LedgerScreen(
     navController: androidx.navigation.NavController? = null,
+    accountId: String? = null,
     viewModel: LedgerViewModel = hiltViewModel()
 ) {
+    // 如果传入了accountId，则设置账户筛选
+    LaunchedEffect(accountId) {
+        accountId?.let {
+            viewModel.filterByAccount(it)
+        }
+    }
     val uiState by viewModel.uiState.collectAsState()
     val selectedMonth by viewModel.selectedMonth.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
@@ -162,10 +170,20 @@ fun LedgerScreen(
             } else {
                 TopAppBar(
                     title = { 
-                        Text(
-                            text = "记账",
-                            style = MaterialTheme.typography.headlineSmall
-                        )
+                        Column {
+                            Text(
+                                text = "记账",
+                                style = MaterialTheme.typography.headlineSmall
+                            )
+                            if (uiState.activeFilter.accountId != null) {
+                                val accountName = uiState.accounts.find { it.id == uiState.activeFilter.accountId }?.name ?: ""
+                                Text(
+                                    text = "筛选账户：$accountName",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
                     },
                     navigationIcon = {
                         IconButton(

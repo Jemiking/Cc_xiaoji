@@ -56,6 +56,14 @@ fun NavGraph(
             LedgerScreen(navController = navController)
         }
         
+        composable(LedgerWithAccountRoute.route) { backStackEntry ->
+            val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
+            LedgerScreen(
+                navController = navController,
+                accountId = accountId
+            )
+        }
+        
         composable(Screen.Todo.route) {
             TodoScreen()
         }
@@ -87,7 +95,7 @@ fun NavGraph(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToAccount = { accountId ->
                     // 导航到账户详情页面（显示该信用卡的交易记录）
-                    navController.navigate(Screen.Ledger.route)
+                    navController.navigate(LedgerWithAccountRoute.createRoute(accountId))
                 }
             )
         }
