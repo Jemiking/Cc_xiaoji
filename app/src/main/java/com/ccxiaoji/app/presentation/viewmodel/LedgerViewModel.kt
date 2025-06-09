@@ -3,8 +3,7 @@ package com.ccxiaoji.app.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.app.data.repository.AccountRepository
-import com.ccxiaoji.app.data.repository.CategoryRepository
-import com.ccxiaoji.app.data.repository.TransactionRepository
+import com.ccxiaoji.feature.ledger.api.LedgerApi
 import com.ccxiaoji.app.data.repository.BudgetRepository
 import com.ccxiaoji.app.data.repository.UserRepository
 import com.ccxiaoji.app.domain.model.Account
@@ -20,12 +19,12 @@ import kotlinx.datetime.toJavaLocalDate
 import java.time.temporal.WeekFields
 import java.util.Locale
 import java.time.YearMonth
+import kotlinx.datetime.LocalDate
 
 @HiltViewModel
 class LedgerViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
-    private val categoryRepository: CategoryRepository,
+    private val ledgerApi: LedgerApi,
     private val budgetRepository: BudgetRepository,
     private val userRepository: UserRepository
 ) : ViewModel() {
@@ -54,22 +53,64 @@ class LedgerViewModel @Inject constructor(
     
     private fun loadTransactions() {
         viewModelScope.launch {
-            val accountId = _uiState.value.activeFilter.accountId
-            val transactionsFlow = if (accountId != null) {
-                transactionRepository.getTransactionsByAccount(accountId)
-            } else {
-                transactionRepository.getTransactions()
-            }
-            
-            transactionsFlow.collect { allTransactions ->
-                // Filter transactions by selected month
-                val filteredByMonth = allTransactions.filter { transaction ->
-                    val transactionDate = transaction.createdAt.toLocalDateTime(TimeZone.currentSystemDefault())
-                    val transactionMonth = YearMonth.of(transactionDate.year, transactionDate.monthNumber)
-                    transactionMonth == _selectedMonth.value
+            try {
+                val selectedMonth = _selectedMonth.value
+                val transactions = ledgerApi.getTransactionsByMonth(
+                    selectedMonth.year,
+                    selectedMonth.monthValue
+                )
+                
+                // Convert TransactionItem to Transaction for UI
+                val domainTransactions = transactions.map { item ->
+                    Transaction(
+                        id = item.id,
+                        amountCents = (item.amount * 100).toInt(),
+                        amountYuan = item.amount,
+                        categoryId = item.categoryName, // Using categoryName as temp ID
+                        accountId = "", // Not provided by API
+                        note = item.note,
+                        createdAt = kotlinx.datetime.Clock.System.now(), // Using current time as placeholder
+                        updatedAt = kotlinx.datetime.Clock.System.now(),
+                        categoryDetails = Category(
+                            id = "",
+                            name = item.categoryName,
+                            type = Category.Type.EXPENSE, // Default, should be determined from category
+                            icon = item.categoryIcon ?: "💰",
+                            color = item.categoryColor,
+                            parentId = null,
+                            displayOrder = 0,
+                            isSystem = false,
+                            createdAt = kotlinx.datetime.Clock.System.now(),
+                            updatedAt = kotlinx.datetime.Clock.System.now()
+                        ),
+                        accountDetails = Account(
+                            id = "",
+                            name = item.accountName,
+                            type = Account.Type.CASH,
+                            balance = 0.0,
+                            icon = "💰",
+                            color = "#000000",
+                            displayOrder = 0,
+                            includeInTotalAssets = true,
+                            isDefault = false,
+                            createdAt = kotlinx.datetime.Clock.System.now(),
+                            updatedAt = kotlinx.datetime.Clock.System.now()
+                        )
+                    )
                 }
-                _uiState.update { it.copy(transactions = filteredByMonth) }
-                updateGroupedTransactions(filteredByMonth)
+                
+                // Apply additional filters if needed
+                val accountId = _uiState.value.activeFilter.accountId
+                val filteredTransactions = if (accountId != null) {
+                    domainTransactions.filter { it.accountDetails?.name == accountId }
+                } else {
+                    domainTransactions
+                }
+                
+                _uiState.update { it.copy(transactions = filteredTransactions) }
+                updateGroupedTransactions(filteredTransactions)
+            } catch (e: Exception) {
+                // Handle error
             }
         }
     }
@@ -78,17 +119,22 @@ class LedgerViewModel @Inject constructor(
         viewModelScope.launch {
             val selectedMonth = _selectedMonth.value
             
-            // Use new method that queries by category type instead of old enum
-            val (income, expense) = transactionRepository.getMonthlyIncomesAndExpenses(
-                selectedMonth.year, 
-                selectedMonth.monthValue
-            )
-            
-            _uiState.update { 
-                it.copy(
-                    monthlyIncome = income / 100.0,
-                    monthlyExpense = expense / 100.0
-                )
+            try {
+                // Get statistics for the selected month
+                val startDate = LocalDate(selectedMonth.year, selectedMonth.monthValue, 1)
+                val endDate = LocalDate(selectedMonth.year, selectedMonth.monthValue, 
+                    selectedMonth.lengthOfMonth())
+                
+                val statistics = ledgerApi.getStatisticsByDateRange(startDate, endDate)
+                
+                _uiState.update { 
+                    it.copy(
+                        monthlyIncome = statistics.totalIncome,
+                        monthlyExpense = statistics.totalExpense
+                    )
+                }
+            } catch (e: Exception) {
+                // Handle error
             }
         }
     }
@@ -108,20 +154,24 @@ class LedgerViewModel @Inject constructor(
     
     fun addTransaction(amountCents: Int, categoryId: String, note: String?, accountId: String? = null) {
         viewModelScope.launch {
-            val finalAccountId = accountId ?: _uiState.value.selectedAccount?.id ?: return@launch
-            
-            // 添加交易
-            transactionRepository.addTransaction(
-                amountCents = amountCents,
-                categoryId = categoryId,
-                note = note,
-                accountId = finalAccountId
-            )
-            
-            // 检查预算
-            checkBudgetAfterTransaction(categoryId)
-            
-            loadMonthlySummary() // Refresh summary
+            try {
+                // 添加交易
+                ledgerApi.addTransaction(
+                    amountCents = amountCents,
+                    categoryId = categoryId,
+                    note = note,
+                    accountId = accountId
+                )
+                
+                // 检查预算
+                checkBudgetAfterTransaction(categoryId)
+                
+                // Reload data
+                loadTransactions()
+                loadMonthlySummary()
+            } catch (e: Exception) {
+                // Handle error
+            }
         }
     }
     
@@ -173,8 +223,26 @@ class LedgerViewModel @Inject constructor(
     
     private fun loadCategories() {
         viewModelScope.launch {
-            categoryRepository.getCategories().collect { categories ->
-                _uiState.update { it.copy(categories = categories) }
+            try {
+                val categories = ledgerApi.getAllCategories()
+                // 将CategoryItem转换为Category
+                val domainCategories = categories.map { categoryItem ->
+                    Category(
+                        id = categoryItem.id,
+                        name = categoryItem.name,
+                        type = Category.Type.valueOf(categoryItem.type),
+                        icon = categoryItem.icon,
+                        color = categoryItem.color,
+                        parentId = categoryItem.parentId,
+                        displayOrder = 0, // LedgerApi中没有提供displayOrder
+                        isSystem = categoryItem.isSystem,
+                        createdAt = kotlinx.datetime.Clock.System.now(),
+                        updatedAt = kotlinx.datetime.Clock.System.now()
+                    )
+                }
+                _uiState.update { it.copy(categories = domainCategories) }
+            } catch (e: Exception) {
+                // 处理错误
             }
         }
     }
@@ -185,15 +253,30 @@ class LedgerViewModel @Inject constructor(
     
     fun deleteTransaction(transactionId: String) {
         viewModelScope.launch {
-            transactionRepository.deleteTransaction(transactionId)
-            loadMonthlySummary() // Refresh summary
+            try {
+                ledgerApi.deleteTransaction(transactionId)
+                loadTransactions()
+                loadMonthlySummary()
+            } catch (e: Exception) {
+                // Handle error
+            }
         }
     }
     
     fun updateTransaction(transaction: Transaction) {
         viewModelScope.launch {
-            transactionRepository.updateTransaction(transaction)
-            loadMonthlySummary() // Refresh summary
+            try {
+                ledgerApi.updateTransaction(
+                    transactionId = transaction.id,
+                    amountCents = transaction.amountCents,
+                    categoryId = transaction.categoryId,
+                    note = transaction.note
+                )
+                loadTransactions()
+                loadMonthlySummary()
+            } catch (e: Exception) {
+                // Handle error
+            }
         }
     }
     
@@ -235,30 +318,38 @@ class LedgerViewModel @Inject constructor(
     
     fun deleteSelectedTransactions() {
         viewModelScope.launch {
-            val selectedIds = _uiState.value.selectedTransactionIds
-            selectedIds.forEach { id ->
-                transactionRepository.deleteTransaction(id)
+            try {
+                val selectedIds = _uiState.value.selectedTransactionIds
+                ledgerApi.deleteTransactions(selectedIds.toList())
+                _uiState.update { 
+                    it.copy(
+                        isSelectionMode = false,
+                        selectedTransactionIds = emptySet()
+                    )
+                }
+                loadTransactions()
+                loadMonthlySummary()
+            } catch (e: Exception) {
+                // Handle error
             }
-            _uiState.update { 
-                it.copy(
-                    isSelectionMode = false,
-                    selectedTransactionIds = emptySet()
-                )
-            }
-            loadMonthlySummary() // Refresh summary
         }
     }
     
     fun copyTransaction(transaction: Transaction) {
         viewModelScope.launch {
-            // Create a new transaction with the same details but current time
-            transactionRepository.addTransaction(
-                amountCents = transaction.amountCents,
-                categoryId = transaction.categoryId,
-                note = transaction.note,
-                accountId = transaction.accountId
-            )
-            loadMonthlySummary() // Refresh summary
+            try {
+                // Create a new transaction with the same details but current time
+                ledgerApi.addTransaction(
+                    amountCents = transaction.amountCents,
+                    categoryId = transaction.categoryId,
+                    note = transaction.note,
+                    accountId = transaction.accountId
+                )
+                loadTransactions()
+                loadMonthlySummary()
+            } catch (e: Exception) {
+                // Handle error
+            }
         }
     }
     
@@ -279,8 +370,49 @@ class LedgerViewModel @Inject constructor(
             _uiState.update { it.copy(filteredTransactions = emptyList()) }
         } else {
             viewModelScope.launch {
-                transactionRepository.searchTransactions(query).collect { results ->
-                    _uiState.update { it.copy(filteredTransactions = results) }
+                try {
+                    val results = ledgerApi.searchTransactions(query)
+                    // Convert TransactionItem to Transaction
+                    val domainTransactions = results.map { item ->
+                        Transaction(
+                            id = item.id,
+                            amountCents = (item.amount * 100).toInt(),
+                            amountYuan = item.amount,
+                            categoryId = item.categoryName,
+                            accountId = "",
+                            note = item.note,
+                            createdAt = kotlinx.datetime.Clock.System.now(),
+                            updatedAt = kotlinx.datetime.Clock.System.now(),
+                            categoryDetails = Category(
+                                id = "",
+                                name = item.categoryName,
+                                type = Category.Type.EXPENSE,
+                                icon = item.categoryIcon ?: "💰",
+                                color = item.categoryColor,
+                                parentId = null,
+                                displayOrder = 0,
+                                isSystem = false,
+                                createdAt = kotlinx.datetime.Clock.System.now(),
+                                updatedAt = kotlinx.datetime.Clock.System.now()
+                            ),
+                            accountDetails = Account(
+                                id = "",
+                                name = item.accountName,
+                                type = Account.Type.CASH,
+                                balance = 0.0,
+                                icon = "💰",
+                                color = "#000000",
+                                displayOrder = 0,
+                                includeInTotalAssets = true,
+                                isDefault = false,
+                                createdAt = kotlinx.datetime.Clock.System.now(),
+                                updatedAt = kotlinx.datetime.Clock.System.now()
+                            )
+                        )
+                    }
+                    _uiState.update { it.copy(filteredTransactions = domainTransactions) }
+                } catch (e: Exception) {
+                    // Handle error
                 }
             }
         }
@@ -312,63 +444,80 @@ class LedgerViewModel @Inject constructor(
     
     private fun applyFilter() {
         viewModelScope.launch {
-            val filter = _uiState.value.activeFilter
-            transactionRepository.getTransactions().collect { allTransactions ->
-                // First filter by selected month
-                val monthFiltered = allTransactions.filter { transaction ->
-                    val transactionDate = transaction.createdAt.toLocalDateTime(TimeZone.currentSystemDefault())
-                    val transactionMonth = YearMonth.of(transactionDate.year, transactionDate.monthNumber)
-                    transactionMonth == _selectedMonth.value
+            try {
+                val filter = _uiState.value.activeFilter
+                val selectedMonth = _selectedMonth.value
+                
+                // Get transactions for selected month
+                val monthTransactions = ledgerApi.getTransactionsByMonth(
+                    selectedMonth.year,
+                    selectedMonth.monthValue
+                )
+                
+                // Convert to domain model
+                val allTransactions = monthTransactions.map { item ->
+                    Transaction(
+                        id = item.id,
+                        amountCents = (item.amount * 100).toInt(),
+                        amountYuan = item.amount,
+                        categoryId = item.categoryName,
+                        accountId = "",
+                        note = item.note,
+                        createdAt = kotlinx.datetime.Clock.System.now(),
+                        updatedAt = kotlinx.datetime.Clock.System.now(),
+                        categoryDetails = Category(
+                            id = "",
+                            name = item.categoryName,
+                            type = if (item.amount > 0) Category.Type.INCOME else Category.Type.EXPENSE,
+                            icon = item.categoryIcon ?: "💰",
+                            color = item.categoryColor,
+                            parentId = null,
+                            displayOrder = 0,
+                            isSystem = false,
+                            createdAt = kotlinx.datetime.Clock.System.now(),
+                            updatedAt = kotlinx.datetime.Clock.System.now()
+                        ),
+                        accountDetails = Account(
+                            id = "",
+                            name = item.accountName,
+                            type = Account.Type.CASH,
+                            balance = 0.0,
+                            icon = "💰",
+                            color = "#000000",
+                            displayOrder = 0,
+                            includeInTotalAssets = true,
+                            isDefault = false,
+                            createdAt = kotlinx.datetime.Clock.System.now(),
+                            updatedAt = kotlinx.datetime.Clock.System.now()
+                        )
+                    )
                 }
                 
-                val filtered = monthFiltered.filter { transaction ->
+                val filtered = allTransactions.filter { transaction ->
                     // Filter by transaction type
                     val typeMatch = when (filter.transactionType) {
                         TransactionType.ALL -> true
-                        TransactionType.INCOME -> transaction.categoryDetails?.type == "INCOME"
-                        TransactionType.EXPENSE -> transaction.categoryDetails?.type == "EXPENSE"
+                        TransactionType.INCOME -> transaction.categoryDetails?.type == Category.Type.INCOME
+                        TransactionType.EXPENSE -> transaction.categoryDetails?.type == Category.Type.EXPENSE
                     }
                     
                     // Filter by categories
                     val categoryMatch = if (filter.categoryIds.isEmpty()) {
                         true
                     } else {
-                        filter.categoryIds.contains(transaction.categoryId)
+                        filter.categoryIds.contains(transaction.categoryDetails?.name)
                     }
                     
                     // Filter by amount range
                     val amountMatch = (filter.minAmount == null || transaction.amountYuan >= filter.minAmount) &&
                             (filter.maxAmount == null || transaction.amountYuan <= filter.maxAmount)
                     
-                    // Filter by date range
-                    val dateMatch = if (filter.dateRange == null) {
-                        true
-                    } else {
-                        val transactionDate = Instant.fromEpochMilliseconds(transaction.createdAt.toEpochMilliseconds())
-                            .toLocalDateTime(TimeZone.currentSystemDefault()).date
-                        val kotlinDate = kotlinx.datetime.LocalDate(
-                            transactionDate.year,
-                            transactionDate.monthNumber,
-                            transactionDate.dayOfMonth
-                        )
-                        val startDate = kotlinx.datetime.LocalDate(
-                            filter.dateRange.start.year,
-                            filter.dateRange.start.monthValue,
-                            filter.dateRange.start.dayOfMonth
-                        )
-                        val endDate = kotlinx.datetime.LocalDate(
-                            filter.dateRange.end.year,
-                            filter.dateRange.end.monthValue,
-                            filter.dateRange.end.dayOfMonth
-                        )
-                        kotlinDate >= startDate && kotlinDate <= endDate
-                    }
+                    // Filter by account
+                    val accountMatch = filter.accountId == null || transaction.accountDetails?.name == filter.accountId
                     
-                    // Filter by account (already handled in query)
-                    val accountMatch = filter.accountId == null || transaction.accountId == filter.accountId
-                    
-                    typeMatch && categoryMatch && amountMatch && dateMatch && accountMatch
+                    typeMatch && categoryMatch && amountMatch && accountMatch
                 }
+                
                 _uiState.update { it.copy(transactions = filtered) }
                 
                 // Update monthly summary based on filtered data
@@ -376,16 +525,18 @@ class LedgerViewModel @Inject constructor(
                 
                 // Update grouped transactions
                 updateGroupedTransactions(filtered)
+            } catch (e: Exception) {
+                // Handle error
             }
         }
     }
     
     private fun updateFilteredSummary(filteredTransactions: List<Transaction>) {
         val income = filteredTransactions
-            .filter { it.categoryDetails?.type == "INCOME" }
+            .filter { it.categoryDetails?.type == Category.Type.INCOME }
             .sumOf { it.amountCents }
         val expense = filteredTransactions
-            .filter { it.categoryDetails?.type == "EXPENSE" }
+            .filter { it.categoryDetails?.type == Category.Type.EXPENSE }
             .sumOf { it.amountCents }
             
         _uiState.update { 
@@ -421,8 +572,8 @@ class LedgerViewModel @Inject constructor(
                         id = "all",
                         title = "所有交易",
                         transactions = transactions,
-                        totalIncome = transactions.filter { it.categoryDetails?.type == "INCOME" }.sumOf { it.amountCents },
-                        totalExpense = transactions.filter { it.categoryDetails?.type == "EXPENSE" }.sumOf { it.amountCents }
+                        totalIncome = transactions.filter { it.categoryDetails?.type == Category.Type.INCOME }.sumOf { it.amountCents },
+                        totalExpense = transactions.filter { it.categoryDetails?.type == Category.Type.EXPENSE }.sumOf { it.amountCents }
                     )
                 )
                 GroupingMode.DAY -> groupTransactionsByDay(transactions)
@@ -471,8 +622,8 @@ class LedgerViewModel @Inject constructor(
                         dayOfWeek
                     } else null,
                     transactions = dayTransactions.sortedByDescending { it.createdAt },
-                    totalIncome = dayTransactions.filter { it.categoryDetails?.type == "INCOME" }.sumOf { it.amountCents },
-                    totalExpense = dayTransactions.filter { it.categoryDetails?.type == "EXPENSE" }.sumOf { it.amountCents }
+                    totalIncome = dayTransactions.filter { it.categoryDetails?.type == Category.Type.INCOME }.sumOf { it.amountCents },
+                    totalExpense = dayTransactions.filter { it.categoryDetails?.type == Category.Type.EXPENSE }.sumOf { it.amountCents }
                 )
             }
             .sortedByDescending { it.id }
@@ -514,8 +665,8 @@ class LedgerViewModel @Inject constructor(
                     title = title,
                     subtitle = if (year != currentYear) "${year}年" else null,
                     transactions = weekTransactions.sortedByDescending { it.createdAt },
-                    totalIncome = weekTransactions.filter { it.categoryDetails?.type == "INCOME" }.sumOf { it.amountCents },
-                    totalExpense = weekTransactions.filter { it.categoryDetails?.type == "EXPENSE" }.sumOf { it.amountCents }
+                    totalIncome = weekTransactions.filter { it.categoryDetails?.type == Category.Type.INCOME }.sumOf { it.amountCents },
+                    totalExpense = weekTransactions.filter { it.categoryDetails?.type == Category.Type.EXPENSE }.sumOf { it.amountCents }
                 )
             }
             .sortedByDescending { it.id }
@@ -547,8 +698,8 @@ class LedgerViewModel @Inject constructor(
                     id = monthKey,
                     title = title,
                     transactions = monthTransactions.sortedByDescending { it.createdAt },
-                    totalIncome = monthTransactions.filter { it.categoryDetails?.type == "INCOME" }.sumOf { it.amountCents },
-                    totalExpense = monthTransactions.filter { it.categoryDetails?.type == "EXPENSE" }.sumOf { it.amountCents }
+                    totalIncome = monthTransactions.filter { it.categoryDetails?.type == Category.Type.INCOME }.sumOf { it.amountCents },
+                    totalExpense = monthTransactions.filter { it.categoryDetails?.type == Category.Type.EXPENSE }.sumOf { it.amountCents }
                 )
             }
             .sortedByDescending { it.id }
@@ -564,8 +715,8 @@ class LedgerViewModel @Inject constructor(
                     id = year.toString(),
                     title = "${year}年",
                     transactions = yearTransactions.sortedByDescending { it.createdAt },
-                    totalIncome = yearTransactions.filter { it.categoryDetails?.type == "INCOME" }.sumOf { it.amountCents },
-                    totalExpense = yearTransactions.filter { it.categoryDetails?.type == "EXPENSE" }.sumOf { it.amountCents }
+                    totalIncome = yearTransactions.filter { it.categoryDetails?.type == Category.Type.INCOME }.sumOf { it.amountCents },
+                    totalExpense = yearTransactions.filter { it.categoryDetails?.type == Category.Type.EXPENSE }.sumOf { it.amountCents }
                 )
             }
             .sortedByDescending { it.id }

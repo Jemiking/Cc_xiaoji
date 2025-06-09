@@ -5,7 +5,13 @@ import android.content.Intent
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.app.data.repository.*
+import com.ccxiaoji.app.data.repository.AccountRepository
+import com.ccxiaoji.feature.ledger.api.LedgerApi
+import com.ccxiaoji.app.data.repository.BudgetRepository
+import com.ccxiaoji.app.data.repository.SavingsGoalRepository
+import com.ccxiaoji.app.data.repository.CountdownRepository
+import com.ccxiaoji.feature.todo.api.TodoApi
+import com.ccxiaoji.feature.habit.api.HabitApi
 import com.ccxiaoji.app.presentation.ui.profile.DateRange
 import com.ccxiaoji.app.presentation.ui.profile.ExportFormat
 import com.google.gson.Gson
@@ -25,11 +31,10 @@ import javax.inject.Inject
 @HiltViewModel
 class DataExportViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val transactionRepository: TransactionRepository,
-    private val taskRepository: TaskRepository,
-    private val habitRepository: HabitRepository,
+    private val todoApi: TodoApi,
+    private val habitApi: HabitApi,
     private val accountRepository: AccountRepository,
-    private val categoryRepository: CategoryRepository,
+    private val ledgerApi: LedgerApi,
     private val budgetRepository: BudgetRepository,
     private val savingsGoalRepository: SavingsGoalRepository,
     private val countdownRepository: CountdownRepository,
@@ -72,12 +77,32 @@ class DataExportViewModel @Inject constructor(
             
             // 导出记账数据
             if (_uiState.value.exportLedger) {
-                val transactions = transactionRepository.getTransactionsByDateRange(
-                    dateRange.first,
-                    dateRange.second
-                ).first()
+                // 获取日期范围内的所有月份
+                val startDate = dateRange.first
+                val endDate = dateRange.second
+                val transactions = mutableListOf<Any>()
+                
+                // 逐月获取交易记录
+                var currentDate = startDate
+                while (currentDate <= endDate) {
+                    val monthTransactions = ledgerApi.getTransactionsByMonth(
+                        currentDate.year,
+                        currentDate.monthNumber
+                    )
+                    transactions.addAll(monthTransactions.filter { transaction ->
+                        transaction.date >= startDate && transaction.date <= endDate
+                    })
+                    
+                    // 移到下个月
+                    currentDate = LocalDate(
+                        if (currentDate.monthNumber == 12) currentDate.year + 1 else currentDate.year,
+                        if (currentDate.monthNumber == 12) 1 else currentDate.monthNumber + 1,
+                        1
+                    )
+                }
+                
                 val accounts = accountRepository.getAccounts().first()
-                val categories = categoryRepository.getCategories().first()
+                val categories = ledgerApi.getAllCategories()
                 
                 exportData["ledger"] = mapOf(
                     "transactions" to transactions,
@@ -88,13 +113,13 @@ class DataExportViewModel @Inject constructor(
             
             // 导出待办数据
             if (_uiState.value.exportTodo) {
-                val tasks = taskRepository.getTasks().first()
+                val tasks = todoApi.getAllTasks()
                 exportData["tasks"] = tasks
             }
             
             // 导出习惯数据
             if (_uiState.value.exportHabit) {
-                val habits = habitRepository.getHabits().first()
+                val habits = habitApi.getAllHabits()
                 exportData["habits"] = habits
             }
             

@@ -7,19 +7,21 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ccxiaoji.app.presentation.MainActivity
 import com.ccxiaoji.app.presentation.ui.home.HomeScreen
-import com.ccxiaoji.app.presentation.ui.ledger.LedgerScreen
-import com.ccxiaoji.app.presentation.ui.todo.TodoScreen
-import com.ccxiaoji.app.presentation.ui.habit.HabitScreen
+import com.ccxiaoji.feature.todo.presentation.navigation.todoGraph
+import com.ccxiaoji.feature.habit.presentation.navigation.habitRoute
+import com.ccxiaoji.feature.habit.presentation.navigation.habitScreen
 import com.ccxiaoji.app.presentation.ui.profile.ProfileScreen
 import com.ccxiaoji.app.presentation.ui.ledger.TransactionDetailScreen
 import com.ccxiaoji.app.presentation.ui.account.AccountScreen
-import com.ccxiaoji.app.presentation.ui.category.CategoryManagementScreen
+import com.ccxiaoji.feature.ledger.presentation.ui.category.CategoryManagementScreen
 import com.ccxiaoji.app.presentation.ui.budget.BudgetScreen
 import com.ccxiaoji.app.presentation.ui.statistics.StatisticsScreen
 import com.ccxiaoji.app.presentation.ui.recurring.RecurringTransactionScreen
@@ -54,24 +56,30 @@ fun NavGraph(
         }
         
         composable(Screen.Ledger.route) {
-            LedgerScreen(navController = navController)
+            val ledgerNavigator = (LocalContext.current as? MainActivity)?.ledgerNavigator
+            if (ledgerNavigator != null) {
+                com.ccxiaoji.feature.ledger.presentation.ui.LedgerScreen(
+                    navigator = ledgerNavigator
+                )
+            }
         }
         
         composable(LedgerWithAccountRoute.route) { backStackEntry ->
             val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
-            LedgerScreen(
-                navController = navController,
-                accountId = accountId
-            )
+            val ledgerNavigator = (LocalContext.current as? MainActivity)?.ledgerNavigator
+            if (ledgerNavigator != null) {
+                // TODO: Handle account-specific ledger view
+                com.ccxiaoji.feature.ledger.presentation.ui.LedgerScreen(
+                    navigator = ledgerNavigator
+                )
+            }
         }
         
-        composable(Screen.Todo.route) {
-            TodoScreen()
-        }
+        // Todo模块导航图
+        todoGraph(navController)
         
-        composable(Screen.Habit.route) {
-            HabitScreen()
-        }
+        // Habit模块导航图
+        habitScreen()
         
         composable(Screen.Profile.route) {
             ProfileScreen(navController = navController)
@@ -117,7 +125,10 @@ fun NavGraph(
         }
         
         composable(CategoryManagementRoute.route) {
-            CategoryManagementScreen(navController = navController)
+            val ledgerNavigator = (LocalContext.current as? MainActivity)?.ledgerNavigator
+            if (ledgerNavigator != null) {
+                CategoryManagementScreen(ledgerNavigator = ledgerNavigator)
+            }
         }
         
         composable(BudgetRoute.route) {

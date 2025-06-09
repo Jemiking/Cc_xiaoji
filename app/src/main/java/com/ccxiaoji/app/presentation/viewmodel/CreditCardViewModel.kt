@@ -2,8 +2,8 @@ package com.ccxiaoji.app.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.app.data.local.entity.CreditCardPaymentEntity
-import com.ccxiaoji.app.data.local.entity.PaymentType
+import com.ccxiaoji.core.database.entity.CreditCardPaymentEntity
+import com.ccxiaoji.core.database.entity.PaymentType
 import com.ccxiaoji.app.data.repository.AccountRepository
 import com.ccxiaoji.app.data.repository.PaymentStats
 import com.ccxiaoji.app.domain.model.Account

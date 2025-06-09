@@ -2,8 +2,6 @@ package com.ccxiaoji.app.notification
 
 import android.content.Context
 import androidx.work.*
-import com.ccxiaoji.app.data.repository.TaskRepository
-import com.ccxiaoji.app.data.repository.HabitRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock

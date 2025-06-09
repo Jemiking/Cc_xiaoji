@@ -3,7 +3,7 @@ package com.ccxiaoji.app.data.sync
 import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
-import com.ccxiaoji.app.data.local.dao.AccountDao
+import com.ccxiaoji.core.database.dao.AccountDao
 import com.ccxiaoji.app.data.repository.UserRepository
 import com.ccxiaoji.app.notification.NotificationManager
 import dagger.assisted.Assisted

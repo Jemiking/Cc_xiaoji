@@ -24,6 +24,16 @@ dependencyResolutionManagement {
 rootProject.name = "CcXiaoJi"
 include(":app")
 
+// Core modules
+include(":core:common")
+include(":core:ui")
+include(":core:database")
+
+// Feature modules
+include(":feature:todo")
+include(":feature:habit")
+include(":feature:ledger")
+
 // Check Java version
 val javaVersion = JavaVersion.current()
 println("ℹ️ Current Java version: $javaVersion")

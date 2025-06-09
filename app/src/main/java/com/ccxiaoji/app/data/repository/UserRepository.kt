@@ -5,8 +5,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.ccxiaoji.app.data.local.dao.UserDao
-import com.ccxiaoji.app.data.local.entity.UserEntity
+import com.ccxiaoji.core.database.dao.UserDao
+import com.ccxiaoji.core.database.entity.UserEntity
 import com.ccxiaoji.app.data.remote.api.AuthApi
 import com.ccxiaoji.app.data.remote.dto.LoginRequest
 import com.ccxiaoji.app.data.remote.dto.LoginResponse

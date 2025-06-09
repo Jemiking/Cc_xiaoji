@@ -2,7 +2,7 @@ package com.ccxiaoji.app.data.backup
 
 import android.content.Context
 import android.os.Environment
-import com.ccxiaoji.app.data.local.CcDatabase
+import com.ccxiaoji.core.database.CcDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

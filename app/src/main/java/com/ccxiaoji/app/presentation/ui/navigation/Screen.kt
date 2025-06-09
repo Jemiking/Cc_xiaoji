@@ -28,7 +28,7 @@ sealed class Screen(
     )
     
     object Todo : Screen(
-        route = "todo",
+        route = "todo_list", // 与TodoRoute.TODO_LIST保持一致
         titleRes = R.string.nav_todo,
         selectedIcon = Icons.Filled.CheckCircle,
         unselectedIcon = Icons.Outlined.CheckCircle

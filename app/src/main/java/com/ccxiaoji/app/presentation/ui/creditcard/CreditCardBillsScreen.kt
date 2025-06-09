@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.ccxiaoji.app.data.local.entity.CreditCardBillEntity
+import com.ccxiaoji.core.database.entity.CreditCardBillEntity
 import com.ccxiaoji.app.presentation.viewmodel.CreditCardBillViewModel
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone

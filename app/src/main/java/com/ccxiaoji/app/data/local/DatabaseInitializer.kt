@@ -1,13 +1,13 @@
 package com.ccxiaoji.app.data.local
 
 import android.util.Log
-import com.ccxiaoji.app.data.local.dao.AccountDao
-import com.ccxiaoji.app.data.local.dao.CategoryDao
-import com.ccxiaoji.app.data.local.dao.UserDao
-import com.ccxiaoji.app.data.local.entity.AccountEntity
-import com.ccxiaoji.app.data.local.entity.CategoryEntity
-import com.ccxiaoji.app.data.local.entity.UserEntity
-import com.ccxiaoji.app.data.sync.SyncStatus
+import com.ccxiaoji.core.database.dao.AccountDao
+import com.ccxiaoji.core.database.dao.CategoryDao
+import com.ccxiaoji.core.database.dao.UserDao
+import com.ccxiaoji.core.database.entity.AccountEntity
+import com.ccxiaoji.core.database.entity.CategoryEntity
+import com.ccxiaoji.core.database.entity.UserEntity
+import com.ccxiaoji.core.database.model.SyncStatus
 import java.util.UUID
 import javax.inject.Inject
 

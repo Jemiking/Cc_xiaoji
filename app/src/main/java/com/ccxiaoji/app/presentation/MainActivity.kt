@@ -12,6 +12,9 @@ import androidx.navigation.compose.rememberNavController
 import com.ccxiaoji.app.presentation.theme.CcXiaoJiTheme
 import com.ccxiaoji.app.presentation.ui.components.BottomNavBar
 import com.ccxiaoji.app.presentation.ui.navigation.NavGraph
+import com.ccxiaoji.app.navigation.TodoNavigatorImpl
+import com.ccxiaoji.app.navigation.HabitNavigatorImpl
+import com.ccxiaoji.app.navigation.LedgerNavigatorImpl
 import com.ccxiaoji.app.notification.NotificationScheduler
 import com.ccxiaoji.app.data.sync.SyncManager
 import com.ccxiaoji.app.data.sync.CreditCardReminderManager
@@ -34,6 +37,15 @@ class MainActivity : ComponentActivity() {
     
     @Inject
     lateinit var creditCardReminderManager: CreditCardReminderManager
+    
+    @Inject
+    lateinit var todoNavigator: TodoNavigatorImpl
+    
+    @Inject
+    lateinit var habitNavigator: HabitNavigatorImpl
+    
+    @Inject
+    lateinit var ledgerNavigator: LedgerNavigatorImpl
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,6 +74,11 @@ class MainActivity : ComponentActivity() {
             setContent {
             CcXiaoJiTheme {
                 val navController = rememberNavController()
+                
+                // 设置Navigator的NavController
+                todoNavigator.setNavController(navController)
+                habitNavigator.setNavController(navController)
+                ledgerNavigator.setNavController(navController)
                 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),

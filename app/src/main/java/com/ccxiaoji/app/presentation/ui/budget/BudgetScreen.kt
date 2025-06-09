@@ -20,8 +20,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.ccxiaoji.app.data.local.dao.BudgetWithSpent
-import com.ccxiaoji.app.data.local.entity.CategoryEntity
+import com.ccxiaoji.core.database.dao.BudgetWithSpent
+import com.ccxiaoji.core.database.entity.CategoryEntity
 import com.ccxiaoji.app.presentation.viewmodel.BudgetViewModel
 import java.text.NumberFormat
 import java.util.*
@@ -266,10 +266,11 @@ private fun TotalBudgetCard(
                 )
             }
             
-            if (budget.note?.isNotBlank() == true) {
+            val note = budget.note
+            if (note?.isNotBlank() == true) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = budget.note,
+                    text = note,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

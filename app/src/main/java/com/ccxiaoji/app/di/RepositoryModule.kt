@@ -2,7 +2,7 @@ package com.ccxiaoji.app.di
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import com.ccxiaoji.app.data.local.dao.*
+import com.ccxiaoji.core.database.dao.*
 import com.ccxiaoji.app.data.repository.*
 import com.ccxiaoji.app.data.remote.api.AuthApi
 import com.google.gson.Gson
@@ -39,25 +39,9 @@ object RepositoryModule {
         return TransactionRepository(transactionDao, changeLogDao, userRepository, accountDao, categoryDao, gson)
     }
 
-    @Provides
-    @Singleton
-    fun provideTaskRepository(
-        taskDao: TaskDao,
-        changeLogDao: ChangeLogDao,
-        gson: Gson
-    ): TaskRepository {
-        return TaskRepository(taskDao, changeLogDao, gson)
-    }
-
-    @Provides
-    @Singleton
-    fun provideHabitRepository(
-        habitDao: HabitDao,
-        changeLogDao: ChangeLogDao,
-        gson: Gson
-    ): HabitRepository {
-        return HabitRepository(habitDao, changeLogDao, gson)
-    }
+    // TaskRepository已迁移到feature:todo模块中提供
+    
+    // HabitRepository已迁移到feature:habit模块中提供
 
     @Provides
     @Singleton
@@ -90,13 +74,8 @@ object RepositoryModule {
         return BudgetRepository(budgetDao)
     }
 
-    @Provides
-    @Singleton
-    fun provideCategoryRepository(
-        categoryDao: CategoryDao
-    ): CategoryRepository {
-        return CategoryRepository(categoryDao)
-    }
+    // CategoryRepository已迁移到feature-ledger模块
+    // 使用LedgerApi代替
 
     @Provides
     @Singleton

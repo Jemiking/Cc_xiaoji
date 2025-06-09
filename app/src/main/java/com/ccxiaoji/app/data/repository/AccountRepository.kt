@@ -1,16 +1,16 @@
 package com.ccxiaoji.app.data.repository
 
-import com.ccxiaoji.app.data.local.dao.AccountDao
-import com.ccxiaoji.app.data.local.dao.ChangeLogDao
-import com.ccxiaoji.app.data.local.dao.CreditCardPaymentDao
-import com.ccxiaoji.app.data.local.dao.CreditCardBillDao
-import com.ccxiaoji.app.data.local.dao.TransactionDao
-import com.ccxiaoji.app.data.local.entity.AccountEntity
-import com.ccxiaoji.app.data.local.entity.ChangeLogEntity
-import com.ccxiaoji.app.data.local.entity.CreditCardPaymentEntity
-import com.ccxiaoji.app.data.local.entity.CreditCardBillEntity
-import com.ccxiaoji.app.data.local.entity.PaymentType
-import com.ccxiaoji.app.data.sync.SyncStatus
+import com.ccxiaoji.core.database.dao.AccountDao
+import com.ccxiaoji.core.database.dao.ChangeLogDao
+import com.ccxiaoji.core.database.dao.CreditCardPaymentDao
+import com.ccxiaoji.core.database.dao.CreditCardBillDao
+import com.ccxiaoji.core.database.dao.TransactionDao
+import com.ccxiaoji.core.database.entity.AccountEntity
+import com.ccxiaoji.core.database.entity.ChangeLogEntity
+import com.ccxiaoji.core.database.entity.CreditCardPaymentEntity
+import com.ccxiaoji.core.database.entity.CreditCardBillEntity
+import com.ccxiaoji.core.database.entity.PaymentType
+import com.ccxiaoji.core.database.model.SyncStatus
 import com.ccxiaoji.app.domain.model.Account
 import com.ccxiaoji.app.domain.model.AccountType
 import com.ccxiaoji.app.domain.model.Transaction
@@ -339,9 +339,13 @@ class AccountRepository @Inject constructor(
         val account = accountDao.getAccountById(accountId) ?: return
         if (account.type != "CREDIT_CARD" || account.billingDay == null) return
         
+        // 创建本地变量避免 smart cast 问题，使用非空断言因为已经检查过非空
+        val billingDay = account.billingDay!!
+        val paymentDueDay = account.paymentDueDay
+        
         val currentDate = kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
         val (cycleStart, cycleEnd) = CreditCardDateUtils.calculateCurrentBillingCycle(
-            billingDay = account.billingDay,
+            billingDay = billingDay,
             currentDate = currentDate
         )
         
@@ -380,10 +384,12 @@ class AccountRepository @Inject constructor(
         val minimumPaymentCents = (totalAmountCents * 0.1).toLong() // 默认10%最低还款
         
         // 计算还款日
-        val paymentDueDate = if (account.paymentDueDay != null) {
+        val paymentDueDate = if (paymentDueDay != null) {
+            // 在条件块内，paymentDueDay 已经被检查为非空
+            val nonNullPaymentDueDay = paymentDueDay
             CreditCardDateUtils.calculateNextPaymentDate(
-                paymentDueDay = account.paymentDueDay,
-                billingDay = account.billingDay,
+                paymentDueDay = nonNullPaymentDueDay,
+                billingDay = billingDay,
                 currentDate = cycleEnd
             ).toEpochDays().toLong() * 24 * 60 * 60 * 1000
         } else {

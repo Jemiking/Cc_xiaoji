@@ -21,7 +21,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ccxiaoji.app.domain.model.Account
 import com.ccxiaoji.app.domain.model.AccountType
-import com.ccxiaoji.app.data.local.entity.PaymentType
+import com.ccxiaoji.core.database.entity.PaymentType
 import com.ccxiaoji.app.presentation.viewmodel.CreditCardViewModel
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone

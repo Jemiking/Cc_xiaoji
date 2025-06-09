@@ -3,12 +3,12 @@ package com.ccxiaoji.app.data.sync
 import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
-import com.ccxiaoji.app.data.local.CcDatabase
-import com.ccxiaoji.app.data.sync.SyncStatus
+import com.ccxiaoji.core.database.CcDatabase
+import com.ccxiaoji.core.database.model.SyncStatus
 import com.ccxiaoji.app.data.remote.api.SyncApi
 import com.ccxiaoji.app.data.remote.api.ConflictItem
 import com.ccxiaoji.app.data.repository.UserRepository
-import com.ccxiaoji.app.data.local.entity.*
+import com.ccxiaoji.core.database.entity.*
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import dagger.assisted.Assisted

@@ -5,12 +5,12 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.WorkManager
-import com.ccxiaoji.app.data.local.dao.AccountDao
-import com.ccxiaoji.app.data.local.dao.UserDao
-import com.ccxiaoji.app.data.local.entity.AccountEntity
-import com.ccxiaoji.app.data.sync.SyncStatus
-import com.ccxiaoji.app.data.local.entity.UserEntity
-import com.ccxiaoji.app.data.repository.CategoryRepository
+import com.ccxiaoji.core.database.dao.AccountDao
+import com.ccxiaoji.core.database.dao.UserDao
+import com.ccxiaoji.core.database.entity.AccountEntity
+import com.ccxiaoji.core.database.model.SyncStatus
+import com.ccxiaoji.core.database.entity.UserEntity
+import com.ccxiaoji.feature.ledger.data.CategoryInitializer
 import com.ccxiaoji.app.data.sync.RecurringTransactionWorker
 import com.ccxiaoji.app.data.sync.CreditCardReminderManager
 import com.ccxiaoji.app.data.sync.CreditCardBillWorker
@@ -38,7 +38,7 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
     lateinit var accountDao: AccountDao
     
     @Inject
-    lateinit var categoryRepository: CategoryRepository
+    lateinit var categoryInitializer: CategoryInitializer
     
     @Inject
     lateinit var creditCardReminderManager: CreditCardReminderManager
@@ -97,7 +97,7 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
                     
                     // 初始化默认分类
                     Log.d(TAG, "Initializing default categories")
-                    categoryRepository.initializeDefaultCategories()
+                    categoryInitializer.initializeDefaultCategories()
                     Log.d(TAG, "Default categories initialized")
                 } catch (e: Exception) {
                     Log.e(TAG, "Error during database initialization", e)

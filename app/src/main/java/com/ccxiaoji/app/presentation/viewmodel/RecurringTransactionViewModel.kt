@@ -2,8 +2,8 @@ package com.ccxiaoji.app.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.app.data.local.entity.RecurringFrequency
-import com.ccxiaoji.app.data.local.entity.RecurringTransactionEntity
+import com.ccxiaoji.core.database.model.RecurringFrequency
+import com.ccxiaoji.core.database.entity.RecurringTransactionEntity
 import com.ccxiaoji.app.data.repository.RecurringTransactionRepository
 import com.ccxiaoji.app.data.repository.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel

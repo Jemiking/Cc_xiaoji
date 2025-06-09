@@ -1,13 +1,13 @@
 package com.ccxiaoji.app.data.repository
 
-import com.ccxiaoji.app.data.local.dao.AccountDao
-import com.ccxiaoji.app.data.local.dao.CategoryDao
-import com.ccxiaoji.app.data.local.dao.CategoryStatistic
-import com.ccxiaoji.app.data.local.dao.ChangeLogDao
-import com.ccxiaoji.app.data.local.dao.TransactionDao
-import com.ccxiaoji.app.data.local.entity.ChangeLogEntity
-import com.ccxiaoji.app.data.sync.SyncStatus
-import com.ccxiaoji.app.data.local.entity.TransactionEntity
+import com.ccxiaoji.core.database.dao.AccountDao
+import com.ccxiaoji.core.database.dao.CategoryDao
+import com.ccxiaoji.core.database.dao.CategoryStatistic
+import com.ccxiaoji.core.database.dao.ChangeLogDao
+import com.ccxiaoji.core.database.dao.TransactionDao
+import com.ccxiaoji.core.database.entity.ChangeLogEntity
+import com.ccxiaoji.core.database.model.SyncStatus
+import com.ccxiaoji.core.database.entity.TransactionEntity
 import com.ccxiaoji.app.domain.model.CategoryDetails
 import com.ccxiaoji.app.domain.model.Transaction
 import com.google.gson.Gson

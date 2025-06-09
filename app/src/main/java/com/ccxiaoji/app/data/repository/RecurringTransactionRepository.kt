@@ -1,11 +1,11 @@
 package com.ccxiaoji.app.data.repository
 
-import com.ccxiaoji.app.data.local.dao.RecurringTransactionDao
-import com.ccxiaoji.app.data.local.dao.TransactionDao
-import com.ccxiaoji.app.data.local.entity.RecurringFrequency
-import com.ccxiaoji.app.data.local.entity.RecurringTransactionEntity
-import com.ccxiaoji.app.data.sync.SyncStatus
-import com.ccxiaoji.app.data.local.entity.TransactionEntity
+import com.ccxiaoji.core.database.dao.RecurringTransactionDao
+import com.ccxiaoji.core.database.dao.TransactionDao
+import com.ccxiaoji.core.database.model.RecurringFrequency
+import com.ccxiaoji.core.database.entity.RecurringTransactionEntity
+import com.ccxiaoji.core.database.model.SyncStatus
+import com.ccxiaoji.core.database.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 import java.util.*
 import javax.inject.Inject
@@ -159,7 +159,8 @@ class RecurringTransactionRepository @Inject constructor(
         
         for (recurring in dueTransactions) {
             // 检查是否已过结束日期
-            if (recurring.endDate != null && now > recurring.endDate) {
+            val endDate = recurring.endDate
+            if (endDate != null && now > endDate) {
                 // 禁用已过期的定期交易
                 recurringTransactionDao.updateEnabledStatus(recurring.id, false, now)
                 continue

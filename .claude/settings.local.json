@@ -34,7 +34,11 @@
       "Bash(./compile_and_test.bat)",
       "Bash(cmd.exe /c compile_and_test.bat)",
       "Bash(bash:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(tree:*)",
+      "Bash(cp:*)",
+      "Bash(do)",
+      "Bash(grep -r \"com.ccxiaoji.app.data.sync.SyncStatus\" /mnt/d/kotlin/Cc_xiaoji/app/src/main/java/com/ccxiaoji/app/)"
     ],
     "deny": []
   },

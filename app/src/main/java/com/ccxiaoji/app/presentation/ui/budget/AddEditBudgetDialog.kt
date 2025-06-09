@@ -18,8 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.ccxiaoji.app.data.local.dao.BudgetWithSpent
-import com.ccxiaoji.app.data.local.entity.CategoryEntity
+import com.ccxiaoji.core.database.dao.BudgetWithSpent
+import com.ccxiaoji.core.database.entity.CategoryEntity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

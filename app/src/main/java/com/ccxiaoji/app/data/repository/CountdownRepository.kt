@@ -1,10 +1,10 @@
 package com.ccxiaoji.app.data.repository
 
-import com.ccxiaoji.app.data.local.dao.CountdownDao
-import com.ccxiaoji.app.data.local.dao.ChangeLogDao
-import com.ccxiaoji.app.data.local.entity.CountdownEntity
-import com.ccxiaoji.app.data.sync.SyncStatus
-import com.ccxiaoji.app.data.local.entity.ChangeLogEntity
+import com.ccxiaoji.core.database.dao.CountdownDao
+import com.ccxiaoji.core.database.dao.ChangeLogDao
+import com.ccxiaoji.core.database.entity.CountdownEntity
+import com.ccxiaoji.core.database.model.SyncStatus
+import com.ccxiaoji.core.database.entity.ChangeLogEntity
 import com.ccxiaoji.app.domain.model.Countdown
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow

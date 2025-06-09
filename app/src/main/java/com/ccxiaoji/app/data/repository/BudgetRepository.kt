@@ -1,9 +1,9 @@
 package com.ccxiaoji.app.data.repository
 
-import com.ccxiaoji.app.data.local.dao.BudgetDao
-import com.ccxiaoji.app.data.local.dao.BudgetWithSpent
-import com.ccxiaoji.app.data.local.entity.BudgetEntity
-import com.ccxiaoji.app.data.sync.SyncStatus
+import com.ccxiaoji.core.database.dao.BudgetDao
+import com.ccxiaoji.core.database.dao.BudgetWithSpent
+import com.ccxiaoji.core.database.entity.BudgetEntity
+import com.ccxiaoji.core.database.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 import java.util.*
 import javax.inject.Inject

@@ -2,8 +2,8 @@ package com.ccxiaoji.app.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.app.data.local.dao.AccountDao
-import com.ccxiaoji.app.data.local.entity.CreditCardBillEntity
+import com.ccxiaoji.core.database.dao.AccountDao
+import com.ccxiaoji.core.database.entity.CreditCardBillEntity
 import com.ccxiaoji.app.data.repository.AccountRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow

@@ -4,11 +4,11 @@ import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
-import com.ccxiaoji.app.data.local.CcDatabase
-import com.ccxiaoji.app.data.local.dao.*
-import com.ccxiaoji.app.data.local.entity.CategoryEntity
-import com.ccxiaoji.app.data.local.entity.UserEntity
-import com.ccxiaoji.app.data.local.migrations.DatabaseMigrations
+import com.ccxiaoji.core.database.CcDatabase
+import com.ccxiaoji.core.database.dao.*
+import com.ccxiaoji.core.database.entity.CategoryEntity
+import com.ccxiaoji.core.database.entity.UserEntity
+import com.ccxiaoji.core.database.migrations.DatabaseMigrations
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

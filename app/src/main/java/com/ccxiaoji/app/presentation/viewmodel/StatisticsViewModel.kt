@@ -2,7 +2,7 @@ package com.ccxiaoji.app.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.app.data.local.dao.CategoryStatistic
+import com.ccxiaoji.core.database.dao.CategoryStatistic
 import com.ccxiaoji.app.data.repository.TransactionRepository
 import com.ccxiaoji.app.domain.model.Transaction
 import dagger.hilt.android.lifecycle.HiltViewModel

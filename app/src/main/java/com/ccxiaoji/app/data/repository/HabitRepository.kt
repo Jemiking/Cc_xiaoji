@@ -1,11 +1,11 @@
 package com.ccxiaoji.app.data.repository
 
-import com.ccxiaoji.app.data.local.dao.HabitDao
-import com.ccxiaoji.app.data.local.dao.ChangeLogDao
-import com.ccxiaoji.app.data.local.entity.HabitEntity
-import com.ccxiaoji.app.data.local.entity.HabitRecordEntity
-import com.ccxiaoji.app.data.sync.SyncStatus
-import com.ccxiaoji.app.data.local.entity.ChangeLogEntity
+import com.ccxiaoji.core.database.dao.HabitDao
+import com.ccxiaoji.core.database.dao.ChangeLogDao
+import com.ccxiaoji.core.database.entity.HabitEntity
+import com.ccxiaoji.core.database.entity.HabitRecordEntity
+import com.ccxiaoji.core.database.model.SyncStatus
+import com.ccxiaoji.core.database.entity.ChangeLogEntity
 import com.ccxiaoji.app.domain.model.Habit
 import com.ccxiaoji.app.domain.model.HabitRecord
 import com.google.gson.Gson

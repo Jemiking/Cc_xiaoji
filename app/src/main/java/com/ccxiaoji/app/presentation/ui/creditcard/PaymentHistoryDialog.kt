@@ -16,8 +16,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.ccxiaoji.app.data.local.entity.CreditCardPaymentEntity
-import com.ccxiaoji.app.data.local.entity.PaymentType
+import com.ccxiaoji.core.database.entity.CreditCardPaymentEntity
+import com.ccxiaoji.core.database.entity.PaymentType
 import com.ccxiaoji.app.data.repository.PaymentStats
 import com.ccxiaoji.app.domain.model.Account
 import kotlinx.datetime.Instant

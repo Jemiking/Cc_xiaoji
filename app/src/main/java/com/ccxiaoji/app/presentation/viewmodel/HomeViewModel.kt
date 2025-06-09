@@ -2,18 +2,16 @@ package com.ccxiaoji.app.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.app.data.repository.TransactionRepository
-import com.ccxiaoji.app.data.repository.TaskRepository
-import com.ccxiaoji.app.data.repository.HabitRepository
-import com.ccxiaoji.app.data.repository.HabitWithStreak
+import com.ccxiaoji.feature.ledger.api.LedgerApi
+import com.ccxiaoji.feature.ledger.api.TransactionItem
+import com.ccxiaoji.feature.todo.api.TodoApi
+import com.ccxiaoji.feature.habit.api.HabitApi
 import com.ccxiaoji.app.data.repository.CountdownRepository
+import kotlinx.coroutines.flow.flow
 import com.ccxiaoji.app.data.repository.BudgetRepository
 import com.ccxiaoji.app.data.repository.SavingsGoalRepository
 import com.ccxiaoji.app.data.repository.UserRepository
-import com.ccxiaoji.app.data.repository.AccountRepository
-import com.ccxiaoji.app.domain.model.Transaction
-import com.ccxiaoji.app.domain.model.Task
-import com.ccxiaoji.app.domain.model.Habit
+import com.ccxiaoji.feature.todo.api.TodoTask
 import com.ccxiaoji.app.domain.model.Countdown
 import com.ccxiaoji.app.domain.model.SavingsGoal
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,14 +26,13 @@ import android.util.Log
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository,
-    private val taskRepository: TaskRepository,
-    private val habitRepository: HabitRepository,
+    private val ledgerApi: LedgerApi,
+    private val todoApi: TodoApi,
+    private val habitApi: HabitApi,
     private val countdownRepository: CountdownRepository,
     private val budgetRepository: BudgetRepository,
     private val savingsGoalRepository: SavingsGoalRepository,
-    private val userRepository: UserRepository,
-    private val accountRepository: AccountRepository
+    private val userRepository: UserRepository
 ) : ViewModel() {
     
     companion object {
@@ -61,63 +58,47 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             // Load monthly expense and today's income/expense
             val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-            val monthlyTotal = transactionRepository.getMonthlyTotal(now.year, now.monthNumber)
-            val todayStart = now.date.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-            val todayEnd = now.date.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+            val monthlyExpense = ledgerApi.getMonthlyExpense(now.year, now.monthNumber)
+            val todayStatistics = ledgerApi.getTodayStatistics()
             
-            transactionRepository.getTransactionsByDateRange(
-                now.date,
-                now.date
-            ).collect { todayTransactions ->
-                val todayIncome = todayTransactions
-                    .filter { it.categoryDetails?.type == "INCOME" }
-                    .sumOf { it.amountCents }
-                val todayExpense = todayTransactions
-                    .filter { it.categoryDetails?.type == "EXPENSE" }
-                    .sumOf { it.amountCents }
-                
-                _uiState.value = _uiState.value.copy(
-                    monthlyExpense = monthlyTotal / 100.0,
-                    todayIncome = todayIncome / 100.0,
-                    todayExpense = todayExpense / 100.0
-                )
-            }
+            _uiState.value = _uiState.value.copy(
+                monthlyExpense = monthlyExpense,
+                todayIncome = todayStatistics.income,
+                todayExpense = todayStatistics.expense
+            )
         }
         
         viewModelScope.launch {
             // Load today's tasks count and completed count
-            taskRepository.getTodayTasks().collect { tasks ->
-                val totalCount = tasks.size
-                val completedCount = tasks.count { it.completed }
-                _uiState.value = _uiState.value.copy(
-                    todayTasks = totalCount,
-                    todayCompletedTasks = completedCount,
-                    todayTasksList = tasks
-                )
-            }
+            val todayTasks = todoApi.getTodayTasks()
+            val statistics = todoApi.getTaskStatistics()
+            _uiState.value = _uiState.value.copy(
+                todayTasks = todayTasks.size,
+                todayCompletedTasks = todayTasks.count { it.isCompleted },
+                todayTasksList = todayTasks
+            )
         }
         
         viewModelScope.launch {
             // Load habits data
             combine(
-                habitRepository.getHabitsWithStreaks(),
-                habitRepository.getTodayCheckedHabitsCount()
-            ) { habitsWithStreaks, todayCheckedCount ->
-                Triple(habitsWithStreaks, todayCheckedCount, habitsWithStreaks.maxOfOrNull { it.currentStreak } ?: 0)
-            }.collect { (habitsWithStreaks, todayCheckedCount, longestStreak) ->
+                flow { emit(habitApi.getTodayHabitStatistics()) },
+                habitApi.getTodayCheckedCount()
+            ) { statistics, todayCheckedCount ->
+                Pair(statistics, todayCheckedCount)
+            }.collect { (statistics, todayCheckedCount) ->
                 _uiState.value = _uiState.value.copy(
-                    activeHabits = habitsWithStreaks.size,
+                    activeHabits = statistics.totalHabits,
                     todayCheckedHabits = todayCheckedCount,
-                    longestHabitStreak = longestStreak,
-                    habitStreaks = habitsWithStreaks
+                    longestHabitStreak = statistics.longestStreak
                 )
             }
         }
         
         viewModelScope.launch {
             // Load recent transactions
-            transactionRepository.getRecentTransactions(5).collect { transactions ->
-                _uiState.value = _uiState.value.copy(recentTransactions = transactions)
+            ledgerApi.getRecentTransactions(5).collect { transactionItems ->
+                _uiState.value = _uiState.value.copy(recentTransactions = transactionItems)
             }
         }
         
@@ -159,7 +140,7 @@ class HomeViewModel @Inject constructor(
         
         viewModelScope.launch {
             // Load account balance
-            val totalBalance = accountRepository.getTotalBalance()
+            val totalBalance = ledgerApi.getTotalBalance()
             _uiState.value = _uiState.value.copy(totalAccountBalance = totalBalance)
         }
     }
@@ -174,9 +155,8 @@ data class HomeUiState(
     val activeHabits: Int = 0,
     val todayCheckedHabits: Int = 0,
     val longestHabitStreak: Int = 0,
-    val recentTransactions: List<Transaction> = emptyList(),
-    val todayTasksList: List<Task> = emptyList(),
-    val habitStreaks: List<HabitWithStreak> = emptyList(),
+    val recentTransactions: List<TransactionItem> = emptyList(),
+    val todayTasksList: List<TodoTask> = emptyList(),
     val upcomingCountdowns: List<Countdown> = emptyList(),
     val budgetAmount: Double = 0.0,
     val budgetSpent: Double = 0.0,

@@ -1,8 +1,8 @@
 package com.ccxiaoji.app.data.repository
 
-import com.ccxiaoji.app.data.local.dao.SavingsGoalDao
-import com.ccxiaoji.app.data.local.entity.SavingsContributionEntity
-import com.ccxiaoji.app.data.local.entity.SavingsGoalEntity
+import com.ccxiaoji.core.database.dao.SavingsGoalDao
+import com.ccxiaoji.core.database.entity.SavingsContributionEntity
+import com.ccxiaoji.core.database.entity.SavingsGoalEntity
 import com.ccxiaoji.app.domain.model.SavingsContribution
 import com.ccxiaoji.app.domain.model.SavingsGoal
 import kotlinx.coroutines.flow.Flow
