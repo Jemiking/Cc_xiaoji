@@ -3,10 +3,7 @@ package com.ccxiaoji.app.di
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.ccxiaoji.app.data.remote.api.AuthApi
-import com.ccxiaoji.app.data.remote.api.SyncApi
 import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -27,14 +24,6 @@ import javax.inject.Singleton
 object NetworkModule {
     
     private const val BASE_URL = "https://api.ccxiaoji.com/" // Replace with actual API URL
-    
-    @Provides
-    @Singleton
-    fun provideGson(): Gson {
-        return GsonBuilder()
-            .setLenient()
-            .create()
-    }
     
     @Provides
     @Singleton
@@ -85,15 +74,6 @@ object NetworkModule {
             .build()
     }
     
-    @Provides
-    @Singleton
-    fun provideAuthApi(retrofit: Retrofit): AuthApi {
-        return retrofit.create(AuthApi::class.java)
-    }
-    
-    @Provides
-    @Singleton
-    fun provideSyncApi(retrofit: Retrofit): SyncApi {
-        return retrofit.create(SyncApi::class.java)
-    }
+    // AuthApi已在shared:user模块的UserModule中提供
+    // SyncService已在shared:sync模块的SyncModule中提供
 }

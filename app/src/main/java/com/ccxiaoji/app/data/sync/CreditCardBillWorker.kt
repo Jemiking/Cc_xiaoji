@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import com.ccxiaoji.core.database.dao.AccountDao
-import com.ccxiaoji.app.data.repository.AccountRepository
+import com.ccxiaoji.feature.ledger.api.LedgerApi
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -18,7 +18,7 @@ class CreditCardBillWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted workerParams: WorkerParameters,
     private val accountDao: AccountDao,
-    private val accountRepository: AccountRepository
+    private val ledgerApi: LedgerApi
 ) : CoroutineWorker(context, workerParams) {
     
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
@@ -33,11 +33,11 @@ class CreditCardBillWorker @AssistedInject constructor(
                 
                 // 如果今天是账单日，生成账单
                 if (currentDay == billingDay) {
-                    accountRepository.generateCreditCardBill(creditCard.id)
+                    ledgerApi.generateCreditCardBill(creditCard.id)
                 }
                 
                 // 标记逾期账单
-                accountRepository.markOverdueBills(creditCard.id)
+                ledgerApi.markOverdueBills(creditCard.id)
             }
             
             Result.success()

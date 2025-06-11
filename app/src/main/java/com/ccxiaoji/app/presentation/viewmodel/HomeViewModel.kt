@@ -8,12 +8,10 @@ import com.ccxiaoji.feature.todo.api.TodoApi
 import com.ccxiaoji.feature.habit.api.HabitApi
 import com.ccxiaoji.app.data.repository.CountdownRepository
 import kotlinx.coroutines.flow.flow
-import com.ccxiaoji.app.data.repository.BudgetRepository
-import com.ccxiaoji.app.data.repository.SavingsGoalRepository
-import com.ccxiaoji.app.data.repository.UserRepository
+import com.ccxiaoji.shared.user.api.UserApi
 import com.ccxiaoji.feature.todo.api.TodoTask
 import com.ccxiaoji.app.domain.model.Countdown
-import com.ccxiaoji.app.domain.model.SavingsGoal
+import com.ccxiaoji.feature.ledger.api.SavingsGoalItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,9 +28,7 @@ class HomeViewModel @Inject constructor(
     private val todoApi: TodoApi,
     private val habitApi: HabitApi,
     private val countdownRepository: CountdownRepository,
-    private val budgetRepository: BudgetRepository,
-    private val savingsGoalRepository: SavingsGoalRepository,
-    private val userRepository: UserRepository
+    private val userApi: UserApi
 ) : ViewModel() {
     
     companion object {
@@ -113,29 +109,21 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             // Load budget overview
             val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-            val userId = userRepository.getCurrentUserId()
-            val totalBudget = budgetRepository.getTotalBudgetWithSpent(userId, now.year, now.monthNumber)
+            val totalBudget = ledgerApi.getTotalBudget(now.year, now.monthNumber)
             
             if (totalBudget != null) {
-                val usagePercentage = if (totalBudget.budgetAmountCents > 0) {
-                    (totalBudget.spentAmountCents.toFloat() / totalBudget.budgetAmountCents.toFloat()) * 100f
-                } else {
-                    0f
-                }
-                
                 _uiState.value = _uiState.value.copy(
-                    budgetAmount = totalBudget.budgetAmountCents / 100.0,
-                    budgetSpent = totalBudget.spentAmountCents / 100.0,
-                    budgetUsagePercentage = usagePercentage
+                    budgetAmount = totalBudget.budgetAmountYuan,
+                    budgetSpent = totalBudget.spentAmountYuan,
+                    budgetUsagePercentage = totalBudget.usagePercentage
                 )
             }
         }
         
         viewModelScope.launch {
             // Load active savings goals
-            savingsGoalRepository.getActiveSavingsGoals().collect { goals ->
-                _uiState.value = _uiState.value.copy(savingsGoals = goals.take(3))
-            }
+            val goals = ledgerApi.getActiveSavingsGoals()
+            _uiState.value = _uiState.value.copy(savingsGoals = goals.take(3))
         }
         
         viewModelScope.launch {
@@ -161,6 +149,6 @@ data class HomeUiState(
     val budgetAmount: Double = 0.0,
     val budgetSpent: Double = 0.0,
     val budgetUsagePercentage: Float = 0f,
-    val savingsGoals: List<SavingsGoal> = emptyList(),
+    val savingsGoals: List<SavingsGoalItem> = emptyList(),
     val totalAccountBalance: Double = 0.0
 )

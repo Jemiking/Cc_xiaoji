@@ -19,19 +19,16 @@ import com.ccxiaoji.feature.todo.presentation.navigation.todoGraph
 import com.ccxiaoji.feature.habit.presentation.navigation.habitRoute
 import com.ccxiaoji.feature.habit.presentation.navigation.habitScreen
 import com.ccxiaoji.app.presentation.ui.profile.ProfileScreen
-import com.ccxiaoji.app.presentation.ui.ledger.TransactionDetailScreen
-import com.ccxiaoji.app.presentation.ui.account.AccountScreen
+import com.ccxiaoji.feature.ledger.presentation.ui.TransactionDetailScreen
+import com.ccxiaoji.feature.ledger.presentation.ui.account.AccountScreen
 import com.ccxiaoji.feature.ledger.presentation.ui.category.CategoryManagementScreen
-import com.ccxiaoji.app.presentation.ui.budget.BudgetScreen
+import com.ccxiaoji.feature.ledger.presentation.navigation.budgetScreen
 import com.ccxiaoji.app.presentation.ui.statistics.StatisticsScreen
-import com.ccxiaoji.app.presentation.ui.recurring.RecurringTransactionScreen
-import com.ccxiaoji.app.presentation.ui.savings.SavingsGoalScreen
-import com.ccxiaoji.app.presentation.ui.savings.SavingsGoalDetailScreen
+import com.ccxiaoji.feature.ledger.presentation.ui.savings.SavingsGoalScreen
+import com.ccxiaoji.feature.ledger.presentation.ui.savings.SavingsGoalDetailScreen
 import com.ccxiaoji.app.presentation.ui.profile.DataExportScreen
 import com.ccxiaoji.app.presentation.ui.profile.ThemeSettingsScreen
 import com.ccxiaoji.app.presentation.ui.profile.NotificationSettingsScreen
-import com.ccxiaoji.app.presentation.ui.creditcard.CreditCardScreen
-import com.ccxiaoji.app.presentation.ui.creditcard.CreditCardBillsScreen
 
 @Composable
 fun NavGraph(
@@ -88,33 +85,61 @@ fun NavGraph(
         // Detail screens
         composable(TransactionDetailRoute.route) { backStackEntry ->
             val transactionId = backStackEntry.arguments?.getString("transactionId") ?: ""
-            TransactionDetailScreen(
-                transactionId = transactionId,
-                navController = navController,
-                viewModel = hiltViewModel()
-            )
+            val ledgerNavigator = (LocalContext.current as? MainActivity)?.ledgerNavigator
+            if (ledgerNavigator != null) {
+                TransactionDetailScreen(
+                    transactionId = transactionId,
+                    navigator = ledgerNavigator
+                )
+            }
         }
         
         composable(AccountManagementRoute.route) {
-            AccountScreen(navController = navController)
+            val ledgerNavigator = (LocalContext.current as? MainActivity)?.ledgerNavigator
+            if (ledgerNavigator != null) {
+                AccountScreen(navigator = ledgerNavigator)
+            }
         }
         
         composable(CreditCardRoute.route) {
-            CreditCardScreen(
-                navController = navController,
+            val ledgerNavigator = (LocalContext.current as? MainActivity)?.ledgerNavigator
+                ?: object : com.ccxiaoji.feature.ledger.api.LedgerNavigator {
+                    override fun navigateToLedger() {}
+                    override fun navigateToQuickAdd() {}
+                    override fun navigateToStatistics() {}
+                    override fun navigateToAccounts() {}
+                    override fun navigateToCategories() {}
+                    override fun navigateToTransactionDetail(transactionId: String) {}
+                    override fun navigateToCreditCards() {}
+                    override fun navigateToCreditCardBills(accountId: String) {
+                        navController.navigate(CreditCardBillsRoute.createRoute(accountId))
+                    }
+                    override fun navigateToBudget() {}
+                    override fun navigateToRecurringTransactions() {}
+                    override fun navigateToSavingsGoals() {}
+                    override fun navigateToSavingsGoalDetail(goalId: Long) {}
+                    override fun navigateToTransactionsByAccount(accountId: String) {
+                        navController.navigate(LedgerWithAccountRoute.createRoute(accountId))
+                    }
+                    override fun navigateUp() { navController.popBackStack() }
+                }
+            com.ccxiaoji.feature.ledger.presentation.ui.creditcard.CreditCardScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToAccount = { accountId ->
-                    // 导航到账户详情页面（显示该信用卡的交易记录）
                     navController.navigate(LedgerWithAccountRoute.createRoute(accountId))
-                }
+                },
+                ledgerNavigator = ledgerNavigator
             )
         }
         
         composable(CreditCardBillsRoute.route) { backStackEntry ->
             val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
-            CreditCardBillsScreen(
+            com.ccxiaoji.feature.ledger.presentation.ui.creditcard.CreditCardBillsScreen(
                 accountId = accountId,
-                navController = navController
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToBillDetail = { billId ->
+                    navController.navigate(CreditCardBillDetailRoute.createRoute(billId))
+                }
             )
         }
         
@@ -131,8 +156,30 @@ fun NavGraph(
             }
         }
         
-        composable(BudgetRoute.route) {
-            BudgetScreen(onNavigateBack = { navController.popBackStack() })
+        // 预算管理（使用feature-ledger模块）
+        composable(com.ccxiaoji.feature.ledger.presentation.navigation.BUDGET_ROUTE) {
+            val ledgerNavigator = (LocalContext.current as? MainActivity)?.ledgerNavigator
+                ?: object : com.ccxiaoji.feature.ledger.api.LedgerNavigator {
+                    override fun navigateToLedger() {}
+                    override fun navigateToQuickAdd() {}
+                    override fun navigateToStatistics() {}
+                    override fun navigateToAccounts() {}
+                    override fun navigateToCategories() {}
+                    override fun navigateToTransactionDetail(transactionId: String) {}
+                    override fun navigateToCreditCards() {}
+                    override fun navigateToCreditCardBills(accountId: String) {
+                        navController.navigate(CreditCardBillsRoute.createRoute(accountId))
+                    }
+                    override fun navigateToBudget() {}
+                    override fun navigateToRecurringTransactions() {}
+                    override fun navigateToSavingsGoals() {}
+                    override fun navigateToSavingsGoalDetail(goalId: Long) {
+                        navController.navigate(SavingsGoalDetailRoute.createRoute(goalId))
+                    }
+                    override fun navigateToTransactionsByAccount(accountId: String) {}
+                    override fun navigateUp() { navController.popBackStack() }
+                }
+            com.ccxiaoji.feature.ledger.presentation.ui.budget.BudgetScreen(navigator = ledgerNavigator)
         }
         
         composable(StatisticsRoute.route) {
@@ -140,14 +187,16 @@ fun NavGraph(
         }
         
         composable(RecurringTransactionRoute.route) {
-            RecurringTransactionScreen(onNavigateBack = { navController.popBackStack() })
+            com.ccxiaoji.feature.ledger.presentation.ui.recurring.RecurringTransactionScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
         
         composable(SavingsGoalRoute.route) {
             SavingsGoalScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToDetail = { goalId ->
-                    navController.navigate(SavingsGoalDetailRoute.createRoute(goalId))
+                    navController.navigate("${SavingsGoalDetailRoute.route}/$goalId")
                 }
             )
         }

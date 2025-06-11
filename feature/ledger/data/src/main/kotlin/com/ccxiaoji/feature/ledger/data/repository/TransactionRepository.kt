@@ -115,7 +115,7 @@ class TransactionRepository @Inject constructor(
         val now = System.currentTimeMillis()
         
         // 获取原交易记录
-        val originalTransaction = transactionDao.getTransactionById(transactionId)
+        val originalTransaction = transactionDao.getTransactionByIdSync(transactionId)
             ?: throw IllegalArgumentException("Transaction not found: $transactionId")
         
         // 如果金额或分类变化，需要更新账户余额
@@ -166,7 +166,7 @@ class TransactionRepository @Inject constructor(
         val now = System.currentTimeMillis()
         
         // 获取交易记录
-        val transaction = transactionDao.getTransactionById(transactionId)
+        val transaction = transactionDao.getTransactionByIdSync(transactionId)
             ?: throw IllegalArgumentException("Transaction not found: $transactionId")
         
         // 撤销对账户余额的影响
@@ -218,7 +218,7 @@ class TransactionRepository @Inject constructor(
      * 获取交易详情
      */
     suspend fun getTransactionDetail(transactionId: String): TransactionDetail? {
-        val entity = transactionDao.getTransactionById(transactionId) ?: return null
+        val entity = transactionDao.getTransactionByIdSync(transactionId) ?: return null
         val category = categoryDao.getCategoryById(entity.categoryId) ?: return null
         val account = accountDao.getAccountById(entity.accountId) ?: return null
         

@@ -49,15 +49,32 @@ class LedgerNavigatorImpl @Inject constructor() : LedgerNavigator {
         navController?.navigate(CreditCardRoute.route)
     }
     
+    override fun navigateToCreditCardBills(accountId: String) {
+        navController?.navigate(CreditCardBillsRoute.createRoute(accountId))
+    }
+    
     override fun navigateToBudget() {
         navController?.navigate(BudgetRoute.route)
     }
     
     override fun navigateToRecurringTransactions() {
-        navController?.navigate(RecurringTransactionRoute.route)
+        navController?.navigate(com.ccxiaoji.feature.ledger.presentation.navigation.RECURRING_TRANSACTION_ROUTE)
     }
     
     override fun navigateToSavingsGoals() {
         navController?.navigate(SavingsGoalRoute.route)
+    }
+    
+    override fun navigateToSavingsGoalDetail(goalId: Long) {
+        navController?.navigate(SavingsGoalDetailRoute.createRoute(goalId))
+    }
+    
+    override fun navigateToTransactionsByAccount(accountId: String) {
+        // 导航到按账户筛选的交易列表
+        navController?.navigate("${Screen.Ledger.route}?accountId=$accountId")
+    }
+    
+    override fun navigateUp() {
+        navController?.navigateUp()
     }
 }

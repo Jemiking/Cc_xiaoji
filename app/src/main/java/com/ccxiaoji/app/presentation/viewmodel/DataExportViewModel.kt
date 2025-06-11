@@ -5,10 +5,7 @@ import android.content.Intent
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.app.data.repository.AccountRepository
 import com.ccxiaoji.feature.ledger.api.LedgerApi
-import com.ccxiaoji.app.data.repository.BudgetRepository
-import com.ccxiaoji.app.data.repository.SavingsGoalRepository
 import com.ccxiaoji.app.data.repository.CountdownRepository
 import com.ccxiaoji.feature.todo.api.TodoApi
 import com.ccxiaoji.feature.habit.api.HabitApi
@@ -23,6 +20,7 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.*
+import kotlinx.datetime.TimeZone
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -33,10 +31,7 @@ class DataExportViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val todoApi: TodoApi,
     private val habitApi: HabitApi,
-    private val accountRepository: AccountRepository,
     private val ledgerApi: LedgerApi,
-    private val budgetRepository: BudgetRepository,
-    private val savingsGoalRepository: SavingsGoalRepository,
     private val countdownRepository: CountdownRepository,
     private val gson: Gson
 ) : ViewModel() {
@@ -101,7 +96,7 @@ class DataExportViewModel @Inject constructor(
                     )
                 }
                 
-                val accounts = accountRepository.getAccounts().first()
+                val accounts = ledgerApi.getAccounts()
                 val categories = ledgerApi.getAllCategories()
                 
                 exportData["ledger"] = mapOf(
@@ -125,8 +120,9 @@ class DataExportViewModel @Inject constructor(
             
             // 导出其他数据
             if (_uiState.value.exportOthers) {
-                val budgets = budgetRepository.getBudgets(getCurrentUserId()).first()
-                val savingsGoals = savingsGoalRepository.getAllSavingsGoals().first()
+                val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+                val budgets = ledgerApi.getBudgetsWithSpent(now.year, now.monthNumber).first()
+                val savingsGoals = ledgerApi.getSavingsGoals()
                 val countdowns = countdownRepository.getCountdowns().first()
                 
                 exportData["others"] = mapOf(

@@ -12,23 +12,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.ccxiaoji.app.domain.model.Transaction
+import com.ccxiaoji.feature.ledger.api.TransactionItem
 
 @Composable
 fun BarChart(
-    transactions: List<Transaction>,
+    transactions: List<TransactionItem>,
     isExpense: Boolean,
     modifier: Modifier = Modifier
 ) {
     val color = if (isExpense) Color(0xFFF44336) else Color(0xFF4CAF50)
-    val maxAmount = transactions.maxOfOrNull { it.amountCents } ?: 1
+    val maxAmount = transactions.maxOfOrNull { kotlin.math.abs(it.amount) } ?: 1.0
     
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         transactions.forEach { transaction ->
-            val percentage = transaction.amountCents.toFloat() / maxAmount
+            val percentage = (kotlin.math.abs(transaction.amount) / maxAmount).toFloat()
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -36,7 +36,7 @@ fun BarChart(
             ) {
                 // Category name
                 Text(
-                    text = transaction.categoryDetails?.name ?: "未分类",
+                    text = transaction.categoryName ?: "未分类",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.width(80.dp),
                     maxLines = 1,
@@ -72,7 +72,7 @@ fun BarChart(
                 
                 // Amount
                 Text(
-                    text = "¥${transaction.amountCents / 100f}",
+                    text = "¥${kotlin.math.abs(transaction.amount)}",
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.width(60.dp),
                     textAlign = androidx.compose.ui.text.style.TextAlign.End

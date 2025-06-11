@@ -4,6 +4,7 @@ import com.ccxiaoji.core.database.dao.CategoryDao
 import com.ccxiaoji.core.database.entity.CategoryEntity
 import com.ccxiaoji.core.database.model.SyncStatus
 import com.ccxiaoji.feature.ledger.api.CategoryItem
+import com.ccxiaoji.shared.user.api.UserApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -17,13 +18,14 @@ import javax.inject.Singleton
  */
 @Singleton
 class CategoryRepository @Inject constructor(
-    private val categoryDao: CategoryDao
+    private val categoryDao: CategoryDao,
+    private val userApi: UserApi
 ) {
     
     /**
-     * 获取当前用户ID（临时方案，后续应从UserRepository或Session获取）
+     * 获取当前用户ID
      */
-    private fun getCurrentUserId(): String = "current_user_id"
+    private suspend fun getCurrentUserId(): String = userApi.getCurrentUserId()
     
     /**
      * 获取所有分类
@@ -39,6 +41,13 @@ class CategoryRepository @Inject constructor(
     suspend fun getCategoriesByType(type: String): List<CategoryItem> {
         val categories = categoryDao.getCategoriesByType(getCurrentUserId(), type).first()
         return categories.map { it.toCategoryItem() }
+    }
+    
+    /**
+     * 根据ID获取分类
+     */
+    suspend fun getCategoryById(categoryId: String): CategoryEntity? {
+        return categoryDao.getCategoryById(categoryId)
     }
     
     /**
@@ -151,7 +160,7 @@ class CategoryRepository @Inject constructor(
     /**
      * 创建默认分类列表
      */
-    private fun createDefaultCategories(timestamp: Long): List<CategoryEntity> {
+    private suspend fun createDefaultCategories(timestamp: Long): List<CategoryEntity> {
         val userId = getCurrentUserId()
         
         val expenseCategories = listOf(

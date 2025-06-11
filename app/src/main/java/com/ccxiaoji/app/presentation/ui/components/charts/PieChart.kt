@@ -17,13 +17,13 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.ccxiaoji.core.database.dao.CategoryStatistic
+import com.ccxiaoji.feature.ledger.api.CategoryStat
 import kotlin.math.cos
 import kotlin.math.sin
 
 @Composable
 fun PieChart(
-    data: List<CategoryStatistic>,
+    data: List<CategoryStat>,
     modifier: Modifier = Modifier
 ) {
     if (data.isEmpty()) {

@@ -2,20 +2,21 @@ package com.ccxiaoji.app.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.core.database.dao.CategoryStatistic
-import com.ccxiaoji.app.data.repository.TransactionRepository
-import com.ccxiaoji.app.domain.model.Transaction
+import com.ccxiaoji.feature.ledger.api.LedgerApi
+import com.ccxiaoji.feature.ledger.api.CategoryStat
+import com.ccxiaoji.feature.ledger.api.TransactionItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
+import java.time.YearMonth
 import javax.inject.Inject
 
 @HiltViewModel
 class StatisticsViewModel @Inject constructor(
-    private val transactionRepository: TransactionRepository
+    private val ledgerApi: LedgerApi
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(StatisticsUiState())
@@ -46,23 +47,44 @@ class StatisticsViewModel @Inject constructor(
             val (startDate, endDate) = getDateRange(period)
             
             try {
-                // Load daily totals for trend chart
-                val dailyTotals = transactionRepository.getDailyTotals(startDate, endDate)
+                // Get transaction statistics for the period
+                val stats = ledgerApi.getTransactionStatsByDateRange(startDate, endDate)
                 
-                // Load category statistics
-                val expenseCategories = transactionRepository.getCategoryStatistics(startDate, endDate, "EXPENSE")
-                val incomeCategories = transactionRepository.getCategoryStatistics(startDate, endDate, "INCOME")
+                // Get transactions for the period
+                val yearMonth = YearMonth.of(startDate.year, startDate.monthNumber)
+                val transactions = ledgerApi.getTransactionsByMonth(yearMonth.year, yearMonth.monthValue)
                 
-                // Load top transactions
-                val topExpenses = transactionRepository.getTopTransactions(startDate, endDate, "EXPENSE", 10)
-                val topIncomes = transactionRepository.getTopTransactions(startDate, endDate, "INCOME", 10)
+                // Filter expense and income categories from stats
+                val expenseCategories = stats.categoryStats.filter { it.totalAmount < 0 }
+                val incomeCategories = stats.categoryStats.filter { it.totalAmount > 0 }
+                
+                // Get top transactions (sorted by amount)
+                val topExpenses = transactions
+                    .filter { it.amount < 0 }
+                    .sortedBy { it.amount }
+                    .take(10)
+                
+                val topIncomes = transactions
+                    .filter { it.amount > 0 }
+                    .sortedByDescending { it.amount }
+                    .take(10)
                 
                 // Calculate savings rate
-                val savingsRate = transactionRepository.calculateSavingsRate(startDate, endDate)
+                val totalIncome = stats.totalIncome
+                val totalExpense = stats.totalExpense
+                val savingsRate = if (totalIncome > 0) {
+                    ((totalIncome - totalExpense).toFloat() / totalIncome.toFloat()) * 100f
+                } else {
+                    0f
+                }
                 
-                // Calculate totals
-                val totalIncome = incomeCategories.sumOf { it.totalAmount }
-                val totalExpense = expenseCategories.sumOf { it.totalAmount }
+                // Create daily totals map (simplified for now)
+                val dailyTotals = mutableMapOf<LocalDate, Pair<Int, Int>>()
+                transactions.groupBy { it.date }.forEach { (date, dayTransactions) ->
+                    val dayIncome = dayTransactions.filter { it.amount > 0 }.sumOf { (it.amount * 100).toInt() }
+                    val dayExpense = dayTransactions.filter { it.amount < 0 }.sumOf { (-it.amount * 100).toInt() }
+                    dailyTotals[date] = Pair(dayIncome, dayExpense)
+                }
                 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -74,7 +96,7 @@ class StatisticsViewModel @Inject constructor(
                     savingsRate = savingsRate,
                     totalIncome = totalIncome,
                     totalExpense = totalExpense,
-                    balance = totalIncome - totalExpense
+                    balance = stats.balance
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
@@ -113,10 +135,10 @@ data class StatisticsUiState(
     val customStartDate: LocalDate? = null,
     val customEndDate: LocalDate? = null,
     val dailyTotals: Map<LocalDate, Pair<Int, Int>> = emptyMap(),
-    val expenseCategories: List<CategoryStatistic> = emptyList(),
-    val incomeCategories: List<CategoryStatistic> = emptyList(),
-    val topExpenses: List<Transaction> = emptyList(),
-    val topIncomes: List<Transaction> = emptyList(),
+    val expenseCategories: List<CategoryStat> = emptyList(),
+    val incomeCategories: List<CategoryStat> = emptyList(),
+    val topExpenses: List<TransactionItem> = emptyList(),
+    val topIncomes: List<TransactionItem> = emptyList(),
     val savingsRate: Float = 0f,
     val totalIncome: Int = 0,
     val totalExpense: Int = 0,

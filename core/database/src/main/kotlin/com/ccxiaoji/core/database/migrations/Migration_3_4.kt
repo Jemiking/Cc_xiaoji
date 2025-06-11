@@ -8,9 +8,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * - 添加信用卡账单表 (credit_card_bills)
  */
 val MIGRATION_3_4 = object : Migration(3, 4) {
-    override fun migrate(database: SupportSQLiteDatabase) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         // 创建信用卡账单表
-        database.execSQL("""
+        db.execSQL("""
             CREATE TABLE IF NOT EXISTS credit_card_bills (
                 id TEXT NOT NULL PRIMARY KEY,
                 userId TEXT NOT NULL,
@@ -38,9 +38,9 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         """)
         
         // 创建索引
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_bills_userId ON credit_card_bills(userId)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_bills_accountId ON credit_card_bills(accountId)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_bills_billStartDate ON credit_card_bills(billStartDate)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_bills_billEndDate ON credit_card_bills(billEndDate)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_bills_userId ON credit_card_bills(userId)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_bills_accountId ON credit_card_bills(accountId)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_bills_billStartDate ON credit_card_bills(billStartDate)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_bills_billEndDate ON credit_card_bills(billEndDate)")
     }
 }

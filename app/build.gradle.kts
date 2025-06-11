@@ -1,21 +1,16 @@
-@Suppress("DSL_SCOPE_VIOLATION")
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
-    alias(libs.plugins.ksp)
-    alias(libs.plugins.hilt)
+    id("ccxiaoji.android.application")
+    id("ccxiaoji.android.application.compose")
+    id("ccxiaoji.android.hilt")
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
 
 android {
     namespace = "com.ccxiaoji.app"
-    compileSdk = 34
-    buildToolsVersion = "33.0.2"
 
     defaultConfig {
         applicationId = "com.ccxiaoji.app"
-        minSdk = 26 // Android 8.0
-        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -23,41 +18,13 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
-        
-        // Room schema export
-        // Room schema export is now handled by KSP configuration
     }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
+    
     kotlinOptions {
-        jvmTarget = "17"
         freeCompilerArgs = listOf(
             "-Xjsr305=strict",
             "-Xjvm-default=all"
         )
-    }
-    buildFeatures {
-        compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.7"
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
     }
 }
 
@@ -72,33 +39,28 @@ dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:ui"))
     implementation(project(":core:database"))
+    implementation(project(":core:data"))
     
     // Feature modules
     implementation(project(":feature:todo"))
     implementation(project(":feature:habit"))
     implementation(project(":feature:ledger"))
     
-    // Core Android
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.androidx.activity.compose)
+    // Shared modules
+    implementation(project(":shared:user"))
+    implementation(project(":shared:sync"))
+    implementation(project(":shared:backup"))
+    implementation(project(":shared:notification"))
     
-    // Compose
-    implementation(platform(libs.compose.bom))
-    implementation(libs.compose.ui)
-    implementation(libs.compose.ui.graphics)
-    implementation(libs.compose.ui.tooling.preview)
-    implementation(libs.compose.material3)
-    implementation(libs.compose.material.icons.extended)
+    // 以下依赖已由 Convention Plugin 提供
+    // Activity - 由 ccxiaoji.android.application.compose 提供
+    // implementation(libs.androidx.activity.compose)
     
-    // Navigation
-    implementation(libs.androidx.navigation.compose)
+    // Navigation - 由 ccxiaoji.android.application.compose 提供
+    // implementation(libs.androidx.navigation.compose)
+    // implementation(libs.hilt.navigation.compose)
     
-    // Hilt for DI
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.compiler)
-    implementation(libs.hilt.navigation.compose)
+    // App-specific dependencies
     implementation(libs.hilt.work)
     ksp(libs.androidx.hilt.compiler)
     
@@ -115,9 +77,6 @@ dependencies {
     // Kotlin Serialization
     implementation(libs.kotlinx.serialization.json)
     
-    // Coroutines
-    implementation(libs.kotlinx.coroutines.android)
-    
     // DataStore for preferences
     implementation(libs.androidx.datastore.preferences)
     
@@ -127,15 +86,10 @@ dependencies {
     // Security
     implementation(libs.androidx.security.crypto)
     
-    // DateTime
-    implementation(libs.kotlinx.datetime)
-    
     // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.ext)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.compose.bom))
-    androidTestImplementation(libs.compose.ui.test.junit4)
-    debugImplementation(libs.compose.ui.tooling)
-    debugImplementation(libs.compose.ui.test.manifest)
+    // compose.ui.test.junit4 已由 Convention Plugin 提供
+    // androidTestImplementation(libs.compose.ui.test.junit4)
 }

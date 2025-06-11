@@ -12,7 +12,11 @@ interface LedgerNavigator {
     fun navigateToCategories()
     fun navigateToTransactionDetail(transactionId: String)
     fun navigateToCreditCards()
+    fun navigateToCreditCardBills(accountId: String)
     fun navigateToBudget()
     fun navigateToRecurringTransactions()
     fun navigateToSavingsGoals()
+    fun navigateToSavingsGoalDetail(goalId: Long)
+    fun navigateToTransactionsByAccount(accountId: String)
+    fun navigateUp()
 }

@@ -2,8 +2,9 @@ package com.ccxiaoji.app.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.app.data.repository.UserRepository
-import com.ccxiaoji.app.data.sync.SyncManager
+import com.ccxiaoji.shared.user.api.UserApi
+import com.ccxiaoji.shared.sync.api.SyncApi
+import com.ccxiaoji.shared.sync.api.SyncState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -14,8 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val userRepository: UserRepository,
-    private val syncManager: SyncManager
+    private val userApi: UserApi,
+    private val syncApi: SyncApi
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -28,7 +29,7 @@ class ProfileViewModel @Inject constructor(
     
     private fun loadUserInfo() {
         viewModelScope.launch {
-            userRepository.getCurrentUserFlow().collect { user ->
+            userApi.getCurrentUserFlow().collect { user ->
                 _uiState.update { 
                     it.copy(
                         userEmail = user?.email ?: "未登录"
@@ -38,7 +39,7 @@ class ProfileViewModel @Inject constructor(
         }
         
         viewModelScope.launch {
-            val lastSync = userRepository.getLastSyncTime()
+            val lastSync = userApi.getLastSyncTime()
             if (lastSync > 0) {
                 val dateTime = Instant.fromEpochMilliseconds(lastSync)
                     .toLocalDateTime(TimeZone.currentSystemDefault())
@@ -54,10 +55,10 @@ class ProfileViewModel @Inject constructor(
     
     private fun observeSyncStatus() {
         viewModelScope.launch {
-            syncManager.getSyncStatus().collect { status ->
+            syncApi.getSyncStatus().collect { status ->
                 _uiState.update { 
                     it.copy(
-                        isSyncing = status == SyncManager.SyncState.SYNCING
+                        isSyncing = status == SyncState.SYNCING
                     )
                 }
             }
@@ -65,7 +66,9 @@ class ProfileViewModel @Inject constructor(
     }
     
     fun syncNow() {
-        syncManager.syncNow()
+        viewModelScope.launch {
+            syncApi.syncNow()
+        }
     }
     
     fun syncData() {
@@ -74,7 +77,7 @@ class ProfileViewModel @Inject constructor(
     
     fun logout() {
         viewModelScope.launch {
-            userRepository.logout()
+            userApi.logout()
             // Navigation to login screen would be handled by navigation component
         }
     }

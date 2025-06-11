@@ -1,4 +1,5 @@
 pluginManagement {
+    includeBuild("build-logic")
     repositories {
         // 阿里云镜像优先
         maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
@@ -28,11 +29,24 @@ include(":app")
 include(":core:common")
 include(":core:ui")
 include(":core:database")
+include(":core:data")
 
 // Feature modules
 include(":feature:todo")
 include(":feature:habit")
 include(":feature:ledger")
+
+// Shared modules
+include(":shared:user")
+include(":shared:sync")
+include(":shared:backup")
+include(":shared:backup:api")
+include(":shared:backup:data")
+include(":shared:backup:domain")
+include(":shared:notification")
+include(":shared:notification:api")
+include(":shared:notification:data")
+include(":shared:notification:domain")
 
 // Check Java version
 val javaVersion = JavaVersion.current()

@@ -38,7 +38,9 @@
       "Bash(tree:*)",
       "Bash(cp:*)",
       "Bash(do)",
-      "Bash(grep -r \"com.ccxiaoji.app.data.sync.SyncStatus\" /mnt/d/kotlin/Cc_xiaoji/app/src/main/java/com/ccxiaoji/app/)"
+      "Bash(grep -r \"com.ccxiaoji.app.data.sync.SyncStatus\" /mnt/d/kotlin/Cc_xiaoji/app/src/main/java/com/ccxiaoji/app/)",
+      "Bash(true)",
+      "WebFetch(domain:developer.android.com)"
     ],
     "deny": []
   },

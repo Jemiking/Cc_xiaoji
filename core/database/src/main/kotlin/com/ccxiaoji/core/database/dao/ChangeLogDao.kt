@@ -29,4 +29,7 @@ interface ChangeLogDao {
     
     @Query("UPDATE change_log SET syncStatus = :syncStatus WHERE tableName = :table AND rowId = :rowId")
     suspend fun markForResync(table: String, rowId: String, syncStatus: SyncStatus = SyncStatus.PENDING_SYNC)
+    
+    @Query("SELECT COUNT(*) FROM change_log WHERE syncStatus = :syncStatus")
+    suspend fun getPendingChangesCount(syncStatus: SyncStatus = SyncStatus.PENDING_SYNC): Int
 }

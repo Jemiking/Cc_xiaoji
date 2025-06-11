@@ -23,6 +23,9 @@ interface HabitDao {
     @Query("SELECT * FROM habit_records WHERE habitId = :habitId AND recordDate = :date AND isDeleted = 0")
     suspend fun getHabitRecordByDate(habitId: String, date: Long): HabitRecordEntity?
     
+    @Query("SELECT * FROM habit_records WHERE id = :recordId AND isDeleted = 0")
+    suspend fun getHabitRecordById(recordId: String): HabitRecordEntity?
+    
     @Query("SELECT * FROM habit_records WHERE habitId = :habitId AND recordDate >= :startDate AND recordDate <= :endDate AND isDeleted = 0 ORDER BY recordDate ASC")
     suspend fun getHabitRecordsByDateRange(habitId: String, startDate: Long, endDate: Long): List<HabitRecordEntity>
     

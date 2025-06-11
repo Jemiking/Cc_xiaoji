@@ -1,6 +1,8 @@
 package com.ccxiaoji.feature.ledger.presentation.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -33,7 +35,6 @@ fun LedgerScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val selectedMonth by viewModel.selectedMonth.collectAsState()
-    val categories by viewModel.categories.collectAsState()
     
     var showAddDialog by remember { mutableStateOf(false) }
     var editingTransactionId by remember { mutableStateOf<String?>(null) }
@@ -187,7 +188,7 @@ fun LedgerScreen(
     // 添加交易对话框
     if (showAddDialog) {
         AddTransactionDialog(
-            categories = categories,
+            categories = uiState.categories,
             onDismiss = { showAddDialog = false },
             onConfirm = { amountCents, categoryId, note ->
                 viewModel.addTransaction(amountCents, categoryId, note)
@@ -201,7 +202,7 @@ fun LedgerScreen(
         uiState.editingTransactionDetail?.let { detail ->
             EditTransactionDialog(
                 transactionDetail = detail,
-                categories = categories,
+                categories = uiState.categories,
                 onDismiss = { 
                     editingTransactionId = null
                     viewModel.setEditingTransaction(null)
@@ -479,7 +480,7 @@ private fun TransactionGroupHeader(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 private fun TransactionListItem(
     transaction: TransactionItem,
@@ -491,7 +492,7 @@ private fun TransactionListItem(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(
+            .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
             ),

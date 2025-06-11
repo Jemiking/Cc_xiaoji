@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -15,8 +17,8 @@ import com.ccxiaoji.app.presentation.ui.navigation.NavGraph
 import com.ccxiaoji.app.navigation.TodoNavigatorImpl
 import com.ccxiaoji.app.navigation.HabitNavigatorImpl
 import com.ccxiaoji.app.navigation.LedgerNavigatorImpl
-import com.ccxiaoji.app.notification.NotificationScheduler
-import com.ccxiaoji.app.data.sync.SyncManager
+import com.ccxiaoji.shared.notification.api.NotificationApi
+import com.ccxiaoji.shared.sync.api.SyncApi
 import com.ccxiaoji.app.data.sync.CreditCardReminderManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -30,10 +32,10 @@ class MainActivity : ComponentActivity() {
     }
     
     @Inject
-    lateinit var notificationScheduler: NotificationScheduler
+    lateinit var notificationApi: NotificationApi
     
     @Inject
-    lateinit var syncManager: SyncManager
+    lateinit var syncApi: SyncApi
     
     @Inject
     lateinit var creditCardReminderManager: CreditCardReminderManager
@@ -57,13 +59,17 @@ class MainActivity : ComponentActivity() {
             
             // 启动每日检查任务
             Log.d(TAG, "Scheduling daily check")
-            notificationScheduler.scheduleDailyCheck()
-            Log.d(TAG, "Daily check scheduled")
+            lifecycleScope.launch {
+                notificationApi.scheduleDailyCheck()
+                Log.d(TAG, "Daily check scheduled")
+            }
             
             // 启动定期同步
             Log.d(TAG, "Starting periodic sync")
-            syncManager.startPeriodicSync()
-            Log.d(TAG, "Periodic sync started")
+            lifecycleScope.launch {
+                syncApi.startPeriodicSync()
+                Log.d(TAG, "Periodic sync started")
+            }
             
             // 启动信用卡还款提醒
             Log.d(TAG, "Starting credit card reminders")

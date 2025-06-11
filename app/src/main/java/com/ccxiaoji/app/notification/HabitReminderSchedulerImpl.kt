@@ -1,6 +1,8 @@
 package com.ccxiaoji.app.notification
 
 import com.ccxiaoji.feature.habit.api.HabitReminderScheduler
+import com.ccxiaoji.shared.notification.api.NotificationApi
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -10,7 +12,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class HabitReminderSchedulerImpl @Inject constructor(
-    private val notificationScheduler: NotificationScheduler
+    private val notificationApi: NotificationApi
 ) : HabitReminderScheduler {
     
     override fun scheduleDailyHabitReminder(
@@ -19,15 +21,19 @@ class HabitReminderSchedulerImpl @Inject constructor(
         reminderHour: Int,
         reminderMinute: Int
     ) {
-        notificationScheduler.scheduleDailyHabitReminder(
-            habitId = habitId,
-            habitTitle = habitTitle,
-            reminderHour = reminderHour,
-            reminderMinute = reminderMinute
-        )
+        runBlocking {
+            notificationApi.scheduleDailyHabitReminder(
+                habitId = habitId,
+                habitTitle = habitTitle,
+                reminderHour = reminderHour,
+                reminderMinute = reminderMinute
+            )
+        }
     }
     
     override fun cancelHabitReminder(habitId: String) {
-        notificationScheduler.cancelHabitReminder(habitId)
+        runBlocking {
+            notificationApi.cancelHabitReminder(habitId)
+        }
     }
 }

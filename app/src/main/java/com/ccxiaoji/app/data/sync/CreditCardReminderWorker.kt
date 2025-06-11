@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import com.ccxiaoji.core.database.dao.AccountDao
-import com.ccxiaoji.app.data.repository.UserRepository
-import com.ccxiaoji.app.notification.NotificationManager
+import com.ccxiaoji.shared.user.api.UserApi
+import com.ccxiaoji.shared.notification.api.NotificationApi
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
@@ -22,13 +22,13 @@ class CreditCardReminderWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted workerParams: WorkerParameters,
     private val accountDao: AccountDao,
-    private val userRepository: UserRepository,
-    private val notificationManager: NotificationManager
+    private val userApi: UserApi,
+    private val notificationApi: NotificationApi
 ) : CoroutineWorker(context, workerParams) {
     
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
-            val userId = userRepository.getCurrentUserId()
+            val userId = userApi.getCurrentUserId()
             val creditCardsWithDebt = accountDao.getCreditCardsWithDebt(userId)
             
             if (creditCardsWithDebt.isEmpty()) {
@@ -51,7 +51,7 @@ class CreditCardReminderWorker @AssistedInject constructor(
                     
                     when (daysUntilDue) {
                         3 -> {
-                            notificationManager.sendCreditCardReminder(
+                            notificationApi.sendCreditCardReminder(
                                 cardId = creditCard.id,
                                 cardName = creditCard.name,
                                 debtAmount = debtAmount,
@@ -60,7 +60,7 @@ class CreditCardReminderWorker @AssistedInject constructor(
                             )
                         }
                         1 -> {
-                            notificationManager.sendCreditCardReminder(
+                            notificationApi.sendCreditCardReminder(
                                 cardId = creditCard.id,
                                 cardName = creditCard.name,
                                 debtAmount = debtAmount,
@@ -69,7 +69,7 @@ class CreditCardReminderWorker @AssistedInject constructor(
                             )
                         }
                         0 -> {
-                            notificationManager.sendCreditCardReminder(
+                            notificationApi.sendCreditCardReminder(
                                 cardId = creditCard.id,
                                 cardName = creditCard.name,
                                 debtAmount = debtAmount,

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.feature.ledger.api.LedgerApi
 import com.ccxiaoji.feature.ledger.api.TransactionItem
 import com.ccxiaoji.feature.ledger.api.CategoryItem
+import com.ccxiaoji.feature.ledger.api.AccountItem
 import com.ccxiaoji.feature.ledger.api.TransactionDetail
 import com.ccxiaoji.feature.ledger.api.TransactionStats
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,12 +26,10 @@ class LedgerViewModel @Inject constructor(
     private val _selectedMonth = MutableStateFlow(YearMonth.now())
     val selectedMonth: StateFlow<YearMonth> = _selectedMonth.asStateFlow()
     
-    private val _categories = MutableStateFlow<List<CategoryItem>>(emptyList())
-    val categories: StateFlow<List<CategoryItem>> = _categories.asStateFlow()
-    
     init {
         loadTransactions()
         loadCategories()
+        loadAccounts()
         loadMonthlyStats()
     }
     
@@ -68,9 +67,50 @@ class LedgerViewModel @Inject constructor(
     private fun loadCategories() {
         viewModelScope.launch {
             try {
-                _categories.value = ledgerApi.getAllCategories()
+                val categories = ledgerApi.getAllCategories()
+                _uiState.update { it.copy(categories = categories) }
             } catch (e: Exception) {
                 // Handle error
+            }
+        }
+    }
+    
+    private fun loadAccounts() {
+        viewModelScope.launch {
+            ledgerApi.getAccountsFlow().collect { accounts ->
+                _uiState.update { it.copy(accounts = accounts) }
+            }
+        }
+    }
+    
+    fun loadTransactionDetail(transactionId: String) {
+        viewModelScope.launch {
+            try {
+                val detail = ledgerApi.getTransactionDetail(transactionId)
+                if (detail != null) {
+                    // 将TransactionDetail转换为TransactionItem以便在UI中显示
+                    val transactionItem = TransactionItem(
+                        id = detail.id,
+                        amount = detail.amountYuan,
+                        categoryName = detail.categoryName,
+                        categoryIcon = detail.categoryIcon,
+                        categoryColor = detail.categoryColor,
+                        accountName = detail.accountName,
+                        note = detail.note,
+                        date = detail.createdAt.toLocalDateTime(TimeZone.currentSystemDefault()).date
+                    )
+                    
+                    // 确保交易在列表中
+                    _uiState.update { state ->
+                        if (state.transactions.none { it.id == transactionId }) {
+                            state.copy(transactions = state.transactions + transactionItem)
+                        } else {
+                            state
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = e.message) }
             }
         }
     }
@@ -348,6 +388,8 @@ class LedgerViewModel @Inject constructor(
 data class LedgerUiState(
     val transactions: List<TransactionItem> = emptyList(),
     val groupedTransactions: List<TransactionGroup> = emptyList(),
+    val accounts: List<AccountItem> = emptyList(),
+    val categories: List<CategoryItem> = emptyList(),
     val monthlyIncome: Double = 0.0,
     val monthlyExpense: Double = 0.0,
     val isLoading: Boolean = false,

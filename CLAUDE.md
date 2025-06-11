@@ -2,22 +2,28 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Current Migration Status (Updated: 2025-01-09)
-**架构迁移进度：正在进行步骤 3.3 - Ledger模块迁移**
+## Current Migration Status (Updated: 2025-06-12)
+**架构迁移进度：第五阶段（共享模块迁移）已全部完成 ✅**
 
 ### 已完成的迁移
 - ✅ 基础模块（core-common, core-ui, core-database）
+- ✅ core-data模块（新增：提供跨模块共享的数据层基础设施）
 - ✅ Todo模块（feature-todo）
 - ✅ Habit模块（feature-habit）
-- ✅ Ledger模块-统计功能
-- ✅ Ledger模块-分类管理
-- ✅ Ledger模块-交易记录
-- ⏳ Ledger模块-账户管理（待进行）
+- ✅ Ledger模块（所有子功能）
+- ✅ 第四阶段-步骤4.1：移除旧代码并修复所有依赖
+- ✅ 第四阶段-步骤4.2：性能优化（已完成）
+- ✅ 第五阶段：共享模块迁移（已完成）
+  - ✅ 步骤5.1：shared-user模块（已完成并修复所有编译错误，详见`doc/shared-user模块迁移总结.md`）
+  - ✅ 步骤5.2：shared-sync模块（已完成，详见`doc/shared-sync模块迁移总结.md`）
+  - ✅ 步骤5.3：shared-backup模块（已完成，详见`doc/shared-backup模块迁移总结.md`）
+  - ✅ 步骤5.4：shared-notification模块（已完成，详见`doc/shared-notification模块迁移总结.md`）
 
 ### 下次继续
-1. 等待用户确认交易记录功能编译结果
-2. 继续迁移Ledger模块的账户管理功能
-3. 详细进度见：`doc/架构迁移进度追踪.md`
+1. 进入第六阶段：最终优化和文档
+2. 详细进度见：`doc/架构迁移进度追踪.md`
+3. 第五阶段总结：`doc/第五阶段迁移完成总结.md`
+4. 里程碑记录：`doc/架构迁移里程碑.md`
 
 ## Important: Development Workflow
 **Claude Code should NOT attempt to compile or build the project after making changes.**
@@ -180,6 +186,10 @@ CC小记 (CC Xiaoji) is positioned as a **Life Management Super App** that integ
 ### Module Types and Responsibilities
 1. **app module** - Application shell, only responsible for module assembly and global navigation
 2. **core modules** - Infrastructure, providing common functionality
+   - **core:common** - Basic utilities, extensions, constants
+   - **core:ui** - Shared UI components and theme
+   - **core:database** - Room database and DAOs
+   - **core:data** - Shared data layer infrastructure (e.g., Gson, network configurations)
 3. **feature modules** - Business feature modules, each representing a life domain
 4. **shared modules** - Cross-domain shared business functions
 

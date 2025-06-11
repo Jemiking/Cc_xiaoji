@@ -36,6 +36,18 @@ fun NavGraphBuilder.ledgerGraph(
     composable(LedgerRoute.STATISTICS) {
         // TODO: 迁移StatisticsScreen
     }
+    
+    // 存钱目标导航
+    savingsGoalScreen(
+        onNavigateBack = { navController.navigateUp() },
+        onNavigateToDetail = { goalId ->
+            navController.navigateToSavingsGoalDetail(goalId)
+        }
+    )
+    
+    savingsGoalDetailScreen(
+        onNavigateBack = { navController.navigateUp() }
+    )
 }
 
 /**
@@ -51,4 +63,8 @@ fun NavController.navigateToStatistics() {
 
 fun NavController.navigateToTransactionDetail(transactionId: String) {
     navigate("${LedgerRoute.TRANSACTION_DETAIL}/$transactionId")
+}
+
+fun NavController.navigateToSavingsGoals() {
+    navigate(SAVINGS_GOAL_ROUTE)
 }

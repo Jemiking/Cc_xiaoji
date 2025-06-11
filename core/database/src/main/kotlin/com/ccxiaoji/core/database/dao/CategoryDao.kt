@@ -39,6 +39,9 @@ interface CategoryDao {
     @Query("UPDATE categories SET usageCount = usageCount + 1 WHERE id = :categoryId")
     suspend fun incrementUsageCount(categoryId: String)
     
+    @Query("UPDATE categories SET usageCount = CASE WHEN usageCount > 0 THEN usageCount - 1 ELSE 0 END WHERE id = :categoryId")
+    suspend fun decrementUsageCount(categoryId: String)
+    
     @Query("SELECT COUNT(*) FROM transactions WHERE categoryId = :categoryId AND isDeleted = 0")
     suspend fun getTransactionCountForCategory(categoryId: String): Int
     
