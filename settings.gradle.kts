@@ -35,6 +35,7 @@ include(":core:data")
 include(":feature:todo")
 include(":feature:habit")
 include(":feature:ledger")
+include(":feature:schedule")
 
 // Shared modules
 include(":shared:user")

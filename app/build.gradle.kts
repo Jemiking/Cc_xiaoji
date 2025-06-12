@@ -15,8 +15,17 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] = "EMULATOR"
         vectorDrawables {
             useSupportLibrary = true
+        }
+    }
+    
+    buildTypes {
+        create("benchmark") {
+            signingConfig = getByName("debug").signingConfig
+            matchingFallbacks += listOf("release")
+            isDebuggable = false
         }
     }
     
@@ -92,4 +101,11 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     // compose.ui.test.junit4 已由 Convention Plugin 提供
     // androidTestImplementation(libs.compose.ui.test.junit4)
+    
+    // Performance Testing
+    androidTestImplementation(libs.androidx.benchmark.macro.junit4)
+    androidTestImplementation(libs.androidx.benchmark.junit4)
+    androidTestImplementation(libs.androidx.test.uiautomator)
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.compiler)
 }

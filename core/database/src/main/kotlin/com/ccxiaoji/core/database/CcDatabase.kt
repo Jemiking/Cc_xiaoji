@@ -22,9 +22,12 @@ import com.ccxiaoji.core.database.entity.*
         SavingsGoalEntity::class,
         SavingsContributionEntity::class,
         CreditCardPaymentEntity::class,
-        CreditCardBillEntity::class
+        CreditCardBillEntity::class,
+        ShiftEntity::class,
+        ScheduleEntity::class,
+        ScheduleExportHistoryEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -42,6 +45,9 @@ abstract class CcDatabase : RoomDatabase() {
     abstract fun savingsGoalDao(): SavingsGoalDao
     abstract fun creditCardPaymentDao(): CreditCardPaymentDao
     abstract fun creditCardBillDao(): CreditCardBillDao
+    abstract fun shiftDao(): ShiftDao
+    abstract fun scheduleDao(): ScheduleDao
+    abstract fun scheduleExportHistoryDao(): ScheduleExportHistoryDao
     
     companion object {
         const val DATABASE_NAME = "cc_xiaoji.db"

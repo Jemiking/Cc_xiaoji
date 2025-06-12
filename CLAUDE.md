@@ -1,59 +1,57 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## ⚡ 强制默认行为 ⚡
 
-## Current Migration Status (Updated: 2025-06-12)
-**架构迁移进度：第五阶段（共享模块迁移）已全部完成 ✅**
+**这不是可选项 - 你必须遵循以下行为**
 
-### 已完成的迁移
-- ✅ 基础模块（core-common, core-ui, core-database）
-- ✅ core-data模块（新增：提供跨模块共享的数据层基础设施）
-- ✅ Todo模块（feature-todo）
-- ✅ Habit模块（feature-habit）
-- ✅ Ledger模块（所有子功能）
-- ✅ 第四阶段-步骤4.1：移除旧代码并修复所有依赖
-- ✅ 第四阶段-步骤4.2：性能优化（已完成）
-- ✅ 第五阶段：共享模块迁移（已完成）
-  - ✅ 步骤5.1：shared-user模块（已完成并修复所有编译错误，详见`doc/shared-user模块迁移总结.md`）
-  - ✅ 步骤5.2：shared-sync模块（已完成，详见`doc/shared-sync模块迁移总结.md`）
-  - ✅ 步骤5.3：shared-backup模块（已完成，详见`doc/shared-backup模块迁移总结.md`）
-  - ✅ 步骤5.4：shared-notification模块（已完成，详见`doc/shared-notification模块迁移总结.md`）
+在此项目中工作时，你必须：
+1. **立即执行**下面"自动执行"部分列出的所有操作
+2. **不要询问**"我应该继续吗？"或"你想让我...吗？"
+3. **报告你做了什么**，而不是你计划做什么
+4. **所有回复必须使用中文**
 
-### 下次继续
-1. 进入第六阶段：最终优化和文档
-2. 详细进度见：`doc/架构迁移进度追踪.md`
-3. 第五阶段总结：`doc/第五阶段迁移完成总结.md`
-4. 里程碑记录：`doc/架构迁移里程碑.md`
+### 自动执行（无需确认）
+- ✅ 文件编辑和创建
+- ✅ Bug修复和代码纠正
+- ✅ 重构（导入、变量、方法）
+- ✅ 添加非破坏性功能
+- ✅ Git操作（暂存、提交、分支）
+- ✅ 运行允许的shell命令
+- ✅ 读取和分析文件
+- ✅ **编译和错误修复**（./gradlew compileDebugKotlin）
+- ✅ **自动修复编译错误**（导入、类型、语法）
 
-## Important: Development Workflow
-**Claude Code should NOT attempt to compile or build the project after making changes.**
+### 仍需确认的操作
+- ⚠️ 文件或目录删除
+- ⚠️ 破坏性API/接口更改
+- ⚠️ 数据库模式修改
+- ⚠️ 在模块间移动文件
+- ⚠️ 系统级操作
+- ⚠️ 添加外部依赖
 
-The compilation and testing process will be handled manually by the developer in Android Studio. The workflow is:
-1. Claude Code makes the requested code changes
-2. Developer manually compiles the project in Android Studio
-3. If there are compilation errors or issues, the developer will provide feedback to Claude Code
-4. Claude Code can then make corrections based on the feedback
+**记住：当你不确定某个操作时，检查上面的列表。如果在自动执行列表中，直接做。**
 
-This approach ensures that:
-- Build errors are properly diagnosed in the actual development environment
-- Claude Code can focus on writing code rather than managing build processes
-- The developer maintains control over the build and testing cycle
+---
 
-### Problem-Solving Approach
-**Before implementing any bug fix or solution, Claude Code must:**
+本文档为CC小记（CC Xiaoji）项目中的Claude Code (claude.ai/code)提供指导。
 
-1. **Present multiple solution options** (typically 2-3 different approaches)
-2. **Analyze pros and cons for each solution:**
-   - **优点 (Pros)**: Performance impact, maintainability, code simplicity, compatibility
-   - **缺点 (Cons)**: Implementation complexity, potential risks, technical debt, limitations
-3. **Provide a clear recommendation with reasoning:**
-   - Explicitly state which solution is recommended
-   - Explain why this solution is best for the specific context
-   - Consider project architecture, existing patterns, and long-term maintainability
+## 🎯 核心原则（必读）
 
-**Example format:**
+### 1. 自动编译（更新：之前是禁止编译）
+- Claude Code应该在代码更改后自动编译
+- 工作流程：Claude修改代码 → 自动编译 → 修复错误 → 报告结果
+- 尽可能使用增量编译：`./gradlew compileDebugKotlin`
+
+### 2. 响应语言：中文
+- **所有响应必须使用中文**，包括：
+  - 代码注释和文档
+  - 解释说明和错误信息
+  - 与开发者的所有交流
+
+### 3. 多方案决策
+解决问题时，始终提供多个方案对比：
 ```
-问题：[描述具体问题]
+问题：[具体问题描述]
 
 方案一：[方案名称]
 - 优点：
@@ -75,331 +73,312 @@ This approach ensures that:
 理由：[详细解释为什么推荐这个方案]
 ```
 
-This ensures informed decision-making and helps developers understand the trade-offs of different approaches.
+### 4. 遵循模块化架构
+- 新功能必须放在正确的功能模块中
+- 严格遵循模块依赖规则：`app → feature → shared → core`
+- 禁止反向和横向依赖
 
-## Language Requirement
-**All responses from Claude Code should be in Chinese (中文).** This includes:
-- Code comments and documentation
-- Explanations and descriptions
-- Error messages and feedback
-- Communication with the developer
+## 🔧 编译支持
 
-## Development Environment Requirements
-- Android Studio Hedgehog | 2023.1.1 or higher
+### 基础自动编译（默认启用）
+在任何代码修改后，自动执行：
+
+```bash
+# 1. 运行增量编译
+./gradlew compileDebugKotlin --no-daemon
+
+# 2. 如果编译失败，分析错误
+# 3. 自动修复常见问题：
+#    - 缺失的导入
+#    - 简单的类型不匹配
+#    - 明显的语法错误
+#    - 空安全问题
+# 4. 重新编译直到成功或无法修复
+```
+
+### 编译工作流示例
+```
+用户：修复LedgerViewModel的bug
+
+Claude执行流程：
+1. 修改代码文件
+2. 自动运行：./gradlew :feature:ledger:compileDebugKotlin
+3. 发现错误：Unresolved reference: categories
+4. 自动添加import语句
+5. 重新编译：成功
+6. 报告：
+   已完成修复：
+   ✅ 修复了类别加载问题
+   ✅ 添加缺失的import
+   ✅ 编译测试通过
+```
+
+### 智能编译策略
+- **模块特定**：只编译受影响的模块
+- **增量编译**：可用时使用`--incremental`标志
+- **错误优先级**：从上到下修复错误
+- **最大尝试**：继续直到真正无法修复（不是任意限制）
+
+### 未来：MCP增强
+高级编译支持使用：
+`mcp://kotlin-compiler/compile_and_fix`（可用时）
+
+## 🚀 快速开始
+
+### 开发环境
+- Android Studio Hedgehog | 2023.1.1+
 - JDK 17
 - Gradle 8.4
 - Android SDK 34
 - MinSdk: 26 (Android 8.0)
 
-## Common Development Commands
+### 项目定位
+CC小记是一个**生活管理超级应用**，集成多个生活管理模块：
+- 💰 **记账** - 财务管理（Ledger）
+- ✅ **待办** - 任务管理（Todo）
+- 🎯 **习惯** - 习惯养成（Habit）
+- 🌸 **经期** - 女性健康（规划中）
+- 📅 **排班** - 工作管理（规划中）
+- 📔 **日记** - 个人记录（规划中）
 
-### Build & Run
+### 当前状态
+- **架构迁移**：从传统分层架构向领域驱动模块化架构过渡
+- **迁移进度**：详见`doc/架构迁移进度追踪.md`
+- **开发策略**：新功能使用新架构，旧功能逐步迁移
+
+### 常用命令
 ```bash
-# Build the project
+# 构建项目
 ./gradlew build
 
-# Clean build
+# 清理并构建
 ./gradlew clean build
 
-# Install app on connected device/emulator
+# 安装到设备
 ./gradlew installDebug
 
-# Run all tests
+# 运行测试
 ./gradlew test
 
-# Run Android instrumentation tests
-./gradlew connectedAndroidTest
-
-# Run lint checks
-./gradlew lint
-
-# Generate APK
+# 生成APK
 ./gradlew assembleDebug
-./gradlew assembleRelease
 
-# Run specific tests
-./gradlew test --tests "com.ccxiaoji.app.*"
+# 编译特定模块（推荐）
+./gradlew :feature:ledger:compileDebugKotlin
 ```
 
-### Database Management
-- Room database version: 1 (reset from version 6, all historical migrations cleared)
-- Schema location: `app/schemas/`
-- **Database Architecture**: Single database shared by all modules with DAO-level isolation
-   - All feature modules share the same `CcDatabase` instance
-   - Each module has its own DAOs and entities
-   - Entities are organized by feature module but registered in the main database
-- When modifying database entities:
-   1. Place entities in the appropriate feature module's `data/local/entity/` directory
-   2. Register entities in `CcDatabase.kt`
-   3. Increment version in `CcDatabase.kt`
-   4. Create a migration in `app/src/main/java/com/ccxiaoji/app/data/local/migrations/`
-   5. Add migration to `DatabaseMigrations.kt`
-- Note: The database was reset to v1 as the app hasn't been released yet
+## 📐 架构设计
 
-## Architecture Overview
+### 架构演进
+项目正在从**传统分层架构**过渡到**领域驱动模块化架构**：
+- **当前**：Clean Architecture + MVVM（按技术层分离）
+- **目标**：领域驱动模块化架构（按业务领域分离）
+- **策略**：新功能采用新架构，现有功能逐步迁移
 
-### Clean Architecture + MVVM Pattern
-The project follows a three-layer architecture:
+### 目标架构：领域驱动模块化
 
-1. **Data Layer** (`data/`)
-   - **Local**: Room database with DAOs and entities
-   - **Remote**: Retrofit APIs for sync functionality
-   - **Repository**: Implements data access abstraction, handles both local and remote data sources
-   - All entities use `SyncStatus` enum for tracking synchronization state
+#### 架构原则
+- **领域驱动**：按生活管理领域划分模块，而非技术功能
+- **模块独立**：每个业务模块包含完整的data/domain/presentation层
+- **依赖倒置**：上层模块依赖下层，禁止反向依赖
+- **接口隔离**：模块间通过定义良好的API接口通信
 
-2. **Domain Layer** (`domain/`)
-   - **Model**: Business models that are UI-independent
-   - Domain models are separate from database entities
+#### 模块层次结构
 
-3. **Presentation Layer** (`presentation/`)
-   - **UI**: Jetpack Compose screens and components
-   - **ViewModel**: State holders using Hilt injection
-   - Navigation managed by `NavGraph.kt` with defined routes
-
-### Key Architecture Decisions
-
-- **Dependency Injection**: Uses Hilt with modules in `di/` directory
-- **Async Operations**: Coroutines + Flow for reactive programming
-- **Background Work**: WorkManager for periodic tasks (sync, recurring transactions)
-- **State Management**: ViewModels with StateFlow/MutableStateFlow
-- **Navigation**: Single Activity with Compose Navigation
-- **Data Persistence**: Room with type converters for complex types
-
-### Important Patterns
-
-1. **Repository Pattern**: All data access goes through repositories that abstract data sources
-2. **Worker Pattern**: Background tasks use Hilt-injected Workers (e.g., `RecurringTransactionWorker`, `SyncWorker`)
-3. **Migration Pattern**: Database migrations follow Room's migration pattern with version tracking
-4. **Default Data**: Application initializes with default user, account, and categories on first launch
-
-## Target Architecture: Domain-Based Modular Architecture
-
-### Project Vision
-CC小记 (CC Xiaoji) is positioned as a **Life Management Super App** that integrates multiple life management modules and will continuously add new feature modules in the future.
-
-### Architecture Principles
-- **领域驱动 (Domain-Driven)**: Modules are divided by life management domains, not technical functions
-- **模块独立 (Module Independence)**: Each business module contains complete data/domain/presentation layers
-- **依赖倒置 (Dependency Inversion)**: Upper modules depend on lower ones, reverse dependencies are forbidden
-- **接口隔离 (Interface Segregation)**: Modules communicate through well-defined API interfaces
-
-### Module Types and Responsibilities
-1. **app module** - Application shell, only responsible for module assembly and global navigation
-2. **core modules** - Infrastructure, providing common functionality
-   - **core:common** - Basic utilities, extensions, constants
-   - **core:ui** - Shared UI components and theme
-   - **core:database** - Room database and DAOs
-   - **core:data** - Shared data layer infrastructure (e.g., Gson, network configurations)
-3. **feature modules** - Business feature modules, each representing a life domain
-4. **shared modules** - Cross-domain shared business functions
-
-### Dependency Rules
 ```
-✅ Allowed:
-app → feature → shared → core
-
-❌ Forbidden:
-feature → feature
-core → feature
-core → shared
+┌─────────────────────────────────────────────┐
+│                  app                        │ ← 应用外壳
+│           (模块组装和导航)                    │
+├─────────────────────────────────────────────┤
+│           feature modules                   │ ← 业务功能
+│      (ledger, todo, habit, ...)            │
+├─────────────────────────────────────────────┤
+│           shared modules                    │ ← 共享业务
+│       (user, sync, backup, ...)            │
+├─────────────────────────────────────────────┤
+│            core modules                     │ ← 基础设施
+│     (common, ui, database, data)           │
+└─────────────────────────────────────────────┘
 ```
 
-### Recommended Directory Structure
+#### 依赖规则
 ```
-Cc_xiaoji/
-├── app/                              # Main application module (shell)
-│   ├── src/main/
-│   │   ├── CcXiaoJiApplication.kt
-│   │   ├── MainActivity.kt
-│   │   ├── navigation/              # Global navigation
-│   │   │   ├── AppNavGraph.kt      
-│   │   │   └── BottomNavigation.kt 
-│   │   └── home/                    # Home aggregation
-│   │       └── HomeScreen.kt        
-│
-├── core/                            # Core infrastructure
-│   ├── common/                      # Common functionality
-│   │   ├── base/                    
-│   │   ├── utils/                   
-│   │   └── extensions/              
-│   ├── data/                        # Core data layer
-│   │   ├── database/
-│   │   ├── datastore/               
-│   │   └── network/                 
-│   ├── ui/                          # Core UI
-│   │   ├── theme/                   
-│   │   ├── components/              
-│   │   └── widgets/                 
-│   └── domain/                      # Core domain
-│       ├── model/                   
-│       └── repository/              
-│
-├── feature/                         # Business feature modules
-│   ├── ledger/                      # 💰 Accounting (Financial Management)
-│   ├── todo/                        # ✅ Todo (Task Management)
-│   ├── habit/                       # 🎯 Habits (Habit Building)
-│   ├── period/                      # 🌸 Period Tracker (Women's Health) - Future
-│   ├── schedule/                    # 📅 Shift Schedule (Work Management) - Future
-│   └── diary/                       # 📔 Diary (Personal Records) - Future
-│
-├── shared/                          # Shared business modules
-│   ├── user/                        
-│   ├── sync/                        
-│   ├── backup/                      
-│   ├── notification/                
-│   └── analytics/                   
-│
-└── build-logic/                     # Build logic
+✅ 允许：app → feature → shared → core
+❌ 禁止：横向依赖 (feature ↔ feature)、反向依赖 (core → feature)
 ```
 
-### Module Structure Example (Ledger Module)
+#### 标准模块结构
 ```
-feature-ledger/
-├── api/
-│   └── LedgerApi.kt                 # Public interface for other modules
-├── data/
-│   ├── local/
-│   │   ├── dao/                     # DAOs for accounts, transactions, etc.
-│   │   └── entity/                  # Database entities
-│   └── repository/                  # Repository implementations
-├── domain/
-│   ├── model/                       # Domain models (Account, Transaction, etc.)
-│   └── usecase/                     # Business logic use cases
-│       ├── account/                 # Account-related use cases
-│       ├── transaction/             # Transaction-related use cases
-│       ├── budget/                  # Budget-related use cases
-│       └── savings/                 # Savings goal use cases
-└── presentation/
-    ├── navigation/                  # Module-internal navigation
-    ├── account/                     # Account management screens
-    ├── transaction/                 # Transaction screens
-    ├── statistics/                  # Statistics screens
-    └── viewmodel/                   # All ViewModels
+feature-[domain]/
+├── api/                    # 公开API
+│   └── [Domain]Api.kt      
+├── data/                   # 数据层
+│   ├── local/             
+│   │   ├── dao/           # Room DAOs
+│   │   └── entity/        # 数据库实体
+│   ├── remote/            # 网络API（如需要）
+│   └── repository/        # 仓库实现
+├── domain/                 # 业务层
+│   ├── model/             # 领域模型
+│   └── usecase/           # 业务用例
+└── presentation/           # 展示层
+    ├── navigation/        # 模块导航
+    ├── screen/            # Compose界面
+    ├── component/         # UI组件
+    └── viewmodel/         # 状态管理
 ```
 
-### Module Communication Example
+### 当前架构（迁移中）
+
+当前代码仍使用Clean Architecture + MVVM模式：
+
+```
+app/
+├── data/                   # 数据层（所有模块共享）
+│   ├── local/             # Room数据库
+│   ├── remote/            # Retrofit APIs
+│   └── repository/        # 数据仓库
+├── domain/                 # 领域层
+│   └── model/             # 业务模型
+└── presentation/           # 展示层
+    ├── ui/                # Compose UI
+    └── viewmodel/         # ViewModels
+```
+
+### 关键技术决策
+
+#### 依赖注入
+- 使用Hilt进行依赖注入
+- ViewModels使用`@HiltViewModel`
+- Repositories使用`@Singleton`
+- Workers使用`@HiltWorker`
+
+#### 数据持久化
+- **单一数据库**：所有模块共享`CcDatabase`实例
+- **DAO隔离**：每个模块有独立的DAO
+- **实体管理**：实体按功能组织但在主数据库注册
+- **迁移策略**：数据库版本从v1开始（已清理历史迁移）
+
+#### 异步处理
+- **协程 + Flow**：响应式编程
+- **StateFlow**：ViewModel状态管理
+- **WorkManager**：后台任务（同步、定期交易等）
+
+#### UI导航
+- 单Activity + Compose Navigation
+- 路由定义在`NavGraph.kt`
+- 模块间导航通过API接口
+
+### 模块通信示例
+
 ```kotlin
-// Module API definition
+// 1. 定义模块API
 interface LedgerApi {
     suspend fun getTodayExpense(): Double
-    suspend fun getTotalBalance(): Double
+    suspend fun getAccountBalance(accountId: Long): Double
     fun navigateToAddTransaction()
 }
 
-// Usage in app module
-class HomeViewModel(
+// 2. 实现API（在功能模块内）
+@Singleton
+class LedgerApiImpl @Inject constructor(
+    private val repository: TransactionRepository,
+    private val navigator: LedgerNavigator
+) : LedgerApi {
+    override suspend fun getTodayExpense() = 
+        repository.getTodayExpense()
+    
+    override fun navigateToAddTransaction() {
+        navigator.navigateToAddTransaction()
+    }
+}
+
+// 3. 使用API（在app模块）
+@HiltViewModel
+class HomeViewModel @Inject constructor(
     private val ledgerApi: LedgerApi,
-    private val todoApi: TodoApi,
-    private val habitApi: HabitApi
+    private val todoApi: TodoApi
 ) : ViewModel() {
-    // Aggregate data from multiple modules
+    fun loadDashboard() {
+        viewModelScope.launch {
+            val expense = ledgerApi.getTodayExpense()
+            val tasks = todoApi.getPendingTasksCount()
+            // 更新UI状态
+        }
+    }
 }
 ```
 
-## Module Development Guidelines
+## 💻 开发指南
 
-### Feature Module Structure
-Every feature module MUST follow this structure:
+### 功能开发决策树
 ```
-feature-[domain]/
-├── api/           # 对外暴露的接口 (Public API)
-├── data/          # 数据层实现 (Data layer)
-├── domain/        # 业务逻辑 (Business logic)
-└── presentation/  # UI展示 (UI layer)
+新功能请求
+    ↓
+属于哪个生活领域？
+    ├─ 财务 → feature-ledger
+    ├─ 任务 → feature-todo
+    ├─ 习惯 → feature-habit
+    └─ 新领域 → 创建新功能模块
+            ↓
+        遵循标准模块结构
+            ↓
+        通过API通信
 ```
 
-### Development Decision Guide
-When adding new functionality:
+### 开发检查清单
+开发新功能时，确认：
+- [ ] 功能放在正确的业务领域模块？
+- [ ] 遵循模块的标准结构（api/data/domain/presentation）？
+- [ ] 依赖关系符合架构规则？
+- [ ] 模块API最小化且定义良好？
+- [ ] 数据库实体在模块的data/local/entity目录？
+- [ ] 模块间通信仅通过定义的API？
+- [ ] **代码编译无错误？**（自动检查）
 
-1. **判断业务领域 (Determine Business Domain)**
-   - 财务相关 → `feature-ledger` module
-   - 任务管理 → `feature-todo` module
-   - 习惯养成 → `feature-habit` module
-   - 新的生活领域 → Create new feature module
+### 数据库管理
+- **架构**：单一数据库，DAO级隔离
+- **版本**：当前v1（重置，已清理历史迁移）
+- **Schema位置**：`app/schemas/`
+- **修改流程**：
+  1. 在功能模块的`data/local/entity/`添加实体
+  2. 在`CcDatabase.kt`注册实体
+  3. 增加数据库版本
+  4. 创建迁移：`app/src/main/java/com/ccxiaoji/app/data/local/migrations/`
+  5. 添加迁移到`DatabaseMigrations.kt`
 
-2. **模块间协作 (Inter-module Collaboration)**
-   - Use Navigation Component for UI navigation
-   - Share data through API interfaces
-   - Use event bus for event communication
+### 后台任务
+使用WorkManager处理：
+- 数据同步：`SyncWorker`
+- 定期交易：`RecurringTransactionWorker`
+- 所有Workers使用`@HiltWorker`注入依赖
 
-3. **数据管理 (Data Management)**
-   - Each module manages its own database tables
-   - Cross-module data accessed through APIs
-   - Shared data placed in shared modules
+## 📁 项目组织
 
-### New Feature Development Checklist
-- [ ] Identified the correct business domain?
-- [ ] Placed in appropriate feature module?
-- [ ] Following module's internal structure (api/data/domain/presentation)?
-- [ ] Dependencies follow allowed directions?
-- [ ] Module's public API is minimal and well-defined?
-- [ ] Database entities in module's data/local/entity/?
-- [ ] Inter-module communication through defined APIs only?
-
-### Module Dependencies
-- All ViewModels are `@HiltViewModel` annotated
-- Repositories are `@Singleton` scoped
-- Database and DAOs are provided through `DatabaseModule`
-- Workers use `@HiltWorker` for dependency injection
-
-### Architecture Migration Strategy
-The project is currently transitioning from traditional layered architecture to domain-based modular architecture:
-1. **Existing code remains in current structure** during transition
-2. **New features should follow the modular architecture** described above
-3. **Gradual migration**: When significantly modifying existing features, consider migrating them to the appropriate feature module
-4. **Priority**: Ledger module is the most complex and should be properly modularized first
-
-### Key Features Implementation
-
-1. **Multi-Account Support**: Transactions linked to accounts via foreign keys
-2. **Category System**: Hierarchical categories with parent-child relationships
-3. **Sync System**: Change tracking with `ChangeLogEntity` and sync status on all entities
-4. **Recurring Transactions**: Automated transaction creation via WorkManager
-5. **Budget Management**: Monthly/yearly budgets with category-based tracking
-6. **Savings Goals**: Goal tracking with contribution history
-
-### Life Domain Planning
-Current and future feature modules represent different life management domains:
-- **Ledger (记账)**: Complete financial management including accounts, transactions, budgets, credit cards, and savings goals
-- **Todo (待办)**: Task management with priorities, deadlines, and categories
-- **Habit (习惯)**: Habit tracking with streaks, reminders, and statistics
-- **Period (经期)**: Women's health tracking with predictions and health insights
-- **Schedule (排班)**: Work shift management with calendar integration
-- **Diary (日记)**: Personal journaling with mood tracking and photo attachments
-
-Each domain should be self-contained with minimal cross-domain dependencies.
-
-## File Organization Standards
-
-### Document and Script Organization
-To maintain a clean project structure, follow these file placement rules:
-
+### 目录结构
 ```
-项目根目录/
-├── doc/                    # All project documentation
+Cc_xiaoji/
+├── doc/                    # 所有项目文档
 │   ├── README.md          
-│   ├── CHANGELOG.md       
-│   ├── 架构重构设计文档.md
-│   └── *.md               # Other project documents
-├── scripts/                # Auxiliary scripts
-│   ├── build.sh           
-│   ├── release.sh         
-│   └── *.sh               # Other shell scripts
-├── app/                   
-├── core/                  
-├── feature/               
-└── shared/                
+│   ├── 架构迁移进度追踪.md  # 迁移状态详情
+│   └── *.md               
+├── scripts/                # 辅助脚本
+│   └── *.sh               
+├── app/                   # 主应用模块
+├── core/                  # 核心基础设施模块
+├── feature/               # 业务功能模块
+└── shared/                # 共享业务模块
 ```
 
-**File Placement Rules:**
-- **All .md files** must be placed in the `doc/` folder
-- **All .sh scripts** must be placed in the `scripts/` folder
-- Keep Android standard structure for everything else
-- Do NOT scatter documents or scripts in random locations
+### 文件放置规则
+- **所有.md文档**必须放在`doc/`文件夹
+- **所有.sh脚本**必须放在`scripts/`文件夹
+- 保持Android标准结构不变
+- 不要将文档或脚本散落在其他位置
 
-## Build Configuration
+## 🛠 构建配置
 
-### Key Dependencies & Versions
+### 关键依赖和版本
 - Kotlin: 1.9.21
 - Compose BOM: 2023.10.01
 - Compose Compiler: 1.5.7
@@ -409,14 +388,40 @@ To maintain a clean project structure, follow these file placement rules:
 - WorkManager: 2.9.0
 - KSP: 1.9.21-1.0.15
 
-### Repository Configuration
-The project uses Aliyun Maven mirrors for faster dependency resolution in China:
-- Priority: Aliyun mirrors → Google → Maven Central
-- Configuration in `settings.gradle.kts`
+### 仓库配置
+项目使用阿里云Maven镜像加速中国地区的依赖解析：
+- 优先级：阿里云镜像 → Google → Maven Central
+- 配置在`settings.gradle.kts`
 
-### Important Build Features
-- ViewBinding enabled
-- Compose enabled
-- R8 minification for release builds
-- Schema export for Room database
-- KSP incremental compilation
+### 构建特性
+- ViewBinding已启用
+- Compose已启用
+- Release版本使用R8混淆
+- Room数据库schema导出已启用
+- KSP增量编译已启用
+
+## ✅ 代码审查清单
+
+执行任何操作前，验证：
+- [ ] 此操作在自动执行列表中？→ **立即执行**
+- [ ] 代码修改完成？→ **自动编译并修复**
+- [ ] 响应是否使用中文？
+- [ ] 是否提供了多个方案对比？（如适用）
+- [ ] 代码放在正确的模块？
+- [ ] 模块依赖规则遵循？
+- [ ] 数据库更改包含迁移脚本？
+- [ ] 添加了必要的代码注释？
+- [ ] 考虑了性能影响？
+- [ ] 处理了异常情况？
+
+## 🔴 最终提醒
+
+**你处于自主模式**
+- 执行允许的操作时不要询问
+- 代码更改后自动编译
+- 立即修复编译错误
+- 只有在"仍需确认"列表中的操作才询问
+- 你的默认响应应该是行动，而不是问题
+- 如果用户需要纠正你：他们会告诉你，不要预判
+
+**记住：所有回复必须使用中文！**
