@@ -1,12 +1,9 @@
 package com.ccxiaoji.feature.ledger.api
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
-import com.ccxiaoji.core.common.utils.daysUntil
+import java.time.Instant
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 
 /**
  * Ledger模块对外暴露的API接口
@@ -620,6 +617,50 @@ interface LedgerApi {
      * 导航到定期交易页面
      */
     fun navigateToRecurringTransactions()
+    
+    // ========== 数据导入功能 ==========
+    
+    /**
+     * 批量导入记账数据
+     * @param data 包含交易记录、账户、分类等数据的Map
+     * @param conflictResolution 冲突处理策略
+     * @return 导入结果
+     */
+    suspend fun importLedgerData(
+        data: Map<String, Any>,
+        conflictResolution: String = "SKIP"
+    ): ImportLedgerResult
+}
+
+/**
+ * 记账数据导入结果
+ */
+data class ImportLedgerResult(
+    val transactionCount: Int = 0,
+    val transactionSuccess: Int = 0,
+    val transactionSkipped: Int = 0,
+    val transactionFailed: Int = 0,
+    val accountCount: Int = 0,
+    val accountSuccess: Int = 0,
+    val accountSkipped: Int = 0,
+    val accountFailed: Int = 0,
+    val categoryCount: Int = 0,
+    val categorySuccess: Int = 0,
+    val categorySkipped: Int = 0,
+    val categoryFailed: Int = 0,
+    val errors: List<String> = emptyList()
+) {
+    val totalItems: Int
+        get() = transactionCount + accountCount + categoryCount
+    
+    val totalSuccess: Int
+        get() = transactionSuccess + accountSuccess + categorySuccess
+    
+    val totalSkipped: Int
+        get() = transactionSkipped + accountSkipped + categorySkipped
+    
+    val totalFailed: Int
+        get() = transactionFailed + accountFailed + categoryFailed
 }
 
 /**
@@ -942,8 +983,9 @@ data class SavingsGoalItem(
     
     val daysRemaining: Int?
         get() = targetDate?.let { target ->
-            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-            today.daysUntil(target).takeIf { it > 0 }
+            val today = LocalDate.now()
+            val days = ChronoUnit.DAYS.between(today, target).toInt()
+            days.takeIf { it > 0 }
         }
 }
 

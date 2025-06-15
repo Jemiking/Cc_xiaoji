@@ -54,6 +54,7 @@ dependencies {
     implementation(project(":feature:todo"))
     implementation(project(":feature:habit"))
     implementation(project(":feature:ledger"))
+    implementation(project(":feature:schedule"))
     
     // Shared modules
     implementation(project(":shared:user"))
@@ -94,6 +95,10 @@ dependencies {
     
     // Security
     implementation(libs.androidx.security.crypto)
+    
+    // Apache POI for Excel export - TODO: 编译验证 - 需要执行 ./gradlew :app:compileDebugKotlin
+    implementation("org.apache.poi:poi:5.2.4")
+    implementation("org.apache.poi:poi-ooxml:5.2.4")
     
     // Testing
     testImplementation(libs.junit)

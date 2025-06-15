@@ -21,7 +21,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ccxiaoji.feature.ledger.api.AccountItem
 import com.ccxiaoji.feature.ledger.api.LedgerNavigator
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.AccountViewModel
-import kotlinx.datetime.Instant
+import java.time.Instant
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -506,7 +506,7 @@ fun EditAccountDialog(
                     val updatedAccount = account.copy(
                         name = name,
                         balanceCents = balanceCents,
-                        updatedAt = Instant.DISTANT_FUTURE // Will be set by repository
+                        updatedAt = Instant.MAX // Will be set by repository
                     )
                     onConfirm(updatedAccount)
                 },

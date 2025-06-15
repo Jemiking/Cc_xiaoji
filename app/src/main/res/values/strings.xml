@@ -6,6 +6,7 @@
     <string name="nav_ledger">记账</string>
     <string name="nav_todo">待办</string>
     <string name="nav_habit">习惯</string>
+    <string name="nav_schedule">排班</string>
     <string name="nav_profile">我的</string>
     
     <!-- Common -->
@@ -50,4 +51,140 @@
     <string name="days_left">还有 %d 天</string>
     <string name="days_passed">已过 %d 天</string>
     <string name="today">就是今天</string>
+    
+    <!-- Schedule Module -->
+    <!-- Calendar Screen -->
+    <string name="schedule_today">今</string>
+    <string name="schedule_more">更多</string>
+    <string name="schedule_comfortable_mode">舒适模式</string>
+    <string name="schedule_compact_mode">紧凑模式</string>
+    <string name="schedule_statistics">统计分析</string>
+    <string name="schedule_batch_schedule">批量排班</string>
+    <string name="schedule_settings">设置</string>
+    <string name="schedule_add_schedule">添加排班</string>
+    <string name="schedule_work_days">工作天数</string>
+    <string name="schedule_rest_days">休息天数</string>
+    <string name="schedule_total_hours">总工时</string>
+    <string name="schedule_days_unit">天</string>
+    <string name="schedule_hours_unit">小时</string>
+    <string name="schedule_hours_format">工时：%.1f小时</string>
+    <string name="schedule_no_schedule">当日无排班</string>
+    <string name="schedule_delete">删除排班</string>
+    <string name="schedule_edit">编辑排班</string>
+    
+    <!-- Shift Management -->
+    <string name="shift_management">班次管理</string>
+    <string name="shift_add">添加班次</string>
+    <string name="shift_no_shifts">暂无班次</string>
+    <string name="shift_add_first_hint">点击右下角按钮添加第一个班次</string>
+    <string name="shift_rest">休息</string>
+    
+    <!-- Schedule Edit -->
+    <string name="schedule_edit_title">编辑排班 - %s</string>
+    <string name="schedule_current_shift">当前班次：</string>
+    <string name="schedule_select_shift">选择班次</string>
+    <string name="schedule_change_shift">更改班次</string>
+    
+    <!-- Schedule Pattern -->
+    <string name="schedule_pattern_title">批量排班</string>
+    <string name="schedule_pattern_create">创建</string>
+    <string name="schedule_date_range">日期范围</string>
+    <string name="schedule_start_date">开始日期</string>
+    <string name="schedule_end_date">结束日期</string>
+    <string name="schedule_to">至</string>
+    <string name="schedule_pattern_mode">排班模式</string>
+    <string name="schedule_select_shifts">选择班次</string>
+    <string name="schedule_cycle_settings">循环排班设置</string>
+    <string name="schedule_cycle_days">循环天数</string>
+    <string name="schedule_cycle_hint">支持 2-365 天的任意循环周期</string>
+    <string name="schedule_rotation_settings">轮班设置</string>
+    <string name="schedule_rotation_hint">请按顺序选择班次：</string>
+    <string name="schedule_rotation_rest_days">轮班后休息天数</string>
+    <string name="schedule_custom_pattern">自定义排班模式</string>
+    <string name="schedule_day_format">第 %d 天</string>
+    <string name="schedule_selected">已选择</string>
+    
+    <!-- Schedule Statistics -->
+    <string name="schedule_statistics_title">排班统计</string>
+    <string name="schedule_export_data">导出数据</string>
+    <string name="schedule_time_range">统计时间范围</string>
+    <string name="schedule_statistics_overview">统计概览</string>
+    <string name="schedule_total_days">总天数</string>
+    <string name="schedule_avg_hours">平均工时</string>
+    <string name="schedule_hours_per_day">小时/天</string>
+    <string name="schedule_shift_distribution">班次分布</string>
+    <string name="schedule_shift_details">班次详情</string>
+    <string name="schedule_no_data">暂无排班数据</string>
+    <string name="schedule_no_data_hint">选择的时间范围内没有排班记录</string>
+    
+    <!-- Export -->
+    <string name="export_title">数据导出</string>
+    <string name="export_button">导出数据</string>
+    <string name="export_time_range">导出时间范围</string>
+    <string name="export_format">导出格式</string>
+    <string name="export_options">导出选项</string>
+    <string name="export_include_statistics">包含统计信息</string>
+    <string name="export_include_actual_time">包含实际打卡时间</string>
+    <string name="export_history">导出历史</string>
+    <string name="export_time">导出时间: %s</string>
+    <string name="export_share">分享</string>
+    <string name="export_failed">导出失败</string>
+    <string name="export_share_title">分享导出数据</string>
+    
+    <!-- Settings -->
+    <string name="settings_general">通用</string>
+    <string name="settings_data">数据管理</string>
+    <string name="settings_appearance">外观</string>
+    <string name="settings_about">关于</string>
+    <string name="settings_reminder">排班提醒</string>
+    <string name="settings_reminder_on">已开启</string>
+    <string name="settings_reminder_off">已关闭</string>
+    <string name="settings_reminder_time">提醒时间</string>
+    <string name="settings_week_start">每周起始日</string>
+    <string name="settings_monday">星期一</string>
+    <string name="settings_sunday">星期日</string>
+    <string name="settings_auto_backup">自动备份</string>
+    <string name="settings_backup_now">立即备份</string>
+    <string name="settings_last_backup">上次备份: %s</string>
+    <string name="settings_never_backup">从未备份</string>
+    <string name="settings_restore">恢复数据</string>
+    <string name="settings_restore_desc">从备份文件恢复数据</string>
+    <string name="settings_clear_data">清除所有数据</string>
+    <string name="settings_clear_data_desc">删除所有班次和排班数据</string>
+    <string name="settings_dark_mode">深色模式</string>
+    <string name="settings_theme_color">主题颜色</string>
+    <string name="settings_theme_color_desc">自定义应用主题颜色</string>
+    <string name="settings_about_app">关于 CC小记排班</string>
+    <string name="settings_version">版本 %s</string>
+    <string name="settings_share_app">分享应用</string>
+    <string name="settings_share_app_desc">推荐给朋友</string>
+    <string name="settings_rate_app">评价应用</string>
+    <string name="settings_rate_app_desc">在应用商店评价</string>
+    
+    <!-- Settings Dialogs -->
+    <string name="settings_select_week_start">选择每周起始日</string>
+    <string name="settings_clear_confirm_title">确认清除所有数据</string>
+    <string name="settings_clear_confirm_message">此操作将删除所有班次和排班数据，且无法恢复。是否确定继续？</string>
+    <string name="settings_backup_location">选择备份位置</string>
+    <string name="settings_backup_location_desc">请选择备份文件的保存位置</string>
+    <string name="settings_backup_external">选择外部存储</string>
+    <string name="settings_backup_internal">备份到应用内部</string>
+    
+    <!-- About -->
+    <string name="about_title">关于</string>
+    <string name="about_app_name">CC小记排班</string>
+    <string name="about_version">版本 1.0.0</string>
+    <string name="about_description">CC小记排班是一款简洁易用的排班管理应用，专为需要灵活管理工作时间的用户设计。无论您是轮班工作者、自由职业者还是需要管理团队排班的管理者，这款应用都能满足您的需求。</string>
+    <string name="about_features">功能特色</string>
+    <string name="about_tech_info">技术信息</string>
+    <string name="about_developer">开发者</string>
+    <string name="about_feedback">反馈</string>
+    <string name="about_share">分享</string>
+    <string name="about_copyright">© 2025 CC小记排班. All rights reserved.</string>
+    <string name="about_thanks">感谢您使用 CC小记排班！如有任何问题或建议，欢迎联系我们。</string>
+    
+    <!-- Common -->
+    <string name="back">返回</string>
+    <string name="ok">确定</string>
+    <string name="error">错误</string>
 </resources>

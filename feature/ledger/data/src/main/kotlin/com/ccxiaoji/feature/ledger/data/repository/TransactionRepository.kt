@@ -16,6 +16,8 @@ import com.google.gson.Gson
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.*
+import kotlinx.datetime.Instant as KotlinInstant
+import com.ccxiaoji.core.common.util.DateConverter
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -233,8 +235,8 @@ class TransactionRepository @Inject constructor(
             accountId = account.id,
             accountName = account.name,
             note = entity.note,
-            createdAt = Instant.fromEpochMilliseconds(entity.createdAt),
-            updatedAt = Instant.fromEpochMilliseconds(entity.updatedAt)
+            createdAt = DateConverter.toJavaInstant(KotlinInstant.fromEpochMilliseconds(entity.createdAt)),
+            updatedAt = DateConverter.toJavaInstant(KotlinInstant.fromEpochMilliseconds(entity.updatedAt))
         )
     }
     
@@ -309,9 +311,11 @@ class TransactionRepository @Inject constructor(
             categoryColor = category?.color ?: "#808080",
             accountName = account?.name ?: "未知账户",
             note = note,
-            date = Instant.fromEpochMilliseconds(createdAt)
-                .toLocalDateTime(TimeZone.currentSystemDefault())
-                .date
+            date = com.ccxiaoji.core.common.util.DateConverter.toJavaDate(
+                KotlinInstant.fromEpochMilliseconds(createdAt)
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .date
+            )
         )
     }
 }

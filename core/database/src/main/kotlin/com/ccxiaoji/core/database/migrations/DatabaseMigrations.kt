@@ -18,7 +18,8 @@ object DatabaseMigrations {
             MIGRATION_1_2, // Add credit card fields
             MIGRATION_2_3, // Add credit card payment history
             MIGRATION_3_4, // Add credit card bill management
-            MIGRATION_4_5  // Add schedule management tables
+            MIGRATION_4_5, // Add schedule management tables
+            MIGRATION_5_6  // Add performance optimization indexes for schedule module
         )
     }
 }

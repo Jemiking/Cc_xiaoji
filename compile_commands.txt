@@ -1,0 +1,39 @@
+# 编译命令记录 - 清理缓存并重新编译
+# 生成时间：2025-06-13
+# 目的：解决ScheduleNavigator接口实现不匹配的编译缓存问题
+
+## 步骤1：清理所有编译缓存
+./gradlew clean
+
+## 步骤2：重新编译整个项目
+./gradlew build
+
+## 如果build失败，可以分步执行：
+## 步骤3：先编译核心模块
+./gradlew :core:common:compileDebugKotlin
+./gradlew :core:database:compileDebugKotlin
+./gradlew :core:data:compileDebugKotlin
+./gradlew :core:ui:compileDebugKotlin
+
+## 步骤4：编译共享模块
+./gradlew :shared:backup:compileDebugKotlin
+./gradlew :shared:notification:compileDebugKotlin
+
+## 步骤5：编译功能模块
+./gradlew :feature:schedule:compileDebugKotlin
+./gradlew :feature:ledger:compileDebugKotlin
+./gradlew :feature:todo:compileDebugKotlin
+./gradlew :feature:habit:compileDebugKotlin
+
+## 步骤6：最后编译app模块
+./gradlew :app:compileDebugKotlin
+
+## 额外建议：如果仍有问题，可以尝试：
+## 1. 清理Gradle缓存
+rm -rf ~/.gradle/caches/
+
+## 2. 使用--rerun-tasks强制重新执行
+./gradlew build --rerun-tasks
+
+## 3. 检查依赖关系
+./gradlew :app:dependencies

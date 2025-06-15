@@ -41,7 +41,29 @@ interface HabitApi {
      * 导航到快速打卡页面
      */
     fun navigateToQuickCheckIn()
+    
+    /**
+     * 批量导入习惯数据
+     * @param habits 习惯数据列表
+     * @param conflictResolution 冲突处理策略
+     * @return 导入结果
+     */
+    suspend fun importHabits(
+        habits: List<Map<String, Any>>,
+        conflictResolution: String = "SKIP"
+    ): ImportHabitsResult
 }
+
+/**
+ * 习惯数据导入结果
+ */
+data class ImportHabitsResult(
+    val totalCount: Int = 0,
+    val successCount: Int = 0,
+    val skippedCount: Int = 0,
+    val failedCount: Int = 0,
+    val errors: List<String> = emptyList()
+)
 
 /**
  * 习惯统计信息

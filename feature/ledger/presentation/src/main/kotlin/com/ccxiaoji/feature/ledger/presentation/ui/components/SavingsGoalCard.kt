@@ -17,7 +17,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ccxiaoji.feature.ledger.api.SavingsGoalItem
-import kotlinx.datetime.toJavaLocalDate
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -78,7 +77,7 @@ fun SavingsGoalCard(
                         
                         goal.targetDate?.let { date ->
                             Text(
-                                text = "目标日期: ${date.toJavaLocalDate().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日"))}",
+                                text = "目标日期: ${date.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日"))}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )

@@ -21,9 +21,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ccxiaoji.feature.ledger.api.CreditCardBill
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.CreditCardBillViewModel
-import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+// 移除了未使用的kotlinx.datetime导入
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
@@ -166,9 +164,6 @@ private fun BillItem(
     val dateFormatter = SimpleDateFormat("yyyy年MM月", Locale.getDefault())
     val dueDateFormatter = SimpleDateFormat("MM月dd日", Locale.getDefault())
     
-    val billStartDate = Instant.fromEpochMilliseconds(bill.billStartDate)
-        .toLocalDateTime(TimeZone.currentSystemDefault())
-        .date
     val paymentDueDate = Date(bill.paymentDueDate)
     
     val statusColor = when {

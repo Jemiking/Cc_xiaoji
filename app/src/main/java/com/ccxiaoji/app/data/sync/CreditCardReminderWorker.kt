@@ -14,8 +14,7 @@ import java.text.NumberFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
-import com.ccxiaoji.app.utils.CreditCardDateUtils
-import kotlinx.datetime.*
+import com.ccxiaoji.core.common.utils.CreditCardDateUtils
 
 @HiltWorker
 class CreditCardReminderWorker @AssistedInject constructor(

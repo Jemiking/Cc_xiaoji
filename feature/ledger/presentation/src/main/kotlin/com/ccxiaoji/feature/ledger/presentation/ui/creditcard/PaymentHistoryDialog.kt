@@ -21,9 +21,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.ccxiaoji.feature.ledger.api.AccountItem
 import com.ccxiaoji.feature.ledger.api.PaymentRecord
 import com.ccxiaoji.feature.ledger.api.PaymentStats
-import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+// 移除了不需要的kotlinx.datetime导入，因为这个文件只使用java.util.Date
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*

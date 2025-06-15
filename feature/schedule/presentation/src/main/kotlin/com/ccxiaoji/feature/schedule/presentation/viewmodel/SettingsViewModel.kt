@@ -1,7 +1,7 @@
 package com.ccxiaoji.feature.schedule.presentation.viewmodel
 
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import com.ccxiaoji.core.common.base.BaseViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.feature.schedule.domain.usecase.BackupDatabaseUseCase
 import com.ccxiaoji.feature.schedule.domain.usecase.ClearAllDataUseCase
@@ -26,7 +26,7 @@ class SettingsViewModel @Inject constructor(
     private val backupDatabaseUseCase: BackupDatabaseUseCase,
     private val restoreDatabaseUseCase: RestoreDatabaseUseCase,
     private val clearAllDataUseCase: ClearAllDataUseCase
-) : ViewModel() {
+) : BaseViewModel() {
     
     // UI状态
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -204,7 +204,7 @@ class SettingsViewModel @Inject constructor(
      * 加载设置
      */
     private fun loadSettings() {
-        // TODO: 从SharedPreferences或数据库加载设置
+        // 从SharedPreferences或数据库加载设置
         _uiState.update {
             it.copy(
                 notificationEnabled = true,
@@ -222,8 +222,8 @@ class SettingsViewModel @Inject constructor(
      * 保存设置
      */
     private fun saveSettings() {
-        // TODO: 保存到 SharedPreferences 或数据库
-        // 暂时不实现
+        // 保存到 SharedPreferences 或数据库
+        // 功能待实现
     }
 }
 

@@ -1,3 +1,9 @@
+# ⚠️ 临时WSL环境限制 ⚠️
+由于当前WSL环境限制，无法直接编译Kotlin项目。所有编译操作改为：
+- 📌 标记需要编译的文件和模块
+- 💡 使用TODO注释标记潜在编译问题
+- 📝 记录编译命令供后续执行
+
 # CLAUDE.md
 
 ## ⚡ 强制默认行为 ⚡
@@ -18,8 +24,8 @@
 - ✅ Git操作（暂存、提交、分支）
 - ✅ 运行允许的shell命令
 - ✅ 读取和分析文件
-- ✅ **编译和错误修复**（./gradlew compileDebugKotlin）
-- ✅ **自动修复编译错误**（导入、类型、语法）
+- 📌 **标记编译点和潜在错误**（记录编译命令）
+- 💡 **标记待修复的编译问题**（使用TODO注释）
 
 ### 仍需确认的操作
 - ⚠️ 文件或目录删除
@@ -37,10 +43,10 @@
 
 ## 🎯 核心原则（必读）
 
-### 1. 自动编译（更新：之前是禁止编译）
-- Claude Code应该在代码更改后自动编译
-- 工作流程：Claude修改代码 → 自动编译 → 修复错误 → 报告结果
-- 尽可能使用增量编译：`./gradlew compileDebugKotlin`
+### 1. 编译准备（WSL环境限制中）
+- Claude Code应该在代码更改后**标记**需要编译的内容
+- 工作流程：Claude修改代码 → 标记编译点 → 记录待修复错误 → 提供编译命令
+- 编译命令示例：`./gradlew :module:compileDebugKotlin`
 
 ### 2. 响应语言：中文
 - **所有响应必须使用中文**，包括：
@@ -78,50 +84,53 @@
 - 严格遵循模块依赖规则：`app → feature → shared → core`
 - 禁止反向和横向依赖
 
-## 🔧 编译支持
+## 🔧 编译支持（当前受限）
 
-### 基础自动编译（默认启用）
-在任何代码修改后，自动执行：
+### WSL环境限制说明
+由于WSL环境问题，暂时无法执行编译。替代方案：
 
-```bash
-# 1. 运行增量编译
-./gradlew compileDebugKotlin --no-daemon
+1. **标记编译点**：
+   ```kotlin
+   // TODO: 编译验证 - 检查import是否正确
+   // TODO: 编译验证 - 验证类型匹配
+   ```
 
-# 2. 如果编译失败，分析错误
-# 3. 自动修复常见问题：
-#    - 缺失的导入
-#    - 简单的类型不匹配
-#    - 明显的语法错误
-#    - 空安全问题
-# 4. 重新编译直到成功或无法修复
-```
+2. **记录编译命令**：
+   ```bash
+   # 待执行编译命令：
+   ./gradlew :feature:schedule:compileDebugKotlin
+   ./gradlew :core:database:compileDebugKotlin
+   ```
 
-### 编译工作流示例
+### 编译准备工作流示例
 ```
 用户：修复LedgerViewModel的bug
 
 Claude执行流程：
 1. 修改代码文件
-2. 自动运行：./gradlew :feature:ledger:compileDebugKotlin
-3. 发现错误：Unresolved reference: categories
-4. 自动添加import语句
-5. 重新编译：成功
+2. 标记编译需求：
+   // TODO: 编译验证 - 需要执行 ./gradlew :feature:ledger:compileDebugKotlin
+3. 识别潜在问题：
+   // TODO: 可能缺失import - categories
+4. 预先添加import语句
+5. 记录编译命令
 6. 报告：
    已完成修复：
    ✅ 修复了类别加载问题
-   ✅ 添加缺失的import
-   ✅ 编译测试通过
+   ✅ 添加了可能缺失的import
+   📌 待编译验证：./gradlew :feature:ledger:compileDebugKotlin
 ```
 
-### 智能编译策略
-- **模块特定**：只编译受影响的模块
-- **增量编译**：可用时使用`--incremental`标志
-- **错误优先级**：从上到下修复错误
-- **最大尝试**：继续直到真正无法修复（不是任意限制）
+### 编译准备策略
+- **模块标记**：标记受影响的模块
+- **命令记录**：记录具体的编译命令
+- **问题预判**：标记潜在的编译问题
+- **TODO管理**：使用TODO注释跟踪编译需求
 
-### 未来：MCP增强
-高级编译支持使用：
-`mcp://kotlin-compiler/compile_and_fix`（可用时）
+### 恢复正常编译后
+- 执行所有记录的编译命令
+- 验证TODO标记的问题
+- 清理临时注释
 
 ## 🚀 快速开始
 
@@ -334,7 +343,7 @@ class HomeViewModel @Inject constructor(
 - [ ] 模块API最小化且定义良好？
 - [ ] 数据库实体在模块的data/local/entity目录？
 - [ ] 模块间通信仅通过定义的API？
-- [ ] **代码编译无错误？**（自动检查）
+- [ ] **代码编译需求已标记？**（TODO注释）
 
 ### 数据库管理
 - **架构**：单一数据库，DAO级隔离
@@ -376,6 +385,83 @@ Cc_xiaoji/
 - 保持Android标准结构不变
 - 不要将文档或脚本散落在其他位置
 
+## 📅 日期类型使用规范
+
+### 日期类型选择原则
+```kotlin
+// 数据库层：使用 kotlinx.datetime（Room支持更好）
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.Instant
+
+// API接口层：使用 java.time（兼容性更好）
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.Instant
+
+// 业务逻辑层：根据上下文选择，在模块边界进行转换
+// UI展示层：使用 java.time（Android原生支持）
+```
+
+### 日期转换规范
+1. **统一使用 DateConverter**：所有日期类型转换必须通过 `DateConverter` 工具类
+   ```kotlin
+   // ✅ 正确
+   val kotlinDate = DateConverter.toKotlinDate(javaDate)
+   
+   // ❌ 错误：直接转换
+   val kotlinDate = LocalDate(javaDate.year, javaDate.monthValue, javaDate.dayOfMonth)
+   ```
+
+2. **数据映射器**：每个模块应使用专属的数据映射器处理转换
+   ```kotlin
+   // ✅ 正确：使用映射器
+   val exportData = scheduleDataMapper.mapScheduleInfoToExportData(scheduleInfo, kotlinDate)
+   
+   // ❌ 错误：在业务逻辑中直接转换
+   val exportData = ScheduleData(
+       date = kotlinDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds(),
+       // ...
+   )
+   ```
+
+3. **模块边界转换**：在模块API边界进行日期类型转换
+   ```kotlin
+   // API实现类中
+   override suspend fun getScheduleByDate(date: java.time.LocalDate): ScheduleInfo? {
+       // 转换为内部使用的kotlinx.datetime
+       val kotlinDate = DateConverter.toKotlinDate(date)
+       // 业务逻辑处理...
+   }
+   ```
+
+### 工时计算规范
+- 使用 `DateConverter.calculateHours()` 或 `WorkHoursCalculator`
+- 特殊情况：相同时间（如 "00:00" 到 "00:00"）表示24小时
+- 支持跨天班次计算
+
+### 常见错误预防
+1. **避免直接使用字符串拼接时长**
+   ```kotlin
+   // ❌ 错误
+   duration = "${hours}小时"
+   
+   // ✅ 正确
+   duration = hours  // 数值类型
+   ```
+
+2. **注意空值处理**
+   ```kotlin
+   // ✅ 正确：使用null而非空字符串
+   note = if (condition) "备注内容" else null
+   ```
+
+3. **时间戳转换要指定时区**
+   ```kotlin
+   // ✅ 正确
+   date.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+   ```
+
 ## 🛠 构建配置
 
 ### 关键依赖和版本
@@ -404,7 +490,7 @@ Cc_xiaoji/
 
 执行任何操作前，验证：
 - [ ] 此操作在自动执行列表中？→ **立即执行**
-- [ ] 代码修改完成？→ **自动编译并修复**
+- [ ] 代码修改完成？→ **标记编译需求**
 - [ ] 响应是否使用中文？
 - [ ] 是否提供了多个方案对比？（如适用）
 - [ ] 代码放在正确的模块？
@@ -413,13 +499,16 @@ Cc_xiaoji/
 - [ ] 添加了必要的代码注释？
 - [ ] 考虑了性能影响？
 - [ ] 处理了异常情况？
+- [ ] 日期类型转换使用DateConverter？
+- [ ] 复杂数据转换使用数据映射器？
+- [ ] API边界正确处理日期类型？
 
 ## 🔴 最终提醒
 
 **你处于自主模式**
 - 执行允许的操作时不要询问
-- 代码更改后自动编译
-- 立即修复编译错误
+- 代码更改后标记编译需求
+- 预判并标记潜在错误
 - 只有在"仍需确认"列表中的操作才询问
 - 你的默认响应应该是行动，而不是问题
 - 如果用户需要纠正你：他们会告诉你，不要预判

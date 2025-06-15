@@ -1,11 +1,13 @@
 package com.ccxiaoji.feature.schedule.domain.model
 
+import androidx.compose.runtime.Immutable
 import java.time.LocalTime
 
 /**
  * 班次领域模型
  * 业务层使用的班次数据结构
  */
+@Immutable
 data class Shift(
     val id: Long = 0,
     val name: String,
@@ -28,22 +30,22 @@ data class Shift(
             }
             return (end - start) / 3600.0
         }
-    
+
     /**
      * 是否为跨天班次
      */
     val isOvernight: Boolean
         get() = endTime.isBefore(startTime)
-    
+
     /**
      * 格式化的时间范围显示
      */
     val timeRangeText: String
         get() = "${startTime.format(TIME_FORMATTER)} - ${endTime.format(TIME_FORMATTER)}"
-    
+
     companion object {
         private val TIME_FORMATTER = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
-        
+
         /**
          * 预定义的班次颜色
          */

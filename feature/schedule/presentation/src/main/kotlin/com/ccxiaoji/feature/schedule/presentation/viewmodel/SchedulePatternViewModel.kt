@@ -1,6 +1,6 @@
 package com.ccxiaoji.feature.schedule.presentation.viewmodel
 
-import androidx.lifecycle.ViewModel
+import com.ccxiaoji.core.common.base.BaseViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.feature.schedule.domain.model.SchedulePattern
 import com.ccxiaoji.feature.schedule.domain.model.Shift
@@ -21,7 +21,7 @@ import javax.inject.Inject
 class SchedulePatternViewModel @Inject constructor(
     private val getActiveShiftsUseCase: GetActiveShiftsUseCase,
     private val createScheduleUseCase: CreateScheduleUseCase
-) : ViewModel() {
+) : BaseViewModel() {
     
     // 班次列表
     val shifts: StateFlow<List<Shift>> = getActiveShiftsUseCase()

@@ -33,6 +33,7 @@ fun HomeScreen(
     onNavigateToLedger: () -> Unit = {},
     onNavigateToTodo: () -> Unit = {},
     onNavigateToHabit: () -> Unit = {},
+    onNavigateToSchedule: () -> Unit = {},
     onQuickAddTransaction: () -> Unit = {},
     onNavigateToStatistics: () -> Unit = {},
     onNavigateToSavingsGoal: () -> Unit = {}
@@ -107,6 +108,17 @@ fun HomeScreen(
                 longestStreak = uiState.longestHabitStreak,
                 onCardClick = onNavigateToHabit,
                 onCheckIn = onNavigateToHabit,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            
+            // 排班模块卡片
+            ScheduleModuleCard(
+                todayShiftName = uiState.todaySchedule?.shiftName,
+                shiftStartTime = uiState.todaySchedule?.startTime,
+                shiftEndTime = uiState.todaySchedule?.endTime,
+                isRestDay = uiState.todaySchedule?.isRestDay ?: true,
+                onCardClick = onNavigateToSchedule,
+                onViewSchedule = onNavigateToSchedule,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
             

@@ -36,7 +36,29 @@ interface TodoApi {
      * 导航到添加待办页面
      */
     fun navigateToAddTask()
+    
+    /**
+     * 批量导入待办任务
+     * @param tasks 待办任务列表
+     * @param conflictResolution 冲突处理策略
+     * @return 导入结果
+     */
+    suspend fun importTasks(
+        tasks: List<Map<String, Any>>,
+        conflictResolution: String = "SKIP"
+    ): ImportTasksResult
 }
+
+/**
+ * 待办任务导入结果
+ */
+data class ImportTasksResult(
+    val totalCount: Int = 0,
+    val successCount: Int = 0,
+    val skippedCount: Int = 0,
+    val failedCount: Int = 0,
+    val errors: List<String> = emptyList()
+)
 
 /**
  * 待办任务数据模型（简化版）

@@ -24,10 +24,9 @@ import com.ccxiaoji.feature.ledger.api.SavingsGoalItem
 import com.ccxiaoji.feature.ledger.presentation.ui.components.ContributionDialog
 import com.ccxiaoji.feature.ledger.presentation.ui.components.SavingsGoalDialog
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.SavingsGoalViewModel
-import kotlinx.datetime.toJavaLocalDateTime
-import kotlinx.datetime.toJavaLocalDate
-import kotlinx.datetime.toJavaInstant
+import com.ccxiaoji.core.common.util.DateConverter
 import java.text.NumberFormat
+import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -200,7 +199,7 @@ fun SavingsGoalDetailScreen(
                             description = description,
                             color = color,
                             iconName = iconName,
-                            updatedAt = kotlinx.datetime.Clock.System.now()
+                            updatedAt = Instant.now()
                         )
                     )
                     showEditDialog = false
@@ -420,7 +419,7 @@ private fun ProgressDetailsCard(goal: SavingsGoalItem) {
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
-                            text = date.toJavaLocalDate().format(DateTimeFormatter.ofPattern("yyyy年MM月dd日")),
+                            text = date.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日")),
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium
                         )
@@ -565,7 +564,7 @@ private fun ContributionItem(
                         fontWeight = FontWeight.Medium
                     )
                     Text(
-                        text = contribution.createdAt.toJavaInstant()
+                        text = contribution.createdAt
                             .atZone(java.time.ZoneId.systemDefault())
                             .toLocalDateTime()
                             .format(DateTimeFormatter.ofPattern("MM月dd日 HH:mm")),

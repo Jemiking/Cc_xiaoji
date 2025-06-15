@@ -35,6 +35,13 @@ interface ScheduleDao {
     fun getScheduleByDateFlow(date: Long): Flow<ScheduleEntity?>
     
     /**
+     * 获取指定日期的排班（包含班次信息）
+     */
+    @Transaction
+    @Query("SELECT * FROM schedules WHERE date = :date")
+    fun getScheduleWithShiftByDate(date: Long): Flow<ScheduleWithShift?>
+    
+    /**
      * 获取指定月份的排班（包含班次信息）
      */
     @Transaction
@@ -110,6 +117,31 @@ interface ScheduleDao {
      */
     @Query("DELETE FROM schedules")
     suspend fun deleteAllSchedules(): Int
+    
+    /**
+     * 获取排班统计信息（优化版）
+     * 直接在数据库层进行统计计算，避免加载所有数据到内存
+     */
+    @Query("""
+        SELECT 
+            sh.id as shiftId,
+            sh.name as shiftName,
+            COUNT(*) as count,
+            SUM(
+                CASE 
+                    WHEN sh.end_time >= sh.start_time 
+                    THEN (CAST(SUBSTR(sh.end_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(sh.end_time, 4, 2) AS INTEGER)) -
+                         (CAST(SUBSTR(sh.start_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(sh.start_time, 4, 2) AS INTEGER))
+                    ELSE (24 * 60) - (CAST(SUBSTR(sh.start_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(sh.start_time, 4, 2) AS INTEGER)) +
+                         (CAST(SUBSTR(sh.end_time, 1, 2) AS INTEGER) * 60 + CAST(SUBSTR(sh.end_time, 4, 2) AS INTEGER))
+                END
+            ) / 60.0 as totalHours
+        FROM schedules s
+        INNER JOIN shifts sh ON s.shift_id = sh.id
+        WHERE s.date >= :startDate AND s.date <= :endDate
+        GROUP BY sh.id, sh.name
+    """)
+    suspend fun getScheduleStatistics(startDate: Long, endDate: Long): List<ShiftStatistics>
 }
 
 /**
@@ -130,4 +162,14 @@ data class ScheduleWithShift(
 data class WorkStatistics(
     val totalDays: Int,
     val shiftDays: Int
+)
+
+/**
+ * 班次统计数据
+ */
+data class ShiftStatistics(
+    val shiftId: Long,
+    val shiftName: String,
+    val count: Int,
+    val totalHours: Double
 )

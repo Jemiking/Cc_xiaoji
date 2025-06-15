@@ -17,10 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ccxiaoji.feature.ledger.api.LedgerNavigator
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerViewModel
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toJavaLocalDateTime
-import kotlinx.datetime.toLocalDateTime
-import kotlinx.datetime.toJavaLocalDate
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -221,7 +217,6 @@ private fun TransactionDetailContent(
                     icon = Icons.Default.CalendarToday,
                     label = "日期时间",
                     value = transaction.date
-                        .toJavaLocalDate()
                         .format(java.time.format.DateTimeFormatter.ofPattern("yyyy年MM月dd日"))
                 )
                 

@@ -1,6 +1,6 @@
 package com.ccxiaoji.feature.schedule.presentation.viewmodel
 
-import androidx.lifecycle.ViewModel
+import com.ccxiaoji.core.common.base.BaseViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.feature.schedule.domain.model.ScheduleStatistics
 import com.ccxiaoji.feature.schedule.domain.model.Shift
@@ -23,7 +23,7 @@ import javax.inject.Inject
 class ScheduleStatisticsViewModel @Inject constructor(
     private val getStatisticsUseCase: GetStatisticsUseCase,
     private val getActiveShiftsUseCase: GetActiveShiftsUseCase
-) : ViewModel() {
+) : BaseViewModel() {
     
     // UI状态
     private val _uiState = MutableStateFlow(ScheduleStatisticsUiState())

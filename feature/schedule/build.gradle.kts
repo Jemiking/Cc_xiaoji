@@ -18,6 +18,18 @@ android {
 }
 
 dependencies {
-    // Feature-specific dependency: database access
+    // Feature-specific dependencies
     implementation(project(":core:database"))
+    implementation(project(":core:data"))
+    
+    // Shared modules
+    implementation(project(":shared:notification"))
+    implementation(project(":shared:backup"))
+    
+    // WorkManager for notifications
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.hilt.work)
+    
+    // DataStore for preferences
+    implementation(libs.androidx.datastore.preferences)
 }

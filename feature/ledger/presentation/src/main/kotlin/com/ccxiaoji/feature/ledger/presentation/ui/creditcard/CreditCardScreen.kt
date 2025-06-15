@@ -23,9 +23,8 @@ import com.ccxiaoji.feature.ledger.api.AccountItem
 import com.ccxiaoji.feature.ledger.api.LedgerNavigator
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.CreditCardViewModel
 import com.ccxiaoji.core.common.utils.CreditCardDateUtils
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import java.time.LocalDate
+import java.time.ZoneId
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -204,7 +203,7 @@ fun CreditCardItem(
     }
     
     // 计算剩余还款天数
-    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+    val today = LocalDate.now(ZoneId.systemDefault())
     val daysUntilPayment = if (card.paymentDueDay != null && card.billingDay != null) {
         CreditCardDateUtils.calculateDaysUntilPayment(card.paymentDueDay, card.billingDay, today)
     } else null

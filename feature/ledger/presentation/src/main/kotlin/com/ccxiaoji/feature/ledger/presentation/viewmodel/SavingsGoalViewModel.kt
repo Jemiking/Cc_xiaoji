@@ -8,12 +8,8 @@ import com.ccxiaoji.feature.ledger.api.SavingsGoalItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
-import kotlinx.datetime.DatePeriod
-import kotlinx.datetime.plus
+import java.time.LocalDate
+import com.ccxiaoji.core.common.util.DateConverter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -65,7 +61,7 @@ class SavingsGoalViewModel @Inject constructor(
                 ledgerApi.createSavingsGoal(
                     name = name,
                     targetAmountCents = targetAmountCents,
-                    targetDate = targetDate,
+                    targetDate = targetDate?.let { DateConverter.toJavaDate(it) },
                     description = description,
                     color = color,
                     iconName = iconName

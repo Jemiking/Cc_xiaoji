@@ -18,6 +18,7 @@ import com.ccxiaoji.app.presentation.ui.home.HomeScreen
 import com.ccxiaoji.feature.todo.presentation.navigation.todoGraph
 import com.ccxiaoji.feature.habit.presentation.navigation.habitRoute
 import com.ccxiaoji.feature.habit.presentation.navigation.habitScreen
+import com.ccxiaoji.feature.schedule.presentation.navigation.scheduleGraph
 import com.ccxiaoji.app.presentation.ui.profile.ProfileScreen
 import com.ccxiaoji.feature.ledger.presentation.ui.TransactionDetailScreen
 import com.ccxiaoji.feature.ledger.presentation.ui.account.AccountScreen
@@ -27,6 +28,7 @@ import com.ccxiaoji.app.presentation.ui.statistics.StatisticsScreen
 import com.ccxiaoji.feature.ledger.presentation.ui.savings.SavingsGoalScreen
 import com.ccxiaoji.feature.ledger.presentation.ui.savings.SavingsGoalDetailScreen
 import com.ccxiaoji.app.presentation.ui.profile.DataExportScreen
+import com.ccxiaoji.app.presentation.ui.profile.DataImportScreen
 import com.ccxiaoji.app.presentation.ui.profile.ThemeSettingsScreen
 import com.ccxiaoji.app.presentation.ui.profile.NotificationSettingsScreen
 
@@ -46,6 +48,7 @@ fun NavGraph(
                 onNavigateToLedger = { navController.navigate(Screen.Ledger.route) },
                 onNavigateToTodo = { navController.navigate(Screen.Todo.route) },
                 onNavigateToHabit = { navController.navigate(Screen.Habit.route) },
+                onNavigateToSchedule = { navController.navigate(Screen.Schedule.route) },
                 onQuickAddTransaction = { navController.navigate(Screen.Ledger.route) },
                 onNavigateToStatistics = { navController.navigate(StatisticsRoute.route) },
                 onNavigateToSavingsGoal = { navController.navigate(SavingsGoalRoute.route) }
@@ -77,6 +80,9 @@ fun NavGraph(
         
         // Habit模块导航图
         habitScreen()
+        
+        // Schedule模块导航图
+        scheduleGraph(navController)
         
         composable(Screen.Profile.route) {
             ProfileScreen(navController = navController)
@@ -216,6 +222,12 @@ fun NavGraph(
         
         composable(DataExportRoute.route) {
             DataExportScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(DataImportRoute.route) {
+            DataImportScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

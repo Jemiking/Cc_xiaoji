@@ -17,6 +17,7 @@ import com.ccxiaoji.app.presentation.ui.navigation.NavGraph
 import com.ccxiaoji.app.navigation.TodoNavigatorImpl
 import com.ccxiaoji.app.navigation.HabitNavigatorImpl
 import com.ccxiaoji.app.navigation.LedgerNavigatorImpl
+import com.ccxiaoji.app.navigation.ScheduleNavigatorImpl
 import com.ccxiaoji.shared.notification.api.NotificationApi
 import com.ccxiaoji.shared.sync.api.SyncApi
 import com.ccxiaoji.app.data.sync.CreditCardReminderManager
@@ -48,6 +49,9 @@ class MainActivity : ComponentActivity() {
     
     @Inject
     lateinit var ledgerNavigator: LedgerNavigatorImpl
+    
+    @Inject
+    lateinit var scheduleNavigator: ScheduleNavigatorImpl
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,6 +89,7 @@ class MainActivity : ComponentActivity() {
                 todoNavigator.setNavController(navController)
                 habitNavigator.setNavController(navController)
                 ledgerNavigator.setNavController(navController)
+                scheduleNavigator.setNavController(navController)
                 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),

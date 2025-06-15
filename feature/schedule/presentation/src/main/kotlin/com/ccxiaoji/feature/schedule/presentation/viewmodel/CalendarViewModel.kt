@@ -1,7 +1,12 @@
 package com.ccxiaoji.feature.schedule.presentation.viewmodel
 
-import androidx.lifecycle.ViewModel
+// Android/AndroidX
 import androidx.lifecycle.viewModelScope
+
+// 项目内部 - Core模块
+import com.ccxiaoji.core.common.base.BaseViewModel
+
+// 项目内部 - Domain层
 import com.ccxiaoji.feature.schedule.domain.model.Schedule
 import com.ccxiaoji.feature.schedule.domain.model.ScheduleStatistics
 import com.ccxiaoji.feature.schedule.domain.model.Shift
@@ -10,9 +15,17 @@ import com.ccxiaoji.feature.schedule.domain.usecase.DeleteScheduleUseCase
 import com.ccxiaoji.feature.schedule.domain.usecase.GetMonthScheduleUseCase
 import com.ccxiaoji.feature.schedule.domain.usecase.GetQuickShiftsUseCase
 import com.ccxiaoji.feature.schedule.domain.usecase.GetScheduleStatisticsUseCase
+
+// 项目内部 - Presentation层
+import com.ccxiaoji.feature.schedule.presentation.ui.calendar.CalendarUiState
+import com.ccxiaoji.feature.schedule.presentation.ui.calendar.CalendarViewMode
+
+// 第三方库
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+
+// Java/Kotlin标准库
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -29,10 +42,9 @@ class CalendarViewModel @Inject constructor(
     private val getQuickShiftsUseCase: GetQuickShiftsUseCase,
     private val createScheduleUseCase: CreateScheduleUseCase,
     private val deleteScheduleUseCase: DeleteScheduleUseCase
-) : ViewModel() {
+) : BaseViewModel() {
     
-    // 在属性初始化完成后，init块会在下面执行
-    
+    // ========== 日期和时间相关状态 ==========
     // 当前显示的年月
     private val _currentYearMonth = MutableStateFlow(YearMonth.now())
     val currentYearMonth: StateFlow<YearMonth> = _currentYearMonth.asStateFlow()
@@ -41,6 +53,11 @@ class CalendarViewModel @Inject constructor(
     private val _selectedDate = MutableStateFlow<LocalDate?>(LocalDate.now())
     val selectedDate: StateFlow<LocalDate?> = _selectedDate.asStateFlow()
     
+    // 一周开始日
+    private val _weekStartDay = MutableStateFlow(DayOfWeek.MONDAY)
+    val weekStartDay: StateFlow<DayOfWeek> = _weekStartDay.asStateFlow()
+    
+    // ========== 排班数据相关状态 ==========
     // 当前月份的排班列表
     val schedules: StateFlow<List<Schedule>> = _currentYearMonth
         .flatMapLatest { yearMonth ->
@@ -64,13 +81,10 @@ class CalendarViewModel @Inject constructor(
             initialValue = emptyList()
         )
     
+    // ========== UI交互相关状态 ==========
     // 快速选择对话框的日期
     private val _quickSelectDate = MutableStateFlow<LocalDate?>(null)
     val quickSelectDate: StateFlow<LocalDate?> = _quickSelectDate.asStateFlow()
-    
-    // 一周开始日
-    private val _weekStartDay = MutableStateFlow(DayOfWeek.MONDAY)
-    val weekStartDay: StateFlow<DayOfWeek> = _weekStartDay.asStateFlow()
     
     // 视图模式状态
     private val _viewMode = MutableStateFlow(CalendarViewMode.COMPACT)
@@ -81,10 +95,8 @@ class CalendarViewModel @Inject constructor(
     val uiState: StateFlow<CalendarUiState> = _uiState.asStateFlow()
     
     init {
-        android.util.Log.d("CalendarViewModel", "ViewModel initialized")
         // 延迟加载初始统计信息，确保所有属性都已初始化
         viewModelScope.launch {
-            android.util.Log.d("CalendarViewModel", "Loading initial statistics")
             loadMonthlyStatistics()
         }
     }
@@ -254,20 +266,4 @@ class CalendarViewModel @Inject constructor(
     fun setWeekStartDay(dayOfWeek: DayOfWeek) {
         _weekStartDay.value = dayOfWeek
     }
-}
-
-/**
- * 日历UI状态
- */
-data class CalendarUiState(
-    val isLoading: Boolean = false,
-    val errorMessage: String? = null
-)
-
-/**
- * 日历视图模式
- */
-enum class CalendarViewMode {
-    COMFORTABLE, // 舒适模式：较大的矩形格子，更多显示空间
-    COMPACT      // 紧凑模式：紧凑的正方形格子，显示更多日期
 }

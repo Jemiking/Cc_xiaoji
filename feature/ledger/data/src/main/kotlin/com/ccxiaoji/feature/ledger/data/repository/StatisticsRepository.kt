@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.*
+import com.ccxiaoji.core.common.util.DateConverter
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -101,8 +102,10 @@ class StatisticsRepository @Inject constructor(
                         categoryColor = category?.color ?: "#999999",
                         accountName = account?.name ?: "未知账户",
                         note = entity.note,
-                        date = Instant.fromEpochMilliseconds(entity.createdAt)
-                            .toLocalDateTime(TimeZone.currentSystemDefault()).date
+                        date = com.ccxiaoji.core.common.util.DateConverter.toJavaDate(
+                            Instant.fromEpochMilliseconds(entity.createdAt)
+                                .toLocalDateTime(TimeZone.currentSystemDefault()).date
+                        )
                     )
                 }
             }

@@ -42,7 +42,8 @@
       "Bash(true)",
       "WebFetch(domain:developer.android.com)",
       "Bash(sh gradlew:*)",
-      "Bash(dos2unix:*)"
+      "Bash(dos2unix:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   },

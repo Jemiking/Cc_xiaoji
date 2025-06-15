@@ -1,0 +1,26 @@
+#!/bin/bash
+# WSL环境配置文件 - 使用Windows的Java和Android SDK
+
+# Java配置
+export JAVA_HOME="/mnt/c/Program Files/Eclipse Adoptium/jdk-17.0.15.6-hotspot"
+export PATH="$JAVA_HOME/bin:$PATH"
+
+# 为WSL创建java别名（去掉.exe后缀）
+alias java='java.exe'
+alias javac='javac.exe'
+alias javap='javap.exe'
+alias javadoc='javadoc.exe'
+
+# Android SDK配置（需要根据实际情况调整用户名）
+# export ANDROID_HOME="/mnt/c/Users/[用户名]/AppData/Local/Android/Sdk"
+# export PATH="$PATH:$ANDROID_HOME/platform-tools"
+
+# 项目快捷方式
+export CCXIAOJI_HOME="/mnt/d/kotlin/Cc_xiaoji"
+alias ccx="cd $CCXIAOJI_HOME"
+
+# Gradle配置
+export GRADLE_USER_HOME="$HOME/.gradle"
+
+echo "CC小记WSL环境已加载"
+echo "Java版本: $(java -version 2>&1 | head -n 1)"

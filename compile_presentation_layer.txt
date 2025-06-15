@@ -1,0 +1,23 @@
+# 排班模块Presentation层编译命令
+
+## 编译整个schedule模块（推荐）
+./gradlew :feature:schedule:compileDebugKotlin
+
+## 清理并重新编译
+./gradlew :feature:schedule:clean :feature:schedule:compileDebugKotlin
+
+## 如果出现缓存问题，执行完整清理
+./gradlew clean
+rm -rf .gradle/
+rm -rf feature/schedule/build/
+./gradlew :feature:schedule:compileDebugKotlin
+
+## 编译并查看详细错误
+./gradlew :feature:schedule:compileDebugKotlin --stacktrace
+
+## 修改内容总结
+### 2025-06-13 Presentation层迁移
+- 修改了7个ViewModels继承BaseViewModel
+- 验证了UI组件主题使用正确
+- 创建了符合主项目架构的导航扩展函数
+- 详见：doc/排班模块Presentation层迁移完成报告.md

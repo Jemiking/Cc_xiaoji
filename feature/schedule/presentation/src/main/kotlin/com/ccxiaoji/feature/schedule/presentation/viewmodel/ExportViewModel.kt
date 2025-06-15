@@ -1,7 +1,7 @@
 package com.ccxiaoji.feature.schedule.presentation.viewmodel
 
 import android.content.Context
-import androidx.lifecycle.ViewModel
+import com.ccxiaoji.core.common.base.BaseViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.core.database.dao.ScheduleExportHistoryDao
 import com.ccxiaoji.core.database.entity.ScheduleExportHistoryEntity
@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
@@ -32,7 +33,7 @@ import javax.inject.Inject
 class ExportViewModel @Inject constructor(
     private val exportScheduleDataUseCase: ExportScheduleDataUseCase,
     private val exportHistoryDao: ScheduleExportHistoryDao
-) : ViewModel() {
+) : BaseViewModel() {
     
     // UI状态
     private val _uiState = MutableStateFlow(ExportUiState())
@@ -283,12 +284,14 @@ class ExportViewModel @Inject constructor(
     fun deleteExportHistory(exportInfo: ExportInfo) {
         viewModelScope.launch {
             // 根据文件路径查找并删除对应的历史记录
-            exportHistoryDao.getAllExportHistory().collect { historyList ->
-                val entity = historyList.find { it.filePath == exportInfo.file.absolutePath }
-                entity?.let {
-                    exportHistoryDao.deleteExportHistory(it.id)
+            exportHistoryDao.getAllExportHistory()
+                .take(1) // 只需要获取一次当前列表
+                .collect { historyList ->
+                    val entity = historyList.find { it.filePath == exportInfo.file.absolutePath }
+                    entity?.let {
+                        exportHistoryDao.deleteExportHistory(it.id)
+                    }
                 }
-            }
         }
     }
 }

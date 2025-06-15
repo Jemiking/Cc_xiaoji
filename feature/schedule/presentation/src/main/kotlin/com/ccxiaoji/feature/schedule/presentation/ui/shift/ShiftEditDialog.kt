@@ -10,15 +10,29 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.ccxiaoji.feature.schedule.domain.model.Shift
+import com.ccxiaoji.core.ui.theme.*
 import com.ccxiaoji.feature.schedule.presentation.ui.components.CustomTimePickerDialog
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+
+/**
+ * 班次编辑状态
+ */
+@Stable
+private data class ShiftEditState(
+    val name: String = "",
+    val startTime: LocalTime = LocalTime.of(9, 0),
+    val endTime: LocalTime = LocalTime.of(18, 0),
+    val selectedColor: Int = Shift.PRESET_COLORS.first(),
+    val description: String = ""
+)
 
 /**
  * 班次编辑对话框
@@ -30,11 +44,15 @@ fun ShiftEditDialog(
     onDismiss: () -> Unit,
     onConfirm: (Shift) -> Unit
 ) {
-    var name by remember(shift) { mutableStateOf(shift?.name ?: "") }
-    var startTime by remember(shift) { mutableStateOf(shift?.startTime ?: LocalTime.of(9, 0)) }
-    var endTime by remember(shift) { mutableStateOf(shift?.endTime ?: LocalTime.of(18, 0)) }
-    var selectedColor by remember(shift) { mutableStateOf(shift?.color ?: Shift.PRESET_COLORS.first()) }
-    var description by remember(shift) { mutableStateOf(shift?.description ?: "") }
+    var editState by remember(shift) {
+        mutableStateOf(ShiftEditState(
+            name = shift?.name ?: "",
+            startTime = shift?.startTime ?: LocalTime.of(9, 0),
+            endTime = shift?.endTime ?: LocalTime.of(18, 0),
+            selectedColor = shift?.color ?: Shift.PRESET_COLORS.first(),
+            description = shift?.description ?: ""
+        ))
+    }
     
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
@@ -60,8 +78,8 @@ fun ShiftEditDialog(
                 
                 // 班次名称
                 OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
+                    value = editState.name,
+                    onValueChange = { editState = editState.copy(name = it) },
                     label = { Text("班次名称") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
@@ -76,7 +94,7 @@ fun ShiftEditDialog(
                 ) {
                     // 开始时间
                     OutlinedTextField(
-                        value = startTime.format(timeFormatter),
+                        value = editState.startTime.format(timeFormatter),
                         onValueChange = { },
                         label = { Text("开始时间") },
                         modifier = Modifier.weight(1f),
@@ -93,7 +111,7 @@ fun ShiftEditDialog(
                     
                     // 结束时间
                     OutlinedTextField(
-                        value = endTime.format(timeFormatter),
+                        value = editState.endTime.format(timeFormatter),
                         onValueChange = { },
                         label = { Text("结束时间") },
                         modifier = Modifier.weight(1f),
@@ -128,9 +146,9 @@ fun ShiftEditDialog(
                                     color = Color(color),
                                     shape = MaterialTheme.shapes.small
                                 )
-                                .clickable { selectedColor = color }
+                                .clickable { editState = editState.copy(selectedColor = color) }
                                 .then(
-                                    if (selectedColor == color) {
+                                    if (editState.selectedColor == color) {
                                         Modifier.border(
                                             width = 2.dp,
                                             color = MaterialTheme.colorScheme.primary,
@@ -146,8 +164,8 @@ fun ShiftEditDialog(
                 
                 // 描述
                 OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
+                    value = editState.description,
+                    onValueChange = { editState = editState.copy(description = it) },
                     label = { Text("描述（选填）") },
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 2
@@ -166,20 +184,20 @@ fun ShiftEditDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
                         onClick = {
-                            if (name.isNotBlank()) {
+                            if (editState.name.isNotBlank()) {
                                 onConfirm(
                                     Shift(
                                         id = shift?.id ?: 0,
-                                        name = name.trim(),
-                                        startTime = startTime,
-                                        endTime = endTime,
-                                        color = selectedColor,
-                                        description = description.ifBlank { null }
+                                        name = editState.name.trim(),
+                                        startTime = editState.startTime,
+                                        endTime = editState.endTime,
+                                        color = editState.selectedColor,
+                                        description = editState.description.ifBlank { null }
                                     )
                                 )
                             }
                         },
-                        enabled = name.isNotBlank()
+                        enabled = editState.name.isNotBlank()
                     ) {
                         Text("确定")
                     }
@@ -191,9 +209,9 @@ fun ShiftEditDialog(
     // 时间选择器
     CustomTimePickerDialog(
         showDialog = showStartTimePicker,
-        initialTime = startTime,
+        initialTime = editState.startTime,
         onTimeSelected = { time ->
-            startTime = time
+            editState = editState.copy(startTime = time)
             showStartTimePicker = false
         },
         onDismiss = { showStartTimePicker = false }
@@ -201,11 +219,13 @@ fun ShiftEditDialog(
     
     CustomTimePickerDialog(
         showDialog = showEndTimePicker,
-        initialTime = endTime,
+        initialTime = editState.endTime,
         onTimeSelected = { time ->
-            endTime = time
+            editState = editState.copy(endTime = time)
             showEndTimePicker = false
         },
         onDismiss = { showEndTimePicker = false }
     )
 }
+
+// 旧的时间选择器已被 CustomTimePickerDialog 替代

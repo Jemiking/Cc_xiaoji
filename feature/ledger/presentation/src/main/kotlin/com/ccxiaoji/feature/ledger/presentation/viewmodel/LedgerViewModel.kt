@@ -11,8 +11,10 @@ import com.ccxiaoji.feature.ledger.api.TransactionStats
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import kotlinx.datetime.*
 import java.time.YearMonth
+import java.time.ZoneId
+import java.time.LocalDate
+import com.ccxiaoji.core.common.util.DateConverter
 import javax.inject.Inject
 
 @HiltViewModel
@@ -97,7 +99,7 @@ class LedgerViewModel @Inject constructor(
                         categoryColor = detail.categoryColor,
                         accountName = detail.accountName,
                         note = detail.note,
-                        date = detail.createdAt.toLocalDateTime(TimeZone.currentSystemDefault()).date
+                        date = detail.createdAt.atZone(ZoneId.systemDefault()).toLocalDate()
                     )
                     
                     // 确保交易在列表中
@@ -119,14 +121,17 @@ class LedgerViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val month = _selectedMonth.value
-                val startDate = LocalDate(month.year, month.monthValue, 1)
+                val startDate = LocalDate.of(month.year, month.monthValue, 1)
                 val endDate = if (month.monthValue == 12) {
-                    LocalDate(month.year + 1, 1, 1).minus(1, DateTimeUnit.DAY)
+                    LocalDate.of(month.year + 1, 1, 1).minusDays(1)
                 } else {
-                    LocalDate(month.year, month.monthValue + 1, 1).minus(1, DateTimeUnit.DAY)
+                    LocalDate.of(month.year, month.monthValue + 1, 1).minusDays(1)
                 }
                 
-                val stats = ledgerApi.getTransactionStatsByDateRange(startDate, endDate)
+                val stats = ledgerApi.getTransactionStatsByDateRange(
+                    startDate,
+                    endDate
+                )
                 
                 _uiState.update { 
                     it.copy(
@@ -322,9 +327,8 @@ class LedgerViewModel @Inject constructor(
     }
     
     private fun groupTransactionsByDay(transactions: List<TransactionItem>): List<TransactionGroup> {
-        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-        val today = now.date
-        val yesterday = today.minus(1, DateTimeUnit.DAY)
+        val today = java.time.LocalDate.now()
+        val yesterday = today.minusDays(1)
         
         return transactions
             .groupBy { it.date }
@@ -333,8 +337,7 @@ class LedgerViewModel @Inject constructor(
                     today -> "今天"
                     yesterday -> "昨天"
                     else -> {
-                        val javaDate = date.toJavaLocalDate()
-                        "${javaDate.monthValue}月${javaDate.dayOfMonth}日"
+                        "${date.monthValue}月${date.dayOfMonth}日"
                     }
                 }
                 
@@ -342,8 +345,7 @@ class LedgerViewModel @Inject constructor(
                     id = date.toString(),
                     title = title,
                     subtitle = if (date != today && date != yesterday) {
-                        val javaDate = date.toJavaLocalDate()
-                        val dayOfWeek = when (javaDate.dayOfWeek.value) {
+                        val dayOfWeek = when (date.dayOfWeek.value) {
                             1 -> "周一"
                             2 -> "周二"
                             3 -> "周三"

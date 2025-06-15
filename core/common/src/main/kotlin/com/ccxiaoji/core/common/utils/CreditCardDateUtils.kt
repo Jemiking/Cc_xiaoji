@@ -1,6 +1,10 @@
 package com.ccxiaoji.core.common.utils
 
-import kotlinx.datetime.*
+import java.time.LocalDate
+import java.time.Month
+import java.time.YearMonth
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import kotlin.math.min
 
 /**
@@ -19,14 +23,14 @@ object CreditCardDateUtils {
     fun calculateNextPaymentDate(
         paymentDueDay: Int,
         billingDay: Int,
-        currentDate: LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        currentDate: LocalDate = LocalDate.now(ZoneId.systemDefault())
     ): LocalDate {
         val currentDay = currentDate.dayOfMonth
         val currentMonth = currentDate.month
         val currentYear = currentDate.year
         
         // 计算本月的还款日（处理月末情况）
-        val daysInCurrentMonth = currentDate.month.length(DateUtils.isLeapYear(currentYear))
+        val daysInCurrentMonth = YearMonth.of(currentYear, currentMonth).lengthOfMonth()
         val actualPaymentDay = min(paymentDueDay, daysInCurrentMonth)
         
         // 判断还款日是否在账单日之后（同月）还是下个月
@@ -81,10 +85,10 @@ object CreditCardDateUtils {
         }
         
         // 计算实际的还款日（处理月末情况）
-        val daysInPaymentMonth = paymentMonth.length(DateUtils.isLeapYear(paymentYear))
+        val daysInPaymentMonth = YearMonth.of(paymentYear, paymentMonth).lengthOfMonth()
         val actualPaymentDayInMonth = min(paymentDueDay, daysInPaymentMonth)
         
-        return LocalDate(paymentYear, paymentMonth, actualPaymentDayInMonth)
+        return LocalDate.of(paymentYear, paymentMonth, actualPaymentDayInMonth)
     }
     
     /**
@@ -97,10 +101,10 @@ object CreditCardDateUtils {
     fun calculateDaysUntilPayment(
         paymentDueDay: Int,
         billingDay: Int,
-        currentDate: LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        currentDate: LocalDate = LocalDate.now(ZoneId.systemDefault())
     ): Int {
         val nextPaymentDate = calculateNextPaymentDate(paymentDueDay, billingDay, currentDate)
-        return currentDate.daysUntil(nextPaymentDate)
+        return currentDate.until(nextPaymentDate, ChronoUnit.DAYS).toInt()
     }
     
     /**
@@ -111,7 +115,7 @@ object CreditCardDateUtils {
      */
     fun calculateCurrentBillingCycle(
         billingDay: Int,
-        currentDate: LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        currentDate: LocalDate = LocalDate.now(ZoneId.systemDefault())
     ): Pair<LocalDate, LocalDate> {
         val currentDay = currentDate.dayOfMonth
         val currentMonth = currentDate.month
@@ -128,19 +132,19 @@ object CreditCardDateUtils {
                 currentMonth.minus(1) to currentYear
             }
             
-            val daysInPreviousMonth = previousMonth.first.length(DateUtils.isLeapYear(previousMonth.second))
+            val daysInPreviousMonth = YearMonth.of(previousMonth.second, previousMonth.first).lengthOfMonth()
             val actualBillingDayPrevMonth = min(billingDay, daysInPreviousMonth)
             
-            cycleStartDate = LocalDate(previousMonth.second, previousMonth.first, actualBillingDayPrevMonth)
+            cycleStartDate = LocalDate.of(previousMonth.second, previousMonth.first, actualBillingDayPrevMonth)
             
-            val daysInCurrentMonth = currentMonth.length(DateUtils.isLeapYear(currentYear))
+            val daysInCurrentMonth = YearMonth.of(currentYear, currentMonth).lengthOfMonth()
             val actualBillingDayCurrentMonth = min(billingDay, daysInCurrentMonth)
-            cycleEndDate = LocalDate(currentYear, currentMonth, actualBillingDayCurrentMonth)
+            cycleEndDate = LocalDate.of(currentYear, currentMonth, actualBillingDayCurrentMonth)
         } else {
             // 已过本月账单日，当前周期是本月账单日到下月账单日
-            val daysInCurrentMonth = currentMonth.length(DateUtils.isLeapYear(currentYear))
+            val daysInCurrentMonth = YearMonth.of(currentYear, currentMonth).lengthOfMonth()
             val actualBillingDayCurrentMonth = min(billingDay, daysInCurrentMonth)
-            cycleStartDate = LocalDate(currentYear, currentMonth, actualBillingDayCurrentMonth)
+            cycleStartDate = LocalDate.of(currentYear, currentMonth, actualBillingDayCurrentMonth)
             
             val nextMonth = if (currentMonth == Month.DECEMBER) {
                 Month.JANUARY to currentYear + 1
@@ -148,9 +152,9 @@ object CreditCardDateUtils {
                 currentMonth.plus(1) to currentYear
             }
             
-            val daysInNextMonth = nextMonth.first.length(DateUtils.isLeapYear(nextMonth.second))
+            val daysInNextMonth = YearMonth.of(nextMonth.second, nextMonth.first).lengthOfMonth()
             val actualBillingDayNextMonth = min(billingDay, daysInNextMonth)
-            cycleEndDate = LocalDate(nextMonth.second, nextMonth.first, actualBillingDayNextMonth)
+            cycleEndDate = LocalDate.of(nextMonth.second, nextMonth.first, actualBillingDayNextMonth)
         }
         
         return cycleStartDate to cycleEndDate
@@ -167,6 +171,6 @@ object CreditCardDateUtils {
         billingDay: Int
     ): Boolean {
         val (cycleStart, cycleEnd) = calculateCurrentBillingCycle(billingDay, date)
-        return date in cycleStart..cycleEnd
+        return !date.isBefore(cycleStart) && !date.isAfter(cycleEnd)
     }
 }

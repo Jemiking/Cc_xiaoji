@@ -15,9 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.ccxiaoji.feature.ledger.api.SavingsGoalItem
 import com.ccxiaoji.feature.ledger.presentation.ui.components.color.ColorPicker
 import com.ccxiaoji.feature.ledger.presentation.ui.components.icon.IconPicker
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.toJavaLocalDate
-import kotlinx.datetime.toKotlinLocalDate
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,7 +78,7 @@ fun SavingsGoalDialog(
                 )
                 
                 OutlinedTextField(
-                    value = targetDate?.toJavaLocalDate()?.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日")) ?: "选择目标日期（可选）",
+                    value = targetDate?.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日")) ?: "选择目标日期（可选）",
                     onValueChange = { },
                     label = { Text("目标日期") },
                     modifier = Modifier.fillMaxWidth(),
@@ -218,7 +216,9 @@ private fun DatePickerDialog(
     onDismiss: () -> Unit
 ) {
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = initialDate?.toEpochDays()?.times(24 * 60 * 60 * 1000L)
+        initialSelectedDateMillis = initialDate?.let {
+            it.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        }
     )
     
     AlertDialog(
@@ -238,7 +238,7 @@ private fun DatePickerDialog(
                         val localDate = java.time.Instant.ofEpochMilli(selectedDateMillis)
                             .atZone(java.time.ZoneId.systemDefault())
                             .toLocalDate()
-                        onDateSelected(localDate.toKotlinLocalDate())
+                        onDateSelected(localDate)
                     } else {
                         onDateSelected(null)
                     }

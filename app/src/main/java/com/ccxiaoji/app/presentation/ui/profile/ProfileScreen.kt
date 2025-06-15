@@ -112,6 +112,12 @@ fun ProfileScreen(
                         onClick = { navController.navigate(DataExportRoute.route) }
                     ),
                     SettingsItem(
+                        icon = Icons.Default.FileUpload,
+                        title = "数据导入",
+                        subtitle = "从文件导入数据",
+                        onClick = { navController.navigate(DataImportRoute.route) }
+                    ),
+                    SettingsItem(
                         icon = Icons.Default.Build,
                         title = "批量操作",
                         subtitle = "批量删除、修改、导入",

@@ -1,11 +1,16 @@
 package com.ccxiaoji.feature.schedule.presentation.viewmodel
 
-import androidx.lifecycle.ViewModel
+// AndroidX
 import androidx.lifecycle.viewModelScope
+
+// 项目内部模块
+import com.ccxiaoji.core.common.base.BaseViewModel
 import com.ccxiaoji.feature.schedule.domain.model.Shift
 import com.ccxiaoji.feature.schedule.domain.usecase.GetShiftsUseCase
 import com.ccxiaoji.feature.schedule.domain.usecase.ManageShiftUseCase
 import com.ccxiaoji.feature.schedule.domain.usecase.ShiftNameExistsException
+
+// 第三方库
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -19,8 +24,10 @@ import javax.inject.Inject
 class ShiftViewModel @Inject constructor(
     private val getShiftsUseCase: GetShiftsUseCase,
     private val manageShiftUseCase: ManageShiftUseCase
-) : ViewModel() {
-    
+) : BaseViewModel() {
+
+    // ========== 状态管理 ==========
+
     // 班次列表
     val shifts: StateFlow<List<Shift>> = getShiftsUseCase()
         .stateIn(
@@ -28,15 +35,17 @@ class ShiftViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
-    
+
     // UI状态
     private val _uiState = MutableStateFlow(ShiftUiState())
     val uiState: StateFlow<ShiftUiState> = _uiState.asStateFlow()
-    
+
     // 当前编辑的班次
     private val _editingShift = MutableStateFlow<Shift?>(null)
     val editingShift: StateFlow<Shift?> = _editingShift.asStateFlow()
-    
+
+    // ========== 班次对话框管理 ==========
+
     /**
      * 显示创建班次对话框
      */
@@ -44,7 +53,7 @@ class ShiftViewModel @Inject constructor(
         _editingShift.value = null
         _uiState.update { it.copy(showShiftDialog = true) }
     }
-    
+
     /**
      * 显示编辑班次对话框
      */
@@ -52,7 +61,7 @@ class ShiftViewModel @Inject constructor(
         _editingShift.value = shift
         _uiState.update { it.copy(showShiftDialog = true) }
     }
-    
+
     /**
      * 隐藏班次对话框
      */
@@ -60,7 +69,9 @@ class ShiftViewModel @Inject constructor(
         _editingShift.value = null
         _uiState.update { it.copy(showShiftDialog = false) }
     }
-    
+
+    // ========== 班次操作 ==========
+
     /**
      * 保存班次（创建或更新）
      */
@@ -107,7 +118,7 @@ class ShiftViewModel @Inject constructor(
             }
         }
     }
-    
+
     /**
      * 删除班次
      */
@@ -132,7 +143,9 @@ class ShiftViewModel @Inject constructor(
             }
         }
     }
-    
+
+    // ========== 辅助方法 ==========
+
     /**
      * 清除消息
      */

@@ -15,13 +15,13 @@ import com.ccxiaoji.feature.ledger.domain.model.Account
 import com.ccxiaoji.feature.ledger.domain.model.AccountType
 import com.ccxiaoji.feature.ledger.api.TransactionItem
 import com.ccxiaoji.core.common.utils.CreditCardDateUtils
+import com.ccxiaoji.core.common.util.DateConverter
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
-import kotlinx.datetime.Instant
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import java.time.LocalDate
+import java.time.ZoneId
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -343,15 +343,15 @@ class AccountRepository @Inject constructor(
         val billingDay = account.billingDay!!
         val paymentDueDay = account.paymentDueDay
         
-        val currentDate = kotlinx.datetime.Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val currentDate = LocalDate.now(ZoneId.systemDefault())
         val (cycleStart, cycleEnd) = CreditCardDateUtils.calculateCurrentBillingCycle(
             billingDay = billingDay,
             currentDate = currentDate
         )
         
         // 检查是否已经生成过该周期的账单
-        val cycleStartMillis = cycleStart.toEpochDays().toLong() * 24 * 60 * 60 * 1000
-        val cycleEndMillis = cycleEnd.toEpochDays().toLong() * 24 * 60 * 60 * 1000
+        val cycleStartMillis = cycleStart.toEpochDay() * 24 * 60 * 60 * 1000
+        val cycleEndMillis = cycleEnd.toEpochDay() * 24 * 60 * 60 * 1000
         
         if (creditCardBillDao.hasBillForPeriod(accountId, cycleStartMillis, cycleEndMillis)) {
             return // 该周期账单已存在
@@ -391,7 +391,7 @@ class AccountRepository @Inject constructor(
                 paymentDueDay = nonNullPaymentDueDay,
                 billingDay = billingDay,
                 currentDate = cycleEnd
-            ).toEpochDays().toLong() * 24 * 60 * 60 * 1000
+            ).toEpochDay() * 24 * 60 * 60 * 1000
         } else {
             cycleEndMillis + (20 * 24 * 60 * 60 * 1000) // 默认账单日后20天
         }
@@ -459,9 +459,11 @@ class AccountRepository @Inject constructor(
                 categoryColor = "#808080",
                 accountName = "", // 需要从账户信息中获取
                 note = transactionEntity.note,
-                date = Instant.fromEpochMilliseconds(transactionEntity.createdAt)
-                    .toLocalDateTime(TimeZone.currentSystemDefault())
-                    .date
+                date = com.ccxiaoji.core.common.util.DateConverter.toJavaDate(
+                    Instant.fromEpochMilliseconds(transactionEntity.createdAt)
+                        .toLocalDateTime(TimeZone.currentSystemDefault())
+                        .date
+                )
             )
         }
     }

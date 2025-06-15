@@ -14,6 +14,7 @@ android {
 dependencies {
     // Additional common dependencies
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.kotlinx.datetime)
     
     // Testing
     testImplementation(libs.junit)

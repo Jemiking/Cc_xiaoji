@@ -1,0 +1,28 @@
+# 排班模块Data层编译命令
+
+## 编译整个schedule模块（推荐）
+./gradlew :feature:schedule:compileDebugKotlin
+
+## 清理并重新编译
+./gradlew :feature:schedule:clean :feature:schedule:compileDebugKotlin
+
+## 如果出现缓存问题，执行完整清理
+./gradlew clean
+rm -rf .gradle/
+rm -rf feature/schedule/build/
+./gradlew :feature:schedule:compileDebugKotlin
+
+## 编译并查看详细错误
+./gradlew :feature:schedule:compileDebugKotlin --stacktrace
+
+## 修复记录
+### 2025-06-13 Repository转换修复
+- 修复了Entity与Domain模型的类型转换
+- 添加了String与LocalTime的转换方法
+- 处理了缺失字段的映射
+- 详见：doc/排班模块Repository转换修复记录.md
+
+### 2025-06-13 Hilt重复绑定修复
+- 删除了重复的ScheduleDataModule
+- 使用已存在的ScheduleModule进行依赖注入
+- 详见：doc/排班模块Hilt重复绑定修复记录.md

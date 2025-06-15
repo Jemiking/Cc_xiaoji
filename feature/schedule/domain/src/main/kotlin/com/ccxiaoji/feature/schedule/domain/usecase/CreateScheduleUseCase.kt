@@ -1,8 +1,11 @@
 package com.ccxiaoji.feature.schedule.domain.usecase
 
+// 项目内部 - Domain层
 import com.ccxiaoji.feature.schedule.domain.model.Schedule
 import com.ccxiaoji.feature.schedule.domain.model.SchedulePattern
 import com.ccxiaoji.feature.schedule.domain.repository.ScheduleRepository
+
+// Java/Kotlin标准库
 import java.time.LocalDate
 import javax.inject.Inject
 

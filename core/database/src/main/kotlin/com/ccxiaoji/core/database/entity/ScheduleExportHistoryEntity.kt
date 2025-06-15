@@ -2,13 +2,20 @@ package com.ccxiaoji.core.database.entity
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 
 /**
  * 排班导出历史实体类
  * 记录用户的排班数据导出操作历史
  */
-@Entity(tableName = "schedule_export_history")
+@Entity(
+    tableName = "schedule_export_history",
+    indices = [
+        Index(value = ["export_time"]),  // 用于按时间排序查询
+        Index(value = ["is_deleted", "export_time"])  // 用于过滤已删除记录并排序
+    ]
+)
 data class ScheduleExportHistoryEntity(
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "id")

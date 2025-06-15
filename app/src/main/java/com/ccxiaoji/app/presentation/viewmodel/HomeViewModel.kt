@@ -6,6 +6,8 @@ import com.ccxiaoji.feature.ledger.api.LedgerApi
 import com.ccxiaoji.feature.ledger.api.TransactionItem
 import com.ccxiaoji.feature.todo.api.TodoApi
 import com.ccxiaoji.feature.habit.api.HabitApi
+import com.ccxiaoji.feature.schedule.api.ScheduleApi
+import com.ccxiaoji.feature.schedule.api.ScheduleInfo
 import com.ccxiaoji.app.data.repository.CountdownRepository
 import kotlinx.coroutines.flow.flow
 import com.ccxiaoji.shared.user.api.UserApi
@@ -27,6 +29,7 @@ class HomeViewModel @Inject constructor(
     private val ledgerApi: LedgerApi,
     private val todoApi: TodoApi,
     private val habitApi: HabitApi,
+    private val scheduleApi: ScheduleApi,
     private val countdownRepository: CountdownRepository,
     private val userApi: UserApi
 ) : ViewModel() {
@@ -131,6 +134,16 @@ class HomeViewModel @Inject constructor(
             val totalBalance = ledgerApi.getTotalBalance()
             _uiState.value = _uiState.value.copy(totalAccountBalance = totalBalance)
         }
+        
+        viewModelScope.launch {
+            // Load today's schedule
+            try {
+                val todaySchedule = scheduleApi.getTodaySchedule()
+                _uiState.value = _uiState.value.copy(todaySchedule = todaySchedule)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading today's schedule", e)
+            }
+        }
     }
 }
 
@@ -150,5 +163,6 @@ data class HomeUiState(
     val budgetSpent: Double = 0.0,
     val budgetUsagePercentage: Float = 0f,
     val savingsGoals: List<SavingsGoalItem> = emptyList(),
-    val totalAccountBalance: Double = 0.0
+    val totalAccountBalance: Double = 0.0,
+    val todaySchedule: ScheduleInfo? = null
 )

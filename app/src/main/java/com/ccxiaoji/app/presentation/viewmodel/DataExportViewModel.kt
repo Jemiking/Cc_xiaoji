@@ -5,10 +5,12 @@ import android.content.Intent
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ccxiaoji.app.domain.usecase.excel.ExportToExcelUseCase
 import com.ccxiaoji.feature.ledger.api.LedgerApi
 import com.ccxiaoji.app.data.repository.CountdownRepository
 import com.ccxiaoji.feature.todo.api.TodoApi
 import com.ccxiaoji.feature.habit.api.HabitApi
+import com.ccxiaoji.feature.schedule.api.ScheduleApi
 import com.ccxiaoji.app.presentation.ui.profile.DateRange
 import com.ccxiaoji.app.presentation.ui.profile.ExportFormat
 import com.google.gson.Gson
@@ -26,12 +28,15 @@ import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
 
+// TODO: 编译验证 - 需要执行 ./gradlew :app:compileDebugKotlin
 @HiltViewModel
 class DataExportViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val exportToExcelUseCase: ExportToExcelUseCase,
     private val todoApi: TodoApi,
     private val habitApi: HabitApi,
     private val ledgerApi: LedgerApi,
+    private val scheduleApi: ScheduleApi,
     private val countdownRepository: CountdownRepository,
     private val gson: Gson
 ) : ViewModel() {
@@ -67,84 +72,10 @@ class DataExportViewModel @Inject constructor(
         try {
             _uiState.update { it.copy(isExporting = true) }
             
-            val dateRange = getDateRange()
-            val exportData = mutableMapOf<String, Any>()
-            
-            // 导出记账数据
-            if (_uiState.value.exportLedger) {
-                // 获取日期范围内的所有月份
-                val startDate = dateRange.first
-                val endDate = dateRange.second
-                val transactions = mutableListOf<Any>()
-                
-                // 逐月获取交易记录
-                var currentDate = startDate
-                while (currentDate <= endDate) {
-                    val monthTransactions = ledgerApi.getTransactionsByMonth(
-                        currentDate.year,
-                        currentDate.monthNumber
-                    )
-                    transactions.addAll(monthTransactions.filter { transaction ->
-                        transaction.date >= startDate && transaction.date <= endDate
-                    })
-                    
-                    // 移到下个月
-                    currentDate = LocalDate(
-                        if (currentDate.monthNumber == 12) currentDate.year + 1 else currentDate.year,
-                        if (currentDate.monthNumber == 12) 1 else currentDate.monthNumber + 1,
-                        1
-                    )
-                }
-                
-                val accounts = ledgerApi.getAccounts()
-                val categories = ledgerApi.getAllCategories()
-                
-                exportData["ledger"] = mapOf(
-                    "transactions" to transactions,
-                    "accounts" to accounts,
-                    "categories" to categories
-                )
-            }
-            
-            // 导出待办数据
-            if (_uiState.value.exportTodo) {
-                val tasks = todoApi.getAllTasks()
-                exportData["tasks"] = tasks
-            }
-            
-            // 导出习惯数据
-            if (_uiState.value.exportHabit) {
-                val habits = habitApi.getAllHabits()
-                exportData["habits"] = habits
-            }
-            
-            // 导出其他数据
-            if (_uiState.value.exportOthers) {
-                val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-                val budgets = ledgerApi.getBudgetsWithSpent(now.year, now.monthNumber).first()
-                val savingsGoals = ledgerApi.getSavingsGoals()
-                val countdowns = countdownRepository.getCountdowns().first()
-                
-                exportData["others"] = mapOf(
-                    "budgets" to budgets,
-                    "savingsGoals" to savingsGoals,
-                    "countdowns" to countdowns
-                )
-            }
-            
-            // 添加元数据
-            exportData["metadata"] = mapOf(
-                "exportDate" to Clock.System.now().toEpochMilliseconds(),
-                "appVersion" to "1.0.0",
-                "dataVersion" to "1"
-            )
-            
-            // 生成文件
-            val fileName = generateFileName()
+            // 根据导出格式选择不同的处理方式
             val file = when (_uiState.value.selectedFormat) {
-                ExportFormat.JSON -> exportAsJson(exportData, fileName)
-                ExportFormat.CSV -> exportAsCsv(exportData, fileName)
-                ExportFormat.EXCEL -> exportAsExcel(exportData, fileName)
+                ExportFormat.EXCEL -> exportAsExcel()
+                else -> exportAsJsonOrCsv()
             }
             
             // 更新导出历史
@@ -159,6 +90,88 @@ class DataExportViewModel @Inject constructor(
         } catch (e: Exception) {
             _uiState.update { it.copy(isExporting = false) }
             false
+        }
+    }
+    
+    private suspend fun exportAsJsonOrCsv(): File? {
+        val dateRange = getDateRange()
+        val exportData = mutableMapOf<String, Any>()
+        
+        // 导出记账数据
+        if (_uiState.value.exportLedger) {
+            // 获取日期范围内的所有月份
+            val startDate = dateRange.first
+            val endDate = dateRange.second
+            val transactions = mutableListOf<Any>()
+            
+            // 逐月获取交易记录
+            var currentDate = startDate
+            while (currentDate <= endDate) {
+                val monthTransactions = ledgerApi.getTransactionsByMonth(
+                    currentDate.year,
+                    currentDate.monthNumber
+                )
+                transactions.addAll(monthTransactions.filter { transaction ->
+                    transaction.date >= startDate && transaction.date <= endDate
+                })
+                
+                // 移到下个月
+                currentDate = LocalDate(
+                    if (currentDate.monthNumber == 12) currentDate.year + 1 else currentDate.year,
+                    if (currentDate.monthNumber == 12) 1 else currentDate.monthNumber + 1,
+                    1
+                )
+            }
+            
+            val accounts = ledgerApi.getAccounts()
+            val categories = ledgerApi.getAllCategories()
+            
+            exportData["ledger"] = mapOf(
+                "transactions" to transactions,
+                "accounts" to accounts,
+                "categories" to categories
+            )
+        }
+        
+        // 导出待办数据
+        if (_uiState.value.exportTodo) {
+            val tasks = todoApi.getAllTasks()
+            exportData["tasks"] = tasks
+        }
+        
+        // 导出习惯数据
+        if (_uiState.value.exportHabit) {
+            val habits = habitApi.getAllHabits()
+            exportData["habits"] = habits
+        }
+        
+        // 导出其他数据
+        if (_uiState.value.exportOthers) {
+            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            val budgets = ledgerApi.getBudgetsWithSpent(now.year, now.monthNumber).first()
+            val savingsGoals = ledgerApi.getSavingsGoals()
+            val countdowns = countdownRepository.getCountdowns().first()
+            
+            exportData["others"] = mapOf(
+                "budgets" to budgets,
+                "savingsGoals" to savingsGoals,
+                "countdowns" to countdowns
+            )
+        }
+        
+        // 添加元数据
+        exportData["metadata"] = mapOf(
+            "exportDate" to Clock.System.now().toEpochMilliseconds(),
+            "appVersion" to "1.0.0",
+            "dataVersion" to "1"
+        )
+        
+        // 生成文件
+        val fileName = generateFileName()
+        return when (_uiState.value.selectedFormat) {
+            ExportFormat.JSON -> exportAsJson(exportData, fileName)
+            ExportFormat.CSV -> exportAsCsv(exportData, fileName)
+            else -> null
         }
     }
     
@@ -192,10 +205,49 @@ class DataExportViewModel @Inject constructor(
         return file
     }
     
-    private fun exportAsExcel(data: Map<String, Any>, fileName: String): File? {
-        // Excel导出需要额外的库支持，这里暂时返回null
-        // 实际实现需要使用Apache POI或类似的库
-        return null
+    private suspend fun exportAsExcel(): File? {
+        val state = _uiState.value
+        val dateRange = getDateRange()
+        
+        // 构建导出选项
+        val options = ExportToExcelUseCase.ExportOptions(
+            includeLedger = state.exportLedger,
+            includeTodo = state.exportTodo,
+            includeHabit = state.exportHabit,
+            includeSchedule = state.exportOthers, // 将排班包含在其他选项中
+            dateRange = ExportToExcelUseCase.DateRange(
+                startDate = dateRange.first,
+                endDate = dateRange.second
+            )
+        )
+        
+        // 调用UseCase导出Excel
+        val result = exportToExcelUseCase(
+            options = options,
+            onProgress = { progress ->
+                // 可以在这里更新进度UI
+                when (progress) {
+                    is ExportToExcelUseCase.ExportResult.Progress -> {
+                        // 更新进度
+                    }
+                    else -> {}
+                }
+            }
+        )
+        
+        return when (result) {
+            is ExportToExcelUseCase.ExportResult.Success -> {
+                // 保存文件
+                val file = File(context.getExternalFilesDir(null), result.fileName)
+                file.writeBytes(result.data)
+                file
+            }
+            is ExportToExcelUseCase.ExportResult.Error -> {
+                // 处理错误
+                null
+            }
+            else -> null
+        }
     }
     
     private fun generateFileName(): String {

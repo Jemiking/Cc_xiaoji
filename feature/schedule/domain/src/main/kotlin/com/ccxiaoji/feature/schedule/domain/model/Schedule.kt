@@ -1,5 +1,6 @@
 package com.ccxiaoji.feature.schedule.domain.model
 
+import androidx.compose.runtime.Immutable
 import java.time.LocalDate
 import java.time.LocalTime
 
@@ -7,6 +8,7 @@ import java.time.LocalTime
  * 排班领域模型
  * 业务层使用的排班数据结构
  */
+@Immutable
 data class Schedule(
     val id: Long = 0,
     val date: LocalDate,

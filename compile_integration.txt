@@ -1,0 +1,42 @@
+# 排班模块集成编译命令
+
+## 编译整个项目（推荐）
+./gradlew clean build
+
+## 分步编译验证
+
+### 1. 编译feature:schedule模块
+./gradlew :feature:schedule:compileDebugKotlin
+
+### 2. 编译app模块
+./gradlew :app:compileDebugKotlin
+
+### 3. 运行Hilt注解处理
+./gradlew :app:hiltJavaCompileDebug
+
+## 安装测试
+./gradlew installDebug
+
+## 运行单元测试
+./gradlew test
+
+## 如果出现问题，清理并重建
+./gradlew clean
+rm -rf .gradle/
+rm -rf app/build/
+rm -rf feature/schedule/build/
+./gradlew build
+
+## 集成内容总结
+### 2025-06-13 第五阶段完成
+- 实现了ScheduleApiImpl和ScheduleNavigatorImpl
+- 更新了导航图和主界面集成
+- 配置了依赖注入
+- 添加了排班模块卡片到首页
+- 详见：doc/排班模块集成测试迁移完成报告.md
+
+### 2025-06-13 修复ScheduleApi重复绑定
+- 删除了app模块的重复ScheduleApiImpl实现
+- 使用feature:schedule模块的实现
+- 保留了ScheduleNavigatorImpl在app模块
+- 详见：doc/排班模块Hilt重复绑定修复记录2.md

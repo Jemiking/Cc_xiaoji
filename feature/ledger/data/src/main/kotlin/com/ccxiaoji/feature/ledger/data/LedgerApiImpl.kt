@@ -7,6 +7,7 @@ import com.ccxiaoji.feature.ledger.api.BudgetItem
 import com.ccxiaoji.feature.ledger.api.CategoryItem
 import com.ccxiaoji.feature.ledger.api.CreditCardBill
 import com.ccxiaoji.feature.ledger.api.DailyStatistics
+import com.ccxiaoji.feature.ledger.api.ImportLedgerResult
 import com.ccxiaoji.feature.ledger.api.LedgerApi
 import com.ccxiaoji.feature.ledger.api.LedgerNavigator
 import com.ccxiaoji.feature.ledger.api.PaymentRecord
@@ -33,17 +34,20 @@ import com.ccxiaoji.feature.ledger.domain.model.SavingsGoal
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.ccxiaoji.core.common.util.DateConverter
+import kotlinx.datetime.Instant as KotlinInstant
+import kotlinx.datetime.LocalDate as KotlinLocalDate
+import kotlinx.datetime.Clock as KotlinClock
+import java.time.Instant
+import java.time.LocalDate
 
 /**
  * LedgerApi的实现类
  * 委托给各个Repository处理具体业务逻辑
  */
+// TODO: 编译验证 - 需要执行 ./gradlew :feature:ledger:compileDebugKotlin
 @Singleton
 class LedgerApiImpl @Inject constructor(
     private val statisticsRepository: StatisticsRepository,
@@ -70,7 +74,10 @@ class LedgerApiImpl @Inject constructor(
         startDate: LocalDate,
         endDate: LocalDate
     ): PeriodStatistics {
-        return statisticsRepository.getStatisticsByDateRange(startDate, endDate)
+        // 转换为kotlinx.datetime类型
+        val kotlinStartDate = DateConverter.toKotlinDate(startDate)
+        val kotlinEndDate = DateConverter.toKotlinDate(endDate)
+        return statisticsRepository.getStatisticsByDateRange(kotlinStartDate, kotlinEndDate)
     }
     
     override suspend fun getTotalBalance(): Double {
@@ -204,10 +211,13 @@ class LedgerApiImpl @Inject constructor(
         startDate: LocalDate,
         endDate: LocalDate
     ): TransactionStats {
+        // 转换为kotlinx.datetime类型
+        val kotlinStartDate = DateConverter.toKotlinDate(startDate)
+        val kotlinEndDate = DateConverter.toKotlinDate(endDate)
         return transactionRepository.getTransactionStatsByDateRange(
             userId = getCurrentUserId(),
-            startDate = startDate,
-            endDate = endDate
+            startDate = kotlinStartDate,
+            endDate = kotlinEndDate
         )
     }
     
@@ -277,8 +287,8 @@ class LedgerApiImpl @Inject constructor(
             billingDay = account.billingDay,
             paymentDueDay = account.paymentDueDay,
             gracePeriodDays = account.gracePeriodDays,
-            createdAt = account.createdAt,
-            updatedAt = account.updatedAt
+            createdAt = DateConverter.toKotlinInstant(account.createdAt),
+            updatedAt = DateConverter.toKotlinInstant(account.updatedAt)
         )
         accountRepository.updateAccount(domainAccount)
     }
@@ -546,10 +556,12 @@ class LedgerApiImpl @Inject constructor(
         color: String,
         iconName: String
     ): SavingsGoalItem {
+        // 转换日期类型
+        val kotlinTargetDate = targetDate?.let { DateConverter.toKotlinDate(it) }
         val goal = SavingsGoal(
             name = name,
             targetAmountCents = targetAmountCents,
-            targetDate = targetDate,
+            targetDate = kotlinTargetDate,
             description = description,
             color = color,
             iconName = iconName,
@@ -570,10 +582,12 @@ class LedgerApiImpl @Inject constructor(
         iconName: String
     ): SavingsGoalItem? {
         val existingGoal = savingsGoalRepository.getSavingsGoalById(goalId) ?: return null
+        // 转换日期类型
+        val kotlinTargetDate = targetDate?.let { DateConverter.toKotlinDate(it) }
         val updatedGoal = existingGoal.copy(
             name = name,
             targetAmountCents = targetAmountCents,
-            targetDate = targetDate,
+            targetDate = kotlinTargetDate,
             description = description,
             color = color,
             iconName = iconName,
@@ -664,8 +678,8 @@ class LedgerApiImpl @Inject constructor(
             spentAmountCents = spentAmountCents,
             alertThreshold = alertThreshold,
             note = note,
-            createdAt = Instant.fromEpochMilliseconds(createdAt),
-            updatedAt = Instant.fromEpochMilliseconds(updatedAt)
+            createdAt = DateConverter.toJavaInstant(KotlinInstant.fromEpochMilliseconds(createdAt)),
+            updatedAt = DateConverter.toJavaInstant(KotlinInstant.fromEpochMilliseconds(updatedAt))
         )
     }
     
@@ -688,8 +702,8 @@ class LedgerApiImpl @Inject constructor(
             spentAmountCents = 0, // BudgetEntity没有花费信息
             alertThreshold = alertThreshold,
             note = note,
-            createdAt = Instant.fromEpochMilliseconds(createdAt),
-            updatedAt = Instant.fromEpochMilliseconds(updatedAt)
+            createdAt = DateConverter.toJavaInstant(KotlinInstant.fromEpochMilliseconds(createdAt)),
+            updatedAt = DateConverter.toJavaInstant(KotlinInstant.fromEpochMilliseconds(updatedAt))
         )
     }
     
@@ -707,8 +721,8 @@ class LedgerApiImpl @Inject constructor(
             billingDay = billingDay,
             paymentDueDay = paymentDueDay,
             gracePeriodDays = gracePeriodDays,
-            createdAt = createdAt,
-            updatedAt = updatedAt
+            createdAt = DateConverter.toJavaInstant(createdAt),
+            updatedAt = DateConverter.toJavaInstant(updatedAt)
         )
     }
     
@@ -721,13 +735,13 @@ class LedgerApiImpl @Inject constructor(
             name = name,
             targetAmountCents = targetAmountCents,
             currentAmountCents = currentAmountCents,
-            targetDate = targetDate,
+            targetDate = targetDate?.let { DateConverter.toJavaDate(it) },
             description = description,
             color = color,
             iconName = iconName,
             isActive = isActive,
-            createdAt = createdAt,
-            updatedAt = updatedAt
+            createdAt = DateConverter.toJavaInstant(createdAt),
+            updatedAt = DateConverter.toJavaInstant(updatedAt)
         )
     }
     
@@ -740,7 +754,7 @@ class LedgerApiImpl @Inject constructor(
             goalId = goalId,
             amountCents = amountCents,
             note = note,
-            createdAt = createdAt
+            createdAt = DateConverter.toJavaInstant(createdAt)
         )
     }
     
@@ -1102,5 +1116,254 @@ class LedgerApiImpl @Inject constructor(
     
     override fun navigateToRecurringTransactions() {
         ledgerNavigator.navigateToRecurringTransactions()
+    }
+    
+    override suspend fun importLedgerData(
+        data: Map<String, Any>,
+        conflictResolution: String
+    ): ImportLedgerResult {
+        var transactionSuccess = 0
+        var transactionSkipped = 0
+        var transactionFailed = 0
+        var accountSuccess = 0
+        var accountSkipped = 0
+        var accountFailed = 0
+        var categorySuccess = 0
+        var categorySkipped = 0
+        var categoryFailed = 0
+        val errors = mutableListOf<String>()
+        
+        // 1. 导入分类
+        val categories = (data["categories"] as? List<*>)?.filterIsInstance<Map<String, Any>>() ?: emptyList()
+        categories.forEach { categoryData ->
+            try {
+                val name = categoryData["name"] as? String
+                if (name.isNullOrBlank()) {
+                    categoryFailed++
+                    errors.add("分类缺少名称")
+                    return@forEach
+                }
+                
+                val type = categoryData["type"] as? String ?: "EXPENSE"
+                val icon = categoryData["icon"] as? String ?: "category"
+                val color = categoryData["color"] as? String ?: "#2196F3"
+                val parentId = categoryData["parentId"] as? String
+                
+                // 检查分类是否已存在
+                val existingCategory = try {
+                    categoryRepository.getCategoriesByType(type).find { it.name == name }
+                } catch (e: Exception) {
+                    null
+                }
+                
+                when (conflictResolution) {
+                    "SKIP" -> {
+                        if (existingCategory != null) {
+                            categorySkipped++
+                            return@forEach
+                        }
+                    }
+                    "REPLACE" -> {
+                        if (existingCategory != null) {
+                            categoryRepository.deleteCategory(existingCategory.id)
+                        }
+                    }
+                    "CREATE_NEW" -> {
+                        // 总是创建新分类
+                    }
+                }
+                
+                categoryRepository.createCategory(name, type, icon, color, parentId)
+                categorySuccess++
+                
+            } catch (e: Exception) {
+                categoryFailed++
+                errors.add("导入分类失败: ${e.message}")
+            }
+        }
+        
+        // 2. 导入账户
+        val accounts = (data["accounts"] as? List<*>)?.filterIsInstance<Map<String, Any>>() ?: emptyList()
+        accounts.forEach { accountData ->
+            try {
+                val name = accountData["name"] as? String
+                if (name.isNullOrBlank()) {
+                    accountFailed++
+                    errors.add("账户缺少名称")
+                    return@forEach
+                }
+                
+                val type = accountData["type"] as? String ?: "CASH"
+                val balanceCents = (accountData["balanceCents"] as? Number)?.toLong() ?: 0L
+                val currency = accountData["currency"] as? String ?: "CNY"
+                val icon = accountData["icon"] as? String
+                val color = accountData["color"] as? String
+                
+                // 检查账户是否已存在
+                val existingAccount = try {
+                    getAccounts().find { it.name == name }
+                } catch (e: Exception) {
+                    null
+                }
+                
+                when (conflictResolution) {
+                    "SKIP" -> {
+                        if (existingAccount != null) {
+                            accountSkipped++
+                            return@forEach
+                        }
+                    }
+                    "REPLACE" -> {
+                        if (existingAccount != null) {
+                            accountRepository.deleteAccount(existingAccount.id)
+                        }
+                    }
+                    "CREATE_NEW" -> {
+                        // 总是创建新账户
+                    }
+                }
+                
+                val accountType = try {
+                    AccountType.valueOf(type)
+                } catch (e: Exception) {
+                    AccountType.CASH
+                }
+                
+                accountRepository.createAccount(
+                    name = name,
+                    type = accountType,
+                    initialBalanceCents = balanceCents,
+                    currency = currency,
+                    icon = icon,
+                    color = color
+                )
+                accountSuccess++
+                
+            } catch (e: Exception) {
+                accountFailed++
+                errors.add("导入账户失败: ${e.message}")
+            }
+        }
+        
+        // 3. 导入交易记录
+        val transactions = (data["transactions"] as? List<*>)?.filterIsInstance<Map<String, Any>>() ?: emptyList()
+        transactions.forEach { transactionData ->
+            try {
+                val amountCents = (transactionData["amountCents"] as? Number)?.toInt()
+                if (amountCents == null) {
+                    transactionFailed++
+                    errors.add("交易记录缺少金额")
+                    return@forEach
+                }
+                
+                val categoryId = transactionData["categoryId"] as? String
+                if (categoryId.isNullOrBlank()) {
+                    transactionFailed++
+                    errors.add("交易记录缺少分类")
+                    return@forEach
+                }
+                
+                val accountId = transactionData["accountId"] as? String
+                val note = transactionData["note"] as? String
+                val createdAt = (transactionData["createdAt"] as? Number)?.let {
+                    Instant.ofEpochMilli(it.toLong())
+                } ?: Instant.ofEpochMilli(System.currentTimeMillis())
+                
+                // 直接创建新交易（交易记录通常不检查重复）
+                transactionRepository.addTransaction(
+                    userId = getCurrentUserId(),
+                    amountCents = amountCents,
+                    categoryId = categoryId,
+                    note = note,
+                    accountId = accountId
+                )
+                transactionSuccess++
+                
+            } catch (e: Exception) {
+                transactionFailed++
+                errors.add("导入交易记录失败: ${e.message}")
+            }
+        }
+        
+        // 4. 导入预算
+        val budgets = (data["budgets"] as? List<*>)?.filterIsInstance<Map<String, Any>>() ?: emptyList()
+        budgets.forEach { budgetData ->
+            try {
+                val year = (budgetData["year"] as? Number)?.toInt()
+                val month = (budgetData["month"] as? Number)?.toInt()
+                val budgetAmountCents = (budgetData["budgetAmountCents"] as? Number)?.toInt()
+                
+                if (year == null || month == null || budgetAmountCents == null) {
+                    errors.add("预算数据不完整")
+                    return@forEach
+                }
+                
+                val categoryId = budgetData["categoryId"] as? String
+                val alertThreshold = (budgetData["alertThreshold"] as? Number)?.toFloat() ?: 0.8f
+                val note = budgetData["note"] as? String
+                
+                budgetRepository.upsertBudget(
+                    userId = getCurrentUserId(),
+                    year = year,
+                    month = month,
+                    categoryId = categoryId,
+                    budgetAmountCents = budgetAmountCents,
+                    alertThreshold = alertThreshold,
+                    note = note
+                )
+                
+            } catch (e: Exception) {
+                errors.add("导入预算失败: ${e.message}")
+            }
+        }
+        
+        // 5. 导入存钱目标
+        val savingsGoals = (data["savingsGoals"] as? List<*>)?.filterIsInstance<Map<String, Any>>() ?: emptyList()
+        savingsGoals.forEach { goalData ->
+            try {
+                val name = goalData["name"] as? String
+                val targetAmountCents = (goalData["targetAmountCents"] as? Number)?.toLong()
+                
+                if (name.isNullOrBlank() || targetAmountCents == null) {
+                    errors.add("存钱目标数据不完整")
+                    return@forEach
+                }
+                
+                val description = goalData["description"] as? String
+                val color = goalData["color"] as? String ?: "#4CAF50"
+                val iconName = goalData["iconName"] as? String ?: "savings"
+                
+                val goal = SavingsGoal(
+                    name = name,
+                    targetAmountCents = targetAmountCents,
+                    targetDate = null, // TODO: 解析日期
+                    description = description,
+                    color = color,
+                    iconName = iconName,
+                    createdAt = kotlinx.datetime.Clock.System.now(),
+                    updatedAt = kotlinx.datetime.Clock.System.now()
+                )
+                savingsGoalRepository.createSavingsGoal(goal)
+                
+            } catch (e: Exception) {
+                errors.add("导入存钱目标失败: ${e.message}")
+            }
+        }
+        
+        return ImportLedgerResult(
+            transactionCount = transactions.size,
+            transactionSuccess = transactionSuccess,
+            transactionSkipped = transactionSkipped,
+            transactionFailed = transactionFailed,
+            accountCount = accounts.size,
+            accountSuccess = accountSuccess,
+            accountSkipped = accountSkipped,
+            accountFailed = accountFailed,
+            categoryCount = categories.size,
+            categorySuccess = categorySuccess,
+            categorySkipped = categorySkipped,
+            categoryFailed = categoryFailed,
+            errors = errors
+        )
     }
 }

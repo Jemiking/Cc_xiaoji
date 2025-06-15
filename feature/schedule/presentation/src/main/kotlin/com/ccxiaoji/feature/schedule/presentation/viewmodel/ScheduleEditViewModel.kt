@@ -1,6 +1,6 @@
 package com.ccxiaoji.feature.schedule.presentation.viewmodel
 
-import androidx.lifecycle.ViewModel
+import com.ccxiaoji.core.common.base.BaseViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.feature.schedule.domain.model.Schedule
 import com.ccxiaoji.feature.schedule.domain.model.Shift
@@ -21,7 +21,7 @@ class ScheduleEditViewModel @Inject constructor(
     private val createScheduleUseCase: CreateScheduleUseCase,
     private val updateScheduleUseCase: UpdateScheduleUseCase,
     private val deleteScheduleUseCase: DeleteScheduleUseCase
-) : ViewModel() {
+) : BaseViewModel() {
     
     // 所有激活的班次列表
     val shifts: StateFlow<List<Shift>> = getActiveShiftsUseCase()
@@ -50,11 +50,11 @@ class ScheduleEditViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                getScheduleByDateUseCase(date).collect { schedule ->
-                    _currentSchedule.value = schedule
-                    _selectedShift.value = schedule?.shift
-                    _uiState.update { it.copy(isLoading = false) }
-                }
+                // 只获取一次当前日期的排班信息
+                val schedule = getScheduleByDateUseCase(date).first()
+                _currentSchedule.value = schedule
+                _selectedShift.value = schedule?.shift
+                _uiState.update { it.copy(isLoading = false) }
             } catch (e: Exception) {
                 _uiState.update { 
                     it.copy(

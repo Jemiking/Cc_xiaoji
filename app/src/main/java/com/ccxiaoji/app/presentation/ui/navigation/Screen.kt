@@ -41,6 +41,13 @@ sealed class Screen(
         unselectedIcon = Icons.Outlined.EmojiEvents
     )
     
+    object Schedule : Screen(
+        route = "schedule_calendar",
+        titleRes = R.string.nav_schedule,
+        selectedIcon = Icons.Filled.CalendarToday,
+        unselectedIcon = Icons.Outlined.CalendarToday
+    )
+    
     object Profile : Screen(
         route = "profile",
         titleRes = R.string.nav_profile,
@@ -54,6 +61,7 @@ val bottomNavItems = listOf(
     Screen.Ledger,
     Screen.Todo,
     Screen.Habit,
+    Screen.Schedule,
     Screen.Profile
 )
 
@@ -118,6 +126,10 @@ object LedgerSettingsRoute {
 
 object DataExportRoute {
     const val route = "data_export"
+}
+
+object DataImportRoute {
+    const val route = "data_import"
 }
 
 object BatchOperationRoute {

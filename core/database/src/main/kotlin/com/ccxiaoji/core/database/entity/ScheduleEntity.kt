@@ -23,7 +23,8 @@ import com.ccxiaoji.core.database.model.SyncStatus
     ],
     indices = [
         Index(value = ["date"], unique = true),
-        Index(value = ["shift_id"])
+        Index(value = ["shift_id"]),
+        Index(value = ["date", "shift_id"])  // 复合索引，用于日期范围+班次查询
     ]
 )
 data class ScheduleEntity(
@@ -47,7 +48,7 @@ data class ScheduleEntity(
     val actualEndTime: String? = null,
     
     @ColumnInfo(name = "sync_status")
-    val syncStatus: SyncStatus = SyncStatus.LOCAL,
+    val syncStatus: SyncStatus = SyncStatus.SYNCED,
     
     @ColumnInfo(name = "created_at")
     val createdAt: Long = System.currentTimeMillis(),

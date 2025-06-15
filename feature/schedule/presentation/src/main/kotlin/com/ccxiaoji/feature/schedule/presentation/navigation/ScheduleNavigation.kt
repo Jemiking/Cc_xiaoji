@@ -4,14 +4,15 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+
 import com.ccxiaoji.feature.schedule.presentation.ui.calendar.CalendarScreen
-import com.ccxiaoji.feature.schedule.presentation.ui.shift.ShiftManageScreen
+import com.ccxiaoji.feature.schedule.presentation.ui.export.ExportScreen
 import com.ccxiaoji.feature.schedule.presentation.ui.pattern.SchedulePatternScreen
 import com.ccxiaoji.feature.schedule.presentation.ui.schedule.ScheduleEditScreen
-import com.ccxiaoji.feature.schedule.presentation.ui.statistics.ScheduleStatisticsScreen
-import com.ccxiaoji.feature.schedule.presentation.ui.export.ExportScreen
-import com.ccxiaoji.feature.schedule.presentation.ui.settings.SettingsScreen
 import com.ccxiaoji.feature.schedule.presentation.ui.settings.AboutScreen
+import com.ccxiaoji.feature.schedule.presentation.ui.settings.SettingsScreen
+import com.ccxiaoji.feature.schedule.presentation.ui.shift.ShiftManageScreen
+import com.ccxiaoji.feature.schedule.presentation.ui.statistics.ScheduleStatisticsScreen
 
 /**
  * 导航路由定义
@@ -61,7 +62,7 @@ fun ScheduleNavHost(
                 }
             )
         }
-        
+
         // 班次管理界面
         composable(Screen.ShiftManage.route) {
             ShiftManageScreen(
@@ -70,7 +71,7 @@ fun ScheduleNavHost(
                 }
             )
         }
-        
+
         // 排班编辑界面
         composable(Screen.ScheduleEdit.route) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
@@ -81,7 +82,7 @@ fun ScheduleNavHost(
                 }
             )
         }
-        
+
         // 排班模式界面
         composable(Screen.SchedulePattern.route) {
             SchedulePatternScreen(
@@ -90,7 +91,7 @@ fun ScheduleNavHost(
                 }
             )
         }
-        
+
         // 排班统计界面
         composable(Screen.ScheduleStatistics.route) {
             ScheduleStatisticsScreen(
@@ -102,7 +103,7 @@ fun ScheduleNavHost(
                 }
             )
         }
-        
+
         // 数据导出界面
         composable(Screen.Export.route) {
             ExportScreen(
@@ -111,7 +112,7 @@ fun ScheduleNavHost(
                 }
             )
         }
-        
+
         // 设置界面
         composable(Screen.Settings.route) {
             SettingsScreen(
@@ -126,7 +127,7 @@ fun ScheduleNavHost(
                 }
             )
         }
-        
+
         // 关于页面
         composable(Screen.About.route) {
             AboutScreen(
