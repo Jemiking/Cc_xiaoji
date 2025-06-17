@@ -34,7 +34,8 @@
       "Bash(./compile_and_test.bat)",
       "Bash(cmd.exe /c compile_and_test.bat)",
       "Bash(bash:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "mcp__android-compiler__compile_kotlin"
     ],
     "deny": []
   },

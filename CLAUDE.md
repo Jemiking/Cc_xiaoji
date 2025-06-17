@@ -2,6 +2,27 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 🚨 Critical: Architecture Migration in Progress
+**This project is preparing for architecture migration from monolithic to modular architecture.**
+
+### Migration Status
+- Current: All code is still in the `app` module (traditional layered architecture)
+- Target: Domain-based modular architecture
+- **Migration Guide: MUST READ `doc/架构迁移计划与原则.md` before any migration work**
+
+### Important Migration Rules
+1. **Migration ≠ Rewrite** - Move existing code, don't recreate it
+2. **No logic changes during migration** - Only change package names and imports
+3. **Incremental migration** - Small steps with verification after each step
+4. **See `doc/架构迁移计划与原则.md` for detailed instructions**
+
+### Migration Progress Tracking
+- **Current Phase**: 准备阶段 (Preparation)
+- **Progress**: 0%
+- **Next Step**: 创建模块结构
+- **Detailed Progress**: See `doc/架构迁移进度追踪.md`
+- **Milestone Records**: See `doc/架构迁移里程碑.md`
+
 ## Important: Development Workflow
 **Claude Code should NOT attempt to compile or build the project after making changes.**
 
@@ -15,6 +36,71 @@ This approach ensures that:
 - Build errors are properly diagnosed in the actual development environment
 - Claude Code can focus on writing code rather than managing build processes
 - The developer maintains control over the build and testing cycle
+
+### Problem-Solving Approach
+**Before implementing any solution, Claude Code must:**
+
+1. **Present multiple solution options** (typically 2-3 different approaches)
+2. **Analyze pros and cons for each solution:**
+   - **优点 (Pros)**: Performance impact, maintainability, code simplicity
+   - **缺点 (Cons)**: Implementation complexity, potential risks, limitations
+3. **Provide a clear recommendation with reasoning**
+
+**Example format:**
+```
+问题：[描述具体问题]
+
+方案一：[方案名称]
+- 优点：
+  • [优点1]
+  • [优点2]
+- 缺点：
+  • [缺点1]
+  • [缺点2]
+
+推荐方案：方案X
+理由：[详细解释为什么推荐这个方案]
+```
+
+## MCP Server Configuration
+**This project has an Android Compiler MCP server configured for automatic compilation verification.**
+
+### MCP Server Details
+- **Server Name**: android-compiler
+- **Purpose**: Provides automatic Kotlin/Android compilation capabilities
+- **Location**: `~/android-compiler-mcp/`
+
+### Available Tools
+1. **compile_kotlin** - Compiles the Android Kotlin project
+    - Parameters:
+        - `projectPath`: Project root directory path (use "." for current directory)
+        - `module`: Optional - specific module to compile
+        - `task`: Compilation task type (compileDebugKotlin, build, clean)
+
+2. **check_gradle** - Checks Gradle and Android environment
+    - Parameters:
+        - `projectPath`: Project root directory path
+
+### Usage Examples
+```
+# Check environment
+使用check_gradle工具检查环境，projectPath是"."
+
+# Compile entire project
+使用compile_kotlin工具编译项目，projectPath是"."
+
+# Compile specific module
+使用compile_kotlin工具编译feature-ledger模块，projectPath是"."，module是"feature-ledger"
+
+# Clean project
+使用compile_kotlin工具清理项目，projectPath是"."，task是"clean"
+```
+
+### MCP Server Configuration
+The MCP server is configured at user level and will automatically start when Claude Code launches. The configuration was added using:
+```bash
+claude mcp add android-compiler -s user -- node /home/hua/android-compiler-mcp/index.js
+```
 
 ## Language Requirement
 **All responses from Claude Code should be in Chinese (中文).** This includes:
@@ -63,6 +149,10 @@ This approach ensures that:
 ### Database Management
 - Room database version: 1 (reset from version 6, all historical migrations cleared)
 - Schema location: `app/schemas/`
+- **Database Architecture**: Single database shared by all modules with DAO-level isolation
+   - All feature modules share the same `CcDatabase` instance
+   - Each module has its own DAOs and entities
+   - Entities are organized by feature module but registered in the main database
 - When modifying database entities:
     1. Increment version in `CcDatabase.kt`
     2. Create a migration in `app/src/main/java/com/ccxiaoji/app/data/local/migrations/`
@@ -119,6 +209,100 @@ The project follows a three-layer architecture:
 4. **Recurring Transactions**: Automated transaction creation via WorkManager
 5. **Budget Management**: Monthly/yearly budgets with category-based tracking
 6. **Savings Goals**: Goal tracking with contribution history
+
+## Target Architecture: Domain-Based Modular Architecture
+
+### Project Vision
+CC小记 (CC Xiaoji) is a **Life Management App** that integrates multiple life management modules.
+
+### Architecture Principles
+- **领域驱动 (Domain-Driven)**: Modules are divided by business domains
+- **模块独立 (Module Independence)**: Each business module contains complete data/domain/presentation layers
+- **依赖倒置 (Dependency Inversion)**: Upper modules depend on lower ones, reverse dependencies are forbidden
+- **接口隔离 (Interface Segregation)**: Modules communicate through well-defined API interfaces
+
+### Module Types and Responsibilities
+1. **app module** - Application shell, only responsible for module assembly and global navigation
+2. **core modules** - Infrastructure, providing common functionality
+   - **core-common** - Basic utilities, extensions, constants
+   - **core-ui** - Shared UI components and theme
+   - **core-database** - Room database infrastructure
+   - **core-network** - Network infrastructure
+3. **feature modules** - Business feature modules, each representing a business domain
+4. **shared modules** - Cross-domain shared business functions (user, sync, backup, etc.)
+
+### Dependency Rules
+```
+✅ Allowed:
+app → feature → shared → core
+
+❌ Forbidden:
+feature → feature (no horizontal dependencies)
+core → feature (no reverse dependencies)
+core → shared (no reverse dependencies)
+```
+
+### Module Structure Standard
+Every feature module MUST follow this structure:
+```
+feature-[name]/
+├── api/           # Public API for other modules
+├── data/          # Data layer implementation
+│   ├── local/
+│   │   ├── dao/
+│   │   └── entity/
+│   └── repository/
+├── domain/        # Business logic
+│   ├── model/
+│   └── usecase/
+└── presentation/  # UI layer
+    ├── screen/
+    ├── component/
+    └── viewmodel/
+```
+
+### Module Communication Example
+```kotlin
+// Module API definition
+interface LedgerApi {
+    suspend fun getTodayExpense(): Double
+    suspend fun getTotalBalance(): Double
+    fun navigateToAddTransaction()
+}
+
+// Usage in app module
+class HomeViewModel @Inject constructor(
+    private val ledgerApi: LedgerApi,
+    private val todoApi: TodoApi
+) : ViewModel() {
+    // Aggregate data from multiple modules
+}
+```
+
+## File Organization Standards
+
+### Document and Script Organization
+```
+项目根目录/
+├── doc/                    # All project documentation
+│   ├── 架构迁移计划与原则.md
+│   ├── 架构迁移进度追踪.md  
+│   ├── 架构迁移里程碑.md
+│   └── [module]迁移总结.md # Migration summaries
+├── scripts/                # Auxiliary scripts
+│   ├── build.sh           
+│   ├── clean_build.sh     
+│   └── *.sh               
+├── app/                   
+├── core/                  
+├── feature/               
+└── shared/                
+```
+
+**File Placement Rules:**
+- All .md files must be placed in the `doc/` folder
+- All .sh scripts must be placed in the `scripts/` folder
+- Keep Android standard structure for everything else
 
 ## Build Configuration
 
