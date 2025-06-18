@@ -18,7 +18,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Migration Progress Tracking
 - **Current Phase**: 第四阶段 - Feature模块迁移
-- **Progress**: 85%
+- **Progress**: 90%
 - **Completed**: 
   - ✅ 模块结构创建
   - ✅ 模块配置
@@ -32,8 +32,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - ✅ shared-notification模块迁移
   - ✅ feature-todo模块迁移
   - ✅ feature-habit模块迁移
-- **In Progress**: feature-ledger模块迁移
-- **Next Step**: 完成feature-ledger模块迁移
+  - 🚧 feature-ledger模块迁移（90%完成）
+    - ✅ API接口、实体类、DAO、Repository层
+    - ✅ Domain模型、UI组件、屏幕、ViewModel层
+    - ⏳ RecurringTransactionWorker迁移
+    - ⏳ DI模块迁移
+    - ⏳ CcDatabase更新
+- **In Progress**: feature-ledger模块剩余任务
+- **Next Step**: 迁移RecurringTransactionWorker
 - **Detailed Progress**: See `doc/架构迁移进度追踪.md`
 - **Milestone Records**: See `doc/架构迁移里程碑.md`
 
