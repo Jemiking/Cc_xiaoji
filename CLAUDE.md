@@ -70,6 +70,17 @@ This approach ensures that:
 理由：[详细解释为什么推荐这个方案]
 ```
 
+### Known Issues and Solutions
+1. **Java 21 + AGP 8.1.x JdkImageTransform Error**
+   - **Issue**: AGP versions < 8.2.1 have compatibility issues with Java 21
+   - **Solution**: Upgrade AGP to 8.2.1 or higher
+   - **Error**: `Execution failed for JdkImageTransform: .../core-for-system-modules.jar`
+   
+2. **Hilt Duplicate Bindings**
+   - **Issue**: Multiple @Provides methods for the same type across modules
+   - **Solution**: Remove duplicate providers, keep only one in the appropriate module
+   - **Example**: NotificationConfig should only be provided by app module
+
 ## MCP Server Configuration
 **This project has an Android Compiler MCP server configured for automatic compilation verification.**
 
