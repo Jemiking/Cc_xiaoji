@@ -5,7 +5,16 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.ccxiaoji.app.data.local.CcDatabase
-import com.ccxiaoji.app.data.local.dao.*
+import com.ccxiaoji.app.data.local.dao.CountdownDao
+import com.ccxiaoji.shared.sync.data.local.dao.ChangeLogDao
+import com.ccxiaoji.feature.ledger.data.local.dao.AccountDao
+import com.ccxiaoji.feature.ledger.data.local.dao.TransactionDao
+import com.ccxiaoji.feature.ledger.data.local.dao.CategoryDao
+import com.ccxiaoji.feature.ledger.data.local.dao.BudgetDao
+import com.ccxiaoji.feature.ledger.data.local.dao.RecurringTransactionDao
+import com.ccxiaoji.feature.ledger.data.local.dao.SavingsGoalDao
+import com.ccxiaoji.feature.ledger.data.local.dao.CreditCardPaymentDao
+import com.ccxiaoji.feature.ledger.data.local.dao.CreditCardBillDao
 import com.ccxiaoji.shared.user.data.local.dao.UserDao
 import com.ccxiaoji.common.constants.DatabaseConstants
 import com.ccxiaoji.core.database.migrations.DatabaseMigrations

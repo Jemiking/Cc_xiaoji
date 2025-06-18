@@ -127,7 +127,6 @@ class LedgerViewModel @Inject constructor(
     
     private suspend fun checkBudgetAfterTransaction(categoryId: String) {
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-        val userId = userApi.getCurrentUserId()
         
         // 检查分类预算
         val categoryBudgetAlert = budgetRepository.checkBudgetAlert(now.year, now.monthNumber, categoryId)

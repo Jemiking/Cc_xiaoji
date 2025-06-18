@@ -22,7 +22,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.ccxiaoji.app.domain.model.SavingsGoal
+import com.ccxiaoji.feature.ledger.domain.model.SavingsGoal
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 

@@ -5,7 +5,12 @@ import android.content.Intent
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.app.data.repository.*
+import com.ccxiaoji.app.data.repository.CountdownRepository
+import com.ccxiaoji.feature.ledger.data.repository.TransactionRepository
+import com.ccxiaoji.feature.ledger.data.repository.AccountRepository
+import com.ccxiaoji.feature.ledger.data.repository.CategoryRepository
+import com.ccxiaoji.feature.ledger.data.repository.BudgetRepository
+import com.ccxiaoji.feature.ledger.data.repository.SavingsGoalRepository
 import com.ccxiaoji.feature.todo.api.TodoApi
 import com.ccxiaoji.feature.habit.api.HabitApi
 import com.ccxiaoji.app.presentation.ui.profile.DateRange
@@ -102,7 +107,7 @@ class DataExportViewModel @Inject constructor(
             
             // 导出其他数据
             if (_uiState.value.exportOthers) {
-                val budgets = budgetRepository.getBudgets(getCurrentUserId()).first()
+                val budgets = budgetRepository.getBudgets().first()
                 val savingsGoals = savingsGoalRepository.getAllSavingsGoals().first()
                 val countdowns = countdownRepository.getCountdowns().first()
                 

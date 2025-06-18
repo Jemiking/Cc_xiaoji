@@ -2,19 +2,19 @@ package com.ccxiaoji.app.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.app.data.repository.TransactionRepository
+import com.ccxiaoji.feature.ledger.data.repository.TransactionRepository
 import com.ccxiaoji.feature.todo.api.TodoApi
 import com.ccxiaoji.feature.todo.domain.model.Task
 import com.ccxiaoji.feature.habit.api.HabitApi
 import com.ccxiaoji.feature.habit.domain.model.HabitWithStreak
 import com.ccxiaoji.app.data.repository.CountdownRepository
-import com.ccxiaoji.app.data.repository.BudgetRepository
-import com.ccxiaoji.app.data.repository.SavingsGoalRepository
+import com.ccxiaoji.feature.ledger.data.repository.BudgetRepository
+import com.ccxiaoji.feature.ledger.data.repository.SavingsGoalRepository
 import com.ccxiaoji.shared.user.api.UserApi
-import com.ccxiaoji.app.data.repository.AccountRepository
-import com.ccxiaoji.app.domain.model.Transaction
+import com.ccxiaoji.feature.ledger.data.repository.AccountRepository
+import com.ccxiaoji.feature.ledger.domain.model.Transaction
 import com.ccxiaoji.app.domain.model.Countdown
-import com.ccxiaoji.app.domain.model.SavingsGoal
+import com.ccxiaoji.feature.ledger.domain.model.SavingsGoal
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -130,8 +130,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             // Load budget overview
             val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-            val userId = userApi.getCurrentUserId()
-            val totalBudget = budgetRepository.getTotalBudgetWithSpent(userId, now.year, now.monthNumber)
+            val totalBudget = budgetRepository.getTotalBudgetWithSpent(now.year, now.monthNumber)
             
             if (totalBudget != null) {
                 val usagePercentage = if (totalBudget.budgetAmountCents > 0) {

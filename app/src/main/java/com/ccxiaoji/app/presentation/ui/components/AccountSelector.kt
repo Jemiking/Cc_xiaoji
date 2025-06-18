@@ -7,7 +7,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.ccxiaoji.app.domain.model.Account
+import com.ccxiaoji.feature.ledger.domain.model.Account
+import com.ccxiaoji.feature.ledger.domain.model.AccountType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,7 +28,7 @@ fun AccountSelector(
     ) {
         OutlinedTextField(
             value = selectedAccount?.let { 
-                if (it.type == com.ccxiaoji.app.domain.model.AccountType.CREDIT_CARD) {
+                if (it.type == AccountType.CREDIT_CARD) {
                     "${it.type.icon} ${it.name} (可用: ¥%.2f)".format(it.availableCreditYuan ?: 0.0)
                 } else {
                     "${it.type.icon} ${it.name}"
@@ -61,7 +62,7 @@ fun AccountSelector(
                                 Text(text = account.type.icon)
                                 Column {
                                     Text(text = account.name)
-                                    if (account.type == com.ccxiaoji.app.domain.model.AccountType.CREDIT_CARD) {
+                                    if (account.type == AccountType.CREDIT_CARD) {
                                         // 信用卡显示可用额度
                                         Text(
                                             text = "可用: ¥%.2f".format(account.availableCreditYuan ?: 0.0),
@@ -136,7 +137,7 @@ fun CompactAccountSelector(
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
-                    if (selectedAccount.type == com.ccxiaoji.app.domain.model.AccountType.CREDIT_CARD) {
+                    if (selectedAccount.type == AccountType.CREDIT_CARD) {
                         Text(
                             text = "可用: ¥%.2f".format(selectedAccount.availableCreditYuan ?: 0.0),
                             style = MaterialTheme.typography.bodySmall,
@@ -178,7 +179,7 @@ fun CompactAccountSelector(
                                 Text(text = account.type.icon)
                                 Text(text = account.name)
                             }
-                            if (account.type == com.ccxiaoji.app.domain.model.AccountType.CREDIT_CARD) {
+                            if (account.type == AccountType.CREDIT_CARD) {
                                 Text(
                                     text = "可用: ¥%.2f".format(account.availableCreditYuan ?: 0.0),
                                     style = MaterialTheme.typography.bodySmall,

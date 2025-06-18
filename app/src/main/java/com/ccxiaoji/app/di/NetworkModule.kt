@@ -1,5 +1,6 @@
 package com.ccxiaoji.app.di
 
+import com.ccxiaoji.app.BuildConfig
 import com.ccxiaoji.core.network.di.AuthorizedRetrofit
 import com.ccxiaoji.core.network.di.BaseUrl
 import com.ccxiaoji.core.network.di.IsDebug
@@ -24,7 +25,7 @@ object NetworkModule {
     
     @Provides
     @IsDebug
-    fun provideIsDebug(): Boolean = true // 临时使用true，实际应该使用BuildConfig.DEBUG
+    fun provideIsDebug(): Boolean = BuildConfig.DEBUG
 }
 
 @Module

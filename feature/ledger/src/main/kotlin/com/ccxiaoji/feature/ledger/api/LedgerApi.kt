@@ -1,5 +1,7 @@
 package com.ccxiaoji.feature.ledger.api
 
+import androidx.compose.runtime.Composable
+import androidx.navigation.NavHostController
 import com.ccxiaoji.feature.ledger.domain.model.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
@@ -154,4 +156,42 @@ interface LedgerApi {
     fun navigateToSavingsGoals()
     fun navigateToStatistics()
     fun navigateToCreditCardManagement()
+    
+    // Screen Providers
+    @Composable
+    fun getLedgerScreen(navController: NavHostController, accountId: String?)
+    
+    @Composable
+    fun getTransactionDetailScreen(transactionId: String, navController: NavHostController)
+    
+    @Composable
+    fun getAccountScreen(navController: NavHostController)
+    
+    @Composable
+    fun getCategoryManagementScreen(navController: NavHostController)
+    
+    @Composable
+    fun getBudgetScreen(onNavigateBack: () -> Unit)
+    
+    @Composable
+    fun getStatisticsScreen(onNavigateBack: () -> Unit)
+    
+    @Composable
+    fun getRecurringTransactionScreen(onNavigateBack: () -> Unit)
+    
+    @Composable
+    fun getSavingsGoalScreen(onNavigateBack: () -> Unit, onNavigateToDetail: (Long) -> Unit)
+    
+    @Composable
+    fun getSavingsGoalDetailScreen(goalId: Long, onNavigateBack: () -> Unit)
+    
+    @Composable
+    fun getCreditCardScreen(
+        navController: NavHostController,
+        onNavigateBack: () -> Unit,
+        onNavigateToAccount: (String) -> Unit
+    )
+    
+    @Composable
+    fun getCreditCardBillsScreen(accountId: String, navController: NavHostController)
 }

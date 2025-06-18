@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId = "com.ccxiaoji.app"
-        minSdk = 26 // Android 8.0
+        minSdk = 26
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
@@ -22,9 +22,6 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
-        
-        // Room schema export
-        // Room schema export is now handled by KSP configuration
     }
 
     buildTypes {
@@ -49,6 +46,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.7"
@@ -67,17 +65,20 @@ ksp {
 }
 
 dependencies {
-    // Module dependencies
-    implementation(project(":core:common"))
-    implementation(project(":core:ui"))
-    implementation(project(":core:database"))
-    implementation(project(":core:network"))
+    // Module dependencies - Only direct feature and shared modules needed
     implementation(project(":shared:user"))
     implementation(project(":shared:sync"))
     implementation(project(":shared:backup"))
     implementation(project(":shared:notification"))
     implementation(project(":feature:todo"))
     implementation(project(":feature:habit"))
+    implementation(project(":feature:ledger"))
+    
+    // Core modules needed for app-specific functionality
+    implementation(project(":core:network")) // For TokenProvider
+    implementation(project(":core:database")) // For database access
+    implementation(project(":core:common")) // For common utilities
+    implementation(project(":core:ui")) // For UI components and theme
     
     // Core Android
     implementation("androidx.core:core-ktx:1.12.0")
@@ -103,28 +104,20 @@ dependencies {
     implementation("androidx.hilt:hilt-work:1.1.0")
     ksp("androidx.hilt:hilt-compiler:1.1.0")
     
-    // Room for local database
-    implementation("androidx.room:room-runtime:2.6.1")
-    implementation("androidx.room:room-ktx:2.6.1")
+    // Room (only needed for schema export)
     ksp("androidx.room:room-compiler:2.6.1")
     
-    // Kotlin Serialization
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-    
-    // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    
-    // DataStore for preferences
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
-    
-    // WorkManager for background sync
+    // WorkManager
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     
-    // Security
-    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    // DataStore
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
     
-    // DateTime
+    // Kotlin DateTime
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
+    
+    // Gson
+    implementation("com.google.code.gson:gson:2.10.1")
     
     // Testing
     testImplementation("junit:junit:4.13.2")

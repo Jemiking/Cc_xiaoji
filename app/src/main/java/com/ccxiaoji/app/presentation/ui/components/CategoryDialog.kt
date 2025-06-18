@@ -13,7 +13,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import com.ccxiaoji.app.domain.model.Category
+import com.ccxiaoji.feature.ledger.domain.model.Category
 import com.ccxiaoji.ui.components.ColorPicker
 import com.ccxiaoji.ui.components.IconPicker
 

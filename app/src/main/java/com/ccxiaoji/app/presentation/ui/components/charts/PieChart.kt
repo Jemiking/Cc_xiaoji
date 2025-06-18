@@ -17,7 +17,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.ccxiaoji.app.data.local.dao.CategoryStatistic
+import com.ccxiaoji.feature.ledger.domain.model.CategoryStatistic
 import kotlin.math.cos
 import kotlin.math.sin
 

@@ -13,27 +13,18 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ccxiaoji.app.presentation.ui.home.HomeScreen
-import com.ccxiaoji.app.presentation.ui.ledger.LedgerScreen
 import com.ccxiaoji.feature.todo.presentation.screen.TodoScreen
 import com.ccxiaoji.feature.habit.presentation.screen.HabitScreen
 import com.ccxiaoji.app.presentation.ui.profile.ProfileScreen
-import com.ccxiaoji.app.presentation.ui.ledger.TransactionDetailScreen
-import com.ccxiaoji.app.presentation.ui.account.AccountScreen
-import com.ccxiaoji.app.presentation.ui.category.CategoryManagementScreen
-import com.ccxiaoji.app.presentation.ui.budget.BudgetScreen
-import com.ccxiaoji.app.presentation.ui.statistics.StatisticsScreen
-import com.ccxiaoji.app.presentation.ui.recurring.RecurringTransactionScreen
-import com.ccxiaoji.app.presentation.ui.savings.SavingsGoalScreen
-import com.ccxiaoji.app.presentation.ui.savings.SavingsGoalDetailScreen
 import com.ccxiaoji.app.presentation.ui.profile.DataExportScreen
 import com.ccxiaoji.app.presentation.ui.profile.ThemeSettingsScreen
 import com.ccxiaoji.app.presentation.ui.profile.NotificationSettingsScreen
-import com.ccxiaoji.app.presentation.ui.creditcard.CreditCardScreen
-import com.ccxiaoji.app.presentation.ui.creditcard.CreditCardBillsScreen
+import com.ccxiaoji.feature.ledger.api.LedgerApi
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
+    ledgerApi: LedgerApi,
     startDestination: String = Screen.Home.route,
     modifier: Modifier = Modifier
 ) {
@@ -54,12 +45,12 @@ fun NavGraph(
         }
         
         composable(Screen.Ledger.route) {
-            LedgerScreen(navController = navController)
+            ledgerApi.getLedgerScreen(navController, null)
         }
         
         composable(LedgerWithAccountRoute.route) { backStackEntry ->
             val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
-            LedgerScreen(
+            ledgerApi.getLedgerScreen(
                 navController = navController,
                 accountId = accountId
             )
@@ -80,19 +71,18 @@ fun NavGraph(
         // Detail screens
         composable(TransactionDetailRoute.route) { backStackEntry ->
             val transactionId = backStackEntry.arguments?.getString("transactionId") ?: ""
-            TransactionDetailScreen(
+            ledgerApi.getTransactionDetailScreen(
                 transactionId = transactionId,
-                navController = navController,
-                viewModel = hiltViewModel()
+                navController = navController
             )
         }
         
         composable(AccountManagementRoute.route) {
-            AccountScreen(navController = navController)
+            ledgerApi.getAccountScreen(navController = navController)
         }
         
         composable(CreditCardRoute.route) {
-            CreditCardScreen(
+            ledgerApi.getCreditCardScreen(
                 navController = navController,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToAccount = { accountId ->
@@ -104,7 +94,7 @@ fun NavGraph(
         
         composable(CreditCardBillsRoute.route) { backStackEntry ->
             val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
-            CreditCardBillsScreen(
+            ledgerApi.getCreditCardBillsScreen(
                 accountId = accountId,
                 navController = navController
             )
@@ -117,23 +107,23 @@ fun NavGraph(
         }
         
         composable(CategoryManagementRoute.route) {
-            CategoryManagementScreen(navController = navController)
+            ledgerApi.getCategoryManagementScreen(navController = navController)
         }
         
         composable(BudgetRoute.route) {
-            BudgetScreen(onNavigateBack = { navController.popBackStack() })
+            ledgerApi.getBudgetScreen(onNavigateBack = { navController.popBackStack() })
         }
         
         composable(StatisticsRoute.route) {
-            StatisticsScreen(onNavigateBack = { navController.popBackStack() })
+            ledgerApi.getStatisticsScreen(onNavigateBack = { navController.popBackStack() })
         }
         
         composable(RecurringTransactionRoute.route) {
-            RecurringTransactionScreen(onNavigateBack = { navController.popBackStack() })
+            ledgerApi.getRecurringTransactionScreen(onNavigateBack = { navController.popBackStack() })
         }
         
         composable(SavingsGoalRoute.route) {
-            SavingsGoalScreen(
+            ledgerApi.getSavingsGoalScreen(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToDetail = { goalId ->
                     navController.navigate(SavingsGoalDetailRoute.createRoute(goalId))
@@ -143,7 +133,7 @@ fun NavGraph(
         
         composable(SavingsGoalDetailRoute.route) { backStackEntry ->
             val goalId = backStackEntry.arguments?.getString("goalId")?.toLongOrNull() ?: 0L
-            SavingsGoalDetailScreen(
+            ledgerApi.getSavingsGoalDetailScreen(
                 goalId = goalId,
                 onNavigateBack = { navController.popBackStack() }
             )

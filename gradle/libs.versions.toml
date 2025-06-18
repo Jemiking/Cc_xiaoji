@@ -1,0 +1,149 @@
+[versions]
+# Android
+compileSdk = "34"
+minSdk = "26"
+targetSdk = "34"
+buildTools = "33.0.2"
+
+# Kotlin
+kotlin = "1.9.21"
+ksp = "1.9.21-1.0.15"
+coroutines = "1.7.3"
+datetime = "0.5.0"
+serialization = "1.6.0"
+
+# AndroidX
+core-ktx = "1.12.0"
+lifecycle = "2.7.0"
+activity-compose = "1.8.2"
+navigation-compose = "2.7.6"
+datastore = "1.0.0"
+work = "2.9.0"
+security-crypto = "1.1.0-alpha06"
+
+# Compose
+compose-bom = "2024.02.00"
+compose-compiler = "1.5.7"
+
+# Hilt
+hilt = "2.48.1"
+hilt-androidx = "1.1.0"
+
+# Room
+room = "2.6.1"
+
+# Network
+retrofit = "2.9.0"
+okhttp = "4.12.0"
+gson = "2.10.1"
+
+# Testing
+junit = "4.13.2"
+androidx-test-ext = "1.1.5"
+espresso = "3.5.1"
+
+[libraries]
+# Kotlin
+kotlin-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+kotlin-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "datetime" }
+kotlin-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
+
+# AndroidX Core
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-runtime-compose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycle" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activity-compose" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigation-compose" }
+androidx-datastore = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+androidx-work = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "security-crypto" }
+
+# Compose
+compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
+compose-ui = { group = "androidx.compose.ui", name = "ui" }
+compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+compose-material-icons = { group = "androidx.compose.material", name = "material-icons-extended" }
+compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+
+# Hilt
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "hilt-androidx" }
+hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hilt-androidx" }
+hilt-androidx-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "hilt-androidx" }
+
+# Room
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+# Network
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }
+okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
+
+# Testing
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-test-ext = { group = "androidx.test.ext", name = "junit", version.ref = "androidx-test-ext" }
+androidx-test-espresso = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
+compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+
+[bundles]
+# 基础Android依赖
+android-core = [
+    "androidx-core-ktx",
+    "kotlin-coroutines"
+]
+
+# Compose UI相关
+compose-ui = [
+    "compose-ui",
+    "compose-ui-graphics", 
+    "compose-ui-tooling-preview",
+    "compose-material3",
+    "compose-material-icons"
+]
+
+# Lifecycle相关
+lifecycle = [
+    "androidx-lifecycle-runtime-ktx",
+    "androidx-lifecycle-runtime-compose"
+]
+
+# Room数据库
+room = [
+    "room-runtime",
+    "room-ktx"
+]
+
+# 网络请求
+network = [
+    "retrofit",
+    "retrofit-gson",
+    "okhttp-logging"
+]
+
+# 测试相关
+testing = [
+    "junit",
+    "androidx-test-ext",
+    "androidx-test-espresso"
+]
+
+# Compose调试工具
+compose-debug = [
+    "compose-ui-tooling",
+    "compose-ui-test-manifest"
+]
+
+[plugins]
+android-application = { id = "com.android.application", version = "8.3.0" }
+android-library = { id = "com.android.library", version = "8.3.0" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }

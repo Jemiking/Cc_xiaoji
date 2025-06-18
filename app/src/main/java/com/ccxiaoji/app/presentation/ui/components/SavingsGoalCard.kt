@@ -17,7 +17,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.ccxiaoji.app.domain.model.SavingsGoal
+import com.ccxiaoji.feature.ledger.domain.model.SavingsGoal
 import java.text.NumberFormat
 import java.time.format.DateTimeFormatter
 import java.util.Locale

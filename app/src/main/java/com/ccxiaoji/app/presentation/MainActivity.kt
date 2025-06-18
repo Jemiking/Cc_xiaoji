@@ -14,7 +14,8 @@ import com.ccxiaoji.app.presentation.ui.components.BottomNavBar
 import com.ccxiaoji.app.presentation.ui.navigation.NavGraph
 import com.ccxiaoji.app.notification.NotificationScheduler
 import com.ccxiaoji.app.data.sync.SyncManager
-import com.ccxiaoji.app.data.sync.CreditCardReminderManager
+import com.ccxiaoji.feature.ledger.api.LedgerApi
+import com.ccxiaoji.feature.ledger.worker.creditcard.CreditCardReminderManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import android.util.Log
@@ -34,6 +35,9 @@ class MainActivity : ComponentActivity() {
     
     @Inject
     lateinit var creditCardReminderManager: CreditCardReminderManager
+    
+    @Inject
+    lateinit var ledgerApi: LedgerApi
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -71,6 +75,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavGraph(
                         navController = navController,
+                        ledgerApi = ledgerApi,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

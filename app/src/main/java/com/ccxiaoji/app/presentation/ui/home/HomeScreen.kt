@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ccxiaoji.app.R
-import com.ccxiaoji.app.domain.model.SavingsGoal
+import com.ccxiaoji.feature.ledger.domain.model.SavingsGoal
 import com.ccxiaoji.app.presentation.ui.components.MiniSavingsGoalCard
 import com.ccxiaoji.app.presentation.ui.home.components.*
 import com.ccxiaoji.app.presentation.viewmodel.HomeViewModel

@@ -3,8 +3,8 @@ package com.ccxiaoji.app.di
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.ccxiaoji.app.data.local.dao.*
-import com.ccxiaoji.shared.user.api.UserApi
 import com.ccxiaoji.app.data.repository.*
+import com.ccxiaoji.shared.sync.data.local.dao.ChangeLogDao
 import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
@@ -18,71 +18,11 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideTransactionRepository(
-        transactionDao: TransactionDao,
-        changeLogDao: ChangeLogDao,
-        userApi: UserApi,
-        accountDao: AccountDao,
-        categoryDao: CategoryDao,
-        gson: Gson
-    ): TransactionRepository {
-        return TransactionRepository(transactionDao, changeLogDao, userApi, accountDao, categoryDao, gson)
-    }
-
-
-    @Provides
-    @Singleton
     fun provideCountdownRepository(
         countdownDao: CountdownDao,
         changeLogDao: ChangeLogDao,
         gson: Gson
     ): CountdownRepository {
         return CountdownRepository(countdownDao, changeLogDao, gson)
-    }
-
-    @Provides
-    @Singleton
-    fun provideAccountRepository(
-        accountDao: AccountDao,
-        changeLogDao: ChangeLogDao,
-        creditCardPaymentDao: CreditCardPaymentDao,
-        creditCardBillDao: CreditCardBillDao,
-        transactionDao: TransactionDao,
-        gson: Gson
-    ): AccountRepository {
-        return AccountRepository(accountDao, changeLogDao, creditCardPaymentDao, creditCardBillDao, transactionDao, gson)
-    }
-
-    @Provides
-    @Singleton
-    fun provideBudgetRepository(
-        budgetDao: BudgetDao
-    ): BudgetRepository {
-        return BudgetRepository(budgetDao)
-    }
-
-    @Provides
-    @Singleton
-    fun provideCategoryRepository(
-        categoryDao: CategoryDao
-    ): CategoryRepository {
-        return CategoryRepository(categoryDao)
-    }
-
-    @Provides
-    @Singleton
-    fun provideRecurringTransactionRepository(
-        recurringTransactionDao: RecurringTransactionDao,
-        transactionDao: TransactionDao
-    ): RecurringTransactionRepository {
-        return RecurringTransactionRepository(recurringTransactionDao, transactionDao)
-    }
-
-    @Provides
-    @Singleton
-    fun provideSavingsGoalRepository(
-        savingsGoalDao: SavingsGoalDao
-    ): SavingsGoalRepository {
-        return SavingsGoalRepository(savingsGoalDao)
     }
 }

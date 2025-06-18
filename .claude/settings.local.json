@@ -38,7 +38,12 @@
       "mcp__android-compiler__compile_kotlin",
       "mcp__android-compiler__check_gradle",
       "Bash(rg:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(./scripts/analyze_dependencies.sh:*)",
+      "Bash(./scripts/check_duplicate_deps.sh:*)",
+      "Bash(./scripts/remove_duplicate_compose_deps.sh:*)",
+      "Bash(tail:*)",
+      "WebFetch(domain:developer.android.com)"
     ],
     "deny": []
   },

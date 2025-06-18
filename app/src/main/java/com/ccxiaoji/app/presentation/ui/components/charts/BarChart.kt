@@ -12,7 +12,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.ccxiaoji.app.domain.model.Transaction
+import com.ccxiaoji.feature.ledger.domain.model.Transaction
 
 @Composable
 fun BarChart(
