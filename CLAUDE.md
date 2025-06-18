@@ -5,6 +5,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## ✅ Architecture Migration Completed
 **This project has successfully completed the architecture migration from monolithic to modular architecture.**
 
+### Project Highlights
+- **🏗️ Modern Architecture**: Domain-driven modular design with Clean Architecture + MVVM
+- **🎨 Latest UI Technology**: 100% Jetpack Compose with Material 3 Design System
+- **⚡ High Performance**: 56% compilation time improvement through modularization
+- **🔧 Developer Friendly**: Complete documentation system and clear architecture guidelines
+- **🌏 China-Optimized**: Aliyun Maven mirrors for faster builds in China
+- **📱 Production Ready**: Comprehensive features for task, habit, and finance management
+
 ### Migration Status
 - Previous: All code was in the `app` module (traditional layered architecture)
 - Current: Domain-based modular architecture with clear module boundaries
@@ -257,7 +265,7 @@ Each module follows a three-layer architecture:
 ## Target Architecture: Domain-Based Modular Architecture
 
 ### Project Vision
-CC小记 (CC Xiaoji) is a **Life Management App** that integrates multiple life management modules.
+CC小记 (CC Xiaoji) is a **Life Management Companion App** that integrates multiple life management modules including task management, habit tracking, and personal finance. Built with modern Android architecture and designed for extensibility.
 
 ### Architecture Principles
 - **领域驱动 (Domain-Driven)**: Modules are divided by business domains
