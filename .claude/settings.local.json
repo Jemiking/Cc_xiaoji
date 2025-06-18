@@ -43,7 +43,8 @@
       "Bash(./scripts/check_duplicate_deps.sh:*)",
       "Bash(./scripts/remove_duplicate_compose_deps.sh:*)",
       "Bash(tail:*)",
-      "WebFetch(domain:developer.android.com)"
+      "WebFetch(domain:developer.android.com)",
+      "Bash(true)"
     ],
     "deny": []
   },
