@@ -4,11 +4,16 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import com.ccxiaoji.app.data.local.CcDatabase
-import com.ccxiaoji.app.data.sync.SyncStatus
-import com.ccxiaoji.app.data.remote.api.SyncApi
-import com.ccxiaoji.app.data.remote.api.ConflictItem
-import com.ccxiaoji.app.data.repository.UserRepository
+import com.ccxiaoji.common.model.SyncStatus
+import com.ccxiaoji.shared.sync.data.remote.api.SyncService
+import com.ccxiaoji.shared.sync.data.remote.dto.ConflictItem
+import com.ccxiaoji.shared.sync.data.remote.dto.SyncUploadItem
+import com.ccxiaoji.shared.sync.data.remote.dto.SyncChange
+import com.ccxiaoji.shared.user.api.UserApi
 import com.ccxiaoji.app.data.local.entity.*
+import com.ccxiaoji.feature.todo.data.local.entity.TaskEntity
+import com.ccxiaoji.feature.habit.data.local.entity.HabitEntity
+import com.ccxiaoji.feature.habit.data.local.entity.HabitRecordEntity
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import dagger.assisted.Assisted
@@ -22,24 +27,24 @@ class SyncWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted params: WorkerParameters,
     private val database: CcDatabase,
-    private val syncApi: SyncApi,
-    private val userRepository: UserRepository,
+    private val syncService: SyncService,
+    private val userApi: UserApi,
     private val gson: Gson
 ) : CoroutineWorker(context, params) {
     
     override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         try {
-            val currentUser = userRepository.getCurrentUser() ?: return@withContext Result.failure()
+            val currentUser = userApi.getCurrentUser() ?: return@withContext Result.failure()
             
             // Upload local changes
             uploadChanges()
             
             // Download remote changes
-            val lastSyncTime = userRepository.getLastSyncTime()
+            val lastSyncTime = userApi.getLastSyncTime()
             downloadChanges(lastSyncTime)
             
             // Update last sync time
-            userRepository.updateLastSyncTime(System.currentTimeMillis())
+            userApi.updateLastSyncTime(System.currentTimeMillis())
             
             Result.success()
         } catch (e: Exception) {
@@ -67,7 +72,7 @@ class SyncWorker @AssistedInject constructor(
             )
         }
         
-        val response = syncApi.uploadChanges(uploadRequest)
+        val response = syncService.uploadChanges(uploadRequest)
         if (response.isSuccessful) {
             val uploadResponse = response.body()
             
@@ -84,7 +89,7 @@ class SyncWorker @AssistedInject constructor(
             
             // Update server time
             uploadResponse?.serverTime?.let { serverTime ->
-                userRepository.updateServerTime(serverTime)
+                userApi.updateServerTime(serverTime)
             }
         } else {
             // Handle upload error
@@ -93,7 +98,7 @@ class SyncWorker @AssistedInject constructor(
     }
     
     private suspend fun downloadChanges(since: Long) {
-        val response = syncApi.getChanges(since)
+        val response = syncService.getChanges(since)
         if (!response.isSuccessful) return
         
         val changes = response.body() ?: return
@@ -380,16 +385,3 @@ class SyncWorker @AssistedInject constructor(
         }
     }
 }
-
-data class SyncUploadItem(
-    val table: String,
-    val rowId: String,
-    val operation: String,
-    val payload: String,
-    val timestamp: Long
-)
-
-data class SyncChange(
-    val table: String,
-    val rows: List<Map<String, Any>>
-)

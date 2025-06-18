@@ -6,10 +6,11 @@ import com.ccxiaoji.app.data.local.dao.CategoryStatistic
 import com.ccxiaoji.app.data.local.dao.ChangeLogDao
 import com.ccxiaoji.app.data.local.dao.TransactionDao
 import com.ccxiaoji.app.data.local.entity.ChangeLogEntity
-import com.ccxiaoji.app.data.sync.SyncStatus
+import com.ccxiaoji.common.model.SyncStatus
 import com.ccxiaoji.app.data.local.entity.TransactionEntity
 import com.ccxiaoji.app.domain.model.CategoryDetails
 import com.ccxiaoji.app.domain.model.Transaction
+import com.ccxiaoji.shared.user.api.UserApi
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -22,13 +23,13 @@ import javax.inject.Singleton
 class TransactionRepository @Inject constructor(
     private val transactionDao: TransactionDao,
     private val changeLogDao: ChangeLogDao,
-    private val userRepository: UserRepository,
+    private val userApi: UserApi,
     private val accountDao: AccountDao,
     private val categoryDao: CategoryDao,
     private val gson: Gson
 ) {
     fun getTransactions(): Flow<List<Transaction>> {
-        return transactionDao.getTransactionsByUser(getCurrentUserId())
+        return transactionDao.getTransactionsByUser(userApi.getCurrentUserId())
             .map { entities -> 
                 entities.map { entity ->
                     val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
@@ -49,7 +50,7 @@ class TransactionRepository @Inject constructor(
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
-        return transactionDao.getTransactionsByDateRange(getCurrentUserId(), startMillis, endMillis)
+        return transactionDao.getTransactionsByDateRange(userApi.getCurrentUserId(), startMillis, endMillis)
             .map { entities -> entities.map { it.toDomainModel() } }
     }
     
@@ -61,7 +62,7 @@ class TransactionRepository @Inject constructor(
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
-        return transactionDao.getTotalAmountByDateRange(getCurrentUserId(), startMillis, endMillis) ?: 0
+        return transactionDao.getTotalAmountByDateRange(userApi.getCurrentUserId(), startMillis, endMillis) ?: 0
     }
     
     
@@ -73,8 +74,8 @@ class TransactionRepository @Inject constructor(
         val endMillis = endDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
         // Use new category-based queries
-        val income = transactionDao.getTotalByType(getCurrentUserId(), startMillis, endMillis, "INCOME") ?: 0
-        val expense = transactionDao.getTotalByType(getCurrentUserId(), startMillis, endMillis, "EXPENSE") ?: 0
+        val income = transactionDao.getTotalByType(userApi.getCurrentUserId(), startMillis, endMillis, "INCOME") ?: 0
+        val expense = transactionDao.getTotalByType(userApi.getCurrentUserId(), startMillis, endMillis, "EXPENSE") ?: 0
         
         return income to expense
     }
@@ -90,7 +91,7 @@ class TransactionRepository @Inject constructor(
         val now = System.currentTimeMillis()
         
         // Use provided accountId or get default account
-        val actualAccountId = accountId ?: accountDao.getDefaultAccount(getCurrentUserId())?.id 
+        val actualAccountId = accountId ?: accountDao.getDefaultAccount(userApi.getCurrentUserId())?.id 
             ?: throw IllegalStateException("No default account found")
         
         // Get category details
@@ -98,7 +99,7 @@ class TransactionRepository @Inject constructor(
         
         val entity = TransactionEntity(
             id = transactionId,
-            userId = getCurrentUserId(),
+            userId = userApi.getCurrentUserId(),
             accountId = actualAccountId,
             amountCents = amountCents,
             categoryId = categoryId,
@@ -135,7 +136,7 @@ class TransactionRepository @Inject constructor(
     
     suspend fun updateTransaction(transaction: Transaction) {
         val now = System.currentTimeMillis()
-        val entity = transaction.toEntity(getCurrentUserId(), now)
+        val entity = transaction.toEntity(userApi.getCurrentUserId(), now)
         
         transactionDao.updateTransaction(entity)
         
@@ -153,7 +154,7 @@ class TransactionRepository @Inject constructor(
     }
     
     fun getRecentTransactions(limit: Int = 10): Flow<List<Transaction>> {
-        return transactionDao.getTransactionsByUser(getCurrentUserId())
+        return transactionDao.getTransactionsByUser(userApi.getCurrentUserId())
             .map { entities -> 
                 entities.take(limit).map { it.toDomainModel() }
             }
@@ -171,12 +172,12 @@ class TransactionRepository @Inject constructor(
     }
     
     fun searchTransactions(query: String): Flow<List<Transaction>> {
-        return transactionDao.searchTransactions(getCurrentUserId(), query)
+        return transactionDao.searchTransactions(userApi.getCurrentUserId(), query)
             .map { entities -> entities.map { it.toDomainModel() } }
     }
     
     fun getTransactionsByAccount(accountId: String): Flow<List<Transaction>> {
-        return transactionDao.getTransactionsByAccount(getCurrentUserId(), accountId)
+        return transactionDao.getTransactionsByAccount(userApi.getCurrentUserId(), accountId)
             .map { entities -> 
                 entities.map { entity ->
                     val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
@@ -197,7 +198,7 @@ class TransactionRepository @Inject constructor(
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
-        return transactionDao.getTransactionsByAccountAndDateRange(getCurrentUserId(), accountId, startMillis, endMillis)
+        return transactionDao.getTransactionsByAccountAndDateRange(userApi.getCurrentUserId(), accountId, startMillis, endMillis)
             .map { entities -> 
                 entities.map { entity ->
                     val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
@@ -219,7 +220,7 @@ class TransactionRepository @Inject constructor(
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
-        val transactions = transactionDao.getTransactionsByDateRangeSync(getCurrentUserId(), startMillis, endMillis)
+        val transactions = transactionDao.getTransactionsByDateRangeSync(userApi.getCurrentUserId(), startMillis, endMillis)
         
         return transactions.groupBy { transaction ->
             Instant.fromEpochMilliseconds(transaction.createdAt)
@@ -242,14 +243,14 @@ class TransactionRepository @Inject constructor(
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
-        return transactionDao.getCategoryStatisticsByType(getCurrentUserId(), startMillis, endMillis, type)
+        return transactionDao.getCategoryStatisticsByType(userApi.getCurrentUserId(), startMillis, endMillis, type)
     }
     
     suspend fun getTopTransactions(startDate: LocalDate, endDate: LocalDate, type: String, limit: Int = 10): List<Transaction> {
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
-        return transactionDao.getTopTransactionsByType(getCurrentUserId(), startMillis, endMillis, type, limit)
+        return transactionDao.getTopTransactionsByType(userApi.getCurrentUserId(), startMillis, endMillis, type, limit)
             .map { entity ->
                 val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
                     CategoryDetails(
@@ -268,8 +269,8 @@ class TransactionRepository @Inject constructor(
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
-        val income = transactionDao.getTotalByType(getCurrentUserId(), startMillis, endMillis, "INCOME") ?: 0
-        val expense = transactionDao.getTotalByType(getCurrentUserId(), startMillis, endMillis, "EXPENSE") ?: 0
+        val income = transactionDao.getTotalByType(userApi.getCurrentUserId(), startMillis, endMillis, "INCOME") ?: 0
+        val expense = transactionDao.getTotalByType(userApi.getCurrentUserId(), startMillis, endMillis, "EXPENSE") ?: 0
         
         return if (income > 0) {
             ((income - expense).toFloat() / income) * 100
@@ -278,10 +279,6 @@ class TransactionRepository @Inject constructor(
         }
     }
     
-    private fun getCurrentUserId(): String {
-        // In a real app, this would get the actual current user ID
-        return "current_user_id"
-    }
 }
 
 private fun TransactionEntity.toDomainModel(categoryDetails: CategoryDetails? = null): Transaction {

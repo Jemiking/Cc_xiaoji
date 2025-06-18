@@ -2,7 +2,7 @@ package com.ccxiaoji.app.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.ccxiaoji.app.data.sync.SyncStatus
+import com.ccxiaoji.common.model.SyncStatus
 import java.time.LocalDate
 import java.time.LocalDateTime
 

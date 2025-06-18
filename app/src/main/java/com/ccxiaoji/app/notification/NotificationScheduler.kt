@@ -2,10 +2,8 @@ package com.ccxiaoji.app.notification
 
 import android.content.Context
 import androidx.work.*
-import com.ccxiaoji.app.data.repository.TaskRepository
-import com.ccxiaoji.app.data.repository.HabitRepository
+import com.ccxiaoji.shared.notification.api.NotificationApi
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.first
 import kotlinx.datetime.Clock
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
@@ -22,7 +20,7 @@ import android.util.Log
 @Singleton
 class NotificationScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val notificationManager: NotificationManager
+    private val notificationApi: NotificationApi
 ) {
     companion object {
         private const val TAG = "CcXiaoJi"
@@ -149,54 +147,5 @@ class NotificationScheduler @Inject constructor(
     // 取消所有通知
     fun cancelAllScheduledNotifications() {
         WorkManager.getInstance(context).cancelAllWork()
-    }
-}
-
-// 任务提醒Worker
-class TaskReminderWorker(
-    context: Context,
-    params: WorkerParameters
-) : Worker(context, params) {
-    
-    override fun doWork(): Result {
-        val taskId = inputData.getString(NotificationScheduler.KEY_TASK_ID) ?: return Result.failure()
-        val taskTitle = inputData.getString(NotificationScheduler.KEY_TASK_TITLE) ?: return Result.failure()
-        val dueTime = inputData.getString(NotificationScheduler.KEY_DUE_TIME) ?: return Result.failure()
-        
-        val notificationManager = NotificationManager(applicationContext)
-        notificationManager.sendTaskReminder(taskId, taskTitle, dueTime)
-        
-        return Result.success()
-    }
-}
-
-// 习惯提醒Worker
-class HabitReminderWorker(
-    context: Context,
-    params: WorkerParameters
-) : Worker(context, params) {
-    
-    override fun doWork(): Result {
-        val habitId = inputData.getString(NotificationScheduler.KEY_HABIT_ID) ?: return Result.failure()
-        val habitTitle = inputData.getString(NotificationScheduler.KEY_HABIT_TITLE) ?: return Result.failure()
-        
-        val notificationManager = NotificationManager(applicationContext)
-        notificationManager.sendHabitReminder(habitId, habitTitle)
-        
-        return Result.success()
-    }
-}
-
-// 每日检查Worker
-class DailyCheckWorker(
-    context: Context,
-    params: WorkerParameters
-) : CoroutineWorker(context, params) {
-    
-    override suspend fun doWork(): Result {
-        // TODO: 实现预算检查等每日任务
-        // 这里可以注入Repository来检查预算使用情况等
-        
-        return Result.success()
     }
 }

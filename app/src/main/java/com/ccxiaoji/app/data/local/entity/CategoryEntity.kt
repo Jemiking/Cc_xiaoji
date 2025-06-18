@@ -4,7 +4,8 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.ccxiaoji.app.data.sync.SyncStatus
+import com.ccxiaoji.common.model.SyncStatus
+import com.ccxiaoji.shared.user.data.local.entity.UserEntity
 
 @Entity(
     tableName = "categories",

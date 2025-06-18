@@ -2,9 +2,9 @@ package com.ccxiaoji.app.data.repository
 
 import com.ccxiaoji.app.data.local.dao.RecurringTransactionDao
 import com.ccxiaoji.app.data.local.dao.TransactionDao
-import com.ccxiaoji.app.data.local.entity.RecurringFrequency
+import com.ccxiaoji.common.model.RecurringFrequency
 import com.ccxiaoji.app.data.local.entity.RecurringTransactionEntity
-import com.ccxiaoji.app.data.sync.SyncStatus
+import com.ccxiaoji.common.model.SyncStatus
 import com.ccxiaoji.app.data.local.entity.TransactionEntity
 import kotlinx.coroutines.flow.Flow
 import java.util.*

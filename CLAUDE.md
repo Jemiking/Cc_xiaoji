@@ -17,9 +17,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 4. **See `doc/架构迁移计划与原则.md` for detailed instructions**
 
 ### Migration Progress Tracking
-- **Current Phase**: 准备阶段 (Preparation)
-- **Progress**: 0%
-- **Next Step**: 创建模块结构
+- **Current Phase**: 第四阶段 - Feature模块迁移
+- **Progress**: 85%
+- **Completed**: 
+  - ✅ 模块结构创建
+  - ✅ 模块配置
+  - ✅ core-common模块迁移
+  - ✅ core-ui模块迁移
+  - ✅ core-database模块迁移（临时方案）
+  - ✅ core-network模块迁移
+  - ✅ shared-user模块迁移
+  - ✅ shared-sync模块迁移
+  - ✅ shared-backup模块迁移
+  - ✅ shared-notification模块迁移
+  - ✅ feature-todo模块迁移
+  - ✅ feature-habit模块迁移
+- **In Progress**: feature-ledger模块迁移
+- **Next Step**: 完成feature-ledger模块迁移
 - **Detailed Progress**: See `doc/架构迁移进度追踪.md`
 - **Milestone Records**: See `doc/架构迁移里程碑.md`
 

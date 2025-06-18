@@ -3,7 +3,7 @@ package com.ccxiaoji.app.data.repository
 import com.ccxiaoji.app.data.local.dao.BudgetDao
 import com.ccxiaoji.app.data.local.dao.BudgetWithSpent
 import com.ccxiaoji.app.data.local.entity.BudgetEntity
-import com.ccxiaoji.app.data.sync.SyncStatus
+import com.ccxiaoji.common.model.SyncStatus
 import kotlinx.coroutines.flow.Flow
 import java.util.*
 import javax.inject.Inject

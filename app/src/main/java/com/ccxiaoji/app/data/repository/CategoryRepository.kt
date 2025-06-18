@@ -2,7 +2,7 @@ package com.ccxiaoji.app.data.repository
 
 import com.ccxiaoji.app.data.local.dao.CategoryDao
 import com.ccxiaoji.app.data.local.entity.CategoryEntity
-import com.ccxiaoji.app.data.sync.SyncStatus
+import com.ccxiaoji.common.model.SyncStatus
 import com.ccxiaoji.app.domain.model.Category
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

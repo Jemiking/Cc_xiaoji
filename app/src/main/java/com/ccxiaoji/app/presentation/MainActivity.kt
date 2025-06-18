@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
-import com.ccxiaoji.app.presentation.theme.CcXiaoJiTheme
+import com.ccxiaoji.ui.theme.CcXiaoJiTheme
 import com.ccxiaoji.app.presentation.ui.components.BottomNavBar
 import com.ccxiaoji.app.presentation.ui.navigation.NavGraph
 import com.ccxiaoji.app.notification.NotificationScheduler

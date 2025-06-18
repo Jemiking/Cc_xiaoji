@@ -3,7 +3,7 @@ package com.ccxiaoji.app.data.local.entity
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.ccxiaoji.app.data.sync.SyncStatus
+import com.ccxiaoji.common.model.SyncStatus
 
 @Entity(
     tableName = "change_log",

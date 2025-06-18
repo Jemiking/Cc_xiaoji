@@ -5,7 +5,16 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.ccxiaoji.app.data.local.dao.*
 import com.ccxiaoji.app.data.local.entity.*
+import com.ccxiaoji.core.database.Converters
+import com.ccxiaoji.shared.user.data.local.dao.UserDao
+import com.ccxiaoji.shared.user.data.local.entity.UserEntity
+import com.ccxiaoji.feature.todo.data.local.dao.TaskDao
+import com.ccxiaoji.feature.todo.data.local.entity.TaskEntity
+import com.ccxiaoji.feature.habit.data.local.dao.HabitDao
+import com.ccxiaoji.feature.habit.data.local.entity.HabitEntity
+import com.ccxiaoji.feature.habit.data.local.entity.HabitRecordEntity
 
+// TODO: 这是临时文件，待所有模块迁移完成后删除
 @Database(
     entities = [
         UserEntity::class,
@@ -42,8 +51,4 @@ abstract class CcDatabase : RoomDatabase() {
     abstract fun savingsGoalDao(): SavingsGoalDao
     abstract fun creditCardPaymentDao(): CreditCardPaymentDao
     abstract fun creditCardBillDao(): CreditCardBillDao
-    
-    companion object {
-        const val DATABASE_NAME = "cc_xiaoji.db"
-    }
 }

@@ -6,6 +6,8 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.app.data.repository.*
+import com.ccxiaoji.feature.todo.api.TodoApi
+import com.ccxiaoji.feature.habit.api.HabitApi
 import com.ccxiaoji.app.presentation.ui.profile.DateRange
 import com.ccxiaoji.app.presentation.ui.profile.ExportFormat
 import com.google.gson.Gson
@@ -26,8 +28,8 @@ import javax.inject.Inject
 class DataExportViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val transactionRepository: TransactionRepository,
-    private val taskRepository: TaskRepository,
-    private val habitRepository: HabitRepository,
+    private val todoApi: TodoApi,
+    private val habitApi: HabitApi,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val budgetRepository: BudgetRepository,
@@ -88,13 +90,13 @@ class DataExportViewModel @Inject constructor(
             
             // 导出待办数据
             if (_uiState.value.exportTodo) {
-                val tasks = taskRepository.getTasks().first()
+                val tasks = todoApi.getTasks().first()
                 exportData["tasks"] = tasks
             }
             
             // 导出习惯数据
             if (_uiState.value.exportHabit) {
-                val habits = habitRepository.getHabits().first()
+                val habits = habitApi.getHabits().first()
                 exportData["habits"] = habits
             }
             

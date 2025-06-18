@@ -2,7 +2,7 @@ package com.ccxiaoji.app.data.local.dao
 
 import androidx.room.*
 import com.ccxiaoji.app.data.local.entity.ChangeLogEntity
-import com.ccxiaoji.app.data.sync.SyncStatus
+import com.ccxiaoji.common.model.SyncStatus
 
 @Dao
 interface ChangeLogDao {

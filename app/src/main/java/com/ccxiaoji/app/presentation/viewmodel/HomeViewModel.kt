@@ -3,17 +3,16 @@ package com.ccxiaoji.app.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.app.data.repository.TransactionRepository
-import com.ccxiaoji.app.data.repository.TaskRepository
-import com.ccxiaoji.app.data.repository.HabitRepository
-import com.ccxiaoji.app.data.repository.HabitWithStreak
+import com.ccxiaoji.feature.todo.api.TodoApi
+import com.ccxiaoji.feature.todo.domain.model.Task
+import com.ccxiaoji.feature.habit.api.HabitApi
+import com.ccxiaoji.feature.habit.domain.model.HabitWithStreak
 import com.ccxiaoji.app.data.repository.CountdownRepository
 import com.ccxiaoji.app.data.repository.BudgetRepository
 import com.ccxiaoji.app.data.repository.SavingsGoalRepository
-import com.ccxiaoji.app.data.repository.UserRepository
+import com.ccxiaoji.shared.user.api.UserApi
 import com.ccxiaoji.app.data.repository.AccountRepository
 import com.ccxiaoji.app.domain.model.Transaction
-import com.ccxiaoji.app.domain.model.Task
-import com.ccxiaoji.app.domain.model.Habit
 import com.ccxiaoji.app.domain.model.Countdown
 import com.ccxiaoji.app.domain.model.SavingsGoal
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,12 +28,12 @@ import android.util.Log
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
-    private val taskRepository: TaskRepository,
-    private val habitRepository: HabitRepository,
+    private val todoApi: TodoApi,
+    private val habitApi: HabitApi,
     private val countdownRepository: CountdownRepository,
     private val budgetRepository: BudgetRepository,
     private val savingsGoalRepository: SavingsGoalRepository,
-    private val userRepository: UserRepository,
+    private val userApi: UserApi,
     private val accountRepository: AccountRepository
 ) : ViewModel() {
     
@@ -86,22 +85,21 @@ class HomeViewModel @Inject constructor(
         
         viewModelScope.launch {
             // Load today's tasks count and completed count
-            taskRepository.getTodayTasks().collect { tasks ->
-                val totalCount = tasks.size
-                val completedCount = tasks.count { it.completed }
-                _uiState.value = _uiState.value.copy(
-                    todayTasks = totalCount,
-                    todayCompletedTasks = completedCount,
-                    todayTasksList = tasks
-                )
-            }
+            val tasks = todoApi.getTodayTasks()
+            val totalCount = tasks.size
+            val completedCount = tasks.count { it.completed }
+            _uiState.value = _uiState.value.copy(
+                todayTasks = totalCount,
+                todayCompletedTasks = completedCount,
+                todayTasksList = tasks
+            )
         }
         
         viewModelScope.launch {
             // Load habits data
             combine(
-                habitRepository.getHabitsWithStreaks(),
-                habitRepository.getTodayCheckedHabitsCount()
+                habitApi.getHabitsWithStreaks(),
+                habitApi.getTodayCheckedHabitsCount()
             ) { habitsWithStreaks, todayCheckedCount ->
                 Triple(habitsWithStreaks, todayCheckedCount, habitsWithStreaks.maxOfOrNull { it.currentStreak } ?: 0)
             }.collect { (habitsWithStreaks, todayCheckedCount, longestStreak) ->
@@ -132,7 +130,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             // Load budget overview
             val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-            val userId = userRepository.getCurrentUserId()
+            val userId = userApi.getCurrentUserId()
             val totalBudget = budgetRepository.getTotalBudgetWithSpent(userId, now.year, now.monthNumber)
             
             if (totalBudget != null) {

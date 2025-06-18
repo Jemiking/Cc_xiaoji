@@ -7,7 +7,7 @@ import com.ccxiaoji.app.data.local.dao.CategoryDao
 import com.ccxiaoji.app.data.local.entity.BudgetEntity
 import com.ccxiaoji.app.data.local.entity.CategoryEntity
 import com.ccxiaoji.app.data.repository.BudgetRepository
-import com.ccxiaoji.app.data.repository.UserRepository
+import com.ccxiaoji.shared.user.api.UserApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -35,14 +35,14 @@ data class BudgetAlert(
 @HiltViewModel
 class BudgetViewModel @Inject constructor(
     private val budgetRepository: BudgetRepository,
-    private val userRepository: UserRepository,
+    private val userApi: UserApi,
     private val categoryDao: CategoryDao
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(BudgetUiState())
     val uiState: StateFlow<BudgetUiState> = _uiState.asStateFlow()
 
-    private val currentUserId = userRepository.getCurrentUserId()
+    private val currentUserId = userApi.getCurrentUserId()
 
     init {
         loadBudgets()

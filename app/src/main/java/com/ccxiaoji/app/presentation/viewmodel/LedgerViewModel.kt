@@ -6,7 +6,7 @@ import com.ccxiaoji.app.data.repository.AccountRepository
 import com.ccxiaoji.app.data.repository.CategoryRepository
 import com.ccxiaoji.app.data.repository.TransactionRepository
 import com.ccxiaoji.app.data.repository.BudgetRepository
-import com.ccxiaoji.app.data.repository.UserRepository
+import com.ccxiaoji.shared.user.api.UserApi
 import com.ccxiaoji.app.domain.model.Account
 import com.ccxiaoji.app.domain.model.Category
 import com.ccxiaoji.app.domain.model.Transaction
@@ -27,7 +27,7 @@ class LedgerViewModel @Inject constructor(
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val budgetRepository: BudgetRepository,
-    private val userRepository: UserRepository
+    private val userApi: UserApi
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(LedgerUiState())
@@ -127,7 +127,7 @@ class LedgerViewModel @Inject constructor(
     
     private suspend fun checkBudgetAfterTransaction(categoryId: String) {
         val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-        val userId = userRepository.getCurrentUserId()
+        val userId = userApi.getCurrentUserId()
         
         // 检查分类预算
         val categoryBudgetAlert = budgetRepository.checkBudgetAlert(userId, now.year, now.monthNumber, categoryId)

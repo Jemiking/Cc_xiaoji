@@ -2,6 +2,7 @@ package com.ccxiaoji.app.data.sync
 
 import android.content.Context
 import androidx.work.*
+import com.ccxiaoji.shared.sync.api.SyncState
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -55,12 +56,5 @@ class SyncManager @Inject constructor(
                     else -> SyncState.SUCCESS
                 }
             }
-    }
-    
-    enum class SyncState {
-        IDLE,
-        SYNCING,
-        SUCCESS,
-        ERROR
     }
 }

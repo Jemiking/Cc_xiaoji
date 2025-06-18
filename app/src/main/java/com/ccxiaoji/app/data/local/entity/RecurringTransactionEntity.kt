@@ -4,7 +4,9 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import com.ccxiaoji.app.data.sync.SyncStatus
+import com.ccxiaoji.common.model.RecurringFrequency
+import com.ccxiaoji.common.model.SyncStatus
+import com.ccxiaoji.shared.user.data.local.entity.UserEntity
 
 @Entity(
     tableName = "recurring_transactions",
@@ -52,10 +54,3 @@ data class RecurringTransactionEntity(
     val updatedAt: Long,
     val syncStatus: SyncStatus = SyncStatus.SYNCED
 )
-
-enum class RecurringFrequency {
-    DAILY,    // 每天
-    WEEKLY,   // 每周
-    MONTHLY,  // 每月
-    YEARLY    // 每年
-}

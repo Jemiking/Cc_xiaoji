@@ -1,7 +1,10 @@
 package com.ccxiaoji.app.di
 
 import android.content.Context
-import com.ccxiaoji.app.notification.NotificationManager
+import com.ccxiaoji.app.R
+import com.ccxiaoji.app.presentation.MainActivity
+import com.ccxiaoji.shared.notification.domain.model.NotificationConfig
+import com.ccxiaoji.shared.notification.api.NotificationApi
 import com.ccxiaoji.app.notification.NotificationScheduler
 import dagger.Module
 import dagger.Provides
@@ -16,18 +19,22 @@ object NotificationModule {
     
     @Provides
     @Singleton
-    fun provideNotificationManager(
+    fun provideNotificationConfig(
         @ApplicationContext context: Context
-    ): NotificationManager {
-        return NotificationManager(context)
+    ): NotificationConfig {
+        return NotificationConfig(
+            mainActivityClass = MainActivity::class.java,
+            smallIconResourceId = R.drawable.ic_launcher_foreground,
+            packageName = context.packageName
+        )
     }
     
     @Provides
     @Singleton
     fun provideNotificationScheduler(
         @ApplicationContext context: Context,
-        notificationManager: NotificationManager
+        notificationApi: NotificationApi
     ): NotificationScheduler {
-        return NotificationScheduler(context, notificationManager)
+        return NotificationScheduler(context, notificationApi)
     }
 }

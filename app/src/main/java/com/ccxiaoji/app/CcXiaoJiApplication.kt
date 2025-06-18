@@ -6,10 +6,10 @@ import androidx.work.Configuration
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.WorkManager
 import com.ccxiaoji.app.data.local.dao.AccountDao
-import com.ccxiaoji.app.data.local.dao.UserDao
+import com.ccxiaoji.shared.user.data.local.dao.UserDao
 import com.ccxiaoji.app.data.local.entity.AccountEntity
-import com.ccxiaoji.app.data.sync.SyncStatus
-import com.ccxiaoji.app.data.local.entity.UserEntity
+import com.ccxiaoji.common.model.SyncStatus
+import com.ccxiaoji.shared.user.data.local.entity.UserEntity
 import com.ccxiaoji.app.data.repository.CategoryRepository
 import com.ccxiaoji.app.data.sync.RecurringTransactionWorker
 import com.ccxiaoji.app.data.sync.CreditCardReminderManager

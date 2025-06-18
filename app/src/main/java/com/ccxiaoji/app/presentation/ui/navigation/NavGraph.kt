@@ -14,8 +14,8 @@ import androidx.navigation.compose.composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ccxiaoji.app.presentation.ui.home.HomeScreen
 import com.ccxiaoji.app.presentation.ui.ledger.LedgerScreen
-import com.ccxiaoji.app.presentation.ui.todo.TodoScreen
-import com.ccxiaoji.app.presentation.ui.habit.HabitScreen
+import com.ccxiaoji.feature.todo.presentation.screen.TodoScreen
+import com.ccxiaoji.feature.habit.presentation.screen.HabitScreen
 import com.ccxiaoji.app.presentation.ui.profile.ProfileScreen
 import com.ccxiaoji.app.presentation.ui.ledger.TransactionDetailScreen
 import com.ccxiaoji.app.presentation.ui.account.AccountScreen

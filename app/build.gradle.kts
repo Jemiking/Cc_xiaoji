@@ -67,6 +67,18 @@ ksp {
 }
 
 dependencies {
+    // Module dependencies
+    implementation(project(":core:common"))
+    implementation(project(":core:ui"))
+    implementation(project(":core:database"))
+    implementation(project(":core:network"))
+    implementation(project(":shared:user"))
+    implementation(project(":shared:sync"))
+    implementation(project(":shared:backup"))
+    implementation(project(":shared:notification"))
+    implementation(project(":feature:todo"))
+    implementation(project(":feature:habit"))
+    
     // Core Android
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
@@ -95,11 +107,6 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
-    
-    // Retrofit for API
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     
     // Kotlin Serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")

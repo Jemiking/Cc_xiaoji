@@ -13,7 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.ccxiaoji.app.data.local.entity.RecurringFrequency
+import com.ccxiaoji.common.model.RecurringFrequency
 import com.ccxiaoji.app.data.local.entity.RecurringTransactionEntity
 import com.ccxiaoji.app.presentation.viewmodel.RecurringTransactionViewModel
 import com.ccxiaoji.app.presentation.viewmodel.RecurringTransactionUiState

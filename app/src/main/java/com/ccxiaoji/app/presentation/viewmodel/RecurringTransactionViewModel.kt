@@ -2,10 +2,10 @@ package com.ccxiaoji.app.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.app.data.local.entity.RecurringFrequency
+import com.ccxiaoji.common.model.RecurringFrequency
 import com.ccxiaoji.app.data.local.entity.RecurringTransactionEntity
 import com.ccxiaoji.app.data.repository.RecurringTransactionRepository
-import com.ccxiaoji.app.data.repository.UserRepository
+import com.ccxiaoji.shared.user.api.UserApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -16,14 +16,14 @@ import javax.inject.Inject
 @HiltViewModel
 class RecurringTransactionViewModel @Inject constructor(
     private val recurringTransactionRepository: RecurringTransactionRepository,
-    private val userRepository: UserRepository
+    private val userApi: UserApi
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(RecurringTransactionUiState())
     val uiState: StateFlow<RecurringTransactionUiState> = _uiState.asStateFlow()
     
     val recurringTransactions: StateFlow<List<RecurringTransactionEntity>> = 
-        flow { emit(userRepository.getCurrentUserId()) }
+        flow { emit(userApi.getCurrentUserId()) }
             .flatMapLatest { userId ->
                 recurringTransactionRepository.getAllRecurringTransactions(userId)
             }
@@ -123,7 +123,7 @@ class RecurringTransactionViewModel @Inject constructor(
     
     fun saveRecurringTransaction() {
         viewModelScope.launch {
-            val userId = userRepository.getCurrentUserId()
+            val userId = userApi.getCurrentUserId()
             val state = _uiState.value
             
             if (state.editingTransaction != null) {
@@ -143,7 +143,7 @@ class RecurringTransactionViewModel @Inject constructor(
                 )
             } else {
                 recurringTransactionRepository.createRecurringTransaction(
-                    userId = userRepository.getCurrentUserId(),
+                    userId = userApi.getCurrentUserId(),
                     name = state.name,
                     accountId = state.accountId,
                     amountCents = state.amountCents,

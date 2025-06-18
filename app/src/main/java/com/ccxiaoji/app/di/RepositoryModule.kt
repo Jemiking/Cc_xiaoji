@@ -3,8 +3,8 @@ package com.ccxiaoji.app.di
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.ccxiaoji.app.data.local.dao.*
+import com.ccxiaoji.shared.user.api.UserApi
 import com.ccxiaoji.app.data.repository.*
-import com.ccxiaoji.app.data.remote.api.AuthApi
 import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
@@ -18,46 +18,17 @@ object RepositoryModule {
 
     @Provides
     @Singleton
-    fun provideUserRepository(
-        userDao: UserDao,
-        authApi: AuthApi,
-        dataStore: DataStore<Preferences>
-    ): UserRepository {
-        return UserRepository(userDao, authApi, dataStore)
-    }
-
-    @Provides
-    @Singleton
     fun provideTransactionRepository(
         transactionDao: TransactionDao,
         changeLogDao: ChangeLogDao,
-        userRepository: UserRepository,
+        userApi: UserApi,
         accountDao: AccountDao,
         categoryDao: CategoryDao,
         gson: Gson
     ): TransactionRepository {
-        return TransactionRepository(transactionDao, changeLogDao, userRepository, accountDao, categoryDao, gson)
+        return TransactionRepository(transactionDao, changeLogDao, userApi, accountDao, categoryDao, gson)
     }
 
-    @Provides
-    @Singleton
-    fun provideTaskRepository(
-        taskDao: TaskDao,
-        changeLogDao: ChangeLogDao,
-        gson: Gson
-    ): TaskRepository {
-        return TaskRepository(taskDao, changeLogDao, gson)
-    }
-
-    @Provides
-    @Singleton
-    fun provideHabitRepository(
-        habitDao: HabitDao,
-        changeLogDao: ChangeLogDao,
-        gson: Gson
-    ): HabitRepository {
-        return HabitRepository(habitDao, changeLogDao, gson)
-    }
 
     @Provides
     @Singleton

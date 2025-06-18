@@ -10,11 +10,11 @@ import com.ccxiaoji.app.data.local.entity.ChangeLogEntity
 import com.ccxiaoji.app.data.local.entity.CreditCardPaymentEntity
 import com.ccxiaoji.app.data.local.entity.CreditCardBillEntity
 import com.ccxiaoji.app.data.local.entity.PaymentType
-import com.ccxiaoji.app.data.sync.SyncStatus
+import com.ccxiaoji.common.model.SyncStatus
 import com.ccxiaoji.app.domain.model.Account
 import com.ccxiaoji.app.domain.model.AccountType
 import com.ccxiaoji.app.domain.model.Transaction
-import com.ccxiaoji.app.utils.CreditCardDateUtils
+import com.ccxiaoji.common.utils.CreditCardDateUtils
 import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
