@@ -88,10 +88,70 @@ interface LedgerApi {
     suspend fun pauseRecurringTransaction(recurringTransactionId: String)
     suspend fun resumeRecurringTransaction(recurringTransactionId: String)
     
+    // Budget methods
+    fun getBudgets(): Flow<List<Budget>>
+    fun getBudgetsByMonth(year: Int, month: Int): Flow<List<Budget>>
+    suspend fun createBudget(
+        categoryId: String,
+        amountCents: Long,
+        period: String,
+        year: Int,
+        month: Int? = null
+    ): Budget
+    suspend fun updateBudget(budget: Budget)
+    suspend fun deleteBudget(budgetId: String)
+    suspend fun getBudgetProgress(budgetId: String): Float
+    
+    // Savings Goal methods
+    fun getSavingsGoals(): Flow<List<SavingsGoal>>
+    suspend fun createSavingsGoal(
+        name: String,
+        targetAmountCents: Long,
+        targetDate: LocalDate,
+        accountId: String? = null
+    ): SavingsGoal
+    suspend fun updateSavingsGoal(savingsGoal: SavingsGoal)
+    suspend fun deleteSavingsGoal(savingsGoalId: String)
+    suspend fun addSavingsContribution(
+        savingsGoalId: String,
+        amountCents: Long,
+        note: String? = null
+    ): SavingsContribution
+    suspend fun getSavingsGoalProgress(savingsGoalId: String): Float
+    
+    // Credit Card methods
+    fun getCreditCardAccounts(): Flow<List<Account>>
+    suspend fun getCreditCardBill(accountId: String, year: Int, month: Int): CreditCardBill?
+    fun getCreditCardBills(accountId: String): Flow<List<CreditCardBill>>
+    suspend fun generateCreditCardBill(accountId: String, year: Int, month: Int)
+    suspend fun recordCreditCardPayment(
+        billId: String,
+        amountCents: Long,
+        paymentDate: LocalDate,
+        fromAccountId: String
+    ): CreditCardPayment
+    fun getCreditCardPayments(billId: String): Flow<List<CreditCardPayment>>
+    suspend fun updateCreditCardAccount(
+        accountId: String,
+        creditLimitCents: Long,
+        billingDay: Int,
+        dueDay: Int
+    )
+    
+    // Additional statistics methods
+    suspend fun getMonthlyTrend(year: Int, categoryId: String? = null): Map<Int, Pair<Long, Long>>
+    suspend fun getYearlyOverview(year: Int): Map<String, Long>
+    suspend fun getExpenseStructure(year: Int, month: Int): Map<String, Float>
+    suspend fun getAccountBalanceTrend(accountId: String, days: Int = 30): List<Pair<LocalDate, Long>>
+    
     // Navigation
     fun navigateToAddTransaction()
     fun navigateToTransactionDetail(transactionId: String)
     fun navigateToAccountManagement()
     fun navigateToCategoryManagement()
     fun navigateToRecurringTransactions()
+    fun navigateToBudgetManagement()
+    fun navigateToSavingsGoals()
+    fun navigateToStatistics()
+    fun navigateToCreditCardManagement()
 }

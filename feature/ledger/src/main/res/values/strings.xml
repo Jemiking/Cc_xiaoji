@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ledger Screen -->
+    <string name="add_transaction">添加交易</string>
+    <string name="monthly_summary">月度概览</string>
+    <string name="income">收入</string>
+    <string name="expense">支出</string>
+    <string name="amount_hint">金额</string>
+    <string name="select_category">选择分类</string>
+    <string name="note_hint">备注（选填）</string>
+    <string name="save">保存</string>
+    <string name="cancel">取消</string>
+    
+    <!-- Account Management -->
+    <string name="account_management">账户管理</string>
+    <string name="add_account">添加账户</string>
+    
+    <!-- Category Management -->
+    <string name="category_management">分类管理</string>
+    
+    <!-- Statistics -->
+    <string name="statistics">统计分析</string>
+    
+    <!-- Credit Card -->
+    <string name="credit_card">信用卡</string>
+    
+    <!-- Budget -->
+    <string name="budget">预算</string>
+    
+    <!-- Savings Goal -->
+    <string name="savings_goal">储蓄目标</string>
+    
+    <!-- Recurring Transaction -->
+    <string name="recurring_transaction">定期交易</string>
+</resources>

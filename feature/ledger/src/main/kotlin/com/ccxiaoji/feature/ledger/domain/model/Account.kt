@@ -40,12 +40,3 @@ data class Account(
             (-balanceCents.toDouble() / creditLimitCents) * 100
         } else null
 }
-
-enum class AccountType(val displayName: String, val icon: String) {
-    CASH("现金", "💵"),
-    BANK_CARD("银行卡", "💳"),
-    ALIPAY("支付宝", "📱"),
-    WECHAT("微信", "💬"),
-    CREDIT_CARD("信用卡", "💳"),
-    OTHER("其他", "📋")
-}
