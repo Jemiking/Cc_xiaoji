@@ -11,8 +11,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ccxiaoji.feature.schedule.R
 import com.ccxiaoji.feature.schedule.domain.model.Shift
 import com.ccxiaoji.feature.schedule.presentation.viewmodel.ShiftViewModel
 import kotlinx.coroutines.launch
@@ -57,10 +59,10 @@ fun ShiftManageScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("班次管理") },
+                title = { Text(stringResource(R.string.schedule_shift_manage_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.schedule_back))
                     }
                 }
             )
@@ -69,7 +71,7 @@ fun ShiftManageScreen(
             FloatingActionButton(
                 onClick = { viewModel.showCreateShiftDialog() }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "添加班次")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.schedule_shift_add))
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -93,13 +95,13 @@ fun ShiftManageScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        "暂无班次",
+                        stringResource(R.string.schedule_shift_empty),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "点击右下角按钮添加第一个班次",
+                        stringResource(R.string.schedule_shift_empty_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -202,12 +204,12 @@ private fun ShiftCard(
             // 操作按钮
             Row {
                 IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = "编辑")
+                    Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.schedule_edit))
                 }
                 IconButton(onClick = onDelete) {
                     Icon(
                         Icons.Default.Delete, 
-                        contentDescription = "删除",
+                        contentDescription = stringResource(R.string.schedule_delete),
                         tint = MaterialTheme.colorScheme.error
                     )
                 }

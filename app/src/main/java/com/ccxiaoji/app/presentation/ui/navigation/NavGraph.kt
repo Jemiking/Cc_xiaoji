@@ -67,19 +67,19 @@ fun NavGraph(
         composable(Screen.Schedule.route) {
             com.ccxiaoji.feature.schedule.presentation.calendar.CalendarScreen(
                 onNavigateToShiftManage = {
-                    // TODO: Navigate to shift management
+                    navController.navigate(ShiftManageRoute.route)
                 },
                 onNavigateToScheduleEdit = { date ->
-                    // TODO: Navigate to schedule edit
+                    navController.navigate(ScheduleEditRoute.createRoute(date.toString()))
                 },
                 onNavigateToSchedulePattern = {
-                    // TODO: Navigate to batch scheduling
+                    navController.navigate(SchedulePatternRoute.route)
                 },
                 onNavigateToStatistics = {
-                    // TODO: Navigate to statistics
+                    navController.navigate(ScheduleStatisticsRoute.route)
                 },
                 onNavigateToSettings = {
-                    // TODO: Navigate to settings
+                    navController.navigate(ScheduleSettingsRoute.route)
                 }
             )
         }
@@ -204,6 +204,54 @@ fun NavGraph(
         
         composable(AboutRoute.route) {
             PlaceholderScreen(title = "关于我们", navController = navController)
+        }
+        
+        // Schedule module routes
+        composable(ShiftManageRoute.route) {
+            com.ccxiaoji.feature.schedule.presentation.shift.ShiftManageScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(ScheduleEditRoute.route) { backStackEntry ->
+            val date = backStackEntry.arguments?.getString("date")
+            com.ccxiaoji.feature.schedule.presentation.schedule.ScheduleEditScreen(
+                date = date,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(SchedulePatternRoute.route) {
+            com.ccxiaoji.feature.schedule.presentation.pattern.SchedulePatternScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(ScheduleStatisticsRoute.route) {
+            com.ccxiaoji.feature.schedule.presentation.statistics.ScheduleStatisticsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToExport = { navController.navigate(ScheduleExportRoute.route) }
+            )
+        }
+        
+        composable(ScheduleSettingsRoute.route) {
+            com.ccxiaoji.feature.schedule.presentation.settings.SettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToAbout = { navController.navigate(ScheduleAboutRoute.route) },
+                onNavigateToShiftManage = { navController.navigate(ShiftManageRoute.route) }
+            )
+        }
+        
+        composable(ScheduleExportRoute.route) {
+            com.ccxiaoji.feature.schedule.presentation.export.ExportScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(ScheduleAboutRoute.route) {
+            com.ccxiaoji.feature.schedule.presentation.settings.AboutScreen(
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }

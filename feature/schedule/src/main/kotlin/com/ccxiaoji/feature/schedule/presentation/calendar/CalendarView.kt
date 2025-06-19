@@ -23,6 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.ccxiaoji.feature.schedule.R
 import kotlin.math.abs
 import com.ccxiaoji.feature.schedule.domain.model.Schedule
 import com.ccxiaoji.feature.schedule.presentation.viewmodel.CalendarViewMode
@@ -167,9 +169,33 @@ private fun WeekDayHeader(weekStartDay: DayOfWeek = DayOfWeek.MONDAY) {
             .padding(horizontal = 8.dp, vertical = 8.dp)
     ) {
         val weekDays = when (weekStartDay) {
-            DayOfWeek.SUNDAY -> listOf("日", "一", "二", "三", "四", "五", "六")
-            DayOfWeek.MONDAY -> listOf("一", "二", "三", "四", "五", "六", "日")
-            else -> listOf("一", "二", "三", "四", "五", "六", "日") // 默认周一开始
+            DayOfWeek.SUNDAY -> listOf(
+                stringResource(R.string.schedule_weekday_short_sunday),
+                stringResource(R.string.schedule_weekday_short_monday),
+                stringResource(R.string.schedule_weekday_short_tuesday),
+                stringResource(R.string.schedule_weekday_short_wednesday),
+                stringResource(R.string.schedule_weekday_short_thursday),
+                stringResource(R.string.schedule_weekday_short_friday),
+                stringResource(R.string.schedule_weekday_short_saturday)
+            )
+            DayOfWeek.MONDAY -> listOf(
+                stringResource(R.string.schedule_weekday_short_monday),
+                stringResource(R.string.schedule_weekday_short_tuesday),
+                stringResource(R.string.schedule_weekday_short_wednesday),
+                stringResource(R.string.schedule_weekday_short_thursday),
+                stringResource(R.string.schedule_weekday_short_friday),
+                stringResource(R.string.schedule_weekday_short_saturday),
+                stringResource(R.string.schedule_weekday_short_sunday)
+            )
+            else -> listOf(
+                stringResource(R.string.schedule_weekday_short_monday),
+                stringResource(R.string.schedule_weekday_short_tuesday),
+                stringResource(R.string.schedule_weekday_short_wednesday),
+                stringResource(R.string.schedule_weekday_short_thursday),
+                stringResource(R.string.schedule_weekday_short_friday),
+                stringResource(R.string.schedule_weekday_short_saturday),
+                stringResource(R.string.schedule_weekday_short_sunday)
+            ) // 默认周一开始
         }
         
         weekDays.forEach { day ->
@@ -180,7 +206,7 @@ private fun WeekDayHeader(weekStartDay: DayOfWeek = DayOfWeek.MONDAY) {
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = FontWeight.Bold,
                 color = when (day) {
-                    "日", "六" -> MaterialTheme.colorScheme.error
+                    stringResource(R.string.schedule_weekday_short_sunday), stringResource(R.string.schedule_weekday_short_saturday) -> MaterialTheme.colorScheme.error
                     else -> MaterialTheme.colorScheme.onSurfaceVariant
                 }
             )

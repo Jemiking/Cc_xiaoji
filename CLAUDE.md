@@ -427,9 +427,14 @@ class HomeViewModel @Inject constructor(
 
 ### 🧪 Testing
 - **JUnit**: 4.13.2
+- **MockK**: 1.13.8 (Kotlin mocking framework)
+- **Coroutines Test**: 1.7.3
+- **Truth**: 1.1.5 (Google assertion library)
+- **Robolectric**: 4.11.1 (Android unit testing)
 - **AndroidX Test**: 1.1.5
 - **Espresso**: 3.5.1
 - **Compose UI Testing**: Included in BOM
+- **Test Coverage**: 每个模块都有测试配置和示例测试文件
 
 ### 🚀 Build Optimization
 - **Repository Configuration**: Aliyun Maven mirrors for China
@@ -438,7 +443,7 @@ class HomeViewModel @Inject constructor(
 - **R8 Minification**: Enabled for release builds
 - **Module Parallel Build**: Leveraging modular architecture
 
-## 📌 Current Project Status (2025-06-18 20:00)
+## 📌 Current Project Status (2025-06-19)
 
 ### ✅ Completed Features
 1. **Architecture Migration**: 100% complete with 13 modules
@@ -446,27 +451,29 @@ class HomeViewModel @Inject constructor(
 3. **Schedule Module**: Successfully integrated from external project
 4. **Database**: Version 5 with all tables integrated
 5. **Navigation**: 6 bottom navigation items (Home, Ledger, Todo, Habit, Schedule, Profile)
+6. **Test Framework**: 完整的测试框架配置（JUnit + MockK + Truth）
+7. **Schedule Navigation**: 内部导航完全实现（7个页面互联）
 
 ### 🚀 Next Steps (Priority Order)
-1. **Schedule Module Internal Navigation**
-   - Connect schedule screens (shift management, statistics, etc.)
-   - Implement proper navigation routes in NavGraph
+1. **String Resource Extraction** (P1)
+   - Extract hardcoded strings from schedule module (37个文件)
+   - Add to string resources for i18n support
    
-2. **Notification Integration**
-   - Integrate schedule notifications with shared-notification module
-   - Register WorkManager tasks for schedule reminders
-   
-3. **Theme Unification**
+2. **Theme Unification** (P1)
    - Merge schedule theme with core-ui theme system
    - Remove duplicate theme code
    
-4. **String Resource Extraction**
-   - Extract hardcoded strings from schedule module
-   - Add to string resources for i18n support
+3. **UseCase Testing** (P0)
+   - Write tests for all UseCase classes
+   - Target: 50% test coverage for domain layer
 
-5. **Testing**
-   - Add unit tests for schedule module
-   - Integration tests for cross-module features
+4. **Notification Integration** (P2)
+   - Integrate schedule notifications with shared-notification module
+   - Register WorkManager tasks for schedule reminders
+
+5. **TODO/FIXME Cleanup** (P2)
+   - Review and clean 58 files with TODO comments
+   - Convert important ones to tasks
 
 ### ⚠️ Important Reminders
 1. **Database Version**: Now at version 5 (includes schedule tables)
@@ -480,4 +487,4 @@ class HomeViewModel @Inject constructor(
 - `doc/排班管理模块迁移完成总结.md` - Schedule migration summary
 
 ---
-*Last Updated: 2025-06-18 20:00*
+*Last Updated: 2025-06-19 - 技术债务清除进行中*

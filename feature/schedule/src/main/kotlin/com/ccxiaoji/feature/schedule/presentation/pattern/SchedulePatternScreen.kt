@@ -1,5 +1,8 @@
 package com.ccxiaoji.feature.schedule.presentation.pattern
 
+import androidx.compose.ui.res.stringResource
+import com.ccxiaoji.feature.schedule.R
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -50,10 +53,10 @@ fun SchedulePatternScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("批量排班") },
+                title = { Text(stringResource(R.string.schedule_pattern_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.schedule_back))
                     }
                 },
                 actions = {
@@ -63,7 +66,7 @@ fun SchedulePatternScreen(
                         enabled = uiState.canCreate && !uiState.isLoading,
                         modifier = Modifier.padding(end = 16.dp)
                     ) {
-                        Text("创建")
+                        Text(stringResource(R.string.schedule_pattern_create))
                     }
                 }
             )
@@ -205,7 +208,7 @@ private fun DateRangeSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                "日期范围",
+                stringResource(R.string.schedule_pattern_date_range),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -216,16 +219,16 @@ private fun DateRangeSection(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 DateSelector(
-                    label = "开始日期",
+                    label = stringResource(R.string.schedule_pattern_start_date),
                     date = startDate,
                     onClick = onStartDateClick,
                     modifier = Modifier.weight(1f)
                 )
                 
-                Text("至", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.schedule_pattern_to), style = MaterialTheme.typography.bodyMedium)
                 
                 DateSelector(
-                    label = "结束日期",
+                    label = stringResource(R.string.schedule_pattern_end_date),
                     date = endDate,
                     onClick = onEndDateClick,
                     modifier = Modifier.weight(1f)
@@ -283,12 +286,18 @@ private fun PatternTypeSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                "排班模式",
+                stringResource(R.string.schedule_pattern_mode),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
             
             PatternType.values().forEach { type ->
+                val typeName = when (type) {
+                    PatternType.SINGLE -> stringResource(R.string.schedule_pattern_single)
+                    PatternType.CYCLE -> stringResource(R.string.schedule_pattern_cycle)
+                    PatternType.ROTATION -> stringResource(R.string.schedule_pattern_rotation)
+                    PatternType.CUSTOM -> stringResource(R.string.schedule_pattern_custom)
+                }
                 OutlinedCard(
                     onClick = { onTypeChange(type) },
                     modifier = Modifier.fillMaxWidth()
@@ -301,13 +310,13 @@ private fun PatternTypeSection(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            type.displayName,
+                            typeName,
                             style = MaterialTheme.typography.bodyMedium
                         )
                         if (selectedType == type) {
                             Icon(
                                 Icons.Default.Check,
-                                contentDescription = "已选择",
+                                contentDescription = stringResource(R.string.schedule_pattern_selected),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -337,7 +346,7 @@ private fun SinglePatternSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                "选择班次",
+                stringResource(R.string.schedule_pattern_select_shift),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -375,7 +384,7 @@ private fun CyclePatternSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                "循环排班设置",
+                stringResource(R.string.schedule_pattern_cycle_settings),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -386,7 +395,7 @@ private fun CyclePatternSection(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    "循环周期设置",
+                    stringResource(R.string.schedule_pattern_cycle_period),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -397,7 +406,7 @@ private fun CyclePatternSection(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "循环天数",
+                        stringResource(R.string.schedule_pattern_cycle_days),
                         style = MaterialTheme.typography.bodyLarge
                     )
                     
@@ -415,7 +424,7 @@ private fun CyclePatternSection(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Remove,
-                                contentDescription = "减少天数"
+                                contentDescription = stringResource(R.string.schedule_pattern_decrease_days)
                             )
                         }
                         
@@ -431,7 +440,7 @@ private fun CyclePatternSection(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "${cycleDays}天",
+                                    text = "${cycleDays}${stringResource(R.string.schedule_pattern_cycle_days_unit)}",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Medium
                                 )
@@ -448,7 +457,7 @@ private fun CyclePatternSection(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Add,
-                                contentDescription = "增加天数"
+                                contentDescription = stringResource(R.string.schedule_pattern_increase_days)
                             )
                         }
                     }
@@ -456,7 +465,7 @@ private fun CyclePatternSection(
                 
                 // 支持范围提示
                 Text(
-                    "支持 2-365 天的任意循环周期",
+                    stringResource(R.string.schedule_pattern_cycle_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -500,7 +509,7 @@ private fun WeeklyPatternSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                "周循环排班",
+                stringResource(R.string.schedule_pattern_cycle),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -540,13 +549,13 @@ private fun RotationPatternSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                "轮班设置",
+                stringResource(R.string.schedule_pattern_rotation_settings),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
             
             Text(
-                "请按顺序选择班次：",
+                stringResource(R.string.schedule_pattern_rotation_order_hint),
                 style = MaterialTheme.typography.bodyMedium
             )
             
@@ -573,7 +582,7 @@ private fun RotationPatternSection(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("轮班后休息天数")
+                Text(stringResource(R.string.schedule_pattern_rotation_rest_days))
                 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -622,7 +631,7 @@ private fun CycleDayShiftSelector(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "第 ${dayIndex + 1} 天",
+                stringResource(R.string.schedule_pattern_day_number, dayIndex + 1),
                 style = MaterialTheme.typography.bodyMedium
             )
             
@@ -646,7 +655,7 @@ private fun CycleDayShiftSelector(
                 }
             } else {
                 Text(
-                    "休息",
+                    stringResource(R.string.schedule_pattern_rest),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -658,7 +667,7 @@ private fun CycleDayShiftSelector(
             onDismissRequest = { expanded = false }
         ) {
             DropdownMenuItem(
-                text = { Text("休息") },
+                text = { Text(stringResource(R.string.schedule_pattern_rest)) },
                 onClick = {
                     onShiftSelect(null)
                     expanded = false
@@ -749,7 +758,7 @@ private fun ShiftSelectionItem(
                 } else {
                     Icon(
                         Icons.Default.Check,
-                        contentDescription = "已选择",
+                        contentDescription = stringResource(R.string.schedule_pattern_selected),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -807,7 +816,7 @@ private fun WeekDayShiftSelector(
                 }
             } else {
                 Text(
-                    "休息",
+                    stringResource(R.string.schedule_pattern_rest),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -819,7 +828,7 @@ private fun WeekDayShiftSelector(
             onDismissRequest = { expanded = false }
         ) {
             DropdownMenuItem(
-                text = { Text("休息") },
+                text = { Text(stringResource(R.string.schedule_pattern_rest)) },
                 onClick = {
                     onShiftSelect(null)
                     expanded = false
@@ -874,14 +883,14 @@ private fun CustomPatternSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                "自定义排班模式",
+                stringResource(R.string.schedule_pattern_custom_mode),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
             
             if (customPattern.isEmpty()) {
                 Text(
-                    "请选择日期范围后自动生成配置",
+                    stringResource(R.string.schedule_pattern_custom_empty_hint),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -931,7 +940,7 @@ private fun CustomDayShiftSelector(
         ) {
             Column {
                 Text(
-                    date.format(DateTimeFormatter.ofPattern("MM月dd日")),
+                    date.format(DateTimeFormatter.ofPattern(stringResource(R.string.schedule_pattern_date_format_month_day))),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium
                 )
@@ -962,7 +971,7 @@ private fun CustomDayShiftSelector(
                 }
             } else {
                 Text(
-                    "休息",
+                    stringResource(R.string.schedule_pattern_rest),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -974,7 +983,7 @@ private fun CustomDayShiftSelector(
             onDismissRequest = { expanded = false }
         ) {
             DropdownMenuItem(
-                text = { Text("休息") },
+                text = { Text(stringResource(R.string.schedule_pattern_rest)) },
                 onClick = {
                     onShiftSelect(null)
                     expanded = false

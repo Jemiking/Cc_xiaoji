@@ -5,7 +5,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ccxiaoji.feature.schedule.R
 import java.time.LocalTime
 
 /**
@@ -38,7 +40,7 @@ fun TimePickerDialog(
         
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("选择时间") },
+            title = { Text(stringResource(R.string.schedule_dialog_select_time)) },
             text = {
                 Box(
                     modifier = Modifier.fillMaxWidth(),
@@ -59,12 +61,12 @@ fun TimePickerDialog(
                         onDismiss()
                     }
                 ) {
-                    Text("确定")
+                    Text(stringResource(R.string.schedule_confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text("取消")
+                    Text(stringResource(R.string.schedule_cancel))
                 }
             }
         )

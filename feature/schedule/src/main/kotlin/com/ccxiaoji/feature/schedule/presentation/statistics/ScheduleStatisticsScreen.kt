@@ -14,11 +14,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ccxiaoji.feature.schedule.R
 import com.ccxiaoji.feature.schedule.domain.model.Shift
 import com.ccxiaoji.feature.schedule.presentation.components.CustomDateRangePickerDialog
 import java.time.LocalDate
@@ -59,15 +61,15 @@ fun ScheduleStatisticsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("排班统计") },
+                title = { Text(stringResource(R.string.schedule_statistics_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.schedule_back))
                     }
                 },
                 actions = {
                     IconButton(onClick = onNavigateToExport) {
-                        Icon(Icons.Default.Download, contentDescription = "导出数据")
+                        Icon(Icons.Default.Download, contentDescription = stringResource(R.string.schedule_statistics_export_data))
                     }
                 }
             )
@@ -160,7 +162,7 @@ private fun TimeRangeSelector(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                "统计时间范围",
+                stringResource(R.string.schedule_statistics_time_range),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -174,7 +176,14 @@ private fun TimeRangeSelector(
                     FilterChip(
                         selected = selectedRange == range,
                         onClick = { onRangeChange(range) },
-                        label = { Text(range.displayName) },
+                        label = { 
+                            Text(when (range) {
+                                TimeRange.THIS_WEEK -> stringResource(R.string.schedule_statistics_time_range_this_week)
+                                TimeRange.THIS_MONTH -> stringResource(R.string.schedule_statistics_time_range_this_month)
+                                TimeRange.LAST_MONTH -> stringResource(R.string.schedule_statistics_time_range_last_month)
+                                TimeRange.CUSTOM -> stringResource(R.string.schedule_statistics_time_range_custom)
+                            })
+                        },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -184,7 +193,7 @@ private fun TimeRangeSelector(
             FilterChip(
                 selected = selectedRange == TimeRange.CUSTOM,
                 onClick = { onRangeChange(TimeRange.CUSTOM) },
-                label = { Text(TimeRange.CUSTOM.displayName) },
+                label = { Text(stringResource(R.string.schedule_statistics_time_range_custom)) },
                 modifier = Modifier.fillMaxWidth()
             )
             
@@ -196,16 +205,16 @@ private fun TimeRangeSelector(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     DateCard(
-                        label = "开始日期",
+                        label = stringResource(R.string.schedule_export_start_date),
                         date = customStartDate,
                         modifier = Modifier.weight(1f),
                         onClick = onCustomDateClick
                     )
                     
-                    Text("至", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.schedule_export_to), style = MaterialTheme.typography.bodyMedium)
                     
                     DateCard(
-                        label = "结束日期",
+                        label = stringResource(R.string.schedule_export_end_date),
                         date = customEndDate,
                         modifier = Modifier.weight(1f),
                         onClick = onCustomDateClick
@@ -268,7 +277,7 @@ private fun StatisticsOverview(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                "统计概览",
+                stringResource(R.string.schedule_statistics_overview),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -278,19 +287,19 @@ private fun StatisticsOverview(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 StatisticCard(
-                    title = "总天数",
+                    title = stringResource(R.string.schedule_statistics_total_days),
                     value = statistics.totalDays.toString(),
-                    unit = "天"
+                    unit = stringResource(R.string.schedule_statistics_day_unit)
                 )
                 StatisticCard(
-                    title = "工作天数",
+                    title = stringResource(R.string.schedule_statistics_work_days),
                     value = statistics.workDays.toString(),
-                    unit = "天"
+                    unit = stringResource(R.string.schedule_statistics_day_unit)
                 )
                 StatisticCard(
-                    title = "休息天数",
+                    title = stringResource(R.string.schedule_statistics_rest_days),
                     value = statistics.restDays.toString(),
-                    unit = "天"
+                    unit = stringResource(R.string.schedule_statistics_day_unit)
                 )
             }
             
@@ -301,16 +310,16 @@ private fun StatisticsOverview(
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 StatisticCard(
-                    title = "总工时",
+                    title = stringResource(R.string.schedule_statistics_total_hours),
                     value = "%.1f".format(statistics.totalHours),
-                    unit = "小时"
+                    unit = stringResource(R.string.schedule_statistics_hour_unit)
                 )
                 StatisticCard(
-                    title = "平均工时",
+                    title = stringResource(R.string.schedule_statistics_average_hours),
                     value = if (statistics.workDays > 0) 
                         "%.1f".format(statistics.totalHours / statistics.workDays)
                     else "0",
-                    unit = "小时/天"
+                    unit = stringResource(R.string.schedule_statistics_hour_per_day_unit)
                 )
             }
         }
@@ -370,7 +379,7 @@ private fun ShiftDistributionChart(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                "班次分布",
+                stringResource(R.string.schedule_statistics_shift_distribution),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -415,7 +424,7 @@ private fun ShiftDistributionBar(
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
-                "${count}天 (${percentage.roundToInt()}%)",
+                stringResource(R.string.schedule_statistics_days_percentage, count, percentage.roundToInt()),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -458,7 +467,7 @@ private fun DetailedShiftStatistics(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                "班次详情",
+                stringResource(R.string.schedule_statistics_shift_details),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -525,11 +534,11 @@ private fun ShiftDetailRow(
             horizontalAlignment = Alignment.End
         ) {
             Text(
-                "$days 天",
+                stringResource(R.string.schedule_statistics_days_count, days),
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
-                "${totalHours.toInt()} 小时",
+                stringResource(R.string.schedule_statistics_hours_count, totalHours.toInt()),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -559,12 +568,12 @@ private fun EmptyStatisticsState() {
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                "暂无排班数据",
+                stringResource(R.string.schedule_statistics_empty),
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center
             )
             Text(
-                "选择的时间范围内没有排班记录",
+                stringResource(R.string.schedule_statistics_empty_desc),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -576,9 +585,9 @@ private fun EmptyStatisticsState() {
 /**
  * 时间范围枚举
  */
-enum class TimeRange(val displayName: String) {
-    THIS_WEEK("本周"),
-    THIS_MONTH("本月"),
-    LAST_MONTH("上月"),
-    CUSTOM("自定义")
+enum class TimeRange {
+    THIS_WEEK,
+    THIS_MONTH,
+    LAST_MONTH,
+    CUSTOM
 }

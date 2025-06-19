@@ -15,6 +15,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.res.stringResource
+import com.ccxiaoji.feature.schedule.R
 import com.ccxiaoji.feature.schedule.domain.model.Shift
 import com.ccxiaoji.feature.schedule.presentation.theme.*
 import com.ccxiaoji.feature.schedule.presentation.components.CustomTimePickerDialog
@@ -53,7 +55,7 @@ fun ShiftEditDialog(
             ) {
                 // 标题
                 Text(
-                    text = if (shift == null) "新建班次" else "编辑班次",
+                    text = if (shift == null) stringResource(R.string.schedule_shift_new) else stringResource(R.string.schedule_shift_edit),
                     style = MaterialTheme.typography.headlineSmall
                 )
                 
@@ -63,7 +65,7 @@ fun ShiftEditDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("班次名称") },
+                    label = { Text(stringResource(R.string.schedule_shift_name)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -79,14 +81,14 @@ fun ShiftEditDialog(
                     OutlinedTextField(
                         value = startTime.format(timeFormatter),
                         onValueChange = { },
-                        label = { Text("开始时间") },
+                        label = { Text(stringResource(R.string.schedule_shift_start_time)) },
                         modifier = Modifier.weight(1f),
                         readOnly = true,
                         trailingIcon = {
                             IconButton(onClick = { showStartTimePicker = true }) {
                                 Icon(
                                     Icons.Default.Schedule,
-                                    contentDescription = "选择开始时间"
+                                    contentDescription = stringResource(R.string.schedule_shift_select_start_time)
                                 )
                             }
                         }
@@ -96,14 +98,14 @@ fun ShiftEditDialog(
                     OutlinedTextField(
                         value = endTime.format(timeFormatter),
                         onValueChange = { },
-                        label = { Text("结束时间") },
+                        label = { Text(stringResource(R.string.schedule_shift_end_time)) },
                         modifier = Modifier.weight(1f),
                         readOnly = true,
                         trailingIcon = {
                             IconButton(onClick = { showEndTimePicker = true }) {
                                 Icon(
                                     Icons.Default.Schedule,
-                                    contentDescription = "选择结束时间"
+                                    contentDescription = stringResource(R.string.schedule_shift_select_end_time)
                                 )
                             }
                         }
@@ -114,7 +116,7 @@ fun ShiftEditDialog(
                 
                 // 颜色选择
                 Text(
-                    text = "选择颜色",
+                    text = stringResource(R.string.schedule_shift_select_color),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(8.dp))
@@ -149,7 +151,7 @@ fun ShiftEditDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("描述（选填）") },
+                    label = { Text(stringResource(R.string.schedule_shift_description_optional)) },
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 2
                 )
@@ -162,7 +164,7 @@ fun ShiftEditDialog(
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(onClick = onDismiss) {
-                        Text("取消")
+                        Text(stringResource(R.string.schedule_cancel))
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     Button(
@@ -182,7 +184,7 @@ fun ShiftEditDialog(
                         },
                         enabled = name.isNotBlank()
                     ) {
-                        Text("确定")
+                        Text(stringResource(R.string.schedule_confirm))
                     }
                 }
             }

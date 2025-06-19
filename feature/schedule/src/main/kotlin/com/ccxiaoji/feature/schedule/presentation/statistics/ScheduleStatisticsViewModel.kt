@@ -15,6 +15,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.temporal.TemporalAdjusters
 import javax.inject.Inject
+import android.app.Application
 
 /**
  * 排班统计界面的ViewModel
@@ -23,7 +24,8 @@ import javax.inject.Inject
 class ScheduleStatisticsViewModel @Inject constructor(
     private val getStatisticsUseCase: GetStatisticsUseCase,
     private val getActiveShiftsUseCase: GetActiveShiftsUseCase,
-    private val themeManager: ThemeManager
+    private val themeManager: ThemeManager,
+    private val application: Application
 ) : ViewModel() {
     
     // UI状态
@@ -94,7 +96,7 @@ class ScheduleStatisticsViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = e.message ?: "加载统计数据失败"
+                        errorMessage = e.message ?: application.getString(com.ccxiaoji.feature.schedule.R.string.schedule_statistics_load_failed)
                     )
                 }
             }

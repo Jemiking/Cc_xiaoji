@@ -17,8 +17,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ccxiaoji.feature.schedule.R
 import com.ccxiaoji.feature.schedule.presentation.statistics.TimeRange
 import com.ccxiaoji.feature.schedule.presentation.components.CustomDateRangePickerDialog
 import java.io.File
@@ -61,10 +63,10 @@ fun ExportScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("数据导出") },
+                title = { Text(stringResource(R.string.schedule_export_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.schedule_back))
                     }
                 }
             )
@@ -124,7 +126,7 @@ fun ExportScreen(
                     } else {
                         Icon(Icons.Default.Download, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("导出数据")
+                        Text(stringResource(R.string.schedule_export_button))
                     }
                 }
             }
@@ -133,7 +135,7 @@ fun ExportScreen(
             if (uiState.exportHistory.isNotEmpty()) {
                 item {
                     Text(
-                        "导出历史",
+                        stringResource(R.string.schedule_export_history),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -169,11 +171,11 @@ fun ExportScreen(
     uiState.errorMessage?.let { error ->
         AlertDialog(
             onDismissRequest = { viewModel.clearError() },
-            title = { Text("导出失败") },
+            title = { Text(stringResource(R.string.schedule_export_failed)) },
             text = { Text(error) },
             confirmButton = {
                 TextButton(onClick = { viewModel.clearError() }) {
-                    Text("确定")
+                    Text(stringResource(R.string.schedule_confirm))
                 }
             }
         )
@@ -202,7 +204,7 @@ private fun TimeRangeSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                "导出时间范围",
+                stringResource(R.string.schedule_export_time_range),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -215,7 +217,14 @@ private fun TimeRangeSection(
                     FilterChip(
                         selected = selectedRange == range,
                         onClick = { onRangeChange(range) },
-                        label = { Text(range.displayName) },
+                        label = { 
+                            Text(when (range) {
+                                TimeRange.THIS_WEEK -> stringResource(R.string.schedule_statistics_time_range_this_week)
+                                TimeRange.THIS_MONTH -> stringResource(R.string.schedule_statistics_time_range_this_month)
+                                TimeRange.LAST_MONTH -> stringResource(R.string.schedule_statistics_time_range_last_month)
+                                TimeRange.CUSTOM -> stringResource(R.string.schedule_statistics_time_range_custom)
+                            })
+                        },
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -224,7 +233,7 @@ private fun TimeRangeSection(
             FilterChip(
                 selected = selectedRange == TimeRange.CUSTOM,
                 onClick = { onRangeChange(TimeRange.CUSTOM) },
-                label = { Text(TimeRange.CUSTOM.displayName) },
+                label = { Text(stringResource(R.string.schedule_statistics_time_range_custom)) },
                 modifier = Modifier.fillMaxWidth()
             )
             
@@ -243,7 +252,7 @@ private fun TimeRangeSection(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                "开始日期",
+                                stringResource(R.string.schedule_export_start_date),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -254,7 +263,7 @@ private fun TimeRangeSection(
                         }
                     }
                     
-                    Text("至")
+                    Text(stringResource(R.string.schedule_export_to))
                     
                     OutlinedCard(
                         modifier = Modifier.weight(1f),
@@ -265,7 +274,7 @@ private fun TimeRangeSection(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                "结束日期",
+                                stringResource(R.string.schedule_export_end_date),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -299,7 +308,7 @@ private fun ExportFormatSection(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                "导出格式",
+                stringResource(R.string.schedule_export_format),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -318,11 +327,19 @@ private fun ExportFormatSection(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            format.displayName,
+                            when (format) {
+                                ExportFormat.CSV -> stringResource(R.string.schedule_export_format_csv)
+                                ExportFormat.JSON -> stringResource(R.string.schedule_export_format_json)
+                                ExportFormat.REPORT -> stringResource(R.string.schedule_export_format_report)
+                            },
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
-                            format.description,
+                            when (format) {
+                                ExportFormat.CSV -> stringResource(R.string.schedule_export_format_csv_desc)
+                                ExportFormat.JSON -> stringResource(R.string.schedule_export_format_json_desc)
+                                ExportFormat.REPORT -> stringResource(R.string.schedule_export_format_report_desc)
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -362,7 +379,7 @@ private fun ExportOptionsSection(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                "导出选项",
+                stringResource(R.string.schedule_export_options),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -376,7 +393,7 @@ private fun ExportOptionsSection(
                     onCheckedChange = onIncludeStatisticsChange
                 )
                 Text(
-                    "包含统计信息",
+                    stringResource(R.string.schedule_export_include_statistics),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -391,7 +408,7 @@ private fun ExportOptionsSection(
                     onCheckedChange = onIncludeActualTimeChange
                 )
                 Text(
-                    "包含实际打卡时间",
+                    stringResource(R.string.schedule_export_include_actual_time),
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyMedium
                 )
@@ -439,20 +456,20 @@ private fun ExportHistoryItem(
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    "导出时间: ${exportInfo.exportTime.format(
+                    stringResource(R.string.schedule_export_time, exportInfo.exportTime.format(
                         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
-                    )}",
+                    )),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             
             IconButton(onClick = { onShare(exportInfo.file) }) {
-                Icon(Icons.Default.Share, contentDescription = "分享")
+                Icon(Icons.Default.Share, contentDescription = stringResource(R.string.schedule_export_share))
             }
             
             IconButton(onClick = { onDelete(exportInfo.file) }) {
-                Icon(Icons.Default.Delete, contentDescription = "删除")
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.schedule_export_delete))
             }
         }
     }
@@ -483,7 +500,7 @@ private fun shareFile(
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     
-    val chooser = Intent.createChooser(intent, "分享导出数据")
+    val chooser = Intent.createChooser(intent, context.getString(R.string.schedule_export_share_title))
     launcher.launch(chooser)
 }
 
@@ -495,9 +512,9 @@ enum class ExportFormat(
     val description: String,
     val extension: String
 ) {
-    CSV("CSV表格", "适合在Excel中查看和编辑", "csv"),
-    JSON("JSON数据", "适合程序读取和处理", "json"),
-    REPORT("统计报表", "人工阅读的文本格式", "txt")
+    CSV("", "", "csv"),
+    JSON("", "", "json"),
+    REPORT("", "", "txt")
 }
 
 /**

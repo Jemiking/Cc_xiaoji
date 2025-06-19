@@ -1,5 +1,8 @@
 package com.ccxiaoji.feature.schedule.presentation.schedule
 
+import androidx.compose.ui.res.stringResource
+import com.ccxiaoji.feature.schedule.R
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -47,12 +50,12 @@ fun ScheduleEditScreen(
             TopAppBar(
                 title = { 
                     Text(
-                        text = "编辑排班 - ${selectedDate.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日"))}"
+                        text = stringResource(R.string.schedule_edit_title_with_date, selectedDate.format(DateTimeFormatter.ofPattern(stringResource(R.string.schedule_calendar_date_format_full))))
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.schedule_back))
                     }
                 },
                 actions = {
@@ -63,7 +66,7 @@ fun ScheduleEditScreen(
                         },
                         enabled = selectedShift != null
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = "保存")
+                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.schedule_save))
                     }
                 }
             )
@@ -103,7 +106,7 @@ fun ScheduleEditScreen(
                         }
                         Column {
                             Text(
-                                text = "当前班次：${schedule.shift.name}",
+                                text = stringResource(R.string.schedule_edit_current_shift, schedule.shift.name),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Text(
@@ -118,7 +121,7 @@ fun ScheduleEditScreen(
             
             // 班次选择提示
             Text(
-                text = if (currentSchedule == null) "选择班次" else "更改班次",
+                text = if (currentSchedule == null) stringResource(R.string.schedule_edit_select_shift) else stringResource(R.string.schedule_edit_change_shift),
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
@@ -201,7 +204,7 @@ private fun ShiftCard(
             // 班次信息
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = shift?.name ?: "休息",
+                    text = shift?.name ?: stringResource(R.string.schedule_edit_rest),
                     style = MaterialTheme.typography.titleMedium,
                     color = if (isSelected) {
                         MaterialTheme.colorScheme.onPrimaryContainer

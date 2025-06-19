@@ -45,7 +45,8 @@
       "Bash(tail:*)",
       "WebFetch(domain:developer.android.com)",
       "Bash(true)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(./scripts/create_test_structure.sh:*)"
     ],
     "deny": []
   },

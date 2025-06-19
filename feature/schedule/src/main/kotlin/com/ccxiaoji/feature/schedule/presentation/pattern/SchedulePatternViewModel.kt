@@ -17,11 +17,11 @@ import javax.inject.Inject
 /**
  * 排班模式类型
  */
-enum class PatternType(val displayName: String) {
-    SINGLE("单次排班"),
-    CYCLE("循环排班"),  // 原 WEEKLY，现在支持任意天数循环
-    ROTATION("轮班"),
-    CUSTOM("自定义")
+enum class PatternType {
+    SINGLE,
+    CYCLE,  // 原 WEEKLY，现在支持任意天数循环
+    ROTATION,
+    CUSTOM
 }
 
 /**
@@ -206,7 +206,7 @@ class SchedulePatternViewModel @Inject constructor(
                 val pattern = when (state.patternType) {
                     PatternType.SINGLE -> {
                         val shiftId = state.selectedShift?.id
-                            ?: throw IllegalStateException("请选择班次")
+                            ?: throw IllegalStateException("Please select a shift")
                         
                         // 为日期范围内的每一天创建相同的排班
                         var currentDate = state.startDate
@@ -222,7 +222,7 @@ class SchedulePatternViewModel @Inject constructor(
                     
                     PatternType.CYCLE -> {
                         if (state.cyclePattern.values.all { it == null }) {
-                            throw IllegalStateException("请至少设置一天的班次")
+                            throw IllegalStateException("Please set shift for at least one day")
                         }
                         SchedulePattern.Cycle(
                             startDate = state.startDate,
@@ -234,7 +234,7 @@ class SchedulePatternViewModel @Inject constructor(
                     
                     PatternType.ROTATION -> {
                         if (state.rotationShifts.isEmpty()) {
-                            throw IllegalStateException("请选择轮班班次")
+                            throw IllegalStateException("Please select rotation shifts")
                         }
                         SchedulePattern.Rotation(
                             startDate = state.startDate,
@@ -246,7 +246,7 @@ class SchedulePatternViewModel @Inject constructor(
                     
                     PatternType.CUSTOM -> {
                         if (state.customPattern.isEmpty()) {
-                            throw IllegalStateException("请配置自定义排班模式")
+                            throw IllegalStateException("Please configure custom pattern")
                         }
                         SchedulePattern.Custom(
                             startDate = state.startDate,
@@ -266,7 +266,7 @@ class SchedulePatternViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = e.message ?: "创建失败"
+                        errorMessage = e.message ?: "Create failed"
                     )
                 }
             }

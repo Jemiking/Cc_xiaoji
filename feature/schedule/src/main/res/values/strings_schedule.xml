@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Schedule Module Strings -->
+    
+    <!-- Common -->
+    <string name="schedule_confirm">确定</string>
+    <string name="schedule_cancel">取消</string>
+    <string name="schedule_delete">删除</string>
+    <string name="schedule_edit">编辑</string>
+    <string name="schedule_save">保存</string>
+    <string name="schedule_back">返回</string>
+    
+    <!-- Calendar Screen -->
+    <string name="schedule_calendar_title">排班日历</string>
+    <string name="schedule_calendar_today">今天</string>
+    <string name="schedule_calendar_today_short">今</string>
+    <string name="schedule_calendar_month_format">%1$d年%2$d月</string>
+    <string name="schedule_calendar_date_format_year_month">yyyy年MM月</string>
+    <string name="schedule_calendar_date_format_full">yyyy年MM月dd日</string>
+    <string name="schedule_calendar_more">更多</string>
+    <string name="schedule_calendar_view_mode_comfortable">舒适模式</string>
+    <string name="schedule_calendar_view_mode_compact">紧凑模式</string>
+    <string name="schedule_calendar_statistics_analysis">统计分析</string>
+    <string name="schedule_calendar_batch_schedule">批量排班</string>
+    <string name="schedule_calendar_settings">设置</string>
+    <string name="schedule_calendar_add_schedule">添加排班</string>
+    <string name="schedule_calendar_delete_schedule">删除排班</string>
+    <string name="schedule_calendar_edit_schedule">编辑排班</string>
+    <string name="schedule_calendar_no_schedule">当日无排班</string>
+    <string name="schedule_calendar_work_days">工作天数</string>
+    <string name="schedule_calendar_rest_days">休息天数</string>
+    <string name="schedule_calendar_total_hours">总工时</string>
+    <string name="schedule_calendar_work_hours">工时：</string>
+    <string name="schedule_calendar_days_unit">天</string>
+    <string name="schedule_calendar_hours_unit">小时</string>
+    <string name="schedule_calendar_hours_format">%.1f小时</string>
+    <string name="schedule_calendar_days_format">%d天</string>
+    <string name="schedule_calendar_hours_int_format">%d小时</string>
+    
+    <!-- Shift Management -->
+    <string name="schedule_shift_manage_title">班次管理</string>
+    <string name="schedule_shift_add">添加班次</string>
+    <string name="schedule_shift_new">新建班次</string>
+    <string name="schedule_shift_edit">编辑班次</string>
+    <string name="schedule_shift_name">班次名称</string>
+    <string name="schedule_shift_start_time">开始时间</string>
+    <string name="schedule_shift_end_time">结束时间</string>
+    <string name="schedule_shift_select_start_time">选择开始时间</string>
+    <string name="schedule_shift_select_end_time">选择结束时间</string>
+    <string name="schedule_shift_color">班次颜色</string>
+    <string name="schedule_shift_select_color">选择颜色</string>
+    <string name="schedule_shift_description_optional">描述（选填）</string>
+    <string name="schedule_shift_is_night">夜班</string>
+    <string name="schedule_shift_is_overtime">加班</string>
+    <string name="schedule_shift_empty">暂无班次</string>
+    <string name="schedule_shift_empty_hint">点击右下角按钮添加第一个班次</string>
+    
+    <!-- Schedule Edit -->
+    <string name="schedule_edit_title">编辑排班</string>
+    <string name="schedule_edit_date">日期</string>
+    <string name="schedule_edit_shift">班次</string>
+    <string name="schedule_edit_note">备注</string>
+    
+    <!-- Pattern Scheduling -->
+    <string name="schedule_pattern_title">批量排班</string>
+    <string name="schedule_pattern_start_date">开始日期</string>
+    <string name="schedule_pattern_end_date">结束日期</string>
+    <string name="schedule_pattern_type">排班模式</string>
+    <string name="schedule_pattern_apply">应用</string>
+    
+    <!-- Statistics -->
+    <string name="schedule_statistics_title">排班统计</string>
+    <string name="schedule_statistics_total_days">总天数</string>
+    <string name="schedule_statistics_work_days">工作天数</string>
+    <string name="schedule_statistics_rest_days">休息天数</string>
+    <string name="schedule_statistics_night_shifts">夜班次数</string>
+    <string name="schedule_statistics_overtime_days">加班天数</string>
+    <string name="schedule_statistics_time_range">统计时间范围</string>
+    <string name="schedule_statistics_overview">统计概览</string>
+    <string name="schedule_statistics_shift_distribution">班次分布</string>
+    <string name="schedule_statistics_shift_details">班次详情</string>
+    <string name="schedule_statistics_total_hours">总工时</string>
+    <string name="schedule_statistics_average_hours">平均工时</string>
+    <string name="schedule_statistics_day_unit">天</string>
+    <string name="schedule_statistics_hour_unit">小时</string>
+    <string name="schedule_statistics_hour_per_day_unit">小时/天</string>
+    <string name="schedule_statistics_days_percentage">%1$d天 (%2$d%%)</string>
+    <string name="schedule_statistics_days_count">%1$d 天</string>
+    <string name="schedule_statistics_hours_count">%1$d 小时</string>
+    <string name="schedule_statistics_empty">暂无排班数据</string>
+    <string name="schedule_statistics_empty_desc">选择的时间范围内没有排班记录</string>
+    <string name="schedule_statistics_time_range_this_week">本周</string>
+    <string name="schedule_statistics_time_range_this_month">本月</string>
+    <string name="schedule_statistics_time_range_last_month">上月</string>
+    <string name="schedule_statistics_time_range_custom">自定义</string>
+    <string name="schedule_statistics_load_failed">加载统计数据失败</string>
+    <string name="schedule_statistics_export_data">导出数据</string>
+    
+    <!-- Settings -->
+    <string name="schedule_settings_title">设置</string>
+    <string name="schedule_settings_notification">通知设置</string>
+    <string name="schedule_settings_reminder">排班提醒</string>
+    <string name="schedule_settings_reminder_time">提醒时间</string>
+    <string name="schedule_settings_week_start">周起始日</string>
+    <string name="schedule_settings_backup">备份与恢复</string>
+    <string name="schedule_settings_export">数据导出</string>
+    <string name="schedule_settings_about">关于</string>
+    <string name="schedule_settings_clear_data">清除所有数据</string>
+    <string name="schedule_settings_general">通用</string>
+    <string name="schedule_settings_shift_manage">班次管理</string>
+    <string name="schedule_settings_shift_manage_subtitle">添加、编辑班次信息</string>
+    <string name="schedule_settings_reminder_enabled">已开启</string>
+    <string name="schedule_settings_reminder_disabled">已关闭</string>
+    <string name="schedule_settings_week_start_monday">星期一</string>
+    <string name="schedule_settings_week_start_sunday">星期日</string>
+    <string name="schedule_settings_week_start_dialog_title">选择每周起始日</string>
+    <string name="schedule_settings_data_management">数据管理</string>
+    <string name="schedule_settings_auto_backup">自动备份</string>
+    <string name="schedule_settings_backup_now">立即备份</string>
+    <string name="schedule_settings_last_backup">上次备份: %1$s</string>
+    <string name="schedule_settings_never_backup">从未备份</string>
+    <string name="schedule_settings_restore_data">恢复数据</string>
+    <string name="schedule_settings_restore_data_subtitle">从备份文件恢复数据</string>
+    <string name="schedule_settings_clear_data_subtitle">删除所有班次和排班数据</string>
+    <string name="schedule_settings_appearance">外观</string>
+    <string name="schedule_settings_dark_mode">深色模式</string>
+    <string name="schedule_settings_theme_color">主题颜色</string>
+    <string name="schedule_settings_theme_color_subtitle">自定义应用主题颜色</string>
+    <string name="schedule_settings_about_app">关于 CC小记排班</string>
+    <string name="schedule_settings_version">版本 %1$s</string>
+    <string name="schedule_settings_share_app">分享应用</string>
+    <string name="schedule_settings_share_app_subtitle">推荐给朋友</string>
+    <string name="schedule_settings_rate_app">评价应用</string>
+    <string name="schedule_settings_rate_app_subtitle">在应用商店评价</string>
+    <string name="schedule_settings_backup_location_dialog_title">选择备份位置</string>
+    <string name="schedule_settings_backup_location_dialog_message">请选择备份文件的保存位置</string>
+    <string name="schedule_settings_backup_external">选择外部存储</string>
+    <string name="schedule_settings_backup_internal">备份到应用内部</string>
+    <string name="schedule_settings_confirm_clear_title">确认清除所有数据</string>
+    <string name="schedule_settings_confirm_clear_message">此操作将删除所有班次和排班数据，且无法恢复。是否确定继续？</string>
+    <string name="schedule_settings_error_title">错误</string>
+    
+    <!-- Export -->
+    <string name="schedule_export_title">数据导出</string>
+    <string name="schedule_export_format">导出格式</string>
+    <string name="schedule_export_date_range">日期范围</string>
+    <string name="schedule_export_success">导出成功</string>
+    <string name="schedule_export_failed">导出失败</string>
+    <string name="schedule_export_time_range">导出时间范围</string>
+    <string name="schedule_export_start_date">开始日期</string>
+    <string name="schedule_export_end_date">结束日期</string>
+    <string name="schedule_export_to">至</string>
+    <string name="schedule_export_options">导出选项</string>
+    <string name="schedule_export_include_statistics">包含统计信息</string>
+    <string name="schedule_export_include_actual_time">包含实际打卡时间</string>
+    <string name="schedule_export_button">导出数据</string>
+    <string name="schedule_export_history">导出历史</string>
+    <string name="schedule_export_time">导出时间: %1$s</string>
+    <string name="schedule_export_share">分享</string>
+    <string name="schedule_export_delete">删除</string>
+    <string name="schedule_export_share_title">分享导出数据</string>
+    <string name="schedule_export_format_csv">CSV表格</string>
+    <string name="schedule_export_format_csv_desc">适合在Excel中查看和编辑</string>
+    <string name="schedule_export_format_json">JSON数据</string>
+    <string name="schedule_export_format_json_desc">适合程序读取和处理</string>
+    <string name="schedule_export_format_report">统计报表</string>
+    <string name="schedule_export_format_report_desc">人工阅读的文本格式</string>
+    <string name="schedule_export_delete_failed">删除文件失败: %1$s</string>
+    
+    <!-- About -->
+    <string name="schedule_about_title">关于</string>
+    <string name="schedule_about_app_name">CC小记排班</string>
+    <string name="schedule_about_version">版本 %1$s</string>
+    <string name="schedule_about_developer">开发者</string>
+    <string name="schedule_about_contact">联系方式</string>
+    <string name="schedule_about_section_about">关于应用</string>
+    <string name="schedule_about_description">CC小记排班是一款专业的排班管理工具，帮助您轻松管理工作排班、统计工时、导出数据。支持多种排班模式，包括单次排班、周循环、轮班制和自定义模式。</string>
+    <string name="schedule_about_section_features">功能特色</string>
+    <string name="schedule_about_feature_calendar">📅 直观的日历视图</string>
+    <string name="schedule_about_feature_calendar_desc">月度排班一目了然</string>
+    <string name="schedule_about_feature_quick">⚡ 快速排班操作</string>
+    <string name="schedule_about_feature_quick_desc">长按日期快速设置班次</string>
+    <string name="schedule_about_feature_patterns">🔄 多种排班模式</string>
+    <string name="schedule_about_feature_patterns_desc">支持单次、周循环、轮班、自定义</string>
+    <string name="schedule_about_feature_statistics">📊 详细统计分析</string>
+    <string name="schedule_about_feature_statistics_desc">工时统计、班次分布图表</string>
+    <string name="schedule_about_feature_backup">💾 数据备份恢复</string>
+    <string name="schedule_about_feature_backup_desc">安全可靠的数据管理</string>
+    <string name="schedule_about_feature_export">📤 多格式导出</string>
+    <string name="schedule_about_feature_export_desc">CSV、JSON、统计报表</string>
+    <string name="schedule_about_feature_dark">🌙 深色模式</string>
+    <string name="schedule_about_feature_dark_desc">护眼舒适的视觉体验</string>
+    <string name="schedule_about_feature_reminder">⏰ 智能提醒</string>
+    <string name="schedule_about_feature_reminder_desc">自定义排班提醒通知</string>
+    <string name="schedule_about_section_tech">技术信息</string>
+    <string name="schedule_about_tech_language">开发语言</string>
+    <string name="schedule_about_tech_language_value">Kotlin</string>
+    <string name="schedule_about_tech_ui">UI框架</string>
+    <string name="schedule_about_tech_ui_value">Jetpack Compose</string>
+    <string name="schedule_about_tech_arch">架构模式</string>
+    <string name="schedule_about_tech_arch_value">MVVM + Clean Architecture</string>
+    <string name="schedule_about_tech_storage">数据存储</string>
+    <string name="schedule_about_tech_storage_value">Room Database</string>
+    <string name="schedule_about_tech_di">依赖注入</string>
+    <string name="schedule_about_tech_di_value">Hilt</string>
+    <string name="schedule_about_tech_min_version">最低版本</string>
+    <string name="schedule_about_tech_min_version_value">Android 7.0 (API 24)</string>
+    <string name="schedule_about_developer_message">感谢您使用 CC小记排班！如有任何问题或建议，欢迎联系我们。</string>
+    <string name="schedule_about_feedback">反馈</string>
+    <string name="schedule_about_share">分享</string>
+    <string name="schedule_about_share_text">推荐一款好用的排班管理应用：CC小记排班</string>
+    <string name="schedule_about_email_subject">CC小记排班 - 用户反馈</string>
+    <string name="schedule_about_copyright">© 2025 CC小记排班. All rights reserved.</string>
+    <string name="schedule_about_app_icon_desc">应用图标</string>
+    
+    <!-- Dialog Messages -->
+    <string name="schedule_dialog_delete_shift_title">删除班次</string>
+    <string name="schedule_dialog_delete_shift_message">确定要删除这个班次吗？</string>
+    <string name="schedule_dialog_clear_data_title">清除所有数据</string>
+    <string name="schedule_dialog_clear_data_message">此操作将删除所有班次和排班数据，且无法恢复。是否确定继续？</string>
+    <string name="schedule_dialog_backup_location">选择备份位置</string>
+    <string name="schedule_dialog_restore_confirm">确定要从此备份恢复数据吗？当前数据将被覆盖。</string>
+    
+    <!-- Error Messages -->
+    <string name="schedule_error_shift_name_empty">班次名称不能为空</string>
+    <string name="schedule_error_time_invalid">结束时间必须晚于开始时间</string>
+    <string name="schedule_error_date_range_invalid">结束日期必须晚于开始日期</string>
+    <string name="schedule_error_backup_failed">备份失败</string>
+    <string name="schedule_error_restore_failed">恢复失败</string>
+    <string name="schedule_error_backup_failed_detail">备份失败: %1$s</string>
+    <string name="schedule_error_restore_failed_detail">恢复失败: %1$s</string>
+    <string name="schedule_error_clear_failed">清除失败: %1$s</string>
+    
+    <!-- Success Messages -->
+    <string name="schedule_success_shift_added">班次添加成功</string>
+    <string name="schedule_success_shift_updated">班次更新成功</string>
+    <string name="schedule_success_shift_deleted">班次删除成功</string>
+    <string name="schedule_success_schedule_saved">排班保存成功</string>
+    <string name="schedule_success_pattern_applied">批量排班成功</string>
+    <string name="schedule_success_backup_completed">备份成功</string>
+    <string name="schedule_success_restore_completed">恢复成功</string>
+    <string name="schedule_success_backup_internal">备份成功: %1$s</string>
+    <string name="schedule_success_restore_restart">恢复成功，请重启应用生效</string>
+    <string name="schedule_success_data_cleared">已清除所有数据：%1$d个班次，%2$d条排班记录</string>
+    
+    <!-- Time Related -->
+    <string name="schedule_time_format_24h">HH:mm</string>
+    <string name="schedule_time_format_12h">hh:mm a</string>
+    <string name="schedule_duration_format">%1$d小时%2$d分钟</string>
+    
+    <!-- Week Days -->
+    <string name="schedule_weekday_monday">周一</string>
+    <string name="schedule_weekday_tuesday">周二</string>
+    <string name="schedule_weekday_wednesday">周三</string>
+    <string name="schedule_weekday_thursday">周四</string>
+    <string name="schedule_weekday_friday">周五</string>
+    <string name="schedule_weekday_saturday">周六</string>
+    <string name="schedule_weekday_sunday">周日</string>
+    
+    <!-- Week Days Short (for calendar) -->
+    <string name="schedule_weekday_short_monday">一</string>
+    <string name="schedule_weekday_short_tuesday">二</string>
+    <string name="schedule_weekday_short_wednesday">三</string>
+    <string name="schedule_weekday_short_thursday">四</string>
+    <string name="schedule_weekday_short_friday">五</string>
+    <string name="schedule_weekday_short_saturday">六</string>
+    <string name="schedule_weekday_short_sunday">日</string>
+    
+    <!-- Pattern Scheduling Additional Strings -->
+    <string name="schedule_pattern_create">创建</string>
+    <string name="schedule_pattern_date_range">日期范围</string>
+    <string name="schedule_pattern_to">至</string>
+    <string name="schedule_pattern_mode">排班模式</string>
+    <string name="schedule_pattern_single">单次排班</string>
+    <string name="schedule_pattern_cycle">循环排班</string>
+    <string name="schedule_pattern_rotation">轮班</string>
+    <string name="schedule_pattern_custom">自定义</string>
+    <string name="schedule_pattern_selected">已选择</string>
+    <string name="schedule_pattern_select_shift">选择班次</string>
+    <string name="schedule_pattern_cycle_settings">循环排班设置</string>
+    <string name="schedule_pattern_cycle_period">循环周期设置</string>
+    <string name="schedule_pattern_cycle_days">循环天数</string>
+    <string name="schedule_pattern_cycle_days_unit">天</string>
+    <string name="schedule_pattern_cycle_hint">支持 2-365 天的任意循环周期</string>
+    <string name="schedule_pattern_day_number">第 %1$d 天</string>
+    <string name="schedule_pattern_rest">休息</string>
+    <string name="schedule_pattern_decrease_days">减少天数</string>
+    <string name="schedule_pattern_increase_days">增加天数</string>
+    <string name="schedule_pattern_rotation_settings">轮班设置</string>
+    <string name="schedule_pattern_rotation_order_hint">请按顺序选择班次：</string>
+    <string name="schedule_pattern_rotation_rest_days">轮班后休息天数</string>
+    <string name="schedule_pattern_custom_mode">自定义排班模式</string>
+    <string name="schedule_pattern_custom_empty_hint">请选择日期范围后自动生成配置</string>
+    <string name="schedule_pattern_date_format_month_day">MM月dd日</string>
+    
+    <!-- Schedule Edit Additional Strings -->
+    <string name="schedule_edit_title_with_date">编辑排班 - %1$s</string>
+    <string name="schedule_edit_current_shift">当前班次：%1$s</string>
+    <string name="schedule_edit_select_shift">选择班次</string>
+    <string name="schedule_edit_change_shift">更改班次</string>
+    <string name="schedule_edit_rest">休息</string>
+    
+    <!-- Error Messages for Pattern -->
+    <string name="schedule_error_select_shift">请选择班次</string>
+    <string name="schedule_error_set_shift_at_least_one_day">请至少设置一天的班次</string>
+    <string name="schedule_error_select_rotation_shifts">请选择轮班班次</string>
+    <string name="schedule_error_configure_custom_pattern">请配置自定义排班模式</string>
+    <string name="schedule_error_create_failed">创建失败</string>
+    
+    <!-- Months -->
+    <string name="schedule_month_january">一月</string>
+    <string name="schedule_month_february">二月</string>
+    <string name="schedule_month_march">三月</string>
+    <string name="schedule_month_april">四月</string>
+    <string name="schedule_month_may">五月</string>
+    <string name="schedule_month_june">六月</string>
+    <string name="schedule_month_july">七月</string>
+    <string name="schedule_month_august">八月</string>
+    <string name="schedule_month_september">九月</string>
+    <string name="schedule_month_october">十月</string>
+    <string name="schedule_month_november">十一月</string>
+    <string name="schedule_month_december">十二月</string>
+    
+    <!-- Component Dialog Strings -->
+    <string name="schedule_dialog_select_time">选择时间</string>
+    <string name="schedule_dialog_quick_select_shift">快速选择班次</string>
+    <string name="schedule_dialog_close">关闭</string>
+    <string name="schedule_dialog_more_shifts">更多班次...</string>
+    <string name="schedule_dialog_clear_schedule">清除排班</string>
+    <string name="schedule_dialog_selected">已选中</string>
+    <string name="schedule_dialog_select_start_date">选择开始日期</string>
+    <string name="schedule_dialog_select_end_date">选择结束日期</string>
+    <string name="schedule_dialog_next_step">下一步</string>
+    <string name="schedule_dialog_previous_month">上一月</string>
+    <string name="schedule_dialog_next_month">下一月</string>
+    <string name="schedule_dialog_start_date_label">开始日期</string>
+    <string name="schedule_dialog_end_date_label">结束日期</string>
+    <string name="schedule_dialog_start_prefix">开始：</string>
+    <string name="schedule_dialog_modify">修改</string>
+    <string name="schedule_dialog_date_start_mark">始</string>
+    <string name="schedule_dialog_date_end_mark">终</string>
+    <string name="schedule_dialog_select_year_month">选择年月</string>
+    <string name="schedule_dialog_previous_year">上一年</string>
+    <string name="schedule_dialog_year">年份</string>
+    <string name="schedule_dialog_next_year">下一年</string>
+    <string name="schedule_dialog_month">月份</string>
+    <string name="schedule_dialog_hour">时</string>
+    <string name="schedule_dialog_minute">分</string>
+    <string name="schedule_dialog_current_time">当前时间</string>
+    
+    <!-- Date/Time Format Strings -->
+    <string name="schedule_format_month_only">%1$d月</string>
+    <string name="schedule_format_year_only">%1$d年</string>
+    <string name="schedule_format_date_pattern_month_day">MM月dd日 EEEE</string>
+    <string name="schedule_format_date_pattern_year_month_day">yyyy年MM月dd日</string>
+</resources>

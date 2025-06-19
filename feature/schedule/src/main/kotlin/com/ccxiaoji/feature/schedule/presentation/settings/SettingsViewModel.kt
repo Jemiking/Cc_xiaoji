@@ -9,6 +9,8 @@ import com.ccxiaoji.feature.schedule.domain.usecase.RestoreDatabaseUseCase
 import com.ccxiaoji.feature.schedule.notification.ScheduleNotificationScheduler
 import com.ccxiaoji.feature.schedule.presentation.theme.ThemeManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import android.content.Context
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,6 +28,7 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val notificationScheduler: ScheduleNotificationScheduler,
     private val themeManager: ThemeManager,
     private val backupDatabaseUseCase: BackupDatabaseUseCase,
@@ -51,9 +54,9 @@ class SettingsViewModel @Inject constructor(
         themeManager.weekStartDay
             .onEach { weekStartDay ->
                 val weekStartDayText = when (weekStartDay) {
-                    DayOfWeek.SUNDAY -> "星期日"
-                    DayOfWeek.MONDAY -> "星期一"
-                    else -> "星期一"
+                    DayOfWeek.SUNDAY -> context.getString(com.ccxiaoji.feature.schedule.R.string.schedule_settings_week_start_sunday)
+                    DayOfWeek.MONDAY -> context.getString(com.ccxiaoji.feature.schedule.R.string.schedule_settings_week_start_monday)
+                    else -> context.getString(com.ccxiaoji.feature.schedule.R.string.schedule_settings_week_start_monday)
                 }
                 _uiState.update { it.copy(weekStartDay = weekStartDayText, weekStartDayValue = weekStartDay) }
             }
@@ -111,9 +114,9 @@ class SettingsViewModel @Inject constructor(
                             isLoading = false,
                             lastBackupTime = backupTime,
                             successMessage = if (backupUri != null) {
-                                "备份成功"
+                                context.getString(com.ccxiaoji.feature.schedule.R.string.schedule_success_backup_completed)
                             } else {
-                                "备份成功: $backupPath"
+                                context.getString(com.ccxiaoji.feature.schedule.R.string.schedule_success_backup_internal, backupPath)
                             }
                         )
                     }
@@ -129,7 +132,7 @@ class SettingsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = "备份失败: ${error.message}"
+                            errorMessage = context.getString(com.ccxiaoji.feature.schedule.R.string.schedule_error_backup_failed_detail, error.message)
                         )
                     }
                 }
@@ -148,7 +151,7 @@ class SettingsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            successMessage = "恢复成功，请重启应用生效"
+                            successMessage = context.getString(com.ccxiaoji.feature.schedule.R.string.schedule_success_restore_restart)
                         )
                     }
                 }
@@ -156,7 +159,7 @@ class SettingsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = "恢复失败: ${error.message}"
+                            errorMessage = context.getString(com.ccxiaoji.feature.schedule.R.string.schedule_error_restore_failed_detail, error.message)
                         )
                     }
                 }
@@ -178,7 +181,7 @@ class SettingsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            successMessage = "已清除所有数据：${statistics.shiftCount}个班次，${statistics.scheduleCount}条排班记录"
+                            successMessage = context.getString(com.ccxiaoji.feature.schedule.R.string.schedule_success_data_cleared, statistics.shiftCount, statistics.scheduleCount)
                         )
                     }
                 }
@@ -186,7 +189,7 @@ class SettingsViewModel @Inject constructor(
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = "清除失败: ${error.message}"
+                            errorMessage = context.getString(com.ccxiaoji.feature.schedule.R.string.schedule_error_clear_failed, error.message)
                         )
                     }
                 }
@@ -245,7 +248,7 @@ class SettingsViewModel @Inject constructor(
             it.copy(
                 notificationEnabled = notificationEnabled,
                 notificationTime = notificationTime,
-                weekStartDay = "星期一",
+                weekStartDay = context.getString(com.ccxiaoji.feature.schedule.R.string.schedule_settings_week_start_monday),
                 autoBackupEnabled = false,
                 lastBackupTime = null,
                 darkMode = DarkModeOption.SYSTEM,

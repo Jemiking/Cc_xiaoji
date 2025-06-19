@@ -22,6 +22,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.res.stringResource
+import com.ccxiaoji.feature.schedule.R
 import com.ccxiaoji.feature.schedule.presentation.calendar.CalendarView
 import com.ccxiaoji.feature.schedule.presentation.viewmodel.CalendarViewMode
 import java.time.DayOfWeek
@@ -96,12 +98,12 @@ fun DatePickerDialog(
                         onDismiss()
                     }
                 ) {
-                    Text("确定")
+                    Text(stringResource(R.string.schedule_confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text("取消")
+                    Text(stringResource(R.string.schedule_cancel))
                 }
             }
         ) {
@@ -148,7 +150,7 @@ fun DateRangePickerDialog(
         AlertDialog(
             onDismissRequest = onDismiss,
             title = {
-                Text(if (isSelectingStartDate) "选择开始日期" else "选择结束日期")
+                Text(if (isSelectingStartDate) stringResource(R.string.schedule_dialog_select_start_date) else stringResource(R.string.schedule_dialog_select_end_date))
             },
             text = {
                 DatePicker(
@@ -184,12 +186,12 @@ fun DateRangePickerDialog(
                         }
                     }
                 ) {
-                    Text(if (isSelectingStartDate) "下一步" else "确定")
+                    Text(if (isSelectingStartDate) stringResource(R.string.schedule_dialog_next_step) else stringResource(R.string.schedule_confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text("取消")
+                    Text(stringResource(R.string.schedule_cancel))
                 }
             }
         )
@@ -275,7 +277,7 @@ fun CustomDatePickerDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.ChevronLeft,
-                                    contentDescription = "上一月"
+                                    contentDescription = stringResource(R.string.schedule_dialog_previous_month)
                                 )
                             }
                             
@@ -289,7 +291,7 @@ fun CustomDatePickerDialog(
                                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                                 )
                                 Text(
-                                    text = "${currentYearMonth.monthValue}月",
+                                    text = stringResource(R.string.schedule_format_month_only, currentYearMonth.monthValue),
                                     style = MaterialTheme.typography.headlineMedium,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -307,7 +309,7 @@ fun CustomDatePickerDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.ChevronRight,
-                                    contentDescription = "下一月"
+                                    contentDescription = stringResource(R.string.schedule_dialog_next_month)
                                 )
                             }
                         }
@@ -351,7 +353,7 @@ fun CustomDatePickerDialog(
                             },
                             shape = MaterialTheme.shapes.medium
                         ) {
-                            Text("今天")
+                            Text(stringResource(R.string.schedule_calendar_today))
                         }
                         
                         // 操作按钮组
@@ -363,7 +365,7 @@ fun CustomDatePickerDialog(
                                 onClick = onDismiss,
                                 shape = MaterialTheme.shapes.medium
                             ) {
-                                Text("取消")
+                                Text(stringResource(R.string.schedule_cancel))
                             }
                             
                             // 确定按钮 - Filled 风格
@@ -377,7 +379,7 @@ fun CustomDatePickerDialog(
                                 enabled = selectedDate != null,
                                 shape = MaterialTheme.shapes.medium
                             ) {
-                                Text("确定")
+                                Text(stringResource(R.string.schedule_confirm))
                             }
                         }
                     }
@@ -466,9 +468,9 @@ private fun PickerCalendarView(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             val weekDays = when (weekStartDay) {
-                DayOfWeek.SUNDAY -> listOf("日", "一", "二", "三", "四", "五", "六")
-                DayOfWeek.MONDAY -> listOf("一", "二", "三", "四", "五", "六", "日")
-                else -> listOf("一", "二", "三", "四", "五", "六", "日")
+                DayOfWeek.SUNDAY -> listOf(stringResource(R.string.schedule_weekday_short_sunday), stringResource(R.string.schedule_weekday_short_monday), stringResource(R.string.schedule_weekday_short_tuesday), stringResource(R.string.schedule_weekday_short_wednesday), stringResource(R.string.schedule_weekday_short_thursday), stringResource(R.string.schedule_weekday_short_friday), stringResource(R.string.schedule_weekday_short_saturday))
+                DayOfWeek.MONDAY -> listOf(stringResource(R.string.schedule_weekday_short_monday), stringResource(R.string.schedule_weekday_short_tuesday), stringResource(R.string.schedule_weekday_short_wednesday), stringResource(R.string.schedule_weekday_short_thursday), stringResource(R.string.schedule_weekday_short_friday), stringResource(R.string.schedule_weekday_short_saturday), stringResource(R.string.schedule_weekday_short_sunday))
+                else -> listOf(stringResource(R.string.schedule_weekday_short_monday), stringResource(R.string.schedule_weekday_short_tuesday), stringResource(R.string.schedule_weekday_short_wednesday), stringResource(R.string.schedule_weekday_short_thursday), stringResource(R.string.schedule_weekday_short_friday), stringResource(R.string.schedule_weekday_short_saturday), stringResource(R.string.schedule_weekday_short_sunday))
             }
             
             weekDays.forEach { day ->
@@ -479,7 +481,7 @@ private fun PickerCalendarView(
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                     color = when (day) {
-                        "日", "六" -> MaterialTheme.colorScheme.error
+                        stringResource(R.string.schedule_weekday_short_sunday), stringResource(R.string.schedule_weekday_short_saturday) -> MaterialTheme.colorScheme.error
                         else -> MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 )
@@ -636,7 +638,7 @@ fun CustomDateRangePickerDialog(
                             // 步骤1
                             StepIndicator(
                                 step = 1,
-                                label = "开始日期",
+                                label = stringResource(R.string.schedule_dialog_start_date_label),
                                 isActive = isSelectingStartDate,
                                 isCompleted = startDate != null && !isSelectingStartDate
                             )
@@ -657,7 +659,7 @@ fun CustomDateRangePickerDialog(
                             // 步骤2
                             StepIndicator(
                                 step = 2,
-                                label = "结束日期",
+                                label = stringResource(R.string.schedule_dialog_end_date_label),
                                 isActive = !isSelectingStartDate,
                                 isCompleted = false
                             )
@@ -678,7 +680,7 @@ fun CustomDateRangePickerDialog(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "开始：${startDate!!.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日"))}",
+                                        text = stringResource(R.string.schedule_dialog_start_prefix) + startDate!!.format(DateTimeFormatter.ofPattern(stringResource(R.string.schedule_format_date_pattern_year_month_day))),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
@@ -689,7 +691,7 @@ fun CustomDateRangePickerDialog(
                                             selectedDate = startDate
                                         }
                                     ) {
-                                        Text("修改")
+                                        Text(stringResource(R.string.schedule_dialog_modify))
                                     }
                                 }
                             }
@@ -721,7 +723,7 @@ fun CustomDateRangePickerDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.ChevronLeft,
-                                    contentDescription = "上一月"
+                                    contentDescription = stringResource(R.string.schedule_dialog_previous_month)
                                 )
                             }
                             
@@ -735,7 +737,7 @@ fun CustomDateRangePickerDialog(
                                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                                 )
                                 Text(
-                                    text = "${currentYearMonth.monthValue}月",
+                                    text = stringResource(R.string.schedule_format_month_only, currentYearMonth.monthValue),
                                     style = MaterialTheme.typography.headlineMedium,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -753,7 +755,7 @@ fun CustomDateRangePickerDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.ChevronRight,
-                                    contentDescription = "下一月"
+                                    contentDescription = stringResource(R.string.schedule_dialog_next_month)
                                 )
                             }
                         }
@@ -806,7 +808,7 @@ fun CustomDateRangePickerDialog(
                             },
                             shape = MaterialTheme.shapes.medium
                         ) {
-                            Text("今天")
+                            Text(stringResource(R.string.schedule_calendar_today))
                         }
                         
                         // 操作按钮组
@@ -818,7 +820,7 @@ fun CustomDateRangePickerDialog(
                                 onClick = onDismiss,
                                 shape = MaterialTheme.shapes.medium
                             ) {
-                                Text("取消")
+                                Text(stringResource(R.string.schedule_cancel))
                             }
                             
                             // 下一步/确定按钮
@@ -846,7 +848,7 @@ fun CustomDateRangePickerDialog(
                                 enabled = selectedDate != null,
                                 shape = MaterialTheme.shapes.medium
                             ) {
-                                Text(if (isSelectingStartDate) "下一步" else "确定")
+                                Text(if (isSelectingStartDate) stringResource(R.string.schedule_dialog_next_step) else stringResource(R.string.schedule_confirm))
                             }
                         }
                     }
@@ -964,9 +966,9 @@ private fun RangePickerCalendarView(
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             val weekDays = when (weekStartDay) {
-                DayOfWeek.SUNDAY -> listOf("日", "一", "二", "三", "四", "五", "六")
-                DayOfWeek.MONDAY -> listOf("一", "二", "三", "四", "五", "六", "日")
-                else -> listOf("一", "二", "三", "四", "五", "六", "日")
+                DayOfWeek.SUNDAY -> listOf(stringResource(R.string.schedule_weekday_short_sunday), stringResource(R.string.schedule_weekday_short_monday), stringResource(R.string.schedule_weekday_short_tuesday), stringResource(R.string.schedule_weekday_short_wednesday), stringResource(R.string.schedule_weekday_short_thursday), stringResource(R.string.schedule_weekday_short_friday), stringResource(R.string.schedule_weekday_short_saturday))
+                DayOfWeek.MONDAY -> listOf(stringResource(R.string.schedule_weekday_short_monday), stringResource(R.string.schedule_weekday_short_tuesday), stringResource(R.string.schedule_weekday_short_wednesday), stringResource(R.string.schedule_weekday_short_thursday), stringResource(R.string.schedule_weekday_short_friday), stringResource(R.string.schedule_weekday_short_saturday), stringResource(R.string.schedule_weekday_short_sunday))
+                else -> listOf(stringResource(R.string.schedule_weekday_short_monday), stringResource(R.string.schedule_weekday_short_tuesday), stringResource(R.string.schedule_weekday_short_wednesday), stringResource(R.string.schedule_weekday_short_thursday), stringResource(R.string.schedule_weekday_short_friday), stringResource(R.string.schedule_weekday_short_saturday), stringResource(R.string.schedule_weekday_short_sunday))
             }
             
             weekDays.forEach { day ->
@@ -977,7 +979,7 @@ private fun RangePickerCalendarView(
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                     color = when (day) {
-                        "日", "六" -> MaterialTheme.colorScheme.error
+                        stringResource(R.string.schedule_weekday_short_sunday), stringResource(R.string.schedule_weekday_short_saturday) -> MaterialTheme.colorScheme.error
                         else -> MaterialTheme.colorScheme.onSurfaceVariant
                     }
                 )
@@ -1072,7 +1074,7 @@ private fun RangeDateCell(
         // 开始/结束标记
         if (isStartDate || isEndDate) {
             Text(
-                text = if (isStartDate) "始" else "终",
+                text = if (isStartDate) stringResource(R.string.schedule_dialog_date_start_mark) else stringResource(R.string.schedule_dialog_date_end_mark),
                 style = MaterialTheme.typography.labelSmall,
                 fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.onPrimary,
@@ -1131,7 +1133,7 @@ fun CustomYearMonthPickerDialog(
                 ) {
                     // 标题
                     Text(
-                        text = "选择年月",
+                        text = stringResource(R.string.schedule_dialog_select_year_month),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Medium,
                         modifier = Modifier.fillMaxWidth(),
@@ -1163,7 +1165,7 @@ fun CustomYearMonthPickerDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.ChevronLeft,
-                                    contentDescription = "上一年"
+                                    contentDescription = stringResource(R.string.schedule_dialog_previous_year)
                                 )
                             }
                             
@@ -1172,12 +1174,12 @@ fun CustomYearMonthPickerDialog(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    text = "年份",
+                                    text = stringResource(R.string.schedule_dialog_year),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                                 )
                                 Text(
-                                    text = "${selectedYear}年",
+                                    text = stringResource(R.string.schedule_format_year_only, selectedYear),
                                     style = MaterialTheme.typography.headlineMedium,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -1195,7 +1197,7 @@ fun CustomYearMonthPickerDialog(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.ChevronRight,
-                                    contentDescription = "下一年"
+                                    contentDescription = stringResource(R.string.schedule_dialog_next_year)
                                 )
                             }
                         }
@@ -1215,7 +1217,7 @@ fun CustomYearMonthPickerDialog(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
-                                text = "月份",
+                                text = stringResource(R.string.schedule_dialog_month),
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -1256,7 +1258,7 @@ fun CustomYearMonthPickerDialog(
                             },
                             shape = MaterialTheme.shapes.medium
                         ) {
-                            Text("今天")
+                            Text(stringResource(R.string.schedule_calendar_today))
                         }
                         
                         // 操作按钮组
@@ -1268,7 +1270,7 @@ fun CustomYearMonthPickerDialog(
                                 onClick = onDismiss,
                                 shape = MaterialTheme.shapes.medium
                             ) {
-                                Text("取消")
+                                Text(stringResource(R.string.schedule_cancel))
                             }
                             
                             // 确定按钮
@@ -1280,7 +1282,7 @@ fun CustomYearMonthPickerDialog(
                                 },
                                 shape = MaterialTheme.shapes.medium
                             ) {
-                                Text("确定")
+                                Text(stringResource(R.string.schedule_confirm))
                             }
                         }
                     }
@@ -1300,9 +1302,9 @@ private fun MonthGridItem(
     onClick: () -> Unit
 ) {
     val monthNames = listOf(
-        "一月", "二月", "三月", "四月",
-        "五月", "六月", "七月", "八月",
-        "九月", "十月", "十一月", "十二月"
+        stringResource(R.string.schedule_month_january), stringResource(R.string.schedule_month_february), stringResource(R.string.schedule_month_march), stringResource(R.string.schedule_month_april),
+        stringResource(R.string.schedule_month_may), stringResource(R.string.schedule_month_june), stringResource(R.string.schedule_month_july), stringResource(R.string.schedule_month_august),
+        stringResource(R.string.schedule_month_september), stringResource(R.string.schedule_month_october), stringResource(R.string.schedule_month_november), stringResource(R.string.schedule_month_december)
     )
     
     Surface(
@@ -1403,7 +1405,7 @@ fun CustomTimePickerDialog(
                 ) {
                     // 标题
                     Text(
-                        text = "选择时间",
+                        text = stringResource(R.string.schedule_dialog_select_time),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Medium
                     )
@@ -1433,7 +1435,7 @@ fun CustomTimePickerDialog(
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                                 Text(
-                                    text = "时",
+                                    text = stringResource(R.string.schedule_dialog_hour),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                                 )
@@ -1458,7 +1460,7 @@ fun CustomTimePickerDialog(
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                                 Text(
-                                    text = "分",
+                                    text = stringResource(R.string.schedule_dialog_minute),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                                 )
@@ -1515,7 +1517,7 @@ fun CustomTimePickerDialog(
                             },
                             shape = MaterialTheme.shapes.medium
                         ) {
-                            Text("当前时间")
+                            Text(stringResource(R.string.schedule_dialog_current_time))
                         }
                         
                         // 操作按钮组
@@ -1527,7 +1529,7 @@ fun CustomTimePickerDialog(
                                 onClick = onDismiss,
                                 shape = MaterialTheme.shapes.medium
                             ) {
-                                Text("取消")
+                                Text(stringResource(R.string.schedule_cancel))
                             }
                             
                             // 确定按钮
@@ -1540,7 +1542,7 @@ fun CustomTimePickerDialog(
                                 },
                                 shape = MaterialTheme.shapes.medium
                             ) {
-                                Text("确定")
+                                Text(stringResource(R.string.schedule_confirm))
                             }
                         }
                     }

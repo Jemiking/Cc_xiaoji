@@ -18,6 +18,8 @@ import com.ccxiaoji.feature.schedule.presentation.components.QuickShiftSelector
 import com.ccxiaoji.feature.schedule.presentation.components.CustomYearMonthPickerDialog
 import com.ccxiaoji.feature.schedule.presentation.viewmodel.CalendarViewModel
 import com.ccxiaoji.feature.schedule.presentation.viewmodel.CalendarViewMode
+import androidx.compose.ui.res.stringResource
+import com.ccxiaoji.feature.schedule.R
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -65,7 +67,7 @@ fun CalendarScreen(
                     ) {
                         Text(
                             text = currentYearMonth.format(
-                                DateTimeFormatter.ofPattern("yyyy年MM月")
+                                DateTimeFormatter.ofPattern(stringResource(R.string.schedule_calendar_date_format_year_month))
                             ),
                             style = MaterialTheme.typography.headlineSmall
                         )
@@ -74,14 +76,14 @@ fun CalendarScreen(
                 actions = {
                     IconButton(onClick = { viewModel.navigateToToday() }) {
                         Text(
-                            text = "今",
+                            text = stringResource(R.string.schedule_calendar_today_short),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
                     }
                     Box {
                         IconButton(onClick = { showDropdownMenu = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "更多")
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.schedule_calendar_more))
                         }
                         DropdownMenu(
                             expanded = showDropdownMenu,
@@ -102,9 +104,9 @@ fun CalendarScreen(
                                         )
                                         Text(
                                             if (viewMode == CalendarViewMode.COMPACT) 
-                                                "舒适模式" 
+                                                stringResource(R.string.schedule_calendar_view_mode_comfortable) 
                                             else 
-                                                "紧凑模式"
+                                                stringResource(R.string.schedule_calendar_view_mode_compact)
                                         )
                                     }
                                 },
@@ -120,7 +122,7 @@ fun CalendarScreen(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Icon(Icons.Default.Analytics, contentDescription = null)
-                                        Text("统计分析")
+                                        Text(stringResource(R.string.schedule_calendar_statistics_analysis))
                                     }
                                 },
                                 onClick = {
@@ -135,7 +137,7 @@ fun CalendarScreen(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Icon(Icons.Default.DateRange, contentDescription = null)
-                                        Text("批量排班")
+                                        Text(stringResource(R.string.schedule_calendar_batch_schedule))
                                     }
                                 },
                                 onClick = {
@@ -150,7 +152,7 @@ fun CalendarScreen(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         Icon(Icons.Default.Settings, contentDescription = null)
-                                        Text("设置")
+                                        Text(stringResource(R.string.schedule_calendar_settings))
                                     }
                                 },
                                 onClick = {
@@ -170,7 +172,7 @@ fun CalendarScreen(
                     FloatingActionButton(
                         onClick = { onNavigateToScheduleEdit(date) }
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = "添加排班")
+                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.schedule_calendar_add_schedule))
                     }
                 }
             }
@@ -194,9 +196,9 @@ fun CalendarScreen(
                             .padding(16.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        StatisticItem("工作天数", "${stats.workDays}天")
-                        StatisticItem("休息天数", "${stats.restDays}天")
-                        StatisticItem("总工时", "${stats.totalHours.toInt()}小时")
+                        StatisticItem(stringResource(R.string.schedule_calendar_work_days), stringResource(R.string.schedule_calendar_days_format, stats.workDays))
+                        StatisticItem(stringResource(R.string.schedule_calendar_rest_days), stringResource(R.string.schedule_calendar_days_format, stats.restDays))
+                        StatisticItem(stringResource(R.string.schedule_calendar_total_hours), stringResource(R.string.schedule_calendar_hours_int_format, stats.totalHours.toInt()))
                     }
                 }
             }
@@ -345,7 +347,7 @@ private fun SelectedDateDetailCard(
             ) {
                 Column {
                     Text(
-                        text = date.format(DateTimeFormatter.ofPattern("yyyy年MM月dd日")),
+                        text = date.format(DateTimeFormatter.ofPattern(stringResource(R.string.schedule_calendar_date_format_full))),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -367,7 +369,7 @@ private fun SelectedDateDetailCard(
                         ) {
                             Icon(
                                 Icons.Default.Delete,
-                                contentDescription = "删除排班",
+                                contentDescription = stringResource(R.string.schedule_calendar_delete_schedule),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -378,7 +380,7 @@ private fun SelectedDateDetailCard(
                     ) {
                         Icon(
                             Icons.Default.Edit,
-                            contentDescription = "编辑排班"
+                            contentDescription = stringResource(R.string.schedule_calendar_edit_schedule)
                         )
                     }
                 }
@@ -424,7 +426,7 @@ private fun SelectedDateDetailCard(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "工时：${String.format("%.1f", schedule.shift.duration)}小时",
+                                text = stringResource(R.string.schedule_calendar_work_hours) + stringResource(R.string.schedule_calendar_hours_format, schedule.shift.duration),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -440,7 +442,7 @@ private fun SelectedDateDetailCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "当日无排班",
+                        text = stringResource(R.string.schedule_calendar_no_schedule),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

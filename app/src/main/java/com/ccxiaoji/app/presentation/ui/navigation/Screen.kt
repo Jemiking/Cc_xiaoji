@@ -159,3 +159,33 @@ object FeedbackRoute {
 object AboutRoute {
     const val route = "about"
 }
+
+// Schedule module routes
+object ShiftManageRoute {
+    const val route = "shift_manage"
+}
+
+object ScheduleEditRoute {
+    const val route = "schedule_edit/{date}"
+    fun createRoute(date: String) = "schedule_edit/$date"
+}
+
+object SchedulePatternRoute {
+    const val route = "schedule_pattern"
+}
+
+object ScheduleStatisticsRoute {
+    const val route = "schedule_statistics"
+}
+
+object ScheduleSettingsRoute {
+    const val route = "schedule_settings"
+}
+
+object ScheduleExportRoute {
+    const val route = "schedule_export"
+}
+
+object ScheduleAboutRoute {
+    const val route = "schedule_about"
+}

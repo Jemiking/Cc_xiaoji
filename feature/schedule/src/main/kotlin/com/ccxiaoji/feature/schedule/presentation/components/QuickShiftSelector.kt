@@ -13,9 +13,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.ccxiaoji.feature.schedule.R
 import com.ccxiaoji.feature.schedule.domain.model.Shift
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -54,12 +56,12 @@ fun QuickShiftSelector(
                 ) {
                     Column {
                         Text(
-                            text = "快速选择班次",
+                            text = stringResource(R.string.schedule_dialog_quick_select_shift),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = selectedDate.format(DateTimeFormatter.ofPattern("MM月dd日 EEEE")),
+                            text = selectedDate.format(DateTimeFormatter.ofPattern(stringResource(R.string.schedule_format_date_pattern_month_day))),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -68,7 +70,7 @@ fun QuickShiftSelector(
                     IconButton(onClick = onDismiss) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "关闭"
+                            contentDescription = stringResource(R.string.schedule_dialog_close)
                         )
                     }
                 }
@@ -107,7 +109,7 @@ fun QuickShiftSelector(
                             .fillMaxWidth()
                             .padding(top = 8.dp)
                     ) {
-                        Text("更多班次...")
+                        Text(stringResource(R.string.schedule_dialog_more_shifts))
                     }
                 }
             }
@@ -204,7 +206,7 @@ private fun QuickShiftOption(
                     }
                     
                     Text(
-                        text = "清除排班",
+                        text = stringResource(R.string.schedule_dialog_clear_schedule),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium
                     )
@@ -215,7 +217,7 @@ private fun QuickShiftOption(
             if (isSelected) {
                 Icon(
                     imageVector = Icons.Default.Check,
-                    contentDescription = "已选中",
+                    contentDescription = stringResource(R.string.schedule_dialog_selected),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }

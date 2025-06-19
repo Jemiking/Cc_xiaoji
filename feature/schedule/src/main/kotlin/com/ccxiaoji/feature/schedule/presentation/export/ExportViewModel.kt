@@ -25,6 +25,7 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 import javax.inject.Inject
+import android.app.Application
 
 /**
  * 数据导出界面的ViewModel
@@ -33,7 +34,8 @@ import javax.inject.Inject
 class ExportViewModel @Inject constructor(
     private val exportScheduleDataUseCase: ExportScheduleDataUseCase,
     private val exportHistoryDao: ExportHistoryDao,
-    private val themeManager: ThemeManager
+    private val themeManager: ThemeManager,
+    private val application: Application
 ) : ViewModel() {
     
     // UI状态
@@ -142,7 +144,7 @@ class ExportViewModel @Inject constructor(
                         _uiState.update {
                             it.copy(
                                 isLoading = false,
-                                errorMessage = exception.message ?: "导出失败"
+                                errorMessage = exception.message ?: application.getString(com.ccxiaoji.feature.schedule.R.string.schedule_export_failed)
                             )
                         }
                     }
@@ -151,7 +153,7 @@ class ExportViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         isLoading = false,
-                        errorMessage = e.message ?: "导出失败"
+                        errorMessage = e.message ?: application.getString(com.ccxiaoji.feature.schedule.R.string.schedule_export_failed)
                     )
                 }
             }
@@ -183,7 +185,7 @@ class ExportViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(errorMessage = "删除文件失败: ${e.message}")
+                    it.copy(errorMessage = application.getString(com.ccxiaoji.feature.schedule.R.string.schedule_export_delete_failed, e.message ?: ""))
                 }
             }
         }

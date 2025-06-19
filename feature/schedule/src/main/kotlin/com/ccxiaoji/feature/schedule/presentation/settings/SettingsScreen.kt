@@ -17,6 +17,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.stringResource
+import com.ccxiaoji.feature.schedule.R
 import com.ccxiaoji.feature.schedule.presentation.components.TimePickerDialog
 import java.time.DayOfWeek
 
@@ -71,13 +73,13 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { showWeekStartDayDialog = false },
             title = {
-                Text("选择每周起始日")
+                Text(stringResource(R.string.schedule_settings_week_start_dialog_title))
             },
             text = {
                 Column {
                     val weekDays = listOf(
-                        DayOfWeek.MONDAY to "星期一",
-                        DayOfWeek.SUNDAY to "星期日"
+                        DayOfWeek.MONDAY to stringResource(R.string.schedule_settings_week_start_monday),
+                        DayOfWeek.SUNDAY to stringResource(R.string.schedule_settings_week_start_sunday)
                     )
                     
                     weekDays.forEach { (dayOfWeek, displayName) ->
@@ -108,7 +110,7 @@ fun SettingsScreen(
                 TextButton(
                     onClick = { showWeekStartDayDialog = false }
                 ) {
-                    Text("取消")
+                    Text(stringResource(R.string.schedule_cancel))
                 }
             }
         )
@@ -118,8 +120,8 @@ fun SettingsScreen(
     if (showClearDataDialog) {
         AlertDialog(
             onDismissRequest = { showClearDataDialog = false },
-            title = { Text("确认清除所有数据") },
-            text = { Text("此操作将删除所有班次和排班数据，且无法恢复。是否确定继续？") },
+            title = { Text(stringResource(R.string.schedule_settings_confirm_clear_title)) },
+            text = { Text(stringResource(R.string.schedule_settings_confirm_clear_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -127,12 +129,12 @@ fun SettingsScreen(
                         showClearDataDialog = false
                     }
                 ) {
-                    Text("确定", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.schedule_confirm), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearDataDialog = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.schedule_cancel))
                 }
             }
         )
@@ -142,8 +144,8 @@ fun SettingsScreen(
     if (showBackupLocationDialog) {
         AlertDialog(
             onDismissRequest = { showBackupLocationDialog = false },
-            title = { Text("选择备份位置") },
-            text = { Text("请选择备份文件的保存位置") },
+            title = { Text(stringResource(R.string.schedule_settings_backup_location_dialog_title)) },
+            text = { Text(stringResource(R.string.schedule_settings_backup_location_dialog_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -151,7 +153,7 @@ fun SettingsScreen(
                         showBackupLocationDialog = false
                     }
                 ) {
-                    Text("选择外部存储")
+                    Text(stringResource(R.string.schedule_settings_backup_external))
                 }
             },
             dismissButton = {
@@ -161,7 +163,7 @@ fun SettingsScreen(
                         showBackupLocationDialog = false
                     }
                 ) {
-                    Text("备份到应用内部")
+                    Text(stringResource(R.string.schedule_settings_backup_internal))
                 }
             }
         )
@@ -170,10 +172,10 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("设置") },
+                title = { Text(stringResource(R.string.schedule_settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.schedule_back))
                     }
                 }
             )
@@ -187,14 +189,14 @@ fun SettingsScreen(
         ) {
             // 通用设置
             item {
-                SettingsCategoryHeader("通用")
+                SettingsCategoryHeader(stringResource(R.string.schedule_settings_general))
             }
             
             item {
                 SettingsItem(
                     icon = Icons.Default.Schedule,
-                    title = "班次管理",
-                    subtitle = "添加、编辑班次信息",
+                    title = stringResource(R.string.schedule_settings_shift_manage),
+                    subtitle = stringResource(R.string.schedule_settings_shift_manage_subtitle),
                     onClick = onNavigateToShiftManage
                 )
             }
@@ -202,8 +204,8 @@ fun SettingsScreen(
             item {
                 SettingsItem(
                     icon = Icons.Default.Notifications,
-                    title = "排班提醒",
-                    subtitle = if (uiState.notificationEnabled) "已开启" else "已关闭",
+                    title = stringResource(R.string.schedule_settings_reminder),
+                    subtitle = if (uiState.notificationEnabled) stringResource(R.string.schedule_settings_reminder_enabled) else stringResource(R.string.schedule_settings_reminder_disabled),
                     onClick = { }
                 ) {
                     Switch(
@@ -216,7 +218,7 @@ fun SettingsScreen(
             item {
                 SettingsItem(
                     icon = Icons.Default.AccessTime,
-                    title = "提醒时间",
+                    title = stringResource(R.string.schedule_settings_reminder_time),
                     subtitle = uiState.notificationTime,
                     enabled = uiState.notificationEnabled,
                     onClick = {
@@ -230,7 +232,7 @@ fun SettingsScreen(
             item {
                 SettingsItem(
                     icon = Icons.Default.Weekend,
-                    title = "每周起始日",
+                    title = stringResource(R.string.schedule_settings_week_start),
                     subtitle = uiState.weekStartDay,
                     onClick = {
                         showWeekStartDayDialog = true
@@ -241,14 +243,14 @@ fun SettingsScreen(
             // 数据管理
             item {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                SettingsCategoryHeader("数据管理")
+                SettingsCategoryHeader(stringResource(R.string.schedule_settings_data_management))
             }
             
             item {
                 SettingsItem(
                     icon = Icons.Default.CloudUpload,
-                    title = "自动备份",
-                    subtitle = if (uiState.autoBackupEnabled) "已开启" else "已关闭",
+                    title = stringResource(R.string.schedule_settings_auto_backup),
+                    subtitle = if (uiState.autoBackupEnabled) stringResource(R.string.schedule_settings_reminder_enabled) else stringResource(R.string.schedule_settings_reminder_disabled),
                     onClick = { }
                 ) {
                     Switch(
@@ -261,8 +263,8 @@ fun SettingsScreen(
             item {
                 SettingsItem(
                     icon = Icons.Default.Backup,
-                    title = "立即备份",
-                    subtitle = uiState.lastBackupTime?.let { "上次备份: $it" } ?: "从未备份",
+                    title = stringResource(R.string.schedule_settings_backup_now),
+                    subtitle = uiState.lastBackupTime?.let { stringResource(R.string.schedule_settings_last_backup, it) } ?: stringResource(R.string.schedule_settings_never_backup),
                     onClick = {
                         showBackupLocationDialog = true
                     }
@@ -272,8 +274,8 @@ fun SettingsScreen(
             item {
                 SettingsItem(
                     icon = Icons.Default.Restore,
-                    title = "恢复数据",
-                    subtitle = "从备份文件恢复数据",
+                    title = stringResource(R.string.schedule_settings_restore_data),
+                    subtitle = stringResource(R.string.schedule_settings_restore_data_subtitle),
                     onClick = {
                         restoreLauncher.launch(arrayOf("application/octet-stream", "*/*"))
                     }
@@ -283,8 +285,8 @@ fun SettingsScreen(
             item {
                 SettingsItem(
                     icon = Icons.Default.Delete,
-                    title = "清除所有数据",
-                    subtitle = "删除所有班次和排班数据",
+                    title = stringResource(R.string.schedule_settings_clear_data),
+                    subtitle = stringResource(R.string.schedule_settings_clear_data_subtitle),
                     onClick = {
                         showClearDataDialog = true
                     }
@@ -294,14 +296,14 @@ fun SettingsScreen(
             // 外观
             item {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                SettingsCategoryHeader("外观")
+                SettingsCategoryHeader(stringResource(R.string.schedule_settings_appearance))
             }
             
             item {
                 SettingsItem(
                     icon = Icons.Default.DarkMode,
-                    title = "深色模式",
-                    subtitle = if (uiState.isDarkMode) "已开启" else "已关闭",
+                    title = stringResource(R.string.schedule_settings_dark_mode),
+                    subtitle = if (uiState.isDarkMode) stringResource(R.string.schedule_settings_reminder_enabled) else stringResource(R.string.schedule_settings_reminder_disabled),
                     onClick = { }
                 ) {
                     Switch(
@@ -314,8 +316,8 @@ fun SettingsScreen(
             item {
                 SettingsItem(
                     icon = Icons.Default.ColorLens,
-                    title = "主题颜色",
-                    subtitle = "自定义应用主题颜色",
+                    title = stringResource(R.string.schedule_settings_theme_color),
+                    subtitle = stringResource(R.string.schedule_settings_theme_color_subtitle),
                     onClick = {
                         // TODO: 显示颜色选择器
                     }
@@ -325,14 +327,14 @@ fun SettingsScreen(
             // 关于
             item {
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-                SettingsCategoryHeader("关于")
+                SettingsCategoryHeader(stringResource(R.string.schedule_settings_about))
             }
             
             item {
                 SettingsItem(
                     icon = Icons.Default.Info,
-                    title = "关于 CC小记排班",
-                    subtitle = "版本 ${uiState.appVersion}",
+                    title = stringResource(R.string.schedule_settings_about_app),
+                    subtitle = stringResource(R.string.schedule_settings_version, uiState.appVersion),
                     onClick = onNavigateToAbout
                 )
             }
@@ -340,8 +342,8 @@ fun SettingsScreen(
             item {
                 SettingsItem(
                     icon = Icons.Default.Share,
-                    title = "分享应用",
-                    subtitle = "推荐给朋友",
+                    title = stringResource(R.string.schedule_settings_share_app),
+                    subtitle = stringResource(R.string.schedule_settings_share_app_subtitle),
                     onClick = {
                         // TODO: 分享应用
                     }
@@ -351,8 +353,8 @@ fun SettingsScreen(
             item {
                 SettingsItem(
                     icon = Icons.Default.Star,
-                    title = "评价应用",
-                    subtitle = "在应用商店评价",
+                    title = stringResource(R.string.schedule_settings_rate_app),
+                    subtitle = stringResource(R.string.schedule_settings_rate_app_subtitle),
                     onClick = {
                         // TODO: 跳转到应用商店
                     }
@@ -387,11 +389,11 @@ fun SettingsScreen(
     uiState.errorMessage?.let { message ->
         AlertDialog(
             onDismissRequest = { viewModel.clearErrorMessage() },
-            title = { Text("错误") },
+            title = { Text(stringResource(R.string.schedule_settings_error_title)) },
             text = { Text(message) },
             confirmButton = {
                 TextButton(onClick = { viewModel.clearErrorMessage() }) {
-                    Text("确定")
+                    Text(stringResource(R.string.schedule_confirm))
                 }
             }
         )
