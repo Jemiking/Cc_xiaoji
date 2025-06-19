@@ -64,6 +64,26 @@ fun NavGraph(
             HabitScreen()
         }
         
+        composable(Screen.Schedule.route) {
+            com.ccxiaoji.feature.schedule.presentation.calendar.CalendarScreen(
+                onNavigateToShiftManage = {
+                    // TODO: Navigate to shift management
+                },
+                onNavigateToScheduleEdit = { date ->
+                    // TODO: Navigate to schedule edit
+                },
+                onNavigateToSchedulePattern = {
+                    // TODO: Navigate to batch scheduling
+                },
+                onNavigateToStatistics = {
+                    // TODO: Navigate to statistics
+                },
+                onNavigateToSettings = {
+                    // TODO: Navigate to settings
+                }
+            )
+        }
+        
         composable(Screen.Profile.route) {
             ProfileScreen(navController = navController)
         }

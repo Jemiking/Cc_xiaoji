@@ -32,6 +32,13 @@ import com.ccxiaoji.feature.todo.data.local.entity.TaskEntity
 import com.ccxiaoji.feature.habit.data.local.dao.HabitDao
 import com.ccxiaoji.feature.habit.data.local.entity.HabitEntity
 import com.ccxiaoji.feature.habit.data.local.entity.HabitRecordEntity
+import com.ccxiaoji.feature.schedule.data.local.dao.ShiftDao
+import com.ccxiaoji.feature.schedule.data.local.dao.ScheduleDao
+import com.ccxiaoji.feature.schedule.data.local.dao.ExportHistoryDao
+import com.ccxiaoji.feature.schedule.data.local.entity.ShiftEntity
+import com.ccxiaoji.feature.schedule.data.local.entity.ScheduleEntity
+import com.ccxiaoji.feature.schedule.data.local.entity.ExportHistoryEntity
+import com.ccxiaoji.feature.schedule.data.local.entity.PatternEntity
 
 // TODO: 这是临时文件，待所有模块迁移完成后删除
 @Database(
@@ -50,9 +57,13 @@ import com.ccxiaoji.feature.habit.data.local.entity.HabitRecordEntity
         SavingsGoalEntity::class,
         SavingsContributionEntity::class,
         CreditCardPaymentEntity::class,
-        CreditCardBillEntity::class
+        CreditCardBillEntity::class,
+        ShiftEntity::class,
+        ScheduleEntity::class,
+        ExportHistoryEntity::class,
+        PatternEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -70,4 +81,7 @@ abstract class CcDatabase : RoomDatabase() {
     abstract fun savingsGoalDao(): SavingsGoalDao
     abstract fun creditCardPaymentDao(): CreditCardPaymentDao
     abstract fun creditCardBillDao(): CreditCardBillDao
+    abstract fun shiftDao(): ShiftDao
+    abstract fun scheduleDao(): ScheduleDao
+    abstract fun exportHistoryDao(): ExportHistoryDao
 }

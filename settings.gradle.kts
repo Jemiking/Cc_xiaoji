@@ -40,6 +40,7 @@ include(":shared:notification")
 include(":feature:todo")
 include(":feature:habit")
 include(":feature:ledger")
+include(":feature:schedule")
 
 // Check Java version
 val javaVersion = JavaVersion.current()

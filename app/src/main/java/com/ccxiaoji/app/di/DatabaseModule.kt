@@ -145,4 +145,13 @@ object DatabaseModule {
     
     @Provides
     fun provideCreditCardBillDao(database: CcDatabase): CreditCardBillDao = database.creditCardBillDao()
+    
+    @Provides
+    fun provideShiftDao(database: CcDatabase): com.ccxiaoji.feature.schedule.data.local.dao.ShiftDao = database.shiftDao()
+    
+    @Provides
+    fun provideScheduleDao(database: CcDatabase): com.ccxiaoji.feature.schedule.data.local.dao.ScheduleDao = database.scheduleDao()
+    
+    @Provides
+    fun provideExportHistoryDao(database: CcDatabase): com.ccxiaoji.feature.schedule.data.local.dao.ExportHistoryDao = database.exportHistoryDao()
 }

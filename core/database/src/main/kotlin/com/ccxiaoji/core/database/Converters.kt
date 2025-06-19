@@ -46,4 +46,29 @@ class Converters {
     fun toLocalDateTime(dateTimeString: String?): LocalDateTime? {
         return dateTimeString?.let { LocalDateTime.parse(it) }
     }
+    
+    // Schedule module date converters (Long <-> LocalDate/LocalDateTime)
+    @TypeConverter
+    fun fromTimestamp(value: Long?): LocalDate? {
+        return value?.let {
+            LocalDateTime.ofEpochSecond(it / 1000, 0, java.time.ZoneOffset.UTC).toLocalDate()
+        }
+    }
+    
+    @TypeConverter
+    fun dateToTimestamp(date: LocalDate?): Long? {
+        return date?.atStartOfDay()?.toInstant(java.time.ZoneOffset.UTC)?.toEpochMilli()
+    }
+    
+    @TypeConverter
+    fun fromLocalDateTimeLong(value: Long?): LocalDateTime? {
+        return value?.let {
+            LocalDateTime.ofEpochSecond(it / 1000, 0, java.time.ZoneOffset.UTC)
+        }
+    }
+    
+    @TypeConverter
+    fun localDateTimeToTimestamp(dateTime: LocalDateTime?): Long? {
+        return dateTime?.toInstant(java.time.ZoneOffset.UTC)?.toEpochMilli()
+    }
 }

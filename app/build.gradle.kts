@@ -36,6 +36,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "17"
@@ -73,6 +74,7 @@ dependencies {
     implementation(project(":feature:todo"))
     implementation(project(":feature:habit"))
     implementation(project(":feature:ledger"))
+    implementation(project(":feature:schedule"))
     
     // Core modules needed for app-specific functionality
     implementation(project(":core:network")) // For TokenProvider
@@ -118,6 +120,9 @@ dependencies {
     
     // Gson
     implementation("com.google.code.gson:gson:2.10.1")
+    
+    // Desugaring for Java 8+ APIs
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     
     // Testing
     testImplementation("junit:junit:4.13.2")

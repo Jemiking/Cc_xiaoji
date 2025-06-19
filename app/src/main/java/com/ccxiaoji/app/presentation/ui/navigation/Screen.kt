@@ -41,6 +41,13 @@ sealed class Screen(
         unselectedIcon = Icons.Outlined.EmojiEvents
     )
     
+    object Schedule : Screen(
+        route = "schedule",
+        titleRes = R.string.nav_schedule,
+        selectedIcon = Icons.Filled.CalendarMonth,
+        unselectedIcon = Icons.Outlined.CalendarMonth
+    )
+    
     object Profile : Screen(
         route = "profile",
         titleRes = R.string.nav_profile,
@@ -54,6 +61,7 @@ val bottomNavItems = listOf(
     Screen.Ledger,
     Screen.Todo,
     Screen.Habit,
+    Screen.Schedule,
     Screen.Profile
 )
 

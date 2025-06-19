@@ -6,6 +6,7 @@
     <string name="nav_ledger">记账</string>
     <string name="nav_todo">待办</string>
     <string name="nav_habit">习惯</string>
+    <string name="nav_schedule">排班</string>
     <string name="nav_profile">我的</string>
     
     <!-- Common -->
