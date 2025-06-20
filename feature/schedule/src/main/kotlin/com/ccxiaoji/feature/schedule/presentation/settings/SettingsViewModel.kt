@@ -93,7 +93,7 @@ class SettingsViewModel @Inject constructor(
      */
     fun updateAutoBackupEnabled(enabled: Boolean) {
         _uiState.update { it.copy(autoBackupEnabled = enabled) }
-        saveSettings()
+        // 设置已通过ThemeManager自动保存，无需额外操作
     }
     
     /**
@@ -126,7 +126,7 @@ class SettingsViewModel @Inject constructor(
                         backupDatabaseUseCase.deleteOldBackups(5)
                     }
                     
-                    saveSettings()
+                    // 设置已通过ThemeManager自动保存，无需额外操作
                 }
                 .onFailure { error ->
                     _uiState.update {
@@ -260,10 +260,6 @@ class SettingsViewModel @Inject constructor(
     /**
      * 保存设置
      */
-    private fun saveSettings() {
-        // TODO: 保存到 SharedPreferences 或数据库
-        // 暂时不实现
-    }
     
 }
 

@@ -111,6 +111,8 @@ class ScheduleRepositoryImpl @Inject constructor(
     override suspend fun createSchedulesByPattern(pattern: SchedulePattern) {
         // 此方法的实现由 CreateScheduleUseCase 处理
         // Repository 只负责基础的数据存储
+        // 该方法在Repository层不需要实现，直接返回
+        throw NotImplementedError("批量创建排班应使用CreateScheduleUseCase，而不是直接调用Repository方法")
     }
     
     override suspend fun deleteScheduleByDate(date: LocalDate) {

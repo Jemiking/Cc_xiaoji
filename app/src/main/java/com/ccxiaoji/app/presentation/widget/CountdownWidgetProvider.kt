@@ -19,11 +19,15 @@ class CountdownWidgetProvider : AppWidgetProvider() {
     }
 
     override fun onEnabled(context: Context) {
-        // Enter relevant functionality for when the first widget is created
+        // 第一个小组件被添加时调用
+        // 可以在这里初始化定时器或注册监听器
+        super.onEnabled(context)
     }
 
     override fun onDisabled(context: Context) {
-        // Enter relevant functionality for when the last widget is disabled
+        // 最后一个小组件被移除时调用
+        // 可以在这里清理资源或取消监听器
+        super.onDisabled(context)
     }
     
     companion object {

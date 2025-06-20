@@ -7,6 +7,7 @@ import com.ccxiaoji.common.model.SyncStatus
 import com.ccxiaoji.feature.habit.domain.model.Habit
 import com.ccxiaoji.feature.habit.domain.model.HabitRecord
 import com.ccxiaoji.feature.habit.domain.model.HabitWithStreak
+import com.ccxiaoji.feature.habit.domain.repository.HabitRepository
 import com.ccxiaoji.shared.user.api.UserApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -22,20 +23,20 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class HabitRepository @Inject constructor(
+class HabitRepositoryImpl @Inject constructor(
     private val habitDao: HabitDao,
     private val userApi: UserApi
-) {
-    fun getHabits(): Flow<List<Habit>> {
+) : HabitRepository {
+    override fun getHabits(): Flow<List<Habit>> {
         return habitDao.getHabitsByUser(userApi.getCurrentUserId())
             .map { entities -> entities.map { it.toDomainModel() } }
     }
     
-    fun getActiveHabitsCount(): Flow<Int> {
+    override fun getActiveHabitsCount(): Flow<Int> {
         return getHabits().map { it.size }
     }
     
-    fun getTodayCheckedHabitsCount(): Flow<Int> {
+    override fun getTodayCheckedHabitsCount(): Flow<Int> {
         val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
         val todayStart = today.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
@@ -48,12 +49,12 @@ class HabitRepository @Inject constructor(
         }
     }
     
-    fun searchHabits(query: String): Flow<List<Habit>> {
+    override fun searchHabits(query: String): Flow<List<Habit>> {
         return habitDao.searchHabits(userApi.getCurrentUserId(), "%$query%")
             .map { entities -> entities.map { it.toDomainModel() } }
     }
     
-    fun getHabitsWithStreaks(): Flow<List<HabitWithStreak>> {
+    override fun getHabitsWithStreaks(): Flow<List<HabitWithStreak>> {
         return getHabits().flatMapLatest { habits ->
             flow {
                 val habitsWithStreaks = habits.map { habit ->
@@ -108,13 +109,13 @@ class HabitRepository @Inject constructor(
         return maxStreak
     }
     
-    suspend fun createHabit(
+    override suspend fun createHabit(
         title: String,
-        description: String? = null,
-        period: String = "daily",
-        target: Int = 1,
-        color: String = "#3A7AFE",
-        icon: String? = null
+        description: String?,
+        period: String,
+        target: Int,
+        color: String,
+        icon: String?
     ): Habit {
         val habitId = UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
@@ -140,14 +141,14 @@ class HabitRepository @Inject constructor(
         return entity.toDomainModel()
     }
     
-    suspend fun updateHabit(
+    override suspend fun updateHabit(
         habitId: String,
         title: String,
-        description: String? = null,
-        period: String = "daily",
-        target: Int = 1,
-        color: String = "#3A7AFE",
-        icon: String? = null
+        description: String?,
+        period: String,
+        target: Int,
+        color: String,
+        icon: String?
     ) {
         val existingHabit = habitDao.getHabitById(habitId) ?: return
         
@@ -168,7 +169,7 @@ class HabitRepository @Inject constructor(
         // TODO: Log the change for sync through ChangeLogApi
     }
     
-    suspend fun checkInHabit(habitId: String, date: LocalDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date) {
+    override suspend fun checkInHabit(habitId: String, date: LocalDate) {
         val recordDate = date.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
         // Check if already checked in today
@@ -203,7 +204,7 @@ class HabitRepository @Inject constructor(
         }
     }
     
-    suspend fun deleteHabit(habitId: String) {
+    override suspend fun deleteHabit(habitId: String) {
         val now = System.currentTimeMillis()
         
         habitDao.softDeleteHabit(habitId, now)

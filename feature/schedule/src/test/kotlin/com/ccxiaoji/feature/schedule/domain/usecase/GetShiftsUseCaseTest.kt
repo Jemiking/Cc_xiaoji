@@ -1,8 +1,7 @@
 package com.ccxiaoji.feature.schedule.domain.usecase
 
-import com.ccxiaoji.feature.schedule.data.repository.ShiftRepository
 import com.ccxiaoji.feature.schedule.domain.model.Shift
-import com.ccxiaoji.feature.schedule.domain.model.ShiftType
+import com.ccxiaoji.feature.schedule.domain.repository.ScheduleRepository
 import com.google.common.truth.Truth.assertThat
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery
@@ -11,187 +10,106 @@ import io.mockk.impl.annotations.MockK
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.*
+import java.time.LocalTime
 import org.junit.Before
 import org.junit.Test
 
 class GetShiftsUseCaseTest {
 
     @MockK
-    private lateinit var shiftRepository: ShiftRepository
+    private lateinit var scheduleRepository: ScheduleRepository
 
     private lateinit var getShiftsUseCase: GetShiftsUseCase
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
-        // 假设存在一个GetShiftsUseCase类
-        getShiftsUseCase = GetShiftsUseCase(shiftRepository)
+        getShiftsUseCase = GetShiftsUseCase(scheduleRepository)
     }
 
     @Test
-    fun `获取指定日期范围的排班记录`() = runTest {
+    fun `获取所有活跃班次`() = runTest {
         // Given
-        val startDate = LocalDate(2024, 1, 1)
-        val endDate = LocalDate(2024, 1, 7)
-        
-        val shiftType = ShiftType(
-            id = "type1",
-            name = "早班",
-            shortName = "早",
-            color = "#FF5722",
-            startTime = LocalTime(8, 0),
-            endTime = LocalTime(16, 0),
-            breakMinutes = 60,
-            isNightShift = false,
-            orderIndex = 1
-        )
-        
         val shifts = listOf(
             Shift(
-                id = "shift1",
-                date = startDate,
-                shiftTypeId = "type1",
-                note = "正常上班",
-                actualStartTime = LocalTime(8, 0),
-                actualEndTime = LocalTime(16, 30),
-                overtimeMinutes = 30,
-                isHoliday = false,
-                isAbsent = false,
-                shiftType = shiftType
+                id = 1L,
+                name = "早班",
+                color = 0xFFFF5722.toInt(),
+                startTime = LocalTime.of(8, 0),
+                endTime = LocalTime.of(16, 0),
+                isActive = true
             ),
             Shift(
-                id = "shift2",
-                date = startDate.plus(1, DateTimeUnit.DAY),
-                shiftTypeId = "type1",
-                note = null,
-                actualStartTime = LocalTime(8, 0),
-                actualEndTime = LocalTime(16, 0),
-                overtimeMinutes = 0,
-                isHoliday = false,
-                isAbsent = false,
-                shiftType = shiftType
+                id = 2L,
+                name = "晚班",
+                color = 0xFF3F51B5.toInt(),
+                startTime = LocalTime.of(16, 0),
+                endTime = LocalTime.of(0, 0),
+                isActive = true
             )
         )
 
-        coEvery { 
-            shiftRepository.getShiftsByDateRange(startDate, endDate) 
-        } returns flowOf(shifts)
+        coEvery { scheduleRepository.getAllShifts() } returns flowOf(shifts)
 
         // When
-        val result = getShiftsUseCase.invoke(startDate, endDate).first()
+        val result = getShiftsUseCase.invoke().first()
 
         // Then
         assertThat(result).hasSize(2)
-        assertThat(result[0].shiftType?.name).isEqualTo("早班")
-        assertThat(result[0].overtimeMinutes).isEqualTo(30)
-        assertThat(result[1].overtimeMinutes).isEqualTo(0)
-        coVerify(exactly = 1) { shiftRepository.getShiftsByDateRange(startDate, endDate) }
+        assertThat(result[0].name).isEqualTo("早班")
+        assertThat(result[1].name).isEqualTo("晚班")
+        coVerify(exactly = 1) { scheduleRepository.getAllShifts() }
     }
 
     @Test
-    fun `获取某月的排班统计`() = runTest {
+    fun `根据ID获取单个班次`() = runTest {
         // Given
-        val year = 2024
-        val month = 1
-        val monthlyStats = mapOf(
-            "totalShifts" to 20,
-            "dayShifts" to 10,
-            "nightShifts" to 8,
-            "restDays" to 2,
-            "totalOvertimeMinutes" to 360
+        val shiftId = 1L
+        val shift = Shift(
+            id = shiftId,
+            name = "早班",
+            color = 0xFFFF5722.toInt(),
+            startTime = LocalTime.of(8, 0),
+            endTime = LocalTime.of(16, 0),
+            isActive = true
         )
 
-        coEvery { 
-            shiftRepository.getMonthlyStatistics(year, month) 
-        } returns monthlyStats
+        coEvery { scheduleRepository.getShiftById(shiftId) } returns shift
 
         // When
-        val result = shiftRepository.getMonthlyStatistics(year, month)
+        val result = getShiftsUseCase.getShiftById(shiftId)
 
         // Then
-        assertThat(result["totalShifts"]).isEqualTo(20)
-        assertThat(result["dayShifts"]).isEqualTo(10)
-        assertThat(result["nightShifts"]).isEqualTo(8)
-        assertThat(result["totalOvertimeMinutes"]).isEqualTo(360)
-        coVerify(exactly = 1) { shiftRepository.getMonthlyStatistics(year, month) }
+        assertThat(result).isNotNull()
+        assertThat(result?.id).isEqualTo(shiftId)
+        assertThat(result?.name).isEqualTo("早班")
+        coVerify(exactly = 1) { scheduleRepository.getShiftById(shiftId) }
     }
 
     @Test
-    fun `获取连续工作天数`() = runTest {
+    fun `根据ID获取不存在的班次返回null`() = runTest {
         // Given
-        val currentDate = LocalDate(2024, 1, 15)
-        val consecutiveWorkDays = 5
-
-        coEvery { 
-            shiftRepository.getConsecutiveWorkDays(currentDate) 
-        } returns consecutiveWorkDays
+        val shiftId = 999L
+        coEvery { scheduleRepository.getShiftById(shiftId) } returns null
 
         // When
-        val result = shiftRepository.getConsecutiveWorkDays(currentDate)
+        val result = getShiftsUseCase.getShiftById(shiftId)
 
         // Then
-        assertThat(result).isEqualTo(5)
-        coVerify(exactly = 1) { shiftRepository.getConsecutiveWorkDays(currentDate) }
+        assertThat(result).isNull()
+        coVerify(exactly = 1) { scheduleRepository.getShiftById(shiftId) }
     }
 
     @Test
-    fun `检查是否为夜班`() = runTest {
+    fun `获取空的班次列表`() = runTest {
         // Given
-        val nightShiftType = ShiftType(
-            id = "type2",
-            name = "夜班",
-            shortName = "夜",
-            color = "#3F51B5",
-            startTime = LocalTime(20, 0),
-            endTime = LocalTime(8, 0), // 跨天
-            breakMinutes = 60,
-            isNightShift = true,
-            orderIndex = 2
-        )
-        
-        val nightShift = Shift(
-            id = "shift3",
-            date = LocalDate(2024, 1, 1),
-            shiftTypeId = "type2",
-            note = "夜班值班",
-            actualStartTime = LocalTime(20, 0),
-            actualEndTime = LocalTime(8, 30),
-            overtimeMinutes = 30,
-            isHoliday = false,
-            isAbsent = false,
-            shiftType = nightShiftType
-        )
+        coEvery { scheduleRepository.getAllShifts() } returns flowOf(emptyList())
 
-        // When & Then
-        assertThat(nightShift.shiftType?.isNightShift).isTrue()
-        assertThat(nightShift.shiftType?.name).isEqualTo("夜班")
-        
-        // 计算夜班工作时长（跨天）
-        val workHours = if (nightShift.shiftType?.endTime!! < nightShift.shiftType?.startTime!!) {
-            // 跨天情况
-            val minutesToMidnight = (LocalTime(23, 59) - nightShift.shiftType?.startTime!!).inWholeMinutes + 1
-            val minutesFromMidnight = nightShift.shiftType?.endTime!!.toSecondOfDay() / 60
-            minutesToMidnight + minutesFromMidnight
-        } else {
-            (nightShift.shiftType?.endTime!! - nightShift.shiftType?.startTime!!).inWholeMinutes
-        }
-        
-        assertThat(workHours).isEqualTo(720L) // 12小时 = 720分钟
+        // When
+        val result = getShiftsUseCase.invoke().first()
+
+        // Then
+        assertThat(result).isEmpty()
+        coVerify(exactly = 1) { scheduleRepository.getAllShifts() }
     }
-}
-
-// 假设的UseCase类和Repository接口
-class GetShiftsUseCase(
-    private val shiftRepository: ShiftRepository
-) {
-    suspend operator fun invoke(startDate: LocalDate, endDate: LocalDate) = 
-        shiftRepository.getShiftsByDateRange(startDate, endDate)
-}
-
-// 假设的Repository接口扩展
-interface ShiftRepository {
-    fun getShiftsByDateRange(startDate: LocalDate, endDate: LocalDate): kotlinx.coroutines.flow.Flow<List<Shift>>
-    suspend fun getMonthlyStatistics(year: Int, month: Int): Map<String, Int>
-    suspend fun getConsecutiveWorkDays(date: LocalDate): Int
 }

@@ -153,19 +153,35 @@ class NotificationSettingsViewModel @Inject constructor(
     }
     
     fun showTaskReminderTimePicker() {
-        // TODO: Show time picker dialog
+        _uiState.update { it.copy(showTaskReminderPicker = true) }
+    }
+    
+    fun hideTaskReminderTimePicker() {
+        _uiState.update { it.copy(showTaskReminderPicker = false) }
     }
     
     fun showHabitReminderTimePicker() {
-        // TODO: Show time picker dialog
+        _uiState.update { it.copy(showHabitReminderPicker = true) }
+    }
+    
+    fun hideHabitReminderTimePicker() {
+        _uiState.update { it.copy(showHabitReminderPicker = false) }
     }
     
     fun showBudgetThresholdPicker() {
-        // TODO: Show threshold picker dialog
+        _uiState.update { it.copy(showBudgetThresholdPicker = true) }
+    }
+    
+    fun hideBudgetThresholdPicker() {
+        _uiState.update { it.copy(showBudgetThresholdPicker = false) }
     }
     
     fun showDoNotDisturbSettings() {
-        // TODO: Show do not disturb settings dialog
+        _uiState.update { it.copy(showDoNotDisturbDialog = true) }
+    }
+    
+    fun hideDoNotDisturbSettings() {
+        _uiState.update { it.copy(showDoNotDisturbDialog = false) }
     }
 }
 
@@ -181,5 +197,9 @@ data class NotificationSettingsUiState(
     val soundEnabled: Boolean = true,
     val doNotDisturbEnabled: Boolean = false,
     val doNotDisturbStart: String = "22:00",
-    val doNotDisturbEnd: String = "08:00"
+    val doNotDisturbEnd: String = "08:00",
+    val showTaskReminderPicker: Boolean = false,
+    val showHabitReminderPicker: Boolean = false,
+    val showBudgetThresholdPicker: Boolean = false,
+    val showDoNotDisturbDialog: Boolean = false
 )

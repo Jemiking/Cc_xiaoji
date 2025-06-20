@@ -1,20 +1,20 @@
 package com.ccxiaoji.shared.user.data.repository
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import com.ccxiaoji.shared.user.data.local.dao.UserDao
 import com.ccxiaoji.shared.user.data.local.entity.UserEntity
-import com.ccxiaoji.shared.user.domain.model.User
+import com.ccxiaoji.shared.user.data.remote.api.AuthApi
+import com.ccxiaoji.shared.user.data.remote.dto.LoginRequest
+import com.ccxiaoji.shared.user.data.remote.dto.LoginResponse
 import com.google.common.truth.Truth.assertThat
-import io.mockk.MockKAnnotations
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
+import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import io.mockk.mockk
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Clock
-import kotlinx.datetime.Instant
+import retrofit2.Response
 import org.junit.Before
 import org.junit.Test
 
@@ -23,186 +23,265 @@ class UserRepositoryTest {
     @MockK
     private lateinit var userDao: UserDao
 
+    @MockK
+    private lateinit var authApi: AuthApi
+
+    @MockK
+    private lateinit var dataStore: DataStore<Preferences>
+
+    @MockK
+    private lateinit var preferences: Preferences
+
     private lateinit var userRepository: UserRepository
 
     @Before
     fun setup() {
         MockKAnnotations.init(this)
-        userRepository = UserRepository(userDao)
+        userRepository = UserRepository(userDao, authApi, dataStore)
     }
 
     @Test
-    fun `获取当前用户信息`() = runTest {
+    fun `登录成功`() = runTest {
         // Given
-        val userId = "user123"
-        val now = System.currentTimeMillis()
-        val userEntity = UserEntity(
-            id = userId,
-            username = "testuser",
-            email = "test@example.com",
-            avatarUrl = "https://example.com/avatar.jpg",
-            nickname = "测试用户",
-            phoneNumber = "13800138000",
-            createdAt = now,
-            updatedAt = now,
-            syncStatus = "SYNCED"
+        val email = "test@example.com"
+        val password = "password123"
+        val userId = "user-123"
+        val accessToken = "access-token"
+        val refreshToken = "refresh-token"
+        
+        val loginResponse = LoginResponse(
+            user = LoginResponse.User(
+                id = userId,
+                email = email,
+                createdAt = System.currentTimeMillis()
+            ),
+            accessToken = accessToken,
+            refreshToken = refreshToken
         )
-
-        coEvery { userDao.getUserById(userId) } returns flowOf(userEntity)
-        coEvery { userRepository.getCurrentUserId() } returns userId
+        
+        coEvery { authApi.login(any()) } returns Response.success(loginResponse)
+        coEvery { dataStore.edit(any<suspend (Preferences) -> Unit>()) } coAnswers {
+            // 模拟 DataStore 编辑操作
+        }
+        
+        val userEntitySlot = slot<UserEntity>()
+        coEvery { userDao.insertUser(capture(userEntitySlot)) } returns Unit
 
         // When
-        val result = userRepository.getCurrentUser().first()
+        val result = userRepository.login(email, password)
+
+        // Then
+        assertThat(result.isSuccess).isTrue()
+        assertThat(result.getOrNull()?.id).isEqualTo(userId)
+        assertThat(result.getOrNull()?.email).isEqualTo(email)
+        
+        val capturedEntity = userEntitySlot.captured
+        assertThat(capturedEntity.id).isEqualTo(userId)
+        assertThat(capturedEntity.email).isEqualTo(email)
+        
+        coVerify(exactly = 1) { authApi.login(LoginRequest(email, password)) }
+        coVerify(exactly = 1) { userDao.insertUser(any()) }
+        coVerify(exactly = 1) { dataStore.edit(any()) }
+    }
+
+    @Test
+    fun `登录失败 - 服务器返回错误`() = runTest {
+        // Given
+        val email = "test@example.com"
+        val password = "wrong-password"
+        
+        coEvery { authApi.login(any()) } returns Response.error(401, mockk(relaxed = true))
+
+        // When
+        val result = userRepository.login(email, password)
+
+        // Then
+        assertThat(result.isFailure).isTrue()
+        assertThat(result.exceptionOrNull()?.message).contains("Login failed: 401")
+        
+        coVerify(exactly = 1) { authApi.login(LoginRequest(email, password)) }
+        coVerify(exactly = 0) { userDao.insertUser(any()) }
+        coVerify(exactly = 0) { dataStore.edit(any()) }
+    }
+
+    @Test
+    fun `登录失败 - 网络异常`() = runTest {
+        // Given
+        val email = "test@example.com"
+        val password = "password123"
+        val exception = Exception("Network error")
+        
+        coEvery { authApi.login(any()) } throws exception
+
+        // When
+        val result = userRepository.login(email, password)
+
+        // Then
+        assertThat(result.isFailure).isTrue()
+        assertThat(result.exceptionOrNull()).isEqualTo(exception)
+        
+        coVerify(exactly = 1) { authApi.login(LoginRequest(email, password)) }
+        coVerify(exactly = 0) { userDao.insertUser(any()) }
+        coVerify(exactly = 0) { dataStore.edit(any()) }
+    }
+
+    @Test
+    fun `登出`() = runTest {
+        // Given
+        coEvery { dataStore.edit(any<suspend (Preferences) -> Unit>()) } coAnswers {
+            // 模拟 DataStore 编辑操作
+        }
+        coEvery { userDao.deleteAllUsers() } returns Unit
+
+        // When
+        userRepository.logout()
+
+        // Then
+        coVerify(exactly = 1) { dataStore.edit(any()) }
+        coVerify(exactly = 1) { userDao.deleteAllUsers() }
+    }
+
+    @Test
+    fun `获取当前用户流`() = runTest {
+        // Given
+        val userEntity = UserEntity(
+            id = "user-123",
+            email = "test@example.com",
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+        
+        coEvery { userDao.getCurrentUser() } returns flowOf(userEntity)
+
+        // When
+        val result = userRepository.getCurrentUserFlow().first()
+
+        // Then
+        assertThat(result).isNotNull()
+        assertThat(result?.id).isEqualTo("user-123")
+        assertThat(result?.email).isEqualTo("test@example.com")
+        coVerify(exactly = 1) { userDao.getCurrentUser() }
+    }
+
+    @Test
+    fun `获取当前用户流 - 无用户`() = runTest {
+        // Given
+        coEvery { userDao.getCurrentUser() } returns flowOf(null)
+
+        // When
+        val result = userRepository.getCurrentUserFlow().first()
+
+        // Then
+        assertThat(result).isNull()
+        coVerify(exactly = 1) { userDao.getCurrentUser() }
+    }
+
+    @Test
+    fun `获取当前用户`() = runTest {
+        // Given
+        val userId = "user-123"
+        val userEntity = UserEntity(
+            id = userId,
+            email = "test@example.com",
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
+        )
+        
+        coEvery { dataStore.data } returns flowOf(mockk {
+            every { get(any()) } returns userId
+        })
+        coEvery { userDao.getUserById(userId) } returns userEntity
+
+        // When
+        val result = userRepository.getCurrentUser()
 
         // Then
         assertThat(result).isNotNull()
         assertThat(result?.id).isEqualTo(userId)
-        assertThat(result?.username).isEqualTo("testuser")
         assertThat(result?.email).isEqualTo("test@example.com")
-        assertThat(result?.nickname).isEqualTo("测试用户")
-        coVerify(exactly = 1) { userDao.getUserById(userId) }
     }
 
     @Test
-    fun `更新用户个人信息`() = runTest {
+    fun `获取访问令牌`() = runTest {
         // Given
-        val userId = "user123"
-        val existingUser = UserEntity(
-            id = userId,
-            username = "testuser",
-            email = "old@example.com",
-            avatarUrl = null,
-            nickname = "旧昵称",
-            phoneNumber = null,
-            createdAt = System.currentTimeMillis() - 86400000, // 一天前
-            updatedAt = System.currentTimeMillis() - 86400000,
-            syncStatus = "SYNCED"
-        )
-
-        val newNickname = "新昵称"
-        val newEmail = "new@example.com"
-        val newPhone = "13900139000"
-
-        coEvery { userDao.getUserByIdSync(userId) } returns existingUser
-        coEvery { userDao.updateUser(any()) } returns Unit
-        coEvery { userRepository.getCurrentUserId() } returns userId
+        val accessToken = "test-access-token"
+        coEvery { dataStore.data } returns flowOf(mockk {
+            every { get(any()) } returns accessToken
+        })
 
         // When
-        userRepository.updateUserInfo(
-            nickname = newNickname,
-            email = newEmail,
-            phoneNumber = newPhone
-        )
+        val result = userRepository.getAccessToken()
 
         // Then
-        coVerify(exactly = 1) { 
-            userDao.updateUser(withArg { updatedUser ->
-                assertThat(updatedUser.nickname).isEqualTo(newNickname)
-                assertThat(updatedUser.email).isEqualTo(newEmail)
-                assertThat(updatedUser.phoneNumber).isEqualTo(newPhone)
-                assertThat(updatedUser.syncStatus).isEqualTo("PENDING_SYNC")
-                assertThat(updatedUser.updatedAt).isGreaterThan(existingUser.updatedAt)
-            })
+        assertThat(result).isEqualTo(accessToken)
+    }
+
+    @Test
+    fun `更新令牌`() = runTest {
+        // Given
+        val newAccessToken = "new-access-token"
+        val newRefreshToken = "new-refresh-token"
+        coEvery { dataStore.edit(any<suspend (Preferences) -> Unit>()) } coAnswers {
+            // 模拟 DataStore 编辑操作
         }
+
+        // When
+        userRepository.updateTokens(newAccessToken, newRefreshToken)
+
+        // Then
+        coVerify(exactly = 1) { dataStore.edit(any()) }
     }
 
     @Test
-    fun `创建新用户`() = runTest {
+    fun `获取最后同步时间`() = runTest {
         // Given
-        val username = "newuser"
-        val email = "newuser@example.com"
-        val nickname = "新用户"
-
-        coEvery { userDao.insertUser(any()) } returns Unit
+        val lastSyncTime = 1704067200000L // 2024-01-01
+        coEvery { dataStore.data } returns flowOf(mockk {
+            every { get(any()) } returns lastSyncTime
+        })
 
         // When
-        val user = userRepository.createUser(
-            username = username,
-            email = email,
-            nickname = nickname
-        )
+        val result = userRepository.getLastSyncTime()
 
         // Then
-        assertThat(user.username).isEqualTo(username)
-        assertThat(user.email).isEqualTo(email)
-        assertThat(user.nickname).isEqualTo(nickname)
-        assertThat(user.id).isNotEmpty()
-        
-        coVerify(exactly = 1) { 
-            userDao.insertUser(withArg { entity ->
-                assertThat(entity.username).isEqualTo(username)
-                assertThat(entity.email).isEqualTo(email)
-                assertThat(entity.nickname).isEqualTo(nickname)
-                assertThat(entity.syncStatus).isEqualTo("PENDING_SYNC")
-            })
+        assertThat(result).isEqualTo(lastSyncTime)
+    }
+
+    @Test
+    fun `获取最后同步时间 - 默认值`() = runTest {
+        // Given
+        coEvery { dataStore.data } returns flowOf(mockk {
+            every { get(any()) } returns null
+        })
+
+        // When
+        val result = userRepository.getLastSyncTime()
+
+        // Then
+        assertThat(result).isEqualTo(0L)
+    }
+
+    @Test
+    fun `更新最后同步时间`() = runTest {
+        // Given
+        val newSyncTime = System.currentTimeMillis()
+        coEvery { dataStore.edit(any<suspend (Preferences) -> Unit>()) } coAnswers {
+            // 模拟 DataStore 编辑操作
         }
+
+        // When
+        userRepository.updateLastSyncTime(newSyncTime)
+
+        // Then
+        coVerify(exactly = 1) { dataStore.edit(any()) }
     }
 
     @Test
-    fun `检查用户名是否存在`() = runTest {
-        // Given
-        val existingUsername = "existinguser"
-        val newUsername = "newusername"
-
-        coEvery { userDao.getUserByUsername(existingUsername) } returns mockk<UserEntity>()
-        coEvery { userDao.getUserByUsername(newUsername) } returns null
-
+    fun `获取当前用户ID`() {
         // When
-        val existingResult = userRepository.isUsernameExists(existingUsername)
-        val newResult = userRepository.isUsernameExists(newUsername)
+        val userId = userRepository.getCurrentUserId()
 
         // Then
-        assertThat(existingResult).isTrue()
-        assertThat(newResult).isFalse()
-        coVerify(exactly = 1) { userDao.getUserByUsername(existingUsername) }
-        coVerify(exactly = 1) { userDao.getUserByUsername(newUsername) }
+        assertThat(userId).isEqualTo("current_user_id")
     }
-}
-
-// 假设的Repository扩展方法
-suspend fun UserRepository.isUsernameExists(username: String): Boolean {
-    return userDao.getUserByUsername(username) != null
-}
-
-suspend fun UserRepository.createUser(
-    username: String,
-    email: String,
-    nickname: String
-): User {
-    val userId = java.util.UUID.randomUUID().toString()
-    val now = System.currentTimeMillis()
-    
-    val entity = UserEntity(
-        id = userId,
-        username = username,
-        email = email,
-        avatarUrl = null,
-        nickname = nickname,
-        phoneNumber = null,
-        createdAt = now,
-        updatedAt = now,
-        syncStatus = "PENDING_SYNC"
-    )
-    
-    userDao.insertUser(entity)
-    
-    return User(
-        id = userId,
-        username = username,
-        email = email,
-        avatarUrl = null,
-        nickname = nickname,
-        phoneNumber = null,
-        createdAt = Instant.fromEpochMilliseconds(now),
-        updatedAt = Instant.fromEpochMilliseconds(now)
-    )
-}
-
-// 假设的DAO接口扩展
-interface UserDao {
-    fun getUserById(userId: String): kotlinx.coroutines.flow.Flow<UserEntity?>
-    suspend fun getUserByIdSync(userId: String): UserEntity?
-    suspend fun getUserByUsername(username: String): UserEntity?
-    suspend fun insertUser(user: UserEntity)
-    suspend fun updateUser(user: UserEntity)
 }

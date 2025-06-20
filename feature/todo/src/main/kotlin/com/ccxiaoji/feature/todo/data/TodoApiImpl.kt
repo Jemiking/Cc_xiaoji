@@ -1,7 +1,7 @@
 package com.ccxiaoji.feature.todo.data
 
 import com.ccxiaoji.feature.todo.api.TodoApi
-import com.ccxiaoji.feature.todo.data.repository.TaskRepository
+import com.ccxiaoji.feature.todo.domain.repository.TodoRepository
 import com.ccxiaoji.feature.todo.domain.model.Task
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -17,31 +17,31 @@ import javax.inject.Singleton
  */
 @Singleton
 class TodoApiImpl @Inject constructor(
-    private val taskRepository: TaskRepository
+    private val todoRepository: TodoRepository
 ) : TodoApi {
     
     override fun getTasks(): Flow<List<Task>> {
-        return taskRepository.getTasks()
+        return todoRepository.getAllTodos()
     }
     
     override fun getIncompleteTasks(): Flow<List<Task>> {
-        return taskRepository.getIncompleteTasks()
+        return todoRepository.getIncompleteTodos()
     }
     
     override suspend fun getTodayTasks(): List<Task> {
-        return taskRepository.getTodayTasks().first()
+        return todoRepository.getTodayTodos().first()
     }
     
     override suspend fun getTaskCount(): Int {
-        return taskRepository.getTasks().first().size
+        return todoRepository.getAllTodos().first().size
     }
     
     override suspend fun getIncompleteTaskCount(): Int {
-        return taskRepository.getIncompleteTasks().first().size
+        return todoRepository.getIncompleteTodos().first().size
     }
     
     override suspend fun getTaskById(taskId: String): Task? {
-        return taskRepository.getTaskById(taskId)
+        return todoRepository.getTodoById(taskId)
     }
     
     override suspend fun addTask(
@@ -50,7 +50,7 @@ class TodoApiImpl @Inject constructor(
         dueAt: Instant?,
         priority: Int
     ): Task {
-        return taskRepository.addTask(title, description, dueAt, priority)
+        return todoRepository.addTodo(title, description, dueAt, priority)
     }
     
     override suspend fun updateTask(
@@ -60,15 +60,15 @@ class TodoApiImpl @Inject constructor(
         dueAt: Instant?,
         priority: Int
     ) {
-        taskRepository.updateTask(taskId, title, description, dueAt, priority)
+        todoRepository.updateTodo(taskId, title, description, dueAt, priority)
     }
     
     override suspend fun updateTaskCompletion(taskId: String, completed: Boolean) {
-        taskRepository.updateTaskCompletion(taskId, completed)
+        todoRepository.updateTodoCompletion(taskId, completed)
     }
     
     override suspend fun deleteTask(taskId: String) {
-        taskRepository.deleteTask(taskId)
+        todoRepository.deleteTodo(taskId)
     }
     
     // 导航功能需要在app模块中实现

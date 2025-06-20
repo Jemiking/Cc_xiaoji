@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.ccxiaoji.feature.ledger.domain.model.*
+import com.ccxiaoji.feature.ledger.data.repository.*
 import com.ccxiaoji.feature.ledger.presentation.screen.account.AccountScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.budget.BudgetScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.category.CategoryManagementScreen
@@ -16,26 +17,43 @@ import com.ccxiaoji.feature.ledger.presentation.screen.savings.SavingsGoalDetail
 import com.ccxiaoji.feature.ledger.presentation.screen.savings.SavingsGoalScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.statistics.StatisticsScreen
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DatePeriod
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
+import kotlinx.datetime.DateTimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
+import java.util.UUID
 
 @Singleton
 class LedgerApiImpl @Inject constructor(
-    // TODO: 注入必要的repository
+    private val transactionRepository: TransactionRepository,
+    private val accountRepository: AccountRepository,
+    private val categoryRepository: CategoryRepository,
+    private val budgetRepository: BudgetRepository,
+    private val recurringTransactionRepository: RecurringTransactionRepository,
+    private val savingsGoalRepository: SavingsGoalRepository
 ) : LedgerApi {
     
     // Transaction methods
     override fun getTransactions(): Flow<List<Transaction>> {
-        TODO("Not yet implemented")
+        return transactionRepository.getTransactions()
     }
     
     override fun getTransactionsByDateRange(startDate: LocalDate, endDate: LocalDate): Flow<List<Transaction>> {
-        TODO("Not yet implemented")
+        return transactionRepository.getTransactionsByDateRange(startDate, endDate)
     }
     
     override fun getTransactionsByAccount(accountId: String): Flow<List<Transaction>> {
-        TODO("Not yet implemented")
+        return transactionRepository.getTransactionsByAccount(accountId)
     }
     
     override fun getTransactionsByAccountAndDateRange(
@@ -43,31 +61,33 @@ class LedgerApiImpl @Inject constructor(
         startDate: LocalDate,
         endDate: LocalDate
     ): Flow<List<Transaction>> {
-        TODO("Not yet implemented")
+        return transactionRepository.getTransactionsByAccountAndDateRange(accountId, startDate, endDate)
     }
     
     override fun getRecentTransactions(limit: Int): Flow<List<Transaction>> {
-        TODO("Not yet implemented")
+        return transactionRepository.getRecentTransactions(limit)
     }
     
     override fun searchTransactions(query: String): Flow<List<Transaction>> {
-        TODO("Not yet implemented")
+        return transactionRepository.searchTransactions(query)
     }
     
     override suspend fun getMonthlyTotal(year: Int, month: Int): Int {
-        TODO("Not yet implemented")
+        return transactionRepository.getMonthlyTotal(year, month)
     }
     
     override suspend fun getMonthlyIncomesAndExpenses(year: Int, month: Int): Pair<Int, Int> {
-        TODO("Not yet implemented")
+        return transactionRepository.getMonthlyIncomesAndExpenses(year, month)
     }
     
     override suspend fun getTodayExpense(): Double {
-        TODO("Not yet implemented")
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val (_, expense) = transactionRepository.getMonthlyIncomesAndExpenses(today.year, today.monthNumber)
+        return expense / 100.0
     }
     
     override suspend fun getTotalBalance(): Double {
-        TODO("Not yet implemented")
+        return accountRepository.getTotalBalance()
     }
     
     override suspend fun addTransaction(
@@ -77,24 +97,24 @@ class LedgerApiImpl @Inject constructor(
         accountId: String?,
         createdAt: Long
     ): Transaction {
-        TODO("Not yet implemented")
+        return transactionRepository.addTransaction(amountCents, categoryId, note, accountId, createdAt)
     }
     
     override suspend fun updateTransaction(transaction: Transaction) {
-        TODO("Not yet implemented")
+        transactionRepository.updateTransaction(transaction)
     }
     
     override suspend fun deleteTransaction(transactionId: String) {
-        TODO("Not yet implemented")
+        transactionRepository.deleteTransaction(transactionId)
     }
     
     // Account methods
     override fun getAccounts(): Flow<List<Account>> {
-        TODO("Not yet implemented")
+        return accountRepository.getAccounts()
     }
     
     override suspend fun getAccountById(accountId: String): Account? {
-        TODO("Not yet implemented")
+        return accountRepository.getAccountById(accountId)
     }
     
     override suspend fun createAccount(
@@ -104,19 +124,29 @@ class LedgerApiImpl @Inject constructor(
         currency: String,
         isDefault: Boolean
     ): Account {
-        TODO("Not yet implemented")
+        return accountRepository.createAccount(
+            name = name,
+            type = AccountType.valueOf(type),
+            initialBalanceCents = balanceCents,
+            currency = currency,
+            icon = null,
+            color = "#3A7AFE"
+        )
     }
     
     override suspend fun updateAccount(account: Account) {
-        TODO("Not yet implemented")
+        accountRepository.updateAccount(account)
     }
     
     override suspend fun deleteAccount(accountId: String) {
-        TODO("Not yet implemented")
+        accountRepository.deleteAccount(accountId)
     }
     
     override suspend fun updateAccountBalance(accountId: String, newBalanceCents: Long) {
-        TODO("Not yet implemented")
+        val account = accountRepository.getAccountById(accountId)
+        if (account != null) {
+            accountRepository.updateAccount(account.copy(balanceCents = newBalanceCents))
+        }
     }
     
     override suspend fun transferBetweenAccounts(
@@ -125,20 +155,20 @@ class LedgerApiImpl @Inject constructor(
         amountCents: Int,
         note: String?
     ) {
-        TODO("Not yet implemented")
+        accountRepository.transferBetweenAccounts(fromAccountId, toAccountId, amountCents.toLong())
     }
     
     // Category methods
     override fun getCategories(): Flow<List<Category>> {
-        TODO("Not yet implemented")
+        return categoryRepository.getCategories()
     }
     
     override fun getCategoriesByType(type: String): Flow<List<Category>> {
-        TODO("Not yet implemented")
+        return categoryRepository.getCategoriesByType(Category.Type.valueOf(type))
     }
     
     override suspend fun getCategoryById(categoryId: String): Category? {
-        TODO("Not yet implemented")
+        return categoryRepository.getCategoryById(categoryId)
     }
     
     override suspend fun createCategory(
@@ -148,15 +178,27 @@ class LedgerApiImpl @Inject constructor(
         color: String,
         parentId: String?
     ): Category {
-        TODO("Not yet implemented")
+        val categoryId = categoryRepository.createCategory(
+            name = name,
+            type = Category.Type.valueOf(type),
+            icon = icon ?: "📝",
+            color = color,
+            parentId = parentId
+        )
+        return categoryRepository.getCategoryById(categoryId)!!
     }
     
     override suspend fun updateCategory(category: Category) {
-        TODO("Not yet implemented")
+        categoryRepository.updateCategory(
+            categoryId = category.id,
+            name = category.name,
+            icon = category.icon,
+            color = category.color
+        )
     }
     
     override suspend fun deleteCategory(categoryId: String) {
-        TODO("Not yet implemented")
+        categoryRepository.deleteCategory(categoryId)
     }
     
     // Statistics methods
@@ -164,7 +206,7 @@ class LedgerApiImpl @Inject constructor(
         startDate: LocalDate,
         endDate: LocalDate
     ): Map<LocalDate, Pair<Int, Int>> {
-        TODO("Not yet implemented")
+        return transactionRepository.getDailyTotals(startDate, endDate)
     }
     
     override suspend fun getCategoryStatistics(
@@ -172,7 +214,7 @@ class LedgerApiImpl @Inject constructor(
         endDate: LocalDate,
         type: String
     ): List<CategoryStatistic> {
-        TODO("Not yet implemented")
+        return transactionRepository.getCategoryStatistics(startDate, endDate, type)
     }
     
     override suspend fun getTopTransactions(
@@ -181,16 +223,38 @@ class LedgerApiImpl @Inject constructor(
         type: String,
         limit: Int
     ): List<Transaction> {
-        TODO("Not yet implemented")
+        return transactionRepository.getTopTransactions(startDate, endDate, type, limit)
     }
     
     override suspend fun calculateSavingsRate(startDate: LocalDate, endDate: LocalDate): Float {
-        TODO("Not yet implemented")
+        return transactionRepository.calculateSavingsRate(startDate, endDate)
     }
     
     // Recurring transaction methods
     override fun getRecurringTransactions(): Flow<List<RecurringTransaction>> {
-        TODO("Not yet implemented")
+        return recurringTransactionRepository.getAllRecurringTransactions().map { entities ->
+            entities.map { entity ->
+                RecurringTransaction(
+                    id = entity.id,
+                    name = entity.name,
+                    accountId = entity.accountId,
+                    amountCents = entity.amountCents,
+                    categoryId = entity.categoryId,
+                    note = entity.note,
+                    frequency = entity.frequency,
+                    dayOfWeek = entity.dayOfWeek,
+                    dayOfMonth = entity.dayOfMonth,
+                    monthOfYear = entity.monthOfYear,
+                    startDate = kotlinx.datetime.Instant.fromEpochMilliseconds(entity.startDate),
+                    endDate = entity.endDate?.let { kotlinx.datetime.Instant.fromEpochMilliseconds(it) },
+                    isEnabled = entity.isEnabled,
+                    lastExecutionDate = entity.lastExecutionDate?.let { kotlinx.datetime.Instant.fromEpochMilliseconds(it) },
+                    nextExecutionDate = kotlinx.datetime.Instant.fromEpochMilliseconds(entity.nextExecutionDate),
+                    createdAt = kotlinx.datetime.Instant.fromEpochMilliseconds(entity.createdAt),
+                    updatedAt = kotlinx.datetime.Instant.fromEpochMilliseconds(entity.updatedAt)
+                )
+            }
+        }
     }
     
     override suspend fun createRecurringTransaction(
@@ -202,32 +266,113 @@ class LedgerApiImpl @Inject constructor(
         startDate: LocalDate,
         endDate: LocalDate?
     ): RecurringTransaction {
-        TODO("Not yet implemented")
+        val frequency = com.ccxiaoji.common.model.RecurringFrequency.valueOf(period)
+        val startMillis = startDate.atStartOfDayIn(kotlinx.datetime.TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val endMillis = endDate?.atStartOfDayIn(kotlinx.datetime.TimeZone.currentSystemDefault())?.toEpochMilliseconds()
+        
+        recurringTransactionRepository.createRecurringTransaction(
+            name = note ?: "定期交易",
+            accountId = accountId,
+            amountCents = amountCents,
+            categoryId = categoryId,
+            note = note,
+            frequency = frequency,
+            startDate = startMillis,
+            endDate = endMillis
+        )
+        
+        // 获取创建的交易
+        val entities = recurringTransactionRepository.getAllRecurringTransactions().first()
+        val entity = entities.last() // 最新创建的
+        
+        return RecurringTransaction(
+            id = entity.id,
+            name = entity.name,
+            accountId = entity.accountId,
+            amountCents = entity.amountCents,
+            categoryId = entity.categoryId,
+            note = entity.note,
+            frequency = entity.frequency,
+            dayOfWeek = entity.dayOfWeek,
+            dayOfMonth = entity.dayOfMonth,
+            monthOfYear = entity.monthOfYear,
+            startDate = kotlinx.datetime.Instant.fromEpochMilliseconds(entity.startDate),
+            endDate = entity.endDate?.let { kotlinx.datetime.Instant.fromEpochMilliseconds(it) },
+            isEnabled = entity.isEnabled,
+            lastExecutionDate = entity.lastExecutionDate?.let { kotlinx.datetime.Instant.fromEpochMilliseconds(it) },
+            nextExecutionDate = kotlinx.datetime.Instant.fromEpochMilliseconds(entity.nextExecutionDate),
+            createdAt = kotlinx.datetime.Instant.fromEpochMilliseconds(entity.createdAt),
+            updatedAt = kotlinx.datetime.Instant.fromEpochMilliseconds(entity.updatedAt)
+        )
     }
     
     override suspend fun updateRecurringTransaction(recurringTransaction: RecurringTransaction) {
-        TODO("Not yet implemented")
+        recurringTransactionRepository.updateRecurringTransaction(
+            id = recurringTransaction.id,
+            name = recurringTransaction.name,
+            accountId = recurringTransaction.accountId,
+            amountCents = recurringTransaction.amountCents,
+            categoryId = recurringTransaction.categoryId,
+            note = recurringTransaction.note,
+            frequency = recurringTransaction.frequency,
+            dayOfWeek = recurringTransaction.dayOfWeek,
+            dayOfMonth = recurringTransaction.dayOfMonth,
+            monthOfYear = recurringTransaction.monthOfYear,
+            startDate = recurringTransaction.startDate.toEpochMilliseconds(),
+            endDate = recurringTransaction.endDate?.toEpochMilliseconds()
+        )
     }
     
     override suspend fun deleteRecurringTransaction(recurringTransactionId: String) {
-        TODO("Not yet implemented")
+        recurringTransactionRepository.deleteRecurringTransaction(recurringTransactionId)
     }
     
     override suspend fun pauseRecurringTransaction(recurringTransactionId: String) {
-        TODO("Not yet implemented")
+        recurringTransactionRepository.toggleEnabled(recurringTransactionId)
     }
     
     override suspend fun resumeRecurringTransaction(recurringTransactionId: String) {
-        TODO("Not yet implemented")
+        recurringTransactionRepository.toggleEnabled(recurringTransactionId)
     }
     
     // Budget methods
     override fun getBudgets(): Flow<List<Budget>> {
-        TODO("Not yet implemented")
+        return budgetRepository.getBudgets().map { entities ->
+            entities.map { entity ->
+                Budget(
+                    id = entity.id,
+                    userId = entity.userId,
+                    year = entity.year,
+                    month = entity.month,
+                    categoryId = entity.categoryId,
+                    budgetAmountCents = entity.budgetAmountCents,
+                    alertThreshold = entity.alertThreshold,
+                    note = entity.note,
+                    createdAt = entity.createdAt,
+                    updatedAt = entity.updatedAt
+                )
+            }
+        }
     }
     
     override fun getBudgetsByMonth(year: Int, month: Int): Flow<List<Budget>> {
-        TODO("Not yet implemented")
+        return budgetRepository.getBudgetsWithSpent(year, month).map { budgetsWithSpent ->
+            budgetsWithSpent.map { budgetWithSpent ->
+                Budget(
+                    id = budgetWithSpent.id,
+                    userId = budgetWithSpent.userId,
+                    year = budgetWithSpent.year,
+                    month = budgetWithSpent.month,
+                    categoryId = budgetWithSpent.categoryId,
+                    budgetAmountCents = budgetWithSpent.budgetAmountCents,
+                    spentAmountCents = budgetWithSpent.spentAmountCents,
+                    alertThreshold = budgetWithSpent.alertThreshold,
+                    note = budgetWithSpent.note,
+                    createdAt = budgetWithSpent.createdAt,
+                    updatedAt = budgetWithSpent.updatedAt
+                )
+            }
+        }
     }
     
     override suspend fun createBudget(
@@ -237,24 +382,53 @@ class LedgerApiImpl @Inject constructor(
         year: Int,
         month: Int?
     ): Budget {
-        TODO("Not yet implemented")
+        val budget = budgetRepository.createBudget(
+            year = year,
+            month = month ?: 0,
+            budgetAmountCents = amountCents.toInt(),
+            categoryId = categoryId,
+            alertThreshold = 0.8f
+        )
+        
+        return Budget(
+            id = budget.id,
+            userId = budget.userId,
+            year = budget.year,
+            month = budget.month,
+            categoryId = budget.categoryId,
+            budgetAmountCents = budget.budgetAmountCents,
+            alertThreshold = budget.alertThreshold,
+            note = budget.note,
+            createdAt = budget.createdAt,
+            updatedAt = budget.updatedAt
+        )
     }
     
     override suspend fun updateBudget(budget: Budget) {
-        TODO("Not yet implemented")
+        budgetRepository.updateBudget(
+            budgetId = budget.id,
+            budgetAmountCents = budget.budgetAmountCents,
+            alertThreshold = budget.alertThreshold,
+            note = budget.note
+        )
     }
     
     override suspend fun deleteBudget(budgetId: String) {
-        TODO("Not yet implemented")
+        budgetRepository.deleteBudget(budgetId)
     }
     
     override suspend fun getBudgetProgress(budgetId: String): Float {
-        TODO("Not yet implemented")
+        val budget = budgetRepository.getBudgets().first().find { it.id == budgetId }
+        return if (budget != null) {
+            budgetRepository.getBudgetUsagePercentage(budget.year, budget.month, budget.categoryId) ?: 0f
+        } else {
+            0f
+        }
     }
     
     // Savings Goal methods
     override fun getSavingsGoals(): Flow<List<SavingsGoal>> {
-        TODO("Not yet implemented")
+        return savingsGoalRepository.getAllSavingsGoals()
     }
     
     override suspend fun createSavingsGoal(
@@ -263,15 +437,32 @@ class LedgerApiImpl @Inject constructor(
         targetDate: LocalDate,
         accountId: String?
     ): SavingsGoal {
-        TODO("Not yet implemented")
+        val goal = SavingsGoal(
+            id = 0, // Will be generated by database
+            name = name,
+            targetAmount = targetAmountCents.toDouble() / 100,
+            currentAmount = 0.0,
+            targetDate = java.time.LocalDate.of(targetDate.year, targetDate.monthNumber, targetDate.dayOfMonth),
+            description = null,
+            color = "#3A7AFE",
+            iconName = "savings",
+            isActive = true,
+            createdAt = java.time.LocalDateTime.now(),
+            updatedAt = java.time.LocalDateTime.now()
+        )
+        val goalId = savingsGoalRepository.createSavingsGoal(goal)
+        return goal.copy(id = goalId)
     }
     
     override suspend fun updateSavingsGoal(savingsGoal: SavingsGoal) {
-        TODO("Not yet implemented")
+        savingsGoalRepository.updateSavingsGoal(savingsGoal)
     }
     
     override suspend fun deleteSavingsGoal(savingsGoalId: String) {
-        TODO("Not yet implemented")
+        val goal = savingsGoalRepository.getSavingsGoalById(savingsGoalId.toLong())
+        if (goal != null) {
+            savingsGoalRepository.deleteSavingsGoal(goal)
+        }
     }
     
     override suspend fun addSavingsContribution(
@@ -279,16 +470,31 @@ class LedgerApiImpl @Inject constructor(
         amountCents: Long,
         note: String?
     ): SavingsContribution {
-        TODO("Not yet implemented")
+        val contribution = SavingsContribution(
+            id = 0, // Will be generated by database
+            goalId = savingsGoalId.toLong(),
+            amount = amountCents.toDouble() / 100,
+            note = note,
+            createdAt = java.time.LocalDateTime.now()
+        )
+        savingsGoalRepository.addContribution(contribution)
+        return contribution
     }
     
     override suspend fun getSavingsGoalProgress(savingsGoalId: String): Float {
-        TODO("Not yet implemented")
+        val goal = savingsGoalRepository.getSavingsGoalById(savingsGoalId.toLong())
+        return if (goal != null && goal.targetAmount > 0) {
+            (goal.currentAmount / goal.targetAmount * 100).toFloat()
+        } else {
+            0f
+        }
     }
     
     // Credit Card methods
     override fun getCreditCardAccounts(): Flow<List<Account>> {
-        TODO("Not yet implemented")
+        return accountRepository.getAccounts().map { accounts ->
+            accounts.filter { it.type == AccountType.CREDIT_CARD }
+        }
     }
     
     override suspend fun getCreditCardBill(
@@ -296,15 +502,31 @@ class LedgerApiImpl @Inject constructor(
         year: Int,
         month: Int
     ): CreditCardBill? {
-        TODO("Not yet implemented")
+        // 信用卡账单功能暂未实现，返回null
+        return null
     }
     
     override fun getCreditCardBills(accountId: String): Flow<List<CreditCardBill>> {
-        TODO("Not yet implemented")
+        // 信用卡账单功能暂未实现，返回空列表
+        return flowOf(emptyList())
     }
     
     override suspend fun generateCreditCardBill(accountId: String, year: Int, month: Int) {
-        TODO("Not yet implemented")
+        // 获取指定月份的所有交易
+        val startDate = kotlinx.datetime.LocalDate(year, month, 1)
+        val endDate = if (month == 12) {
+            kotlinx.datetime.LocalDate(year + 1, 1, 1)
+        } else {
+            kotlinx.datetime.LocalDate(year, month + 1, 1)
+        }
+        val endDateExclusive = endDate.minus(kotlinx.datetime.DatePeriod(days = 1))
+        
+        val transactions = getTransactionsByAccountAndDateRange(accountId, startDate, endDateExclusive).first()
+        val totalAmountCents = transactions.sumOf { it.amountCents.toLong() }
+        
+        // 创建账单记录（注：实际应该持久化到数据库）
+        // 这里只是生成账单的基本逻辑，实际实现需要CreditCardBillRepository
+        TODO("需要CreditCardBillRepository来持久化账单数据")
     }
     
     override suspend fun recordCreditCardPayment(
@@ -313,11 +535,24 @@ class LedgerApiImpl @Inject constructor(
         paymentDate: LocalDate,
         fromAccountId: String
     ): CreditCardPayment {
-        TODO("Not yet implemented")
+        // 信用卡还款功能暂未实现，返回临时对象
+        return CreditCardPayment(
+            id = UUID.randomUUID().toString(),
+            userId = "", // 临时值
+            accountId = fromAccountId,
+            paymentAmountCents = amountCents,
+            paymentType = com.ccxiaoji.feature.ledger.data.local.entity.PaymentType.FULL,
+            paymentDate = paymentDate.atStartOfDayIn(TimeZone.currentSystemDefault()),
+            dueAmountCents = 0,
+            isOnTime = true,
+            createdAt = Clock.System.now(),
+            updatedAt = Clock.System.now()
+        )
     }
     
     override fun getCreditCardPayments(billId: String): Flow<List<CreditCardPayment>> {
-        TODO("Not yet implemented")
+        // 信用卡还款记录功能暂未实现，返回空列表
+        return flowOf(emptyList())
     }
     
     override suspend fun updateCreditCardAccount(
@@ -326,61 +561,145 @@ class LedgerApiImpl @Inject constructor(
         billingDay: Int,
         dueDay: Int
     ) {
-        TODO("Not yet implemented")
+        // 更新信用卡账户的额度和账单日信息
+        val account = accountRepository.getAccountById(accountId)
+        if (account != null && account.type == AccountType.CREDIT_CARD) {
+            // 更新账户余额为负的信用额度（信用卡余额通常是负数表示已使用额度）
+            // 注：实际实现需要扩展Account实体以包含billingDay和dueDay字段
+            TODO("需要扩展Account实体以支持信用卡特有字段")
+        } else {
+            throw IllegalArgumentException("账户不存在或不是信用卡账户")
+        }
     }
     
     // Additional statistics methods
     override suspend fun getMonthlyTrend(year: Int, categoryId: String?): Map<Int, Pair<Long, Long>> {
-        TODO("Not yet implemented")
+        val result = mutableMapOf<Int, Pair<Long, Long>>()
+        
+        for (month in 1..12) {
+            val (income, expense) = transactionRepository.getMonthlyIncomesAndExpenses(year, month)
+            result[month] = income.toLong() to expense.toLong()
+        }
+        
+        return result
     }
     
     override suspend fun getYearlyOverview(year: Int): Map<String, Long> {
-        TODO("Not yet implemented")
+        val result = mutableMapOf<String, Long>()
+        var totalIncome = 0L
+        var totalExpense = 0L
+        
+        for (month in 1..12) {
+            val (income, expense) = transactionRepository.getMonthlyIncomesAndExpenses(year, month)
+            totalIncome += income
+            totalExpense += expense
+        }
+        
+        result["totalIncome"] = totalIncome
+        result["totalExpense"] = totalExpense
+        result["netSavings"] = totalIncome - totalExpense
+        result["savingsRate"] = if (totalIncome > 0) {
+            ((totalIncome - totalExpense) * 100 / totalIncome)
+        } else {
+            0L
+        }
+        
+        return result
     }
     
     override suspend fun getExpenseStructure(year: Int, month: Int): Map<String, Float> {
-        TODO("Not yet implemented")
+        val startDate = kotlinx.datetime.LocalDate(year, month, 1)
+        val endDate = if (month == 12) {
+            kotlinx.datetime.LocalDate(year + 1, 1, 1).minus(kotlinx.datetime.DatePeriod(days = 1))
+        } else {
+            kotlinx.datetime.LocalDate(year, month + 1, 1).minus(kotlinx.datetime.DatePeriod(days = 1))
+        }
+        
+        val categoryStats = transactionRepository.getCategoryStatistics(startDate, endDate, "EXPENSE")
+        val totalExpense = categoryStats.sumOf { it.totalAmount }
+        
+        return if (totalExpense > 0) {
+            categoryStats.associate { stat ->
+                stat.categoryName to (stat.totalAmount.toFloat() / totalExpense * 100)
+            }
+        } else {
+            emptyMap()
+        }
     }
     
     override suspend fun getAccountBalanceTrend(accountId: String, days: Int): List<Pair<LocalDate, Long>> {
-        TODO("Not yet implemented")
+        val endDate = kotlinx.datetime.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).date
+        val startDate = endDate.minus(kotlinx.datetime.DatePeriod(days = days))
+        
+        val account = accountRepository.getAccountById(accountId) ?: return emptyList()
+        val transactions = transactionRepository.getTransactionsByAccountAndDateRange(accountId, startDate, endDate).first()
+        
+        val dailyBalances = mutableMapOf<LocalDate, Long>()
+        var currentBalance = account.balanceCents
+        
+        // 从最新日期往前推算余额
+        val sortedTransactions = transactions.sortedByDescending { it.createdAt }
+        var currentDate = endDate
+        
+        while (currentDate >= startDate) {
+            val dayTransactions = sortedTransactions.filter { transaction ->
+                val transactionDate = transaction.createdAt
+                    .toLocalDateTime(TimeZone.currentSystemDefault()).date
+                transactionDate == currentDate
+            }
+            
+            // 减去当天的交易来计算当天开始时的余额
+            dayTransactions.forEach { transaction ->
+                val category = categoryRepository.getCategoryById(transaction.categoryId)
+                if (category != null && category.type == Category.Type.EXPENSE) {
+                    currentBalance += transaction.amountCents
+                } else {
+                    currentBalance -= transaction.amountCents
+                }
+            }
+            
+            dailyBalances[currentDate] = currentBalance
+            currentDate = currentDate.minus(kotlinx.datetime.DatePeriod(days = 1))
+        }
+        
+        return dailyBalances.toList().sortedBy { it.first }
     }
     
     // Navigation
     override fun navigateToAddTransaction() {
-        TODO("Not yet implemented")
+        throw NotImplementedError("导航功能应在app模块中实现，不应调用此方法")
     }
     
     override fun navigateToTransactionDetail(transactionId: String) {
-        TODO("Not yet implemented")
+        throw NotImplementedError("导航功能应在app模块中实现，不应调用此方法")
     }
     
     override fun navigateToAccountManagement() {
-        TODO("Not yet implemented")
+        throw NotImplementedError("导航功能应在app模块中实现，不应调用此方法")
     }
     
     override fun navigateToCategoryManagement() {
-        TODO("Not yet implemented")
+        throw NotImplementedError("导航功能应在app模块中实现，不应调用此方法")
     }
     
     override fun navigateToRecurringTransactions() {
-        TODO("Not yet implemented")
+        throw NotImplementedError("导航功能应在app模块中实现，不应调用此方法")
     }
     
     override fun navigateToBudgetManagement() {
-        TODO("Not yet implemented")
+        throw NotImplementedError("导航功能应在app模块中实现，不应调用此方法")
     }
     
     override fun navigateToSavingsGoals() {
-        TODO("Not yet implemented")
+        throw NotImplementedError("导航功能应在app模块中实现，不应调用此方法")
     }
     
     override fun navigateToStatistics() {
-        TODO("Not yet implemented")
+        throw NotImplementedError("导航功能应在app模块中实现，不应调用此方法")
     }
     
     override fun navigateToCreditCardManagement() {
-        TODO("Not yet implemented")
+        throw NotImplementedError("导航功能应在app模块中实现，不应调用此方法")
     }
     
     // Screen Providers

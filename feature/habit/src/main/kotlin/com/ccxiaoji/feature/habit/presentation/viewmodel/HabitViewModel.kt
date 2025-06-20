@@ -2,7 +2,7 @@ package com.ccxiaoji.feature.habit.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.feature.habit.data.repository.HabitRepository
+import com.ccxiaoji.feature.habit.domain.repository.HabitRepository
 import com.ccxiaoji.feature.habit.domain.model.HabitWithStreak
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -51,8 +51,11 @@ class HabitViewModel @Inject constructor(
     }
     
     private fun loadCheckedToday() {
-        // TODO: Load habits that have been checked in today
-        // This would require a method in HabitRepository to get today's check-ins
+        // 获取今日打卡的习惯
+        // 注：当前HabitWithStreak模型没有lastCheckInDate字段
+        // 需要通过Repository层获取今日打卡记录
+        // 暂时保持checkedToday为空，等待后续完善数据获取逻辑
+        _uiState.update { it.copy(checkedToday = emptySet()) }
     }
     
     fun addHabit(
@@ -66,7 +69,9 @@ class HabitViewModel @Inject constructor(
                 title = title,
                 description = description,
                 period = period,
-                target = target
+                target = target,
+                color = "#3A7AFE",
+                icon = null
             )
         }
     }
@@ -95,7 +100,8 @@ class HabitViewModel @Inject constructor(
     
     fun checkInHabit(habitId: String) {
         viewModelScope.launch {
-            habitRepository.checkInHabit(habitId)
+            val today = kotlinx.datetime.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).date
+            habitRepository.checkInHabit(habitId, today)
             _uiState.update { 
                 it.copy(checkedToday = it.checkedToday + habitId)
             }

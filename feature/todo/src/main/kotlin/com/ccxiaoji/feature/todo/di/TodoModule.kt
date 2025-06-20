@@ -2,6 +2,8 @@ package com.ccxiaoji.feature.todo.di
 
 import com.ccxiaoji.feature.todo.api.TodoApi
 import com.ccxiaoji.feature.todo.data.TodoApiImpl
+import com.ccxiaoji.feature.todo.data.repository.TaskRepository
+import com.ccxiaoji.feature.todo.domain.repository.TodoRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -18,4 +20,8 @@ abstract class TodoModule {
     @Binds
     @Singleton
     abstract fun bindTodoApi(impl: TodoApiImpl): TodoApi
+    
+    @Binds
+    @Singleton
+    abstract fun bindTodoRepository(impl: TaskRepository): TodoRepository
 }

@@ -1,11 +1,14 @@
 package com.ccxiaoji.feature.habit.data
 
 import com.ccxiaoji.feature.habit.api.HabitApi
-import com.ccxiaoji.feature.habit.data.repository.HabitRepository
+import com.ccxiaoji.feature.habit.domain.repository.HabitRepository
 import com.ccxiaoji.feature.habit.domain.model.Habit
 import com.ccxiaoji.feature.habit.domain.model.HabitWithStreak
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -58,11 +61,8 @@ class HabitApiImpl @Inject constructor(
     }
     
     override suspend fun checkInHabit(habitId: String, date: LocalDate?) {
-        if (date != null) {
-            habitRepository.checkInHabit(habitId, date)
-        } else {
-            habitRepository.checkInHabit(habitId)
-        }
+        val checkInDate = date ?: kotlinx.datetime.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).date
+        habitRepository.checkInHabit(habitId, checkInDate)
     }
     
     override suspend fun deleteHabit(habitId: String) {

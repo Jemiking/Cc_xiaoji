@@ -18,7 +18,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.res.stringResource
 import com.ccxiaoji.feature.schedule.R
 import com.ccxiaoji.feature.schedule.domain.model.Shift
-import com.ccxiaoji.feature.schedule.presentation.theme.*
+import com.ccxiaoji.ui.theme.*
 import com.ccxiaoji.feature.schedule.presentation.components.CustomTimePickerDialog
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter

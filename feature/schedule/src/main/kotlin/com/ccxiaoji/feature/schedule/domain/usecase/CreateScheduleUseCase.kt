@@ -70,24 +70,6 @@ class CreateScheduleUseCase @Inject constructor(
         repository.saveSchedule(schedule)
     }
     
-    private suspend fun handleWeeklyPattern(pattern: SchedulePattern.Weekly) {
-        val schedules = mutableListOf<Schedule>()
-        var currentDate = pattern.startDate
-        
-        while (!currentDate.isAfter(pattern.endDate)) {
-            val shiftId = pattern.weekPattern[currentDate.dayOfWeek]
-            if (shiftId != null) {
-                val shift = repository.getShiftById(shiftId)
-                if (shift != null) {
-                    schedules.add(Schedule(date = currentDate, shift = shift))
-                }
-            }
-            currentDate = currentDate.plusDays(1)
-        }
-        
-        repository.saveSchedules(schedules)
-    }
-    
     /**
      * 处理循环排班模式（支持任意天数周期）
      */

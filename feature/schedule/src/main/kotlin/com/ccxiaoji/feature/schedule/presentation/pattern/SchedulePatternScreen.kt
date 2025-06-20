@@ -490,45 +490,6 @@ private fun CyclePatternSection(
 }
 
 /**
- * 周循环配置部分（已废弃，保留以兼容）
- */
-@Deprecated("使用 CyclePatternSection 代替")
-@Composable
-private fun WeeklyPatternSection(
-    shifts: List<Shift>,
-    weekPattern: Map<DayOfWeek, Long?>,
-    onPatternChange: (DayOfWeek, Long?) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                stringResource(R.string.schedule_pattern_cycle),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            DayOfWeek.values().forEach { dayOfWeek ->
-                WeekDayShiftSelector(
-                    dayOfWeek = dayOfWeek,
-                    shifts = shifts,
-                    selectedShiftId = weekPattern[dayOfWeek],
-                    onShiftSelect = { shiftId ->
-                        onPatternChange(dayOfWeek, shiftId)
-                    }
-                )
-            }
-        }
-    }
-}
-
-/**
  * 轮班配置部分
  */
 @Composable

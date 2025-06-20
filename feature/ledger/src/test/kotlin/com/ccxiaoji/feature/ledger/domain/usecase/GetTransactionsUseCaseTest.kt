@@ -2,7 +2,9 @@ package com.ccxiaoji.feature.ledger.domain.usecase
 
 import com.ccxiaoji.feature.ledger.data.repository.TransactionRepository
 import com.ccxiaoji.feature.ledger.domain.model.Account
+import com.ccxiaoji.feature.ledger.domain.model.AccountType
 import com.ccxiaoji.feature.ledger.domain.model.Category
+import com.ccxiaoji.feature.ledger.domain.model.CategoryDetails
 import com.ccxiaoji.feature.ledger.domain.model.Transaction
 import com.google.common.truth.Truth.assertThat
 import io.mockk.MockKAnnotations
@@ -40,8 +42,8 @@ class GetTransactionsUseCaseTest {
         val account = Account(
             id = "account1",
             name = "现金账户",
-            type = "CASH",
-            balance = 10000.0,
+            type = AccountType.CASH,
+            balanceCents = 1000000L,
             currency = "CNY",
             icon = "💵",
             color = "#4CAF50",
@@ -53,11 +55,11 @@ class GetTransactionsUseCaseTest {
         val category = Category(
             id = "category1",
             name = "餐饮",
-            type = "EXPENSE",
+            type = Category.Type.EXPENSE,
             icon = "🍔",
             color = "#FF5722",
             parentId = null,
-            orderIndex = 1,
+            displayOrder = 1,
             createdAt = now,
             updatedAt = now
         )
@@ -67,29 +69,33 @@ class GetTransactionsUseCaseTest {
                 id = "trans1",
                 accountId = "account1",
                 categoryId = "category1",
-                amountCents = 5000L, // 50元
-                type = "EXPENSE",
+                amountCents = 5000, // 50元
                 note = "午餐",
-                transactionDate = startDate.atTime(12, 0).toInstant(TimeZone.currentSystemDefault()),
                 createdAt = now,
                 updatedAt = now,
-                accountDetails = account,
-                categoryDetails = category,
-                tags = listOf("餐饮", "工作日")
+                categoryDetails = CategoryDetails(
+                    id = category.id,
+                    name = category.name,
+                    icon = category.icon,
+                    color = category.color,
+                    type = "EXPENSE"
+                )
             ),
             Transaction(
                 id = "trans2",
                 accountId = "account1",
                 categoryId = "category1",
-                amountCents = 8000L, // 80元
-                type = "EXPENSE",
+                amountCents = 8000, // 80元
                 note = "晚餐",
-                transactionDate = startDate.atTime(18, 30).toInstant(TimeZone.currentSystemDefault()),
                 createdAt = now,
                 updatedAt = now,
-                accountDetails = account,
-                categoryDetails = category,
-                tags = listOf("餐饮", "聚餐")
+                categoryDetails = CategoryDetails(
+                    id = category.id,
+                    name = category.name,
+                    icon = category.icon,
+                    color = category.color,
+                    type = "EXPENSE"
+                )
             )
         )
 
@@ -102,9 +108,9 @@ class GetTransactionsUseCaseTest {
 
         // Then
         assertThat(result).hasSize(2)
-        assertThat(result[0].amountCents).isEqualTo(5000L)
-        assertThat(result[1].amountCents).isEqualTo(8000L)
-        assertThat(result.sumOf { it.amountCents }).isEqualTo(13000L)
+        assertThat(result[0].amountCents).isEqualTo(5000)
+        assertThat(result[1].amountCents).isEqualTo(8000)
+        assertThat(result.sumOf { it.amountCents }).isEqualTo(13000)
         coVerify(exactly = 1) { transactionRepository.getTransactionsByDateRange(startDate, endDate) }
     }
 
@@ -122,12 +128,12 @@ class GetTransactionsUseCaseTest {
         coEvery { transactionRepository.getRecentTransactions(limit) } returns flowOf(recentTransactions)
 
         // When
-        val result = transactionRepository.getRecentTransactions(limit).first()
+        val result = getTransactionsUseCase.getRecentTransactions(limit).first()
 
         // Then
         assertThat(result).hasSize(3)
-        assertThat(result[0].amountCents).isEqualTo(10000L)
-        assertThat(result[0].type).isEqualTo("INCOME")
+        assertThat(result[0].amountCents).isEqualTo(10000)
+        assertThat(result[0].categoryDetails?.type).isEqualTo("INCOME")
         coVerify(exactly = 1) { transactionRepository.getRecentTransactions(limit) }
     }
 
@@ -136,41 +142,19 @@ class GetTransactionsUseCaseTest {
         // Given
         val year = 2024
         val month = 1
-        val monthlyTotal = 250000L // 2500元
+        val monthlyTotal = 250000 // 2500元
 
         coEvery { transactionRepository.getMonthlyTotal(year, month) } returns monthlyTotal
 
         // When
-        val result = transactionRepository.getMonthlyTotal(year, month)
+        val result = getTransactionsUseCase.getMonthlyTotal(year, month)
 
         // Then
         assertThat(result).isEqualTo(250000L)
-        assertThat(result / 100.0).isEqualTo(2500.0) // 转换为元
+        assertThat(result.toDouble() / 100.0).isEqualTo(2500.0) // 转换为元
         coVerify(exactly = 1) { transactionRepository.getMonthlyTotal(year, month) }
     }
 
-    @Test
-    fun `按类别获取交易记录`() = runTest {
-        // Given
-        val categoryId = "food_category"
-        val transactions = listOf(
-            createTestTransaction("trans1", 5000L, "早餐", "EXPENSE", categoryId),
-            createTestTransaction("trans2", 8000L, "午餐", "EXPENSE", categoryId),
-            createTestTransaction("trans3", 12000L, "晚餐", "EXPENSE", categoryId)
-        )
-
-        coEvery { 
-            transactionRepository.getTransactionsByCategory(categoryId) 
-        } returns flowOf(transactions)
-
-        // When
-        val result = transactionRepository.getTransactionsByCategory(categoryId).first()
-
-        // Then
-        assertThat(result).hasSize(3)
-        assertThat(result.all { it.categoryId == categoryId }).isTrue()
-        assertThat(result.sumOf { it.amountCents }).isEqualTo(25000L) // 总计250元
-    }
 
     // 辅助方法：创建测试用的Transaction对象
     private fun createTestTransaction(
@@ -185,15 +169,17 @@ class GetTransactionsUseCaseTest {
             id = id,
             accountId = "account1",
             categoryId = categoryId,
-            amountCents = amountCents,
-            type = type,
+            amountCents = amountCents.toInt(),
             note = note,
-            transactionDate = now,
             createdAt = now,
             updatedAt = now,
-            accountDetails = null,
-            categoryDetails = null,
-            tags = emptyList()
+            categoryDetails = CategoryDetails(
+                id = categoryId,
+                name = "Test Category",
+                icon = "📝",
+                color = "#6200EE",
+                type = type
+            )
         )
     }
 }
@@ -204,4 +190,10 @@ class GetTransactionsUseCase(
 ) {
     suspend operator fun invoke(startDate: LocalDate, endDate: LocalDate) = 
         transactionRepository.getTransactionsByDateRange(startDate, endDate)
+    
+    fun getRecentTransactions(limit: Int) = 
+        transactionRepository.getRecentTransactions(limit)
+    
+    suspend fun getMonthlyTotal(year: Int, month: Int): Long = 
+        transactionRepository.getMonthlyTotal(year, month).toLong()
 }

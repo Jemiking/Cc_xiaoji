@@ -24,6 +24,7 @@ class NotificationManager @Inject constructor(
         const val CHANNEL_HABIT_REMINDER = "habit_reminder"
         const val CHANNEL_BUDGET_ALERT = "budget_alert"
         const val CHANNEL_CREDIT_CARD_REMINDER = "credit_card_reminder"
+        const val CHANNEL_SCHEDULE_REMINDER = "schedule_reminder"
         const val CHANNEL_GENERAL = "general"
         
         // 通知ID范围
@@ -31,6 +32,7 @@ class NotificationManager @Inject constructor(
         const val NOTIFICATION_ID_HABIT_BASE = 2000
         const val NOTIFICATION_ID_BUDGET_BASE = 3000
         const val NOTIFICATION_ID_CREDIT_CARD_BASE = 5000
+        const val NOTIFICATION_ID_SCHEDULE_BASE = 6000
         const val NOTIFICATION_ID_GENERAL_BASE = 4000
     }
     
@@ -85,6 +87,16 @@ class NotificationManager @Inject constructor(
                 enableVibration(true)
             }
             
+            // 排班提醒渠道
+            val scheduleChannel = NotificationChannel(
+                CHANNEL_SCHEDULE_REMINDER,
+                "排班提醒",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "每日排班提醒通知"
+                enableLights(true)
+            }
+            
             // 通用渠道
             val generalChannel = NotificationChannel(
                 CHANNEL_GENERAL,
@@ -95,7 +107,7 @@ class NotificationManager @Inject constructor(
             }
             
             notificationManager.createNotificationChannels(
-                listOf(taskChannel, habitChannel, budgetChannel, creditCardChannel, generalChannel)
+                listOf(taskChannel, habitChannel, budgetChannel, creditCardChannel, scheduleChannel, generalChannel)
             )
         }
     }
@@ -232,6 +244,40 @@ class NotificationManager @Inject constructor(
         
         with(NotificationManagerCompat.from(context)) {
             notify(NOTIFICATION_ID_CREDIT_CARD_BASE + cardId.hashCode(), notification)
+        }
+    }
+    
+    // 发送排班提醒通知
+    fun sendScheduleReminder(hasSchedule: Boolean, shiftName: String? = null, shiftTime: String? = null) {
+        val intent = Intent(context, config.mainActivityClass).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            putExtra("navigation", "schedule")
+        }
+        
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            NOTIFICATION_ID_SCHEDULE_BASE,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        
+        val (title, content) = if (hasSchedule && shiftName != null && shiftTime != null) {
+            "今日排班提醒" to "今天的班次：$shiftName（$shiftTime）"
+        } else {
+            "今日排班提醒" to "今天没有排班安排"
+        }
+        
+        val notification = NotificationCompat.Builder(context, CHANNEL_SCHEDULE_REMINDER)
+            .setSmallIcon(config.smallIconResourceId)
+            .setContentTitle(title)
+            .setContentText(content)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+        
+        with(NotificationManagerCompat.from(context)) {
+            notify(NOTIFICATION_ID_SCHEDULE_BASE, notification)
         }
     }
     

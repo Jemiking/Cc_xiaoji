@@ -4,6 +4,7 @@ import com.ccxiaoji.feature.todo.data.local.dao.TaskDao
 import com.ccxiaoji.feature.todo.data.local.entity.TaskEntity
 import com.ccxiaoji.common.model.SyncStatus
 import com.ccxiaoji.feature.todo.domain.model.Task
+import com.ccxiaoji.feature.todo.domain.repository.TodoRepository
 import com.ccxiaoji.shared.user.api.UserApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -16,23 +17,23 @@ import javax.inject.Singleton
 class TaskRepository @Inject constructor(
     private val taskDao: TaskDao,
     private val userApi: UserApi
-) {
-    fun getTasks(): Flow<List<Task>> {
+) : TodoRepository {
+    override fun getAllTodos(): Flow<List<Task>> {
         return taskDao.getTasksByUser(userApi.getCurrentUserId())
             .map { entities -> entities.map { it.toDomainModel() } }
     }
     
-    fun getIncompleteTasks(): Flow<List<Task>> {
+    override fun getIncompleteTodos(): Flow<List<Task>> {
         return taskDao.getIncompleteTasks(userApi.getCurrentUserId())
             .map { entities -> entities.map { it.toDomainModel() } }
     }
     
-    fun searchTasks(query: String): Flow<List<Task>> {
+    override fun searchTodos(query: String): Flow<List<Task>> {
         return taskDao.searchTasks(userApi.getCurrentUserId(), "%$query%")
             .map { entities -> entities.map { it.toDomainModel() } }
     }
     
-    fun getTodayTasks(): Flow<List<Task>> {
+    override fun getTodayTodos(): Flow<List<Task>> {
         val todayStart = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
             .date.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val todayEnd = todayStart + 86400000 // 24 hours
@@ -41,15 +42,15 @@ class TaskRepository @Inject constructor(
             .map { entities -> entities.map { it.toDomainModel() } }
     }
     
-    fun getTodayTasksCount(): Flow<Int> {
-        return getTodayTasks().map { it.size }
+    override fun getTodayTodosCount(): Flow<Int> {
+        return getTodayTodos().map { it.size }
     }
     
-    suspend fun addTask(
+    override suspend fun addTodo(
         title: String,
-        description: String? = null,
-        dueAt: Instant? = null,
-        priority: Int = 0
+        description: String?,
+        dueAt: Instant?,
+        priority: Int
     ): Task {
         val taskId = UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
@@ -73,23 +74,23 @@ class TaskRepository @Inject constructor(
         return entity.toDomainModel()
     }
     
-    suspend fun updateTaskCompletion(taskId: String, completed: Boolean) {
+    override suspend fun updateTodoCompletion(todoId: String, completed: Boolean) {
         val now = System.currentTimeMillis()
         val completedAt = if (completed) now else null
         
-        taskDao.updateTaskCompletion(taskId, completed, completedAt, now)
+        taskDao.updateTaskCompletion(todoId, completed, completedAt, now)
         
         // TODO: Log the change for sync through ChangeLogApi
     }
     
-    suspend fun updateTask(
-        taskId: String,
+    override suspend fun updateTodo(
+        todoId: String,
         title: String,
-        description: String? = null,
-        dueAt: Instant? = null,
-        priority: Int = 0
+        description: String?,
+        dueAt: Instant?,
+        priority: Int
     ) {
-        val existingTask = taskDao.getTaskById(taskId) ?: return
+        val existingTask = taskDao.getTaskById(todoId) ?: return
         
         val now = System.currentTimeMillis()
         val updatedTask = existingTask.copy(
@@ -106,16 +107,16 @@ class TaskRepository @Inject constructor(
         // TODO: Log the change for sync through ChangeLogApi
     }
     
-    suspend fun deleteTask(taskId: String) {
+    override suspend fun deleteTodo(todoId: String) {
         val now = System.currentTimeMillis()
         
-        taskDao.softDeleteTask(taskId, now)
+        taskDao.softDeleteTask(todoId, now)
         
         // TODO: Log the change for sync through ChangeLogApi
     }
     
-    suspend fun getTaskById(taskId: String): Task? {
-        return taskDao.getTaskById(taskId)?.toDomainModel()
+    override suspend fun getTodoById(todoId: String): Task? {
+        return taskDao.getTaskById(todoId)?.toDomainModel()
     }
 }
 

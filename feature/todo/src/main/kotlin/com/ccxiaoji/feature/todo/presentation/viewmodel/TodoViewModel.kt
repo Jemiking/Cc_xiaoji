@@ -2,7 +2,7 @@ package com.ccxiaoji.feature.todo.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.feature.todo.data.repository.TaskRepository
+import com.ccxiaoji.feature.todo.domain.repository.TodoRepository
 import com.ccxiaoji.feature.todo.domain.model.Task
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -12,7 +12,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TodoViewModel @Inject constructor(
-    private val taskRepository: TaskRepository
+    private val todoRepository: TodoRepository
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(TodoUiState())
@@ -38,9 +38,9 @@ class TodoViewModel @Inject constructor(
                     .distinctUntilChanged()
                     .flatMapLatest { showCompleted ->
                         if (showCompleted) {
-                            taskRepository.getTasks()
+                            todoRepository.getAllTodos()
                         } else {
-                            taskRepository.getIncompleteTasks()
+                            todoRepository.getIncompleteTodos()
                         }
                     }
             ) { query, filterOptions, allTasks ->
@@ -116,7 +116,7 @@ class TodoViewModel @Inject constructor(
         priority: Int
     ) {
         viewModelScope.launch {
-            val task = taskRepository.addTask(
+            val task = todoRepository.addTodo(
                 title = title,
                 description = description,
                 dueAt = dueAt,
@@ -138,8 +138,8 @@ class TodoViewModel @Inject constructor(
         priority: Int
     ) {
         viewModelScope.launch {
-            taskRepository.updateTask(
-                taskId = taskId,
+            todoRepository.updateTodo(
+                todoId = taskId,
                 title = title,
                 description = description,
                 dueAt = dueAt,
@@ -153,13 +153,13 @@ class TodoViewModel @Inject constructor(
     
     fun toggleTaskCompletion(taskId: String, completed: Boolean) {
         viewModelScope.launch {
-            taskRepository.updateTaskCompletion(taskId, completed)
+            todoRepository.updateTodoCompletion(taskId, completed)
         }
     }
     
     fun deleteTask(taskId: String) {
         viewModelScope.launch {
-            taskRepository.deleteTask(taskId)
+            todoRepository.deleteTodo(taskId)
             // 发送事件，让外部处理通知调度
             _taskEvent.emit(TaskEvent.TaskDeleted(taskId))
         }

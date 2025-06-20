@@ -1,6 +1,6 @@
 package com.ccxiaoji.feature.habit.domain.usecase
 
-import com.ccxiaoji.feature.habit.data.repository.HabitRepository
+import com.ccxiaoji.feature.habit.domain.repository.HabitRepository
 import com.ccxiaoji.feature.habit.domain.model.Habit
 import com.ccxiaoji.feature.habit.domain.model.HabitWithStreak
 import com.google.common.truth.Truth.assertThat
@@ -100,7 +100,7 @@ class GetHabitsUseCaseTest {
         coEvery { habitRepository.getHabitsWithStreaks() } returns flowOf(habitsWithStreak)
 
         // When
-        val result = habitRepository.getHabitsWithStreaks().first()
+        val result = getHabitsUseCase.getHabitsWithStreaks().first()
 
         // Then
         assertThat(result).hasSize(1)
@@ -108,6 +108,7 @@ class GetHabitsUseCaseTest {
         assertThat(result[0].currentStreak).isEqualTo(7)
         assertThat(result[0].completedCount).isEqualTo(25)
         assertThat(result[0].longestStreak).isEqualTo(15)
+        coVerify(exactly = 1) { habitRepository.getHabitsWithStreaks() }
     }
 
     @Test
@@ -132,7 +133,7 @@ class GetHabitsUseCaseTest {
         coEvery { habitRepository.searchHabits(searchQuery) } returns flowOf(searchResults)
 
         // When
-        val result = habitRepository.searchHabits(searchQuery).first()
+        val result = getHabitsUseCase.searchHabits(searchQuery).first()
 
         // Then
         assertThat(result).hasSize(1)
@@ -147,17 +148,24 @@ class GetHabitsUseCaseTest {
         coEvery { habitRepository.getTodayCheckedHabitsCount() } returns flowOf(checkedCount)
 
         // When
-        val result = habitRepository.getTodayCheckedHabitsCount().first()
+        val result = getHabitsUseCase.getTodayCheckedCount().first()
 
         // Then
         assertThat(result).isEqualTo(3)
         coVerify(exactly = 1) { habitRepository.getTodayCheckedHabitsCount() }
     }
-}
 
-// 假设的UseCase类，实际项目中应该存在
-class GetHabitsUseCase(
-    private val habitRepository: HabitRepository
-) {
-    suspend operator fun invoke() = habitRepository.getHabits()
+    @Test
+    fun `获取活跃习惯数量`() = runTest {
+        // Given
+        val activeCount = 5
+        coEvery { habitRepository.getActiveHabitsCount() } returns flowOf(activeCount)
+
+        // When
+        val result = getHabitsUseCase.getActiveHabitsCount().first()
+
+        // Then
+        assertThat(result).isEqualTo(5)
+        coVerify(exactly = 1) { habitRepository.getActiveHabitsCount() }
+    }
 }
