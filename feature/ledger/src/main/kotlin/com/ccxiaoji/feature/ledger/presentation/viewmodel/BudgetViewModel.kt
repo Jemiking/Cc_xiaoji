@@ -5,7 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.feature.ledger.data.local.dao.BudgetWithSpent
 import com.ccxiaoji.feature.ledger.data.local.dao.CategoryDao
 import com.ccxiaoji.feature.ledger.data.local.entity.CategoryEntity
-import com.ccxiaoji.feature.ledger.data.repository.BudgetRepository
+import com.ccxiaoji.feature.ledger.domain.repository.BudgetRepository
+import com.ccxiaoji.feature.ledger.domain.model.Budget
 import com.ccxiaoji.shared.user.api.UserApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -130,14 +131,32 @@ class BudgetViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             try {
-                budgetRepository.upsertBudget(
-                    year = _uiState.value.selectedYear,
-                    month = _uiState.value.selectedMonth,
-                    budgetAmountCents = budgetAmountCents,
-                    categoryId = categoryId,
-                    alertThreshold = alertThreshold,
-                    note = note
-                )
+                val existingBudget = _uiState.value.editingBudget
+                if (existingBudget != null) {
+                    // 更新现有预算
+                    // 从BudgetWithSpent创建Budget对象进行更新
+                    val budget = Budget(
+                        id = existingBudget.id,
+                        userId = existingBudget.userId,
+                        year = existingBudget.year,
+                        month = existingBudget.month,
+                        categoryId = existingBudget.categoryId,
+                        budgetAmountCents = budgetAmountCents,
+                        alertThreshold = existingBudget.alertThreshold,
+                        note = existingBudget.note,
+                        createdAt = existingBudget.createdAt,
+                        updatedAt = existingBudget.updatedAt
+                    )
+                    budgetRepository.updateBudget(budget)
+                } else {
+                    // 创建新预算
+                    budgetRepository.createBudget(
+                        year = _uiState.value.selectedYear,
+                        month = _uiState.value.selectedMonth,
+                        categoryId = categoryId,
+                        amountCents = budgetAmountCents
+                    )
+                }
                 hideAddEditDialog()
             } catch (e: Exception) {
                 _uiState.update { it.copy(error = e.message) }

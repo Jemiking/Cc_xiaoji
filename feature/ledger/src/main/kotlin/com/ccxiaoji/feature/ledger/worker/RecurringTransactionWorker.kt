@@ -3,32 +3,38 @@ package com.ccxiaoji.feature.ledger.worker
 import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
+import com.ccxiaoji.common.base.BaseWorker
 import com.ccxiaoji.feature.ledger.data.repository.RecurringTransactionRepository
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import java.util.concurrent.TimeUnit
 
+/**
+ * 定期交易执行Worker
+ * 负责执行到期的定期交易（如房租、订阅费等）
+ */
 @HiltWorker
 class RecurringTransactionWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted workerParams: WorkerParameters,
     private val recurringTransactionRepository: RecurringTransactionRepository
-) : CoroutineWorker(context, workerParams) {
+) : BaseWorker(context, workerParams) {
     
-    override suspend fun doWork(): Result {
-        return try {
-            val executedCount = recurringTransactionRepository.executeDueRecurringTransactions()
-            
-            if (executedCount > 0) {
-                // 发送通知（可选）
-                // TODO: 实现通知功能
-            }
-            
-            Result.success()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.retry()
+    override fun getWorkerName(): String = "RecurringTransactionWorker"
+    
+    override suspend fun performWork(): Result {
+        val executedCount = recurringTransactionRepository.executeDueRecurringTransactions()
+        
+        if (executedCount > 0) {
+            logInfo("Executed $executedCount recurring transactions")
+            // TODO: 发送通知给用户
+        } else {
+            logInfo("No recurring transactions to execute")
         }
+        
+        return Result.success(
+            workDataOf("executed_count" to executedCount)
+        )
     }
     
     companion object {

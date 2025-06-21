@@ -1,5 +1,8 @@
 package com.ccxiaoji.feature.habit.data.repository
 
+import com.ccxiaoji.common.base.BaseResult
+import com.ccxiaoji.common.base.DomainException
+import com.ccxiaoji.common.base.safeSuspendCall
 import com.ccxiaoji.feature.habit.data.local.dao.HabitDao
 import com.ccxiaoji.feature.habit.data.local.entity.HabitEntity
 import com.ccxiaoji.feature.habit.data.local.entity.HabitRecordEntity
@@ -116,7 +119,14 @@ class HabitRepositoryImpl @Inject constructor(
         target: Int,
         color: String,
         icon: String?
-    ): Habit {
+    ): BaseResult<Habit> = safeSuspendCall {
+        if (title.isBlank()) {
+            throw DomainException.ValidationException("习惯名称不能为空")
+        }
+        if (target <= 0) {
+            throw DomainException.ValidationException("目标必须大于0")
+        }
+        
         val habitId = UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
         
@@ -138,7 +148,7 @@ class HabitRepositoryImpl @Inject constructor(
         
         // TODO: Log the change for sync through ChangeLogApi
         
-        return entity.toDomainModel()
+        entity.toDomainModel()
     }
     
     override suspend fun updateHabit(
@@ -149,8 +159,16 @@ class HabitRepositoryImpl @Inject constructor(
         target: Int,
         color: String,
         icon: String?
-    ) {
-        val existingHabit = habitDao.getHabitById(habitId) ?: return
+    ): BaseResult<Unit> = safeSuspendCall {
+        if (title.isBlank()) {
+            throw DomainException.ValidationException("习惯名称不能为空")
+        }
+        if (target <= 0) {
+            throw DomainException.ValidationException("目标必须大于0")
+        }
+        
+        val existingHabit = habitDao.getHabitById(habitId) 
+            ?: throw DomainException.DataException("习惯不存在")
         
         val now = System.currentTimeMillis()
         val updatedHabit = existingHabit.copy(
@@ -169,7 +187,7 @@ class HabitRepositoryImpl @Inject constructor(
         // TODO: Log the change for sync through ChangeLogApi
     }
     
-    override suspend fun checkInHabit(habitId: String, date: LocalDate) {
+    override suspend fun checkInHabit(habitId: String, date: LocalDate): BaseResult<Unit> = safeSuspendCall {
         val recordDate = date.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
         // Check if already checked in today
@@ -204,7 +222,7 @@ class HabitRepositoryImpl @Inject constructor(
         }
     }
     
-    override suspend fun deleteHabit(habitId: String) {
+    override suspend fun deleteHabit(habitId: String): BaseResult<Unit> = safeSuspendCall {
         val now = System.currentTimeMillis()
         
         habitDao.softDeleteHabit(habitId, now)

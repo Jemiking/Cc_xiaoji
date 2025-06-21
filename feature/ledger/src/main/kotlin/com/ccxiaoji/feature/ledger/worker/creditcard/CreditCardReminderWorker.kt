@@ -3,6 +3,7 @@ package com.ccxiaoji.feature.ledger.worker.creditcard
 import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
+import com.ccxiaoji.common.base.BaseWorker
 import com.ccxiaoji.feature.ledger.data.local.dao.AccountDao
 import com.ccxiaoji.shared.user.api.UserApi
 import com.ccxiaoji.shared.notification.api.NotificationApi
@@ -24,68 +25,58 @@ class CreditCardReminderWorker @AssistedInject constructor(
     private val accountDao: AccountDao,
     private val userApi: UserApi,
     private val notificationApi: NotificationApi
-) : CoroutineWorker(context, workerParams) {
+) : BaseWorker(context, workerParams) {
     
-    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        try {
-            val userId = userApi.getCurrentUserId()
-            val creditCardsWithDebt = accountDao.getCreditCardsWithDebt(userId)
+    override fun getWorkerName(): String = "CreditCardReminderWorker"
+    
+    override suspend fun performWork(): Result {
+        logInfo("Starting credit card payment reminders")
+        
+        val userId = userApi.getCurrentUserId()
+        val creditCardsWithDebt = accountDao.getCreditCardsWithDebt(userId)
+        
+        if (creditCardsWithDebt.isEmpty()) {
+            logInfo("No credit cards with debt found")
+            return Result.success()
+        }
+        
+        logInfo("Checking ${creditCardsWithDebt.size} credit cards for payment reminders")
+        var remindersSent = 0
+        
+        creditCardsWithDebt.forEach { creditCard ->
+            val dueDay = creditCard.paymentDueDay
+            val billingDay = creditCard.billingDay
             
-            if (creditCardsWithDebt.isEmpty()) {
-                return@withContext Result.success()
-            }
-            
-            creditCardsWithDebt.forEach { creditCard ->
-                val dueDay = creditCard.paymentDueDay
-                val billingDay = creditCard.billingDay
+            if (dueDay != null && billingDay != null) {
+                // Calculate days until due using the new utility
+                val daysUntilDue = CreditCardDateUtils.calculateDaysUntilPayment(
+                    paymentDueDay = dueDay,
+                    billingDay = billingDay
+                )
                 
-                if (dueDay != null && billingDay != null) {
-                    // Calculate days until due using the new utility
-                    val daysUntilDue = CreditCardDateUtils.calculateDaysUntilPayment(
-                        paymentDueDay = dueDay,
-                        billingDay = billingDay
-                    )
-                    
-                    // Format debt amount
-                    val debtAmount = formatCurrency(abs(creditCard.balanceCents))
-                    
-                    when (daysUntilDue) {
-                        3 -> {
-                            notificationApi.sendCreditCardReminder(
-                                cardId = creditCard.id,
-                                cardName = creditCard.name,
-                                debtAmount = debtAmount,
-                                daysUntilDue = 3,
-                                paymentDueDay = dueDay
-                            )
-                        }
-                        1 -> {
-                            notificationApi.sendCreditCardReminder(
-                                cardId = creditCard.id,
-                                cardName = creditCard.name,
-                                debtAmount = debtAmount,
-                                daysUntilDue = 1,
-                                paymentDueDay = dueDay
-                            )
-                        }
-                        0 -> {
-                            notificationApi.sendCreditCardReminder(
-                                cardId = creditCard.id,
-                                cardName = creditCard.name,
-                                debtAmount = debtAmount,
-                                daysUntilDue = 0,
-                                paymentDueDay = dueDay
-                            )
-                        }
+                // Format debt amount
+                val debtAmount = formatCurrency(abs(creditCard.balanceCents))
+                
+                when (daysUntilDue) {
+                    3, 1, 0 -> {
+                        logInfo("Sending reminder for ${creditCard.name}: $daysUntilDue days until due, amount: $debtAmount")
+                        notificationApi.sendCreditCardReminder(
+                            cardId = creditCard.id,
+                            cardName = creditCard.name,
+                            debtAmount = debtAmount,
+                            daysUntilDue = daysUntilDue,
+                            paymentDueDay = dueDay
+                        )
+                        remindersSent++
                     }
                 }
             }
-            
-            Result.success()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.retry()
         }
+        
+        logInfo("Credit card reminders completed. Sent $remindersSent reminders")
+        return Result.success(
+            workDataOf("reminders_sent" to remindersSent)
+        )
     }
     
     

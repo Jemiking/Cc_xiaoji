@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import com.ccxiaoji.app.data.local.CcDatabase
+import com.ccxiaoji.common.base.BaseWorker
 import com.ccxiaoji.common.model.SyncStatus
 import com.ccxiaoji.shared.sync.data.remote.api.SyncService
 import com.ccxiaoji.shared.sync.data.remote.dto.ConflictItem
@@ -32,37 +33,46 @@ class SyncWorker @AssistedInject constructor(
     private val syncService: SyncService,
     private val userApi: UserApi,
     private val gson: Gson
-) : CoroutineWorker(context, params) {
+) : BaseWorker(context, params) {
     
-    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
-        try {
-            val currentUser = userApi.getCurrentUser() ?: return@withContext Result.failure()
-            
-            // Upload local changes
-            uploadChanges()
-            
-            // Download remote changes
-            val lastSyncTime = userApi.getLastSyncTime()
-            downloadChanges(lastSyncTime)
-            
-            // Update last sync time
-            userApi.updateLastSyncTime(System.currentTimeMillis())
-            
-            Result.success()
-        } catch (e: Exception) {
-            if (runAttemptCount < MAX_RETRY_COUNT) {
-                Result.retry()
-            } else {
-                Result.failure()
-            }
+    override fun getWorkerName(): String = "SyncWorker"
+    
+    override fun getMaxRetryCount(): Int = MAX_RETRY_COUNT
+    
+    override suspend fun performWork(): Result {
+        val currentUser = userApi.getCurrentUser() 
+        if (currentUser == null) {
+            logError("No current user found, skipping sync")
+            return Result.failure()
         }
+        
+        logInfo("Starting sync for user: ${currentUser.email}")
+        
+        // Upload local changes
+        uploadChanges()
+        
+        // Download remote changes
+        val lastSyncTime = userApi.getLastSyncTime()
+        downloadChanges(lastSyncTime)
+        
+        // Update last sync time
+        userApi.updateLastSyncTime(System.currentTimeMillis())
+        
+        logInfo("Sync completed successfully")
+        return Result.success()
     }
     
     private suspend fun uploadChanges() {
         val changeLogDao = database.changeLogDao()
         val pendingChanges = changeLogDao.getPendingChanges(limit = BATCH_SIZE)
         
-        if (pendingChanges.isEmpty()) return
+        if (pendingChanges.isEmpty()) {
+            logInfo("No pending changes to upload")
+            return
+        }
+        
+        logInfo("Uploading ${pendingChanges.size} changes")
+        updateProgress(10) // 10% progress for starting upload
         
         val uploadRequest = pendingChanges.map { change ->
             SyncUploadItem(
@@ -80,6 +90,7 @@ class SyncWorker @AssistedInject constructor(
             
             // Handle conflicts if any
             uploadResponse?.conflicts?.forEach { conflict ->
+                logWarning("Conflict detected for ${conflict.table}:${conflict.rowId}")
                 handleConflict(conflict)
             }
             
@@ -93,20 +104,36 @@ class SyncWorker @AssistedInject constructor(
             uploadResponse?.serverTime?.let { serverTime ->
                 userApi.updateServerTime(serverTime)
             }
+            
+            logInfo("Upload completed successfully")
+            updateProgress(50) // 50% progress after upload
         } else {
             // Handle upload error
+            logError("Upload failed: ${response.code()} ${response.message()}")
             throw Exception("Upload failed: ${response.code()} ${response.message()}")
         }
     }
     
     private suspend fun downloadChanges(since: Long) {
-        val response = syncService.getChanges(since)
-        if (!response.isSuccessful) return
+        logInfo("Downloading changes since: $since")
         
-        val changes = response.body() ?: return
+        val response = syncService.getChanges(since)
+        if (!response.isSuccessful) {
+            logError("Failed to download changes: ${response.code()} ${response.message()}")
+            return
+        }
+        
+        val changes = response.body()
+        if (changes == null || changes.isEmpty()) {
+            logInfo("No new changes to download")
+            return
+        }
+        
+        logInfo("Downloading ${changes.size} changes")
+        updateProgress(60) // 60% progress for starting download
         
         // Apply changes to local database
-        changes.forEach { change ->
+        changes.forEachIndexed { index, change ->
             when (change.table) {
                 "transactions" -> applyTransactionChanges(change)
                 "tasks" -> applyTaskChanges(change)
@@ -120,7 +147,14 @@ class SyncWorker @AssistedInject constructor(
                 "savings_contributions" -> applySavingsContributionChanges(change)
                 "recurring_transactions" -> applyRecurringTransactionChanges(change)
             }
+            
+            // Update progress
+            val progress = 60 + (30 * (index + 1) / changes.size)
+            updateProgress(progress)
         }
+        
+        logInfo("Download and apply completed successfully")
+        updateProgress(90) // 90% progress after download
     }
     
     private suspend fun applyTransactionChanges(change: SyncChange) {

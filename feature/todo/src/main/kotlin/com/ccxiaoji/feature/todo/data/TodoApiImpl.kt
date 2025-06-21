@@ -41,7 +41,7 @@ class TodoApiImpl @Inject constructor(
     }
     
     override suspend fun getTaskById(taskId: String): Task? {
-        return todoRepository.getTodoById(taskId)
+        return todoRepository.getTodoById(taskId).getOrNull()
     }
     
     override suspend fun addTask(
@@ -50,7 +50,7 @@ class TodoApiImpl @Inject constructor(
         dueAt: Instant?,
         priority: Int
     ): Task {
-        return todoRepository.addTodo(title, description, dueAt, priority)
+        return todoRepository.addTodo(title, description, dueAt, priority).getOrThrow()
     }
     
     override suspend fun updateTask(
@@ -60,15 +60,15 @@ class TodoApiImpl @Inject constructor(
         dueAt: Instant?,
         priority: Int
     ) {
-        todoRepository.updateTodo(taskId, title, description, dueAt, priority)
+        todoRepository.updateTodo(taskId, title, description, dueAt, priority).getOrThrow()
     }
     
     override suspend fun updateTaskCompletion(taskId: String, completed: Boolean) {
-        todoRepository.updateTodoCompletion(taskId, completed)
+        todoRepository.updateTodoCompletion(taskId, completed).getOrThrow()
     }
     
     override suspend fun deleteTask(taskId: String) {
-        todoRepository.deleteTodo(taskId)
+        todoRepository.deleteTodo(taskId).getOrThrow()
     }
     
     // 导航功能需要在app模块中实现

@@ -35,9 +35,25 @@ fun HabitScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val errorState by viewModel.errorState.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    
     var showAddDialog by remember { mutableStateOf(false) }
     var editingHabit by remember { mutableStateOf<HabitWithStreak?>(null) }
     var showStatistics by remember { mutableStateOf(false) }
+    
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // 显示错误/成功消息
+    LaunchedEffect(errorState) {
+        errorState?.let { error ->
+            snackbarHostState.showSnackbar(
+                message = error.message,
+                duration = SnackbarDuration.Short
+            )
+            viewModel.clearError()
+        }
+    }
     
     Scaffold(
         topBar = {
@@ -66,7 +82,8 @@ fun HabitScreen(
                     Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_habit))
                 }
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier

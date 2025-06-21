@@ -3,7 +3,7 @@ package com.ccxiaoji.feature.ledger.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.feature.ledger.domain.model.CategoryStatistic
-import com.ccxiaoji.feature.ledger.data.repository.TransactionRepository
+import com.ccxiaoji.feature.ledger.domain.repository.TransactionRepository
 import com.ccxiaoji.feature.ledger.domain.model.Transaction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,6 +12,16 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import javax.inject.Inject
+
+// Extension function to convert java.time.LocalDate to kotlinx.datetime.LocalDate
+private fun java.time.LocalDate.toKotlinLocalDate(): kotlinx.datetime.LocalDate {
+    return kotlinx.datetime.LocalDate(this.year, this.monthValue, this.dayOfMonth)
+}
+
+// Extension function to convert kotlinx.datetime.LocalDate to java.time.LocalDate
+private fun kotlinx.datetime.LocalDate.toJavaLocalDate(): java.time.LocalDate {
+    return java.time.LocalDate.of(this.year, this.monthNumber, this.dayOfMonth)
+}
 
 @HiltViewModel
 class StatisticsViewModel @Inject constructor(
@@ -47,18 +57,27 @@ class StatisticsViewModel @Inject constructor(
             
             try {
                 // Load daily totals for trend chart
-                val dailyTotals = transactionRepository.getDailyTotals(startDate, endDate)
+                val dailyTotals = transactionRepository.getDailyTotals(startDate, endDate).getOrThrow()
+                
+                // Convert LocalDate to timestamp
+                val startTimestamp = startDate
+                    .atStartOfDayIn(TimeZone.currentSystemDefault())
+                    .toEpochMilliseconds()
+                val endTimestamp = endDate
+                    .atTime(23, 59, 59)
+                    .toInstant(TimeZone.currentSystemDefault())
+                    .toEpochMilliseconds()
                 
                 // Load category statistics
-                val expenseCategories = transactionRepository.getCategoryStatistics(startDate, endDate, "EXPENSE")
-                val incomeCategories = transactionRepository.getCategoryStatistics(startDate, endDate, "INCOME")
+                val expenseCategories = transactionRepository.getCategoryStatistics("EXPENSE", startTimestamp, endTimestamp).getOrThrow()
+                val incomeCategories = transactionRepository.getCategoryStatistics("INCOME", startTimestamp, endTimestamp).getOrThrow()
                 
                 // Load top transactions
-                val topExpenses = transactionRepository.getTopTransactions(startDate, endDate, "EXPENSE", 10)
-                val topIncomes = transactionRepository.getTopTransactions(startDate, endDate, "INCOME", 10)
+                val topExpenses = transactionRepository.getTopTransactions(startDate, endDate, "EXPENSE", 10).getOrThrow()
+                val topIncomes = transactionRepository.getTopTransactions(startDate, endDate, "INCOME", 10).getOrThrow()
                 
                 // Calculate savings rate
-                val savingsRate = transactionRepository.calculateSavingsRate(startDate, endDate)
+                val savingsRate = transactionRepository.calculateSavingsRate(startDate, endDate).getOrThrow()
                 
                 // Calculate totals
                 val totalIncome = incomeCategories.sumOf { it.totalAmount }

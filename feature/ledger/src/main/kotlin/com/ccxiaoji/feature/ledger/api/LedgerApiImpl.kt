@@ -4,7 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.ccxiaoji.feature.ledger.domain.model.*
-import com.ccxiaoji.feature.ledger.data.repository.*
+import com.ccxiaoji.feature.ledger.domain.repository.TransactionRepository
+import com.ccxiaoji.feature.ledger.domain.repository.AccountRepository
+import com.ccxiaoji.feature.ledger.domain.repository.CategoryRepository
+import com.ccxiaoji.feature.ledger.domain.repository.BudgetRepository
+import com.ccxiaoji.feature.ledger.data.repository.RecurringTransactionRepository
+import com.ccxiaoji.feature.ledger.data.repository.SavingsGoalRepository
 import com.ccxiaoji.feature.ledger.presentation.screen.account.AccountScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.budget.BudgetScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.category.CategoryManagementScreen
@@ -29,6 +34,7 @@ import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 import java.util.UUID
@@ -73,16 +79,16 @@ class LedgerApiImpl @Inject constructor(
     }
     
     override suspend fun getMonthlyTotal(year: Int, month: Int): Int {
-        return transactionRepository.getMonthlyTotal(year, month)
+        return transactionRepository.getMonthlyTotal(year, month).getOrThrow()
     }
     
     override suspend fun getMonthlyIncomesAndExpenses(year: Int, month: Int): Pair<Int, Int> {
-        return transactionRepository.getMonthlyIncomesAndExpenses(year, month)
+        return transactionRepository.getMonthlyIncomesAndExpenses(year, month).getOrThrow()
     }
     
     override suspend fun getTodayExpense(): Double {
         val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-        val (_, expense) = transactionRepository.getMonthlyIncomesAndExpenses(today.year, today.monthNumber)
+        val (_, expense) = transactionRepository.getMonthlyIncomesAndExpenses(today.year, today.monthNumber).getOrThrow()
         return expense / 100.0
     }
     
@@ -97,7 +103,18 @@ class LedgerApiImpl @Inject constructor(
         accountId: String?,
         createdAt: Long
     ): Transaction {
-        return transactionRepository.addTransaction(amountCents, categoryId, note, accountId, createdAt)
+        val transactionId = transactionRepository.addTransaction(amountCents, categoryId, note, accountId ?: "")
+        // TODO: 返回完整的Transaction对象而不是仅仅ID
+        return Transaction(
+            id = transactionId.toString(),
+            accountId = accountId ?: "",
+            amountCents = amountCents,
+            categoryId = categoryId,
+            categoryDetails = null,
+            note = note,
+            createdAt = Instant.fromEpochMilliseconds(createdAt),
+            updatedAt = Instant.fromEpochMilliseconds(createdAt)
+        )
     }
     
     override suspend fun updateTransaction(transaction: Transaction) {
@@ -124,13 +141,27 @@ class LedgerApiImpl @Inject constructor(
         currency: String,
         isDefault: Boolean
     ): Account {
-        return accountRepository.createAccount(
+        val accountId = accountRepository.createAccount(
             name = name,
             type = AccountType.valueOf(type),
             initialBalanceCents = balanceCents,
+            creditLimitCents = null,
+            billingDay = null,
+            paymentDueDay = null,
+            gracePeriodDays = null
+        )
+        // TODO: 返回完整的Account对象而不是仅仅ID
+        return Account(
+            id = accountId.toString(),
+            name = name,
+            type = AccountType.valueOf(type),
+            balanceCents = balanceCents,
             currency = currency,
+            isDefault = isDefault,
             icon = null,
-            color = "#3A7AFE"
+            color = "#3A7AFE",
+            createdAt = Instant.fromEpochMilliseconds(System.currentTimeMillis()),
+            updatedAt = Instant.fromEpochMilliseconds(System.currentTimeMillis())
         )
     }
     
@@ -155,7 +186,7 @@ class LedgerApiImpl @Inject constructor(
         amountCents: Int,
         note: String?
     ) {
-        accountRepository.transferBetweenAccounts(fromAccountId, toAccountId, amountCents.toLong())
+        accountRepository.transferBetweenAccounts(fromAccountId, toAccountId, amountCents.toLong(), null)
     }
     
     // Category methods
@@ -180,21 +211,16 @@ class LedgerApiImpl @Inject constructor(
     ): Category {
         val categoryId = categoryRepository.createCategory(
             name = name,
-            type = Category.Type.valueOf(type),
+            type = type,
             icon = icon ?: "📝",
             color = color,
             parentId = parentId
         )
-        return categoryRepository.getCategoryById(categoryId)!!
+        return categoryRepository.getCategoryById(categoryId.toString())!!
     }
     
     override suspend fun updateCategory(category: Category) {
-        categoryRepository.updateCategory(
-            categoryId = category.id,
-            name = category.name,
-            icon = category.icon,
-            color = category.color
-        )
+        categoryRepository.updateCategory(category)
     }
     
     override suspend fun deleteCategory(categoryId: String) {
@@ -206,7 +232,7 @@ class LedgerApiImpl @Inject constructor(
         startDate: LocalDate,
         endDate: LocalDate
     ): Map<LocalDate, Pair<Int, Int>> {
-        return transactionRepository.getDailyTotals(startDate, endDate)
+        return transactionRepository.getDailyTotals(startDate, endDate).getOrThrow()
     }
     
     override suspend fun getCategoryStatistics(
@@ -214,7 +240,11 @@ class LedgerApiImpl @Inject constructor(
         endDate: LocalDate,
         type: String
     ): List<CategoryStatistic> {
-        return transactionRepository.getCategoryStatistics(startDate, endDate, type)
+        return transactionRepository.getCategoryStatistics(
+            categoryType = type,
+            startDate = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds(),
+            endDate = endDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        ).getOrThrow()
     }
     
     override suspend fun getTopTransactions(
@@ -223,11 +253,11 @@ class LedgerApiImpl @Inject constructor(
         type: String,
         limit: Int
     ): List<Transaction> {
-        return transactionRepository.getTopTransactions(startDate, endDate, type, limit)
+        return transactionRepository.getTopTransactions(startDate, endDate, type, limit).getOrThrow()
     }
     
     override suspend fun calculateSavingsRate(startDate: LocalDate, endDate: LocalDate): Float {
-        return transactionRepository.calculateSavingsRate(startDate, endDate)
+        return transactionRepository.calculateSavingsRate(startDate, endDate).getOrThrow()
     }
     
     // Recurring transaction methods
@@ -365,7 +395,6 @@ class LedgerApiImpl @Inject constructor(
                     month = budgetWithSpent.month,
                     categoryId = budgetWithSpent.categoryId,
                     budgetAmountCents = budgetWithSpent.budgetAmountCents,
-                    spentAmountCents = budgetWithSpent.spentAmountCents,
                     alertThreshold = budgetWithSpent.alertThreshold,
                     note = budgetWithSpent.note,
                     createdAt = budgetWithSpent.createdAt,
@@ -382,35 +411,30 @@ class LedgerApiImpl @Inject constructor(
         year: Int,
         month: Int?
     ): Budget {
-        val budget = budgetRepository.createBudget(
+        val budgetId = budgetRepository.createBudget(
             year = year,
             month = month ?: 0,
-            budgetAmountCents = amountCents.toInt(),
             categoryId = categoryId,
-            alertThreshold = 0.8f
+            amountCents = amountCents.toInt()
         )
         
+        // TODO: 返回完整的Budget对象而不是仅仅ID
         return Budget(
-            id = budget.id,
-            userId = budget.userId,
-            year = budget.year,
-            month = budget.month,
-            categoryId = budget.categoryId,
-            budgetAmountCents = budget.budgetAmountCents,
-            alertThreshold = budget.alertThreshold,
-            note = budget.note,
-            createdAt = budget.createdAt,
-            updatedAt = budget.updatedAt
+            id = budgetId.toString(),
+            userId = "",
+            year = year,
+            month = month ?: 0,
+            categoryId = categoryId,
+            budgetAmountCents = amountCents.toInt(),
+            alertThreshold = 0.8f,
+            note = null,
+            createdAt = System.currentTimeMillis(),
+            updatedAt = System.currentTimeMillis()
         )
     }
     
     override suspend fun updateBudget(budget: Budget) {
-        budgetRepository.updateBudget(
-            budgetId = budget.id,
-            budgetAmountCents = budget.budgetAmountCents,
-            alertThreshold = budget.alertThreshold,
-            note = budget.note
-        )
+        budgetRepository.updateBudget(budget)
     }
     
     override suspend fun deleteBudget(budgetId: String) {
@@ -577,7 +601,7 @@ class LedgerApiImpl @Inject constructor(
         val result = mutableMapOf<Int, Pair<Long, Long>>()
         
         for (month in 1..12) {
-            val (income, expense) = transactionRepository.getMonthlyIncomesAndExpenses(year, month)
+            val (income, expense) = transactionRepository.getMonthlyIncomesAndExpenses(year, month).getOrThrow()
             result[month] = income.toLong() to expense.toLong()
         }
         
@@ -590,7 +614,7 @@ class LedgerApiImpl @Inject constructor(
         var totalExpense = 0L
         
         for (month in 1..12) {
-            val (income, expense) = transactionRepository.getMonthlyIncomesAndExpenses(year, month)
+            val (income, expense) = transactionRepository.getMonthlyIncomesAndExpenses(year, month).getOrThrow()
             totalIncome += income
             totalExpense += expense
         }
@@ -615,7 +639,11 @@ class LedgerApiImpl @Inject constructor(
             kotlinx.datetime.LocalDate(year, month + 1, 1).minus(kotlinx.datetime.DatePeriod(days = 1))
         }
         
-        val categoryStats = transactionRepository.getCategoryStatistics(startDate, endDate, "EXPENSE")
+        val categoryStats = transactionRepository.getCategoryStatistics(
+            categoryType = "EXPENSE",
+            startDate = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds(),
+            endDate = endDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        ).getOrThrow()
         val totalExpense = categoryStats.sumOf { it.totalAmount }
         
         return if (totalExpense > 0) {
@@ -635,7 +663,7 @@ class LedgerApiImpl @Inject constructor(
         val transactions = transactionRepository.getTransactionsByAccountAndDateRange(accountId, startDate, endDate).first()
         
         val dailyBalances = mutableMapOf<LocalDate, Long>()
-        var currentBalance = account.balanceCents
+        var currentBalance = account.balanceCents.toLong()
         
         // 从最新日期往前推算余额
         val sortedTransactions = transactions.sortedByDescending { it.createdAt }

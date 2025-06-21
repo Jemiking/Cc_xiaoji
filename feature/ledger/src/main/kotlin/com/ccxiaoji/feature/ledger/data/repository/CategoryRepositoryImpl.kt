@@ -4,26 +4,37 @@ import com.ccxiaoji.feature.ledger.data.local.dao.CategoryDao
 import com.ccxiaoji.feature.ledger.data.local.entity.CategoryEntity
 import com.ccxiaoji.common.model.SyncStatus
 import com.ccxiaoji.feature.ledger.domain.model.Category
+import com.ccxiaoji.feature.ledger.domain.model.CategoryWithStats
+import com.ccxiaoji.feature.ledger.domain.repository.CategoryRepository
 import com.ccxiaoji.shared.user.api.UserApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.Clock
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class CategoryRepository @Inject constructor(
+class CategoryRepositoryImpl @Inject constructor(
     private val categoryDao: CategoryDao,
     private val userApi: UserApi
-) {
+) : CategoryRepository {
     
-    fun getCategories(): Flow<List<Category>> {
+    override fun getCategories(): Flow<List<Category>> {
         return categoryDao.getCategoriesByUser(userApi.getCurrentUserId()).map { entities ->
             entities.map { it.toDomainModel() }
         }
     }
     
-    fun getCategoriesByType(type: Category.Type): Flow<List<Category>> {
+    override fun getIncomeCategories(): Flow<List<Category>> {
+        return getCategoriesByType(Category.Type.INCOME)
+    }
+    
+    override fun getExpenseCategories(): Flow<List<Category>> {
+        return getCategoriesByType(Category.Type.EXPENSE)
+    }
+    
+    override fun getCategoriesByType(type: Category.Type): Flow<List<Category>> {
         return categoryDao.getCategoriesByType(userApi.getCurrentUserId(), type.name).map { entities ->
             entities.map { it.toDomainModel() }
         }
@@ -52,25 +63,25 @@ class CategoryRepository @Inject constructor(
         }
     }
     
-    suspend fun createCategory(
+    override suspend fun createCategory(
         name: String,
-        type: Category.Type,
+        type: String,
         icon: String,
         color: String,
-        parentId: String? = null
-    ): String {
+        parentId: String?
+    ): Long {
         val now = System.currentTimeMillis()
         val categoryId = UUID.randomUUID().toString()
         
         // Get current max display order
-        val categories = categoryDao.getCategoriesByType(userApi.getCurrentUserId(), type.name)
+        val categories = categoryDao.getCategoriesByType(userApi.getCurrentUserId(), type)
             .map { it.maxByOrNull { cat -> cat.displayOrder }?.displayOrder ?: 0 }
         
         val category = CategoryEntity(
             id = categoryId,
             userId = userApi.getCurrentUserId(),
             name = name,
-            type = type.name,
+            type = type,
             icon = icon,
             color = color,
             parentId = parentId,
@@ -79,14 +90,29 @@ class CategoryRepository @Inject constructor(
             usageCount = 0,
             createdAt = now,
             updatedAt = now,
-            syncStatus = SyncStatus.PENDING
+            syncStatus = SyncStatus.PENDING_SYNC
         )
         
         categoryDao.insertCategory(category)
-        return categoryId
+        return 1L // TODO: 返回实际的ID
     }
     
-    suspend fun updateCategory(
+    override suspend fun updateCategory(category: Category) {
+        val entity = categoryDao.getCategoryById(category.id)
+        if (entity != null) {
+            val updatedEntity = entity.copy(
+                name = category.name,
+                icon = category.icon,
+                color = category.color,
+                updatedAt = Clock.System.now().toEpochMilliseconds(),
+                syncStatus = SyncStatus.PENDING_SYNC
+            )
+            categoryDao.updateCategory(updatedEntity)
+            // TODO: Log change for sync
+        }
+    }
+
+    suspend fun updateCategoryDetailed(
         categoryId: String,
         name: String? = null,
         icon: String? = null,
@@ -99,23 +125,22 @@ class CategoryRepository @Inject constructor(
             icon = icon ?: existing.icon,
             color = color ?: existing.color,
             updatedAt = System.currentTimeMillis(),
-            syncStatus = SyncStatus.PENDING
+            syncStatus = SyncStatus.PENDING_SYNC
         )
         
         categoryDao.updateCategory(updated)
     }
     
-    suspend fun deleteCategory(categoryId: String): Boolean {
+    override suspend fun deleteCategory(categoryId: String) {
         // Check if category is system category
-        val category = categoryDao.getCategoryById(categoryId) ?: return false
-        if (category.isSystem) return false
+        val category = categoryDao.getCategoryById(categoryId) ?: throw IllegalArgumentException("分类不存在")
+        if (category.isSystem) throw IllegalStateException("系统分类无法删除")
         
         // Check if category has transactions
         val transactionCount = categoryDao.getTransactionCountForCategory(categoryId)
-        if (transactionCount > 0) return false
+        if (transactionCount > 0) throw IllegalStateException("分类正在被使用，无法删除")
         
         categoryDao.deleteCategory(categoryId, System.currentTimeMillis())
-        return true
     }
     
     suspend fun reorderCategories(categoryIds: List<String>) {
@@ -125,7 +150,7 @@ class CategoryRepository @Inject constructor(
         }
     }
     
-    suspend fun getCategoryById(categoryId: String): Category? {
+    override suspend fun getCategoryById(categoryId: String): Category? {
         return categoryDao.getCategoryById(categoryId)?.toDomainModel()
     }
     
@@ -289,9 +314,3 @@ private fun CategoryEntity.toDomainModel(): Category {
         updatedAt = kotlinx.datetime.Instant.fromEpochMilliseconds(updatedAt)
     )
 }
-
-data class CategoryWithStats(
-    val category: Category,
-    val transactionCount: Int,
-    val usageCount: Long
-)

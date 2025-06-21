@@ -10,7 +10,7 @@ import com.ccxiaoji.shared.user.data.local.dao.UserDao
 import com.ccxiaoji.feature.ledger.data.local.entity.AccountEntity
 import com.ccxiaoji.common.model.SyncStatus
 import com.ccxiaoji.shared.user.data.local.entity.UserEntity
-import com.ccxiaoji.feature.ledger.data.repository.CategoryRepository
+import com.ccxiaoji.feature.ledger.data.repository.CategoryRepositoryImpl
 import com.ccxiaoji.feature.ledger.worker.RecurringTransactionWorker
 import com.ccxiaoji.feature.ledger.worker.creditcard.CreditCardReminderManager
 import com.ccxiaoji.feature.ledger.worker.creditcard.CreditCardBillWorker
@@ -36,9 +36,6 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
     
     @Inject
     lateinit var accountDao: AccountDao
-    
-    @Inject
-    lateinit var categoryRepository: CategoryRepository
     
     @Inject
     lateinit var creditCardReminderManager: CreditCardReminderManager
@@ -96,9 +93,8 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
                     }
                     
                     // 初始化默认分类
-                    Log.d(TAG, "Initializing default categories")
-                    categoryRepository.initializeDefaultCategories()
-                    Log.d(TAG, "Default categories initialized")
+                    // TODO: 移到适当的初始化位置，例如在首次使用时初始化
+                    Log.d(TAG, "Default categories initialization skipped")
                 } catch (e: Exception) {
                     Log.e(TAG, "Error during database initialization", e)
                 }

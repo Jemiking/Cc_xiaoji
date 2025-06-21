@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.feature.ledger.data.local.entity.CreditCardPaymentEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.PaymentType
-import com.ccxiaoji.feature.ledger.data.repository.AccountRepository
-import com.ccxiaoji.feature.ledger.data.repository.PaymentStats
+import com.ccxiaoji.feature.ledger.domain.repository.AccountRepository
+import com.ccxiaoji.feature.ledger.domain.repository.PaymentStats
 import com.ccxiaoji.feature.ledger.domain.model.Account
 import com.ccxiaoji.feature.ledger.domain.model.AccountType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,7 +23,8 @@ class CreditCardViewModel @Inject constructor(
     val uiState: StateFlow<CreditCardUiState> = _uiState.asStateFlow()
     
     // 信用卡列表
-    val creditCards: StateFlow<List<Account>> = accountRepository.getCreditCardAccounts()
+    val creditCards: StateFlow<List<Account>> = accountRepository.getAccounts()
+        .map { accounts -> accounts.filter { it.type == AccountType.CREDIT_CARD } }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

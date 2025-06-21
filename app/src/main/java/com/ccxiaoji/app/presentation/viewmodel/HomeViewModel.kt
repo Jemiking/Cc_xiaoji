@@ -2,16 +2,16 @@ package com.ccxiaoji.app.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.feature.ledger.data.repository.TransactionRepository
+import com.ccxiaoji.feature.ledger.domain.repository.TransactionRepository
 import com.ccxiaoji.feature.todo.api.TodoApi
 import com.ccxiaoji.feature.todo.domain.model.Task
 import com.ccxiaoji.feature.habit.api.HabitApi
 import com.ccxiaoji.feature.habit.domain.model.HabitWithStreak
 import com.ccxiaoji.app.data.repository.CountdownRepository
-import com.ccxiaoji.feature.ledger.data.repository.BudgetRepository
+import com.ccxiaoji.feature.ledger.domain.repository.BudgetRepository
 import com.ccxiaoji.feature.ledger.data.repository.SavingsGoalRepository
 import com.ccxiaoji.shared.user.api.UserApi
-import com.ccxiaoji.feature.ledger.data.repository.AccountRepository
+import com.ccxiaoji.feature.ledger.domain.repository.AccountRepository
 import com.ccxiaoji.feature.ledger.domain.model.Transaction
 import com.ccxiaoji.app.domain.model.Countdown
 import com.ccxiaoji.feature.ledger.domain.model.SavingsGoal
@@ -60,7 +60,11 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             // Load monthly expense and today's income/expense
             val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-            val monthlyTotal = transactionRepository.getMonthlyTotal(now.year, now.monthNumber)
+            val monthlyTotal = try {
+                transactionRepository.getMonthlyTotal(now.year, now.monthNumber).getOrThrow()
+            } catch (e: Exception) {
+                0
+            }
             val todayStart = now.date.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
             val todayEnd = now.date.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
             
@@ -130,20 +134,22 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             // Load budget overview
             val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-            val totalBudget = budgetRepository.getTotalBudgetWithSpent(now.year, now.monthNumber)
-            
-            if (totalBudget != null) {
-                val usagePercentage = if (totalBudget.budgetAmountCents > 0) {
-                    (totalBudget.spentAmountCents.toFloat() / totalBudget.budgetAmountCents.toFloat()) * 100f
-                } else {
-                    0f
-                }
+            budgetRepository.getBudgetsWithSpent(now.year, now.monthNumber).collect { budgets ->
+                // Calculate total budget and spent
+                val totalBudgetCents = budgets.sumOf { it.budgetAmountCents }
+                val totalSpentCents = budgets.sumOf { it.spentAmountCents }
                 
-                _uiState.value = _uiState.value.copy(
-                    budgetAmount = totalBudget.budgetAmountCents / 100.0,
-                    budgetSpent = totalBudget.spentAmountCents / 100.0,
-                    budgetUsagePercentage = usagePercentage
-                )
+                    val usagePercentage = if (totalBudgetCents > 0) {
+                        (totalSpentCents.toFloat() / totalBudgetCents.toFloat()) * 100f
+                    } else {
+                        0f
+                    }
+                    
+                    _uiState.value = _uiState.value.copy(
+                        budgetAmount = totalBudgetCents / 100.0,
+                        budgetSpent = totalSpentCents / 100.0,
+                        budgetUsagePercentage = usagePercentage
+                    )
             }
         }
         

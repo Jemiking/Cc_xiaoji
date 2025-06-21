@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Todo Module Strings -->
+    
+    <!-- Screen Titles -->
+    <string name="todo_title">待办事项</string>
+    
+    <!-- Actions -->
+    <string name="todo_add_task">添加任务</string>
+    <string name="todo_edit_task">编辑任务</string>
+    <string name="todo_delete_task">删除</string>
+    <string name="todo_save">保存</string>
+    <string name="todo_cancel">取消</string>
+    <string name="todo_search">搜索</string>
+    <string name="todo_clear">清除</string>
+    <string name="todo_edit">编辑</string>
+    
+    <!-- Messages -->
+    <string name="todo_task_added_success">任务添加成功</string>
+    <string name="todo_task_updated_success">任务更新成功</string>
+    <string name="todo_task_deleted_success">任务删除成功</string>
+    <string name="todo_no_tasks">暂无任务</string>
+    <string name="todo_add_task_hint">点击右下角的 + 按钮添加新任务</string>
+    
+    <!-- Input Hints -->
+    <string name="todo_search_hint">搜索任务…</string>
+    <string name="todo_task_title_hint">任务标题</string>
+    <string name="todo_task_description_hint">描述（可选）</string>
+    
+    <!-- Filters -->
+    <string name="todo_show_completed">显示已完成</string>
+    <string name="todo_filter_today">今天</string>
+    <string name="todo_filter_this_week">本周</string>
+    <string name="todo_filter_overdue">逾期</string>
+    
+    <!-- Priority -->
+    <string name="todo_priority_label">优先级</string>
+    <string name="todo_priority_low">低</string>
+    <string name="todo_priority_medium">中</string>
+    <string name="todo_priority_high">高</string>
+    <string name="todo_priority_low_short">低优先级</string>
+    <string name="todo_priority_medium_short">中优先级</string>
+    <string name="todo_priority_high_short">高优先级</string>
+</resources>

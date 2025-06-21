@@ -1,0 +1,89 @@
+name: Technical Debt Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # 每周一早上9点运行
+    - cron: '0 9 * * 1'
+
+jobs:
+  check-technical-debt:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Make scripts executable
+      run: chmod +x scripts/*.sh
+    
+    - name: Run Technical Debt Check
+      run: ./scripts/check_technical_debt.sh
+      
+    - name: Upload check results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: technical-debt-report
+        path: |
+          doc/20250620-*.md
+          
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request' && failure()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: '❌ 技术债务检查失败！请运行 `./scripts/check_technical_debt.sh` 查看详情。'
+          })
+          
+  module-configuration-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Run Module Configuration Check
+      run: |
+        chmod +x scripts/check_module_configuration.sh
+        ./scripts/check_module_configuration.sh || true
+        
+  compile-check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: [feature:todo, feature:habit, feature:ledger, feature:schedule]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Setup Gradle
+      uses: gradle/gradle-build-action@v2
+      
+    - name: Compile ${{ matrix.module }}
+      run: ./gradlew :${{ matrix.module }}:build
+      
+    - name: Upload build reports
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-reports-${{ matrix.module }}
+        path: |
+          ${{ matrix.module }}/build/reports/

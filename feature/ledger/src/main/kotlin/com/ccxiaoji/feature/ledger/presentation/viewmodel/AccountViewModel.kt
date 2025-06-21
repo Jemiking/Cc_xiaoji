@@ -2,7 +2,7 @@ package com.ccxiaoji.feature.ledger.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.feature.ledger.data.repository.AccountRepository
+import com.ccxiaoji.feature.ledger.domain.repository.AccountRepository
 import com.ccxiaoji.feature.ledger.domain.model.Account
 import com.ccxiaoji.feature.ledger.domain.model.AccountType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -111,7 +111,8 @@ class AccountViewModel @Inject constructor(
                 accountRepository.transferBetweenAccounts(
                     fromAccountId = fromAccountId,
                     toAccountId = toAccountId,
-                    amountCents = amountCents
+                    amountCents = amountCents,
+                    note = null
                 )
                 loadTotalBalance() // Refresh total balance
             } catch (e: Exception) {

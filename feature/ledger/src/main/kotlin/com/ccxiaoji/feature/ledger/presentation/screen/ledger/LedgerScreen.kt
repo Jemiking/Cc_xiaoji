@@ -48,27 +48,45 @@ import java.time.YearMonth
 fun LedgerScreen(
     navController: androidx.navigation.NavController? = null,
     accountId: String? = null,
-    viewModel: LedgerViewModel = hiltViewModel()
+    viewModel: LedgerViewModel = hiltViewModel(),
+    selectionViewModel: SelectionViewModel = hiltViewModel(),
+    searchViewModel: SearchViewModel = hiltViewModel(),
+    dialogViewModel: DialogViewModel = hiltViewModel(),
+    filterViewModel: FilterViewModel = hiltViewModel()
 ) {
+    // 收集所有 ViewModels 的状态
+    val uiState by viewModel.uiState.collectAsState()
+    val selectionState by selectionViewModel.selectionState.collectAsState()
+    val searchState by searchViewModel.searchState.collectAsState()
+    val dialogState by dialogViewModel.dialogState.collectAsState()
+    val filterState by filterViewModel.filterState.collectAsState()
+    
     // 如果传入了accountId，则设置账户筛选
     LaunchedEffect(accountId) {
         accountId?.let {
-            viewModel.filterByAccount(it)
+            filterViewModel.updateFilter(
+                filterState.activeFilter.copy(accountId = it)
+            )
         }
     }
-    val uiState by viewModel.uiState.collectAsState()
+    
+    // 同步交易数据到SearchViewModel
+    LaunchedEffect(uiState.transactions) {
+        searchViewModel.setSearchableTransactions(uiState.transactions)
+    }
+    
     val selectedMonth by viewModel.selectedMonth.collectAsState()
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
-    val currentAccount = uiState.selectedAccount
+    val currentAccount = uiState.accounts.find { it.id == uiState.selectedAccountId }
     
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             LedgerDrawerContent(
-                currentAccountName = currentAccount?.name ?: "默认账户",
+                currentAccountName = currentAccount?.name ?: stringResource(R.string.default_account),
                 onNavigateToStatistics = {
                     navController?.navigate(LedgerNavigation.StatisticsRoute)
                 },
@@ -100,17 +118,17 @@ fun LedgerScreen(
                 }
             )
         },
-        gesturesEnabled = !uiState.isSelectionMode && !uiState.isSearchMode
+        gesturesEnabled = !selectionState.isSelectionMode && !searchState.isSearchMode
     ) {
         Scaffold(
         topBar = {
-            if (uiState.isSearchMode) {
+            if (searchState.isSearchMode) {
                 TopAppBar(
                     title = {
                         TextField(
-                            value = uiState.searchQuery,
-                            onValueChange = { viewModel.updateSearchQuery(it) },
-                            placeholder = { Text("搜索交易记录...") },
+                            value = searchState.searchQuery,
+                            onValueChange = { searchViewModel.updateSearchQuery(it) },
+                            placeholder = { Text(stringResource(R.string.search_transactions)) },
                             singleLine = true,
                             colors = TextFieldDefaults.colors(
                                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -121,45 +139,45 @@ fun LedgerScreen(
                     },
                     navigationIcon = {
                         IconButton(onClick = { 
-                            viewModel.toggleSearchMode()
-                            viewModel.clearSearch()
+                            searchViewModel.toggleSearchMode()
+                            searchViewModel.clearSearch()
                         }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "退出搜索")
+                            Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.exit_search))
                         }
                     },
                     actions = {
-                        if (uiState.searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { viewModel.clearSearch() }) {
-                                Icon(Icons.Default.Clear, contentDescription = "清除搜索")
+                        if (searchState.searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchViewModel.clearSearch() }) {
+                                Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear_search))
                             }
                         }
                     }
                 )
-            } else if (uiState.isSelectionMode) {
+            } else if (selectionState.isSelectionMode) {
                 TopAppBar(
                     title = { 
                         Text(
-                            text = "已选择 ${uiState.selectedTransactionIds.size} 项",
+                            text = stringResource(R.string.selected_items, selectionState.selectedTransactionIds.size),
                             style = MaterialTheme.typography.headlineSmall
                         )
                     },
                     navigationIcon = {
-                        IconButton(onClick = { viewModel.toggleSelectionMode() }) {
-                            Icon(Icons.Default.Close, contentDescription = "退出选择")
+                        IconButton(onClick = { selectionViewModel.toggleSelectionMode() }) {
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.exit_selection))
                         }
                     },
                     actions = {
-                        IconButton(onClick = { viewModel.selectAllTransactions() }) {
-                            Icon(Icons.Default.SelectAll, contentDescription = "全选")
+                        IconButton(onClick = { selectionViewModel.selectAllTransactions(uiState.transactions.map { it.id }) }) {
+                            Icon(Icons.Default.SelectAll, contentDescription = stringResource(R.string.select_all))
                         }
                         IconButton(
-                            onClick = { viewModel.deleteSelectedTransactions() },
-                            enabled = uiState.selectedTransactionIds.isNotEmpty()
+                            onClick = { selectionViewModel.deleteSelectedTransactions { /* 刷新交易列表 */ } },
+                            enabled = selectionState.selectedTransactionIds.isNotEmpty()
                         ) {
                             Icon(
                                 Icons.Default.Delete, 
-                                contentDescription = "删除选中项",
-                                tint = if (uiState.selectedTransactionIds.isNotEmpty()) 
+                                contentDescription = stringResource(R.string.delete_selected),
+                                tint = if (selectionState.selectedTransactionIds.isNotEmpty()) 
                                     MaterialTheme.colorScheme.error 
                                 else 
                                     MaterialTheme.colorScheme.onSurfaceVariant
@@ -172,13 +190,13 @@ fun LedgerScreen(
                     title = { 
                         Column {
                             Text(
-                                text = "记账",
+                                text = stringResource(R.string.ledger),
                                 style = MaterialTheme.typography.headlineSmall
                             )
-                            if (uiState.activeFilter.accountId != null) {
-                                val accountName = uiState.accounts.find { it.id == uiState.activeFilter.accountId }?.name ?: ""
+                            if (filterState.activeFilter.accountId != null) {
+                                val accountName = uiState.accounts.find { it.id == filterState.activeFilter.accountId }?.name ?: ""
                                 Text(
-                                    text = "筛选账户：$accountName",
+                                    text = stringResource(R.string.filter_account, accountName),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -193,7 +211,7 @@ fun LedgerScreen(
                                 }
                             }
                         ) {
-                            Icon(Icons.Default.Menu, contentDescription = "打开菜单")
+                            Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.open_menu))
                         }
                     },
                     actions = {
@@ -203,15 +221,15 @@ fun LedgerScreen(
                             onMonthSelected = { viewModel.selectMonth(it) }
                         )
                         
-                        IconButton(onClick = { viewModel.toggleSearchMode() }) {
-                            Icon(Icons.Default.Search, contentDescription = "搜索")
+                        IconButton(onClick = { searchViewModel.toggleSearchMode() }) {
+                            Icon(Icons.Default.Search, contentDescription = stringResource(R.string.search))
                         }
                     }
                 )
             }
         },
         floatingActionButton = {
-            if (!uiState.isSelectionMode && !uiState.isSearchMode) {
+            if (!selectionState.isSelectionMode && !searchState.isSearchMode) {
                 FloatingActionButton(
                     onClick = { showAddDialog = true }
                 ) {
@@ -234,17 +252,17 @@ fun LedgerScreen(
             Divider()
             
             // Budget Alert
-            uiState.budgetAlert?.let { alert ->
+            dialogState.budgetAlert?.let { alert ->
                 BudgetAlertCard(
                     alert = alert,
-                    onDismiss = { viewModel.dismissBudgetAlert() },
+                    onDismiss = { dialogViewModel.dismissBudgetAlert() },
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
             
             // Transactions List
-            val displayTransactions = if (uiState.isSearchMode && uiState.searchQuery.isNotEmpty()) {
-                uiState.filteredTransactions
+            val displayTransactions = if (searchState.isSearchMode && searchState.searchQuery.isNotEmpty()) {
+                searchState.searchResults
             } else {
                 uiState.transactions
             }
@@ -254,7 +272,7 @@ fun LedgerScreen(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (uiState.isSearchMode && uiState.searchQuery.isNotEmpty() && displayTransactions.isEmpty()) {
+                if (searchState.isSearchMode && searchState.searchQuery.isNotEmpty() && displayTransactions.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier
@@ -263,7 +281,7 @@ fun LedgerScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = "没有找到相关交易记录",
+                                text = stringResource(R.string.no_search_results),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -274,17 +292,17 @@ fun LedgerScreen(
                 items(displayTransactions) { transaction ->
                     TransactionItem(
                         transaction = transaction,
-                        isSelected = uiState.selectedTransactionIds.contains(transaction.id),
-                        isSelectionMode = uiState.isSelectionMode,
+                        isSelected = selectionState.selectedTransactionIds.contains(transaction.id),
+                        isSelectionMode = selectionState.isSelectionMode,
                         onEdit = { 
-                            viewModel.setEditingTransaction(transaction)
+                            dialogViewModel.showEditTransactionDialog(transaction)
                             showEditDialog = true
                         },
                         onDelete = { viewModel.deleteTransaction(transaction.id) },
                         onCopy = { viewModel.copyTransaction(transaction) },
                         onClick = {
-                            if (uiState.isSelectionMode) {
-                                viewModel.toggleTransactionSelection(transaction.id)
+                            if (selectionState.isSelectionMode) {
+                                selectionViewModel.toggleTransactionSelection(transaction.id)
                             } else {
                                 navController?.navigate(
                                     LedgerNavigation.transactionDetailRoute(transaction.id)
@@ -300,7 +318,7 @@ fun LedgerScreen(
     if (showAddDialog) {
         AddTransactionDialog(
             accounts = uiState.accounts,
-            selectedAccount = uiState.selectedAccount,
+            selectedAccount = currentAccount,
             categories = uiState.categories,
             onDismiss = { showAddDialog = false },
             onConfirm = { amount, categoryId, note, accountId ->
@@ -310,34 +328,34 @@ fun LedgerScreen(
         )
     }
     
-    if (showEditDialog && uiState.editingTransaction != null) {
+    if (showEditDialog && dialogState.editingTransaction != null) {
         EditTransactionDialog(
-            transaction = uiState.editingTransaction!!,
+            transaction = dialogState.editingTransaction!!,
             categories = uiState.categories,
             onDismiss = { 
                 showEditDialog = false
-                viewModel.setEditingTransaction(null)
+                dialogViewModel.hideEditTransactionDialog()
             },
             onConfirm = { updatedTransaction ->
                 viewModel.updateTransaction(updatedTransaction)
                 showEditDialog = false
-                viewModel.setEditingTransaction(null)
+                dialogViewModel.hideEditTransactionDialog()
             }
         )
     }
     
-    if (uiState.showFilterDialog) {
+    if (dialogState.showFilterDialog) {
         FilterTransactionDialog(
-            currentFilter = uiState.activeFilter,
+            currentFilter = filterState.activeFilter,
             categories = uiState.categories,
-            onDismiss = { viewModel.toggleFilterDialog() },
+            onDismiss = { dialogViewModel.hideFilterDialog() },
             onConfirm = { filter ->
-                viewModel.updateFilter(filter)
-                viewModel.toggleFilterDialog()
+                filterViewModel.updateFilter(filter)
+                dialogViewModel.hideFilterDialog()
             },
             onClearFilter = {
-                viewModel.clearFilter()
-                viewModel.toggleFilterDialog()
+                filterViewModel.clearFilter()
+                dialogViewModel.hideFilterDialog()
             }
         )
     }
@@ -384,10 +402,10 @@ fun MonthlySummaryCard(
                         ) {
                             Text(
                                 text = when (groupingMode) {
-                                    GroupingMode.DAY -> "按天"
-                                    GroupingMode.WEEK -> "按周"
-                                    GroupingMode.MONTH -> "按月"
-                                    GroupingMode.YEAR -> "按年"
+                                    GroupingMode.DAY -> stringResource(R.string.group_by_day)
+                                    GroupingMode.WEEK -> stringResource(R.string.group_by_week)
+                                    GroupingMode.MONTH -> stringResource(R.string.group_by_month)
+                                    GroupingMode.YEAR -> stringResource(R.string.group_by_year)
                                     else -> ""
                                 },
                                 style = MaterialTheme.typography.labelSmall,
@@ -397,7 +415,7 @@ fun MonthlySummaryCard(
                     }
                     if (hasActiveFilter) {
                         Text(
-                            text = "已筛选",
+                            text = stringResource(R.string.filtered),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -444,7 +462,7 @@ fun MonthlySummaryCard(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "结余",
+                        text = stringResource(R.string.balance),
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -512,7 +530,7 @@ fun TransactionItem(
                 
                 Column {
                     Text(
-                        text = transaction.categoryDetails?.name ?: "未分类",
+                        text = transaction.categoryDetails?.name ?: stringResource(R.string.uncategorized),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium
                     )
@@ -556,7 +574,7 @@ fun TransactionItem(
             onDismissRequest = { showMenu = false }
         ) {
             DropdownMenuItem(
-                text = { Text("复制") },
+                text = { Text(stringResource(R.string.copy)) },
                 onClick = {
                     onCopy()
                     showMenu = false
@@ -566,7 +584,7 @@ fun TransactionItem(
                 }
             )
             DropdownMenuItem(
-                text = { Text("编辑") },
+                text = { Text(stringResource(R.string.edit)) },
                 onClick = {
                     onEdit()
                     showMenu = false
@@ -576,7 +594,7 @@ fun TransactionItem(
                 }
             )
             DropdownMenuItem(
-                text = { Text("删除") },
+                text = { Text(stringResource(R.string.delete)) },
                 onClick = {
                     onDelete()
                     showMenu = false
@@ -629,7 +647,7 @@ fun AddTransactionDialog(
                         accounts = accounts,
                         selectedAccount = currentAccount,
                         onAccountSelected = { currentAccount = it },
-                        label = "选择账户"
+                        label = stringResource(R.string.select_account)
                     )
                 }
                 
@@ -732,7 +750,7 @@ fun EditTransactionDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("编辑交易") },
+        title = { Text(stringResource(R.string.edit_transaction)) },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -847,7 +865,7 @@ fun FilterTransactionDialog(
     
     // Date picker states
     val startDatePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = dateRange?.start?.let { 
+        initialSelectedDateMillis = dateRange?.startDate?.let { 
             java.time.LocalDate.of(it.year, it.monthValue, it.dayOfMonth)
                 .atStartOfDay(java.time.ZoneId.systemDefault())
                 .toInstant()
@@ -855,7 +873,7 @@ fun FilterTransactionDialog(
         }
     )
     val endDatePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = dateRange?.end?.let { 
+        initialSelectedDateMillis = dateRange?.endDate?.let { 
             java.time.LocalDate.of(it.year, it.monthValue, it.dayOfMonth)
                 .atStartOfDay(java.time.ZoneId.systemDefault())
                 .toInstant()
@@ -865,7 +883,7 @@ fun FilterTransactionDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("筛选交易记录") },
+        title = { Text(stringResource(R.string.filter_transactions)) },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -873,7 +891,7 @@ fun FilterTransactionDialog(
                 // Transaction Type Filter
                 Column {
                     Text(
-                        text = "交易类型",
+                        text = stringResource(R.string.transaction_type),
                         style = MaterialTheme.typography.labelLarge
                     )
                     Row(
@@ -883,19 +901,19 @@ fun FilterTransactionDialog(
                         FilterChip(
                             selected = transactionType == TransactionType.ALL,
                             onClick = { transactionType = TransactionType.ALL },
-                            label = { Text("全部") },
+                            label = { Text(stringResource(R.string.all)) },
                             modifier = Modifier.weight(1f)
                         )
                         FilterChip(
                             selected = transactionType == TransactionType.INCOME,
                             onClick = { transactionType = TransactionType.INCOME },
-                            label = { Text("收入") },
+                            label = { Text(stringResource(R.string.income)) },
                             modifier = Modifier.weight(1f)
                         )
                         FilterChip(
                             selected = transactionType == TransactionType.EXPENSE,
                             onClick = { transactionType = TransactionType.EXPENSE },
-                            label = { Text("支出") },
+                            label = { Text(stringResource(R.string.expense)) },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -904,7 +922,7 @@ fun FilterTransactionDialog(
                 // Category Filter
                 Column {
                     Text(
-                        text = "分类",
+                        text = stringResource(R.string.category),
                         style = MaterialTheme.typography.labelLarge
                     )
                     
@@ -950,7 +968,7 @@ fun FilterTransactionDialog(
                 // Amount Range Filter
                 Column {
                     Text(
-                        text = "金额范围",
+                        text = stringResource(R.string.amount_range),
                         style = MaterialTheme.typography.labelLarge
                     )
                     Row(
@@ -960,13 +978,13 @@ fun FilterTransactionDialog(
                         OutlinedTextField(
                             value = minAmount,
                             onValueChange = { minAmount = it.filter { char -> char.isDigit() || char == '.' } },
-                            label = { Text("最小金额") },
+                            label = { Text(stringResource(R.string.min_amount)) },
                             modifier = Modifier.weight(1f)
                         )
                         OutlinedTextField(
                             value = maxAmount,
                             onValueChange = { maxAmount = it.filter { char -> char.isDigit() || char == '.' } },
-                            label = { Text("最大金额") },
+                            label = { Text(stringResource(R.string.max_amount)) },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -975,7 +993,7 @@ fun FilterTransactionDialog(
                 // Date Range Filter
                 Column {
                     Text(
-                        text = "日期范围",
+                        text = stringResource(R.string.date_range),
                         style = MaterialTheme.typography.labelLarge
                     )
                     
@@ -990,7 +1008,7 @@ fun FilterTransactionDialog(
                                 val today = java.time.LocalDate.now()
                                 dateRange = DateRange(today, today)
                             },
-                            label = { Text("今天") },
+                            label = { Text(stringResource(R.string.today)) },
                             modifier = Modifier.weight(1f)
                         )
                         FilterChip(
@@ -1000,7 +1018,7 @@ fun FilterTransactionDialog(
                                 val startOfWeek = now.with(java.time.DayOfWeek.MONDAY)
                                 dateRange = DateRange(startOfWeek, now)
                             },
-                            label = { Text("本周") },
+                            label = { Text(stringResource(R.string.this_week)) },
                             modifier = Modifier.weight(1f)
                         )
                         FilterChip(
@@ -1010,7 +1028,7 @@ fun FilterTransactionDialog(
                                 val startOfMonth = now.withDayOfMonth(1)
                                 dateRange = DateRange(startOfMonth, now)
                             },
-                            label = { Text("本月") },
+                            label = { Text(stringResource(R.string.this_month)) },
                             modifier = Modifier.weight(1f)
                         )
                         FilterChip(
@@ -1020,7 +1038,7 @@ fun FilterTransactionDialog(
                                 val startOfYear = now.withDayOfYear(1)
                                 dateRange = DateRange(startOfYear, now)
                             },
-                            label = { Text("本年") },
+                            label = { Text(stringResource(R.string.this_year)) },
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -1047,7 +1065,7 @@ fun FilterTransactionDialog(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = dateRange?.start?.toString() ?: "开始日期",
+                                    text = dateRange?.startDate?.toString() ?: stringResource(R.string.start_date),
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
@@ -1068,7 +1086,7 @@ fun FilterTransactionDialog(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = dateRange?.end?.toString() ?: "结束日期",
+                                    text = dateRange?.endDate?.toString() ?: stringResource(R.string.end_date),
                                     style = MaterialTheme.typography.bodyMedium
                                 )
                             }
@@ -1080,7 +1098,7 @@ fun FilterTransactionDialog(
                             onClick = { dateRange = null },
                             modifier = Modifier.align(Alignment.End)
                         ) {
-                            Text("清除日期筛选")
+                            Text(stringResource(R.string.clear_date_filter))
                         }
                     }
                 }
@@ -1089,7 +1107,7 @@ fun FilterTransactionDialog(
         confirmButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = onClearFilter) {
-                    Text("清除筛选")
+                    Text(stringResource(R.string.clear_filter))
                 }
                 TextButton(
                     onClick = {
@@ -1103,13 +1121,13 @@ fun FilterTransactionDialog(
                         onConfirm(filter)
                     }
                 ) {
-                    Text("应用")
+                    Text(stringResource(R.string.apply))
                 }
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text(stringResource(R.string.cancel))
             }
         }
     )
@@ -1123,8 +1141,8 @@ fun FilterTransactionDialog(
                         .atZone(java.time.ZoneId.systemDefault())
                         .toLocalDate()
                     dateRange = DateRange(
-                        start = selectedDate,
-                        end = dateRange?.end ?: selectedDate
+                        startDate = selectedDate,
+                        endDate = dateRange?.endDate ?: selectedDate
                     )
                 }
                 showStartDatePicker = false
@@ -1143,8 +1161,8 @@ fun FilterTransactionDialog(
                         .atZone(java.time.ZoneId.systemDefault())
                         .toLocalDate()
                     dateRange = DateRange(
-                        start = dateRange?.start ?: selectedDate,
-                        end = selectedDate
+                        startDate = dateRange?.startDate ?: selectedDate,
+                        endDate = selectedDate
                     )
                 }
                 showEndDatePicker = false
@@ -1170,12 +1188,12 @@ fun CustomDatePickerDialog(
                     onDateSelected(datePickerState.selectedDateMillis)
                 }
             ) {
-                Text("确定")
+                Text(stringResource(R.string.confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text(stringResource(R.string.cancel))
             }
         }
     ) {
@@ -1281,7 +1299,7 @@ fun GroupHeader(
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "收入",
+                        text = stringResource(R.string.income),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1296,7 +1314,7 @@ fun GroupHeader(
                         color = MaterialTheme.colorScheme.error
                     )
                     Text(
-                        text = "支出",
+                        text = stringResource(R.string.expense),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1311,7 +1329,7 @@ fun GroupHeader(
                         color = if (balance >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                     )
                     Text(
-                        text = "结余",
+                        text = stringResource(R.string.balance),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1365,7 +1383,7 @@ fun BudgetAlertCard(
             IconButton(onClick = onDismiss) {
                 Icon(
                     Icons.Default.Close,
-                    contentDescription = "关闭",
+                    contentDescription = stringResource(R.string.close),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

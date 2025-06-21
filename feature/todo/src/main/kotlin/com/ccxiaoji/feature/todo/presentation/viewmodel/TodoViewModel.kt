@@ -1,8 +1,9 @@
 package com.ccxiaoji.feature.todo.presentation.viewmodel
 
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ccxiaoji.feature.todo.domain.repository.TodoRepository
+import com.ccxiaoji.common.base.BaseViewModel
+import com.ccxiaoji.common.base.DomainException
+import com.ccxiaoji.feature.todo.domain.usecase.*
 import com.ccxiaoji.feature.todo.domain.model.Task
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -12,8 +13,14 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TodoViewModel @Inject constructor(
-    private val todoRepository: TodoRepository
-) : ViewModel() {
+    private val getAllTodosUseCase: GetAllTodosUseCase,
+    private val addTodoUseCase: AddTodoUseCase,
+    private val updateTodoUseCase: UpdateTodoUseCase,
+    private val deleteTodoUseCase: DeleteTodoUseCase,
+    private val toggleTodoCompletionUseCase: ToggleTodoCompletionUseCase,
+    private val searchTodosUseCase: SearchTodosUseCase,
+    private val filterTodosUseCase: FilterTodosUseCase
+) : BaseViewModel() {
     
     private val _uiState = MutableStateFlow(TodoUiState())
     val uiState: StateFlow<TodoUiState> = _uiState.asStateFlow()
@@ -37,68 +44,14 @@ class TodoViewModel @Inject constructor(
                 _uiState.map { it.filterOptions.showCompleted }
                     .distinctUntilChanged()
                     .flatMapLatest { showCompleted ->
-                        if (showCompleted) {
-                            todoRepository.getAllTodos()
-                        } else {
-                            todoRepository.getIncompleteTodos()
-                        }
+                        getAllTodosUseCase(showCompleted)
                     }
             ) { query, filterOptions, allTasks ->
-                applyFilters(allTasks, query, filterOptions)
+                filterTodosUseCase(allTasks, query, filterOptions)
             }.collect { filteredTasks ->
                 _uiState.update { it.copy(tasks = filteredTasks) }
             }
         }
-    }
-    
-    private fun applyFilters(
-        tasks: List<Task>,
-        query: String,
-        filterOptions: TaskFilterOptions
-    ): List<Task> {
-        var filteredTasks = tasks
-        
-        // Apply search filter
-        if (query.isNotBlank()) {
-            filteredTasks = filteredTasks.filter { task ->
-                task.title.contains(query, ignoreCase = true) || 
-                task.description?.contains(query, ignoreCase = true) == true
-            }
-        }
-        
-        // Apply priority filter
-        filteredTasks = filteredTasks.filter { task ->
-            task.priority in filterOptions.selectedPriorities
-        }
-        
-        // Apply date filter
-        filteredTasks = when (filterOptions.dateFilter) {
-            DateFilter.TODAY -> {
-                val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-                filteredTasks.filter { task ->
-                    task.dueAt?.toLocalDateTime(TimeZone.currentSystemDefault())?.date == today
-                }
-            }
-            DateFilter.THIS_WEEK -> {
-                val now = Clock.System.now()
-                val weekStart = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
-                    .let { it.minus(it.dayOfWeek.ordinal, DateTimeUnit.DAY) }
-                    .atStartOfDayIn(TimeZone.currentSystemDefault())
-                val weekEnd = weekStart.plus(DateTimePeriod(days = 7), TimeZone.currentSystemDefault())
-                filteredTasks.filter { task ->
-                    task.dueAt?.let { it >= weekStart && it < weekEnd } ?: false
-                }
-            }
-            DateFilter.OVERDUE -> {
-                val now = Clock.System.now()
-                filteredTasks.filter { task ->
-                    task.dueAt?.let { it < now && !task.completed } ?: false
-                }
-            }
-            DateFilter.ALL -> filteredTasks
-        }
-        
-        return filteredTasks
     }
     
     fun updateSearchQuery(query: String) {
@@ -115,8 +68,8 @@ class TodoViewModel @Inject constructor(
         dueAt: Instant?,
         priority: Int
     ) {
-        viewModelScope.launch {
-            val task = todoRepository.addTodo(
+        launchWithErrorHandling {
+            val task = addTodoUseCase(
                 title = title,
                 description = description,
                 dueAt = dueAt,
@@ -127,6 +80,8 @@ class TodoViewModel @Inject constructor(
             if (dueAt != null) {
                 _taskEvent.emit(TaskEvent.TaskAdded(task))
             }
+            
+            showSuccess("Task added successfully")
         }
     }
     
@@ -137,8 +92,8 @@ class TodoViewModel @Inject constructor(
         dueAt: Instant?,
         priority: Int
     ) {
-        viewModelScope.launch {
-            todoRepository.updateTodo(
+        launchWithErrorHandling {
+            updateTodoUseCase(
                 todoId = taskId,
                 title = title,
                 description = description,
@@ -148,20 +103,24 @@ class TodoViewModel @Inject constructor(
             
             // 发送事件，让外部处理通知调度
             _taskEvent.emit(TaskEvent.TaskUpdated(taskId, title, dueAt))
+            
+            showSuccess("Task updated successfully")
         }
     }
     
     fun toggleTaskCompletion(taskId: String, completed: Boolean) {
-        viewModelScope.launch {
-            todoRepository.updateTodoCompletion(taskId, completed)
+        launchWithErrorHandling {
+            toggleTodoCompletionUseCase(taskId, completed)
         }
     }
     
     fun deleteTask(taskId: String) {
-        viewModelScope.launch {
-            todoRepository.deleteTodo(taskId)
+        launchWithErrorHandling {
+            deleteTodoUseCase(taskId)
             // 发送事件，让外部处理通知调度
             _taskEvent.emit(TaskEvent.TaskDeleted(taskId))
+            
+            showSuccess("Task deleted successfully")
         }
     }
 }

@@ -46,7 +46,11 @@
       "WebFetch(domain:developer.android.com)",
       "Bash(true)",
       "Bash(tree:*)",
-      "Bash(./scripts/create_test_structure.sh:*)"
+      "Bash(./scripts/create_test_structure.sh:*)",
+      "Bash(./scripts/fix_room_compiler.sh:*)",
+      "Bash(./scripts/migrate_to_version_catalog.sh:*)",
+      "Bash(./scripts/check_module_configuration.sh:*)",
+      "Bash(./scripts/check_technical_debt.sh:*)"
     ],
     "deny": []
   },

@@ -32,4 +32,159 @@
     
     <!-- Recurring Transaction -->
     <string name="recurring_transaction">定期交易</string>
+    
+    <!-- Common -->
+    <string name="ledger">记账</string>
+    <string name="default_account">默认账户</string>
+    <string name="search">搜索</string>
+    <string name="edit">编辑</string>
+    <string name="delete">删除</string>
+    <string name="copy">复制</string>
+    <string name="close">关闭</string>
+    <string name="confirm">确定</string>
+    <string name="apply">应用</string>
+    <string name="clear">清除</string>
+    <string name="balance">结余</string>
+    <string name="all">全部</string>
+    <string name="today">今天</string>
+    <string name="this_week">本周</string>
+    <string name="this_month">本月</string>
+    <string name="this_year">本年</string>
+    
+    <!-- Search -->
+    <string name="search_transactions">搜索交易记录...</string>
+    <string name="exit_search">退出搜索</string>
+    <string name="clear_search">清除搜索</string>
+    <string name="no_search_results">没有找到相关交易记录</string>
+    
+    <!-- Selection Mode -->
+    <string name="selected_items">已选择 %d 项</string>
+    <string name="exit_selection">退出选择</string>
+    <string name="select_all">全选</string>
+    <string name="delete_selected">删除选中项</string>
+    
+    <!-- Navigation -->
+    <string name="open_menu">打开菜单</string>
+    <string name="filter_account">筛选账户：%s</string>
+    
+    <!-- Categories -->
+    <string name="uncategorized">未分类</string>
+    <string name="category">分类</string>
+    <string name="select_account">选择账户</string>
+    
+    <!-- Filter -->
+    <string name="filter_transactions">筛选交易记录</string>
+    <string name="transaction_type">交易类型</string>
+    <string name="amount_range">金额范围</string>
+    <string name="min_amount">最小金额</string>
+    <string name="max_amount">最大金额</string>
+    <string name="date_range">日期范围</string>
+    <string name="start_date">开始日期</string>
+    <string name="end_date">结束日期</string>
+    <string name="clear_date_filter">清除日期筛选</string>
+    <string name="clear_filter">清除筛选</string>
+    <string name="filtered">已筛选</string>
+    <string name="group_by_day">按天</string>
+    <string name="group_by_week">按周</string>
+    <string name="group_by_month">按月</string>
+    <string name="group_by_year">按年</string>
+    
+    <!-- Transaction -->
+    <string name="edit_transaction">编辑交易</string>
+    
+    <!-- Statistics -->
+    <string name="asset_overview">资产总览</string>
+    
+    <!-- Category Management Screen -->
+    <string name="back">返回</string>
+    <string name="add_category">添加分类</string>
+    <string name="expense_category">支出分类</string>
+    <string name="income_category">收入分类</string>
+    <string name="tip">提示</string>
+    
+    <!-- Common Actions -->
+    <string name="ok">确定</string>
+    <string name="yes">是</string>
+    <string name="no">否</string>
+    <string name="retry">重试</string>
+    
+    <!-- Account Screen -->
+    <string name="total_balance">总余额</string>
+    <string name="cash">现金</string>
+    <string name="bank_card">银行卡</string>
+    <string name="alipay">支付宝</string>
+    <string name="wechat">微信</string>
+    <string name="credit_card_account">信用卡</string>
+    <string name="other_account">其他</string>
+    <string name="account_name">账户名称</string>
+    <string name="account_type">账户类型</string>
+    <string name="initial_balance">初始余额</string>
+    <string name="remark">备注</string>
+    <string name="edit_account">编辑账户</string>
+    <string name="delete_account">删除账户</string>
+    <string name="delete_account_confirm">确定要删除这个账户吗？</string>
+    
+    <!-- Budget Screen -->
+    <string name="create_budget">创建预算</string>
+    <string name="budget_name">预算名称</string>
+    <string name="budget_amount">预算金额</string>
+    <string name="budget_period">预算周期</string>
+    <string name="monthly">每月</string>
+    <string name="yearly">每年</string>
+    <string name="budget_progress">预算进度</string>
+    <string name="used_amount">已使用</string>
+    <string name="remaining_amount">剩余</string>
+    <string name="budget_exceeded">预算超支</string>
+    <string name="budget_warning">预算警告</string>
+    
+    <!-- Credit Card Screen -->
+    <string name="bill_day">账单日</string>
+    <string name="payment_day">还款日</string>
+    <string name="credit_limit">信用额度</string>
+    <string name="available_credit">可用额度</string>
+    <string name="current_bill">当前账单</string>
+    <string name="not_generated">未生成</string>
+    <string name="payment_history">还款记录</string>
+    <string name="add_credit_card">添加信用卡</string>
+    <string name="edit_credit_card">编辑信用卡</string>
+    <string name="delete_credit_card">删除信用卡</string>
+    <string name="card_name">卡片名称</string>
+    <string name="card_number">卡号后四位</string>
+    <string name="bank_name">银行名称</string>
+    
+    <!-- Recurring Transaction Screen -->
+    <string name="create_recurring_transaction">创建定期交易</string>
+    <string name="frequency">频率</string>
+    <string name="daily">每天</string>
+    <string name="weekly">每周</string>
+    <string name="biweekly">每两周</string>
+    <string name="monthly_on_day">每月固定日</string>
+    <string name="quarterly">每季度</string>
+    <string name="next_execution">下次执行</string>
+    <string name="active">启用</string>
+    <string name="inactive">禁用</string>
+    
+    <!-- Savings Goal Screen -->
+    <string name="create_savings_goal">创建储蓄目标</string>
+    <string name="goal_name">目标名称</string>
+    <string name="target_amount">目标金额</string>
+    <string name="saved_amount">已存金额</string>
+    <string name="target_date">目标日期</string>
+    <string name="goal_progress">目标进度</string>
+    <string name="add_contribution">添加存款</string>
+    <string name="contribution_amount">存款金额</string>
+    <string name="goal_achieved">目标已达成</string>
+    
+    <!-- Statistics Screen -->
+    <string name="income_expense_trend">收支趋势</string>
+    <string name="category_distribution">分类分布</string>
+    <string name="account_distribution">账户分布</string>
+    <string name="time_range">时间范围</string>
+    <string name="last_7_days">最近7天</string>
+    <string name="last_30_days">最近30天</string>
+    <string name="last_3_months">最近3个月</string>
+    <string name="last_6_months">最近6个月</string>
+    <string name="last_year">最近1年</string>
+    <string name="custom_range">自定义范围</string>
+    <string name="no_data">暂无数据</string>
 </resources>

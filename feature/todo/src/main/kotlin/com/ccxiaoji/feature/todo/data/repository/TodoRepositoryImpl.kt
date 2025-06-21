@@ -1,5 +1,8 @@
 package com.ccxiaoji.feature.todo.data.repository
 
+import com.ccxiaoji.common.base.BaseResult
+import com.ccxiaoji.common.base.DomainException
+import com.ccxiaoji.common.base.safeSuspendCall
 import com.ccxiaoji.feature.todo.data.local.dao.TaskDao
 import com.ccxiaoji.feature.todo.data.local.entity.TaskEntity
 import com.ccxiaoji.common.model.SyncStatus
@@ -14,7 +17,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class TaskRepository @Inject constructor(
+class TodoRepositoryImpl @Inject constructor(
     private val taskDao: TaskDao,
     private val userApi: UserApi
 ) : TodoRepository {
@@ -51,7 +54,11 @@ class TaskRepository @Inject constructor(
         description: String?,
         dueAt: Instant?,
         priority: Int
-    ): Task {
+    ): BaseResult<Task> = safeSuspendCall {
+        if (title.isBlank()) {
+            throw DomainException.ValidationException("标题不能为空")
+        }
+        
         val taskId = UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
         
@@ -71,10 +78,10 @@ class TaskRepository @Inject constructor(
         
         // TODO: Log the change for sync through ChangeLogApi
         
-        return entity.toDomainModel()
+        entity.toDomainModel()
     }
     
-    override suspend fun updateTodoCompletion(todoId: String, completed: Boolean) {
+    override suspend fun updateTodoCompletion(todoId: String, completed: Boolean): BaseResult<Unit> = safeSuspendCall {
         val now = System.currentTimeMillis()
         val completedAt = if (completed) now else null
         
@@ -89,8 +96,13 @@ class TaskRepository @Inject constructor(
         description: String?,
         dueAt: Instant?,
         priority: Int
-    ) {
-        val existingTask = taskDao.getTaskById(todoId) ?: return
+    ): BaseResult<Unit> = safeSuspendCall {
+        if (title.isBlank()) {
+            throw DomainException.ValidationException("标题不能为空")
+        }
+        
+        val existingTask = taskDao.getTaskById(todoId) 
+            ?: throw DomainException.DataException("任务不存在")
         
         val now = System.currentTimeMillis()
         val updatedTask = existingTask.copy(
@@ -107,7 +119,7 @@ class TaskRepository @Inject constructor(
         // TODO: Log the change for sync through ChangeLogApi
     }
     
-    override suspend fun deleteTodo(todoId: String) {
+    override suspend fun deleteTodo(todoId: String): BaseResult<Unit> = safeSuspendCall {
         val now = System.currentTimeMillis()
         
         taskDao.softDeleteTask(todoId, now)
@@ -115,8 +127,8 @@ class TaskRepository @Inject constructor(
         // TODO: Log the change for sync through ChangeLogApi
     }
     
-    override suspend fun getTodoById(todoId: String): Task? {
-        return taskDao.getTaskById(todoId)?.toDomainModel()
+    override suspend fun getTodoById(todoId: String): BaseResult<Task?> = safeSuspendCall {
+        taskDao.getTaskById(todoId)?.toDomainModel()
     }
 }
 

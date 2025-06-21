@@ -1,49 +1,56 @@
 package com.ccxiaoji.feature.todo.presentation.screen
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ccxiaoji.feature.todo.R
 import com.ccxiaoji.feature.todo.domain.model.Task
+import com.ccxiaoji.feature.todo.presentation.component.*
 import com.ccxiaoji.feature.todo.presentation.viewmodel.TodoViewModel
-import com.ccxiaoji.feature.todo.presentation.viewmodel.TaskFilterOptions
-import com.ccxiaoji.feature.todo.presentation.viewmodel.DateFilter
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toJavaLocalDateTime
-import kotlinx.datetime.toLocalDateTime
-import java.time.format.DateTimeFormatter
 
+/**
+ * 待办事项主屏幕
+ * 使用模块化组件设计，将复杂UI拆分为独立组件
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TodoScreen(
-    viewModel: TodoViewModel = hiltViewModel()
+    viewModel: TodoViewModel = hiltViewModel(),
+    modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val errorState by viewModel.errorState.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    
     var showAddDialog by remember { mutableStateOf(false) }
     var editingTask by remember { mutableStateOf<Task?>(null) }
     
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // 显示错误/成功消息
+    LaunchedEffect(errorState) {
+        errorState?.let { error ->
+            snackbarHostState.showSnackbar(
+                message = error.message,
+                duration = SnackbarDuration.Short
+            )
+            viewModel.clearError()
+        }
+    }
+    
     Scaffold(
+        modifier = modifier,
         topBar = {
             TopAppBar(
                 title = { 
                     Text(
-                        text = "待办事项",
+                        text = stringResource(R.string.todo_title),
                         style = MaterialTheme.typography.headlineSmall
                     )
                 }
@@ -53,155 +60,57 @@ fun TodoScreen(
             FloatingActionButton(
                 onClick = { showAddDialog = true }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "添加任务")
+                Icon(
+                    imageVector = Icons.Default.Add, 
+                    contentDescription = stringResource(R.string.todo_add_task)
+                )
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // Search bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { viewModel.updateSearchQuery(it) },
-                placeholder = { Text("搜索任务...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "搜索") },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.updateSearchQuery("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "清除")
-                        }
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                singleLine = true
+            // 搜索栏
+            TodoSearchBar(
+                searchQuery = searchQuery,
+                onSearchQueryChange = viewModel::updateSearchQuery
             )
             
-            // Filter chips
-            LazyRow(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Show completed toggle
-                item {
-                    FilterChip(
-                        selected = uiState.filterOptions.showCompleted,
-                        onClick = {
-                            viewModel.updateFilterOptions(
-                                uiState.filterOptions.copy(showCompleted = !uiState.filterOptions.showCompleted)
-                            )
-                        },
-                        label = { Text("显示已完成") }
-                    )
-                }
-                
-                // Date filters
-                item {
-                    FilterChip(
-                        selected = uiState.filterOptions.dateFilter == DateFilter.TODAY,
-                        onClick = {
-                            viewModel.updateFilterOptions(
-                                uiState.filterOptions.copy(
-                                    dateFilter = if (uiState.filterOptions.dateFilter == DateFilter.TODAY) 
-                                        DateFilter.ALL else DateFilter.TODAY
-                                )
-                            )
-                        },
-                        label = { Text("今天") }
-                    )
-                }
-                
-                item {
-                    FilterChip(
-                        selected = uiState.filterOptions.dateFilter == DateFilter.THIS_WEEK,
-                        onClick = {
-                            viewModel.updateFilterOptions(
-                                uiState.filterOptions.copy(
-                                    dateFilter = if (uiState.filterOptions.dateFilter == DateFilter.THIS_WEEK) 
-                                        DateFilter.ALL else DateFilter.THIS_WEEK
-                                )
-                            )
-                        },
-                        label = { Text("本周") }
-                    )
-                }
-                
-                item {
-                    FilterChip(
-                        selected = uiState.filterOptions.dateFilter == DateFilter.OVERDUE,
-                        onClick = {
-                            viewModel.updateFilterOptions(
-                                uiState.filterOptions.copy(
-                                    dateFilter = if (uiState.filterOptions.dateFilter == DateFilter.OVERDUE) 
-                                        DateFilter.ALL else DateFilter.OVERDUE
-                                )
-                            )
-                        },
-                        label = { Text("逾期") }
-                    )
-                }
-                
-                // Priority filters
-                item {
-                    FilterChip(
-                        selected = uiState.filterOptions.selectedPriorities.size < 3,
-                        onClick = {
-                            viewModel.updateFilterOptions(
-                                uiState.filterOptions.copy(
-                                    selectedPriorities = if (uiState.filterOptions.selectedPriorities.size < 3)
-                                        setOf(0, 1, 2) else setOf()
-                                )
-                            )
-                        },
-                        label = { Text("优先级筛选") },
-                        leadingIcon = if (uiState.filterOptions.selectedPriorities.size < 3) {
-                            { Icon(Icons.Default.FilterList, contentDescription = null, modifier = Modifier.size(16.dp)) }
-                        } else null
-                    )
-                }
-            }
+            // 过滤器栏
+            TodoFilterBar(
+                filterOptions = uiState.filterOptions,
+                onFilterOptionsChange = viewModel::updateFilterOptions
+            )
             
-            if (uiState.tasks.isEmpty()) {
+            // 任务列表
+            if (isLoading) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = androidx.compose.ui.Alignment.Center
                 ) {
-                    Text(
-                        text = if (searchQuery.isNotEmpty() || uiState.filterOptions != TaskFilterOptions()) {
-                            "没有找到匹配的任务"
-                        } else {
-                            "暂无任务"
-                        },
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    CircularProgressIndicator()
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(uiState.tasks) { task ->
-                        TaskItem(
-                            task = task,
-                            onToggleComplete = { viewModel.toggleTaskCompletion(task.id, !task.completed) },
-                            onEdit = { editingTask = task },
-                            onDelete = { viewModel.deleteTask(task.id) }
-                        )
+                TaskList(
+                    tasks = uiState.tasks,
+                    onToggleComplete = { task ->
+                        viewModel.toggleTaskCompletion(task.id, !task.completed)
+                    },
+                    onEditTask = { task ->
+                        editingTask = task
+                    },
+                    onDeleteTask = { task ->
+                        viewModel.deleteTask(task.id)
                     }
-                }
+                )
             }
         }
     }
     
+    // 添加/编辑任务对话框
     if (showAddDialog || editingTask != null) {
         AddTaskDialog(
             onDismiss = { 
@@ -210,9 +119,20 @@ fun TodoScreen(
             },
             onConfirm = { title, description, dueAt, priority ->
                 if (editingTask != null) {
-                    viewModel.updateTask(editingTask!!.id, title, description, dueAt, priority)
+                    viewModel.updateTask(
+                        editingTask!!.id, 
+                        title, 
+                        description, 
+                        dueAt, 
+                        priority
+                    )
                 } else {
-                    viewModel.addTask(title, description, dueAt, priority)
+                    viewModel.addTask(
+                        title, 
+                        description, 
+                        dueAt, 
+                        priority
+                    )
                 }
                 showAddDialog = false
                 editingTask = null
@@ -220,164 +140,4 @@ fun TodoScreen(
             task = editingTask
         )
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TaskItem(
-    task: Task,
-    onToggleComplete: () -> Unit,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Checkbox(
-                checked = task.completed,
-                onCheckedChange = { onToggleComplete() }
-            )
-            
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = task.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
-                    textDecoration = if (task.completed) TextDecoration.LineThrough else null
-                )
-                
-                task.description?.let { desc ->
-                    Text(
-                        text = desc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    // Priority chip
-                    AssistChip(
-                        onClick = { },
-                        label = { Text(task.priorityLevel.displayName) },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    )
-                    
-                    // Due date
-                    task.dueAt?.let { dueAt ->
-                        Text(
-                            text = dueAt.toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
-                                .toJavaLocalDateTime()
-                                .format(DateTimeFormatter.ofPattern("MM-dd HH:mm")),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-            
-            IconButton(onClick = onEdit) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "编辑"
-                )
-            }
-            
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "删除"
-                )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AddTaskDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (title: String, description: String?, dueAt: kotlinx.datetime.Instant?, priority: Int) -> Unit,
-    task: Task? = null
-) {
-    var title by remember { mutableStateOf(task?.title ?: "") }
-    var description by remember { mutableStateOf(task?.description ?: "") }
-    var priority by remember { mutableStateOf(task?.priority ?: 0) }
-    
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(if (task == null) "添加任务" else "编辑任务") },
-        text = {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                OutlinedTextField(
-                    value = title,
-                    onValueChange = { title = it },
-                    label = { Text("任务标题") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
-                    label = { Text("描述（可选）") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                // Priority selection
-                Text(
-                    text = "优先级",
-                    style = MaterialTheme.typography.labelLarge
-                )
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        selected = priority == 0,
-                        onClick = { priority = 0 },
-                        label = { Text("低") }
-                    )
-                    FilterChip(
-                        selected = priority == 1,
-                        onClick = { priority = 1 },
-                        label = { Text("中") }
-                    )
-                    FilterChip(
-                        selected = priority == 2,
-                        onClick = { priority = 2 },
-                        label = { Text("高") }
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onConfirm(title, description.ifEmpty { null }, null, priority)
-                },
-                enabled = title.isNotEmpty()
-            ) {
-                Text("保存")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("取消")
-            }
-        }
-    )
 }

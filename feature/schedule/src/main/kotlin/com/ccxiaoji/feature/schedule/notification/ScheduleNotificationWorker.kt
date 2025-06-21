@@ -2,8 +2,8 @@ package com.ccxiaoji.feature.schedule.notification
 
 import android.content.Context
 import androidx.hilt.work.HiltWorker
-import androidx.work.CoroutineWorker
-import androidx.work.WorkerParameters
+import androidx.work.*
+import com.ccxiaoji.common.base.BaseWorker
 import com.ccxiaoji.feature.schedule.domain.usecase.GetScheduleByDateUseCase
 import com.ccxiaoji.shared.notification.data.manager.NotificationManager
 import dagger.assisted.Assisted
@@ -17,39 +17,52 @@ class ScheduleNotificationWorker @AssistedInject constructor(
     @Assisted workerParams: WorkerParameters,
     private val getScheduleByDateUseCase: GetScheduleByDateUseCase,
     private val notificationManager: NotificationManager
-) : CoroutineWorker(context, workerParams) {
+) : BaseWorker(context, workerParams) {
 
     companion object {
         const val WORK_NAME = "schedule_daily_reminder"
     }
 
-    override suspend fun doWork(): Result {
-        return try {
-            // 获取今天的日期
-            val today = LocalDate.now()
+    override fun getWorkerName(): String = "ScheduleNotificationWorker"
+    
+    override suspend fun performWork(): Result {
+        logInfo("Starting schedule notification check")
+        
+        // 获取今天的日期
+        val today = LocalDate.now()
+        logInfo("Checking schedule for date: $today")
+        
+        // 获取今天的排班信息
+        val schedule = getScheduleByDateUseCase(today).first()
+        
+        if (schedule != null && schedule.shift != null) {
+            val shift = schedule.shift
+            logInfo("Found schedule: ${shift.name} (${shift.startTime} - ${shift.endTime})")
             
-            // 获取今天的排班信息
-            val schedule = getScheduleByDateUseCase(today).first()
+            // 发送有排班的通知
+            notificationManager.sendScheduleReminder(
+                hasSchedule = true,
+                shiftName = shift.name,
+                shiftTime = "${shift.startTime} - ${shift.endTime}"
+            )
             
-            if (schedule != null && schedule.shift != null) {
-                val shift = schedule.shift
-                // 发送有排班的通知
-                notificationManager.sendScheduleReminder(
-                    hasSchedule = true,
-                    shiftName = shift.name,
-                    shiftTime = "${shift.startTime} - ${shift.endTime}"
+            return Result.success(
+                workDataOf(
+                    "has_schedule" to true,
+                    "shift_name" to shift.name
                 )
-            } else {
-                // 发送无排班的通知
-                notificationManager.sendScheduleReminder(
-                    hasSchedule = false
-                )
-            }
+            )
+        } else {
+            logInfo("No schedule found for today")
             
-            Result.success()
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Result.failure()
+            // 发送无排班的通知
+            notificationManager.sendScheduleReminder(
+                hasSchedule = false
+            )
+            
+            return Result.success(
+                workDataOf("has_schedule" to false)
+            )
         }
     }
 

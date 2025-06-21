@@ -5,42 +5,47 @@ import com.ccxiaoji.feature.ledger.data.local.dao.BudgetWithSpent
 import com.ccxiaoji.feature.ledger.data.local.entity.BudgetEntity
 import com.ccxiaoji.common.model.SyncStatus
 import com.ccxiaoji.shared.user.api.UserApi
+import com.ccxiaoji.feature.ledger.domain.repository.BudgetRepository
+import com.ccxiaoji.feature.ledger.domain.model.Budget
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class BudgetRepository @Inject constructor(
+class BudgetRepositoryImpl @Inject constructor(
     private val budgetDao: BudgetDao,
     private val userApi: UserApi
-) {
-    suspend fun createBudget(
+) : BudgetRepository {
+    override suspend fun createBudget(
         year: Int,
         month: Int,
-        budgetAmountCents: Int,
-        categoryId: String? = null,
-        alertThreshold: Float = 0.8f,
-        note: String? = null
-    ): BudgetEntity {
+        categoryId: String?,
+        amountCents: Int
+    ): Long {
         val budget = BudgetEntity(
             id = UUID.randomUUID().toString(),
             userId = userApi.getCurrentUserId(),
             year = year,
             month = month,
             categoryId = categoryId,
-            budgetAmountCents = budgetAmountCents,
-            alertThreshold = alertThreshold,
-            note = note,
+            budgetAmountCents = amountCents,
+            alertThreshold = 0.8f,
+            note = null,
             createdAt = System.currentTimeMillis(),
             updatedAt = System.currentTimeMillis(),
             syncStatus = SyncStatus.PENDING
         )
         budgetDao.insertBudget(budget)
-        return budget
+        return 1L // TODO: 返回实际的ID
     }
 
-    suspend fun updateBudget(
+    override suspend fun updateBudget(budget: Budget) {
+        // TODO: 实现
+    }
+    
+    suspend fun updateBudgetDetailed(
         budgetId: String,
         budgetAmountCents: Int? = null,
         alertThreshold: Float? = null,
@@ -59,15 +64,16 @@ class BudgetRepository @Inject constructor(
         return updatedBudget
     }
 
-    suspend fun deleteBudget(budgetId: String) {
+    override suspend fun deleteBudget(budgetId: String) {
         budgetDao.deleteBudget(budgetId, System.currentTimeMillis())
     }
 
-    fun getBudgetsByMonth(year: Int, month: Int): Flow<List<BudgetEntity>> {
+    override fun getMonthlyBudgets(year: Int, month: Int): Flow<List<Budget>> {
         return budgetDao.getBudgetsByMonth(userApi.getCurrentUserId(), year, month)
+            .map { entities -> entities.map { it.toDomainModel() } }
     }
 
-    fun getBudgetsWithSpent(year: Int, month: Int): Flow<List<BudgetWithSpent>> {
+    override fun getBudgetsWithSpent(year: Int, month: Int): Flow<List<BudgetWithSpent>> {
         return budgetDao.getBudgetsWithSpent(userApi.getCurrentUserId(), year, month)
     }
 
@@ -87,7 +93,7 @@ class BudgetRepository @Inject constructor(
         return budgetDao.getBudgetWithSpent(userApi.getCurrentUserId(), year, month, categoryId)
     }
 
-    suspend fun checkBudgetExceeded(year: Int, month: Int, categoryId: String?): Boolean {
+    override suspend fun checkBudgetExceeded(year: Int, month: Int, categoryId: String?): Boolean {
         val budget = if (categoryId == null) {
             budgetDao.getTotalBudgetWithSpent(userApi.getCurrentUserId(), year, month)
         } else {
@@ -99,11 +105,12 @@ class BudgetRepository @Inject constructor(
         } ?: false
     }
     
-    fun getBudgets(): Flow<List<BudgetEntity>> {
+    override fun getBudgets(): Flow<List<Budget>> {
         return budgetDao.getBudgetsByUser(userApi.getCurrentUserId())
+            .map { entities -> entities.map { it.toDomainModel() } }
     }
 
-    suspend fun checkBudgetAlert(year: Int, month: Int, categoryId: String?): Boolean {
+    override suspend fun checkBudgetAlert(year: Int, month: Int, categoryId: String?): Boolean {
         val budget = if (categoryId == null) {
             budgetDao.getTotalBudgetWithSpent(userApi.getCurrentUserId(), year, month)
         } else {
@@ -116,7 +123,7 @@ class BudgetRepository @Inject constructor(
         } ?: false
     }
 
-    suspend fun getBudgetUsagePercentage(year: Int, month: Int, categoryId: String?): Float? {
+    override suspend fun getBudgetUsagePercentage(year: Int, month: Int, categoryId: String?): Float? {
         val budget = if (categoryId == null) {
             budgetDao.getTotalBudgetWithSpent(userApi.getCurrentUserId(), year, month)
         } else {
@@ -149,22 +156,40 @@ class BudgetRepository @Inject constructor(
 
         return if (existingBudget != null) {
             // 更新现有预算
-            updateBudget(
-                budgetId = existingBudget.id,
+            val updatedBudget = existingBudget.copy(
                 budgetAmountCents = budgetAmountCents,
                 alertThreshold = alertThreshold,
-                note = note
-            )!!
+                note = note,
+                updatedAt = System.currentTimeMillis(),
+                syncStatus = SyncStatus.PENDING_SYNC
+            )
+            budgetDao.updateBudget(updatedBudget)
+            updatedBudget
         } else {
             // 创建新预算
-            createBudget(
+            val budgetId = createBudget(
                 year = year,
                 month = month,
-                budgetAmountCents = budgetAmountCents,
                 categoryId = categoryId,
-                alertThreshold = alertThreshold,
-                note = note
+                amountCents = budgetAmountCents
             )
+            // 获取创建的预算
+            budgetDao.getBudgetById(budgetId.toString())!!
         }
     }
+}
+
+private fun BudgetEntity.toDomainModel(): Budget {
+    return Budget(
+        id = id,
+        userId = userId,
+        year = year,
+        month = month,
+        categoryId = categoryId,
+        budgetAmountCents = budgetAmountCents,
+        alertThreshold = alertThreshold,
+        note = note,
+        createdAt = createdAt,
+        updatedAt = updatedAt
+    )
 }

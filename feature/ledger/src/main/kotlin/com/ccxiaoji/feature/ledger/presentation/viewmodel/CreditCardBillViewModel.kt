@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.feature.ledger.data.local.dao.AccountDao
 import com.ccxiaoji.feature.ledger.data.local.entity.CreditCardBillEntity
-import com.ccxiaoji.feature.ledger.data.repository.AccountRepository
+import com.ccxiaoji.feature.ledger.domain.repository.AccountRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,14 +34,16 @@ class CreditCardBillViewModel @Inject constructor(
     }
     
     fun getBills(accountId: String): Flow<List<CreditCardBillEntity>> {
-        return accountRepository.getCreditCardBills(accountId)
+        // TODO: 需要实现BillRepository或在AccountRepository中添加此方法
+        return kotlinx.coroutines.flow.flowOf(emptyList())
     }
     
     fun generateBillForAccount(accountId: String) {
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(isLoading = true) }
-                accountRepository.generateCreditCardBill(accountId)
+                // TODO: 需要实现BillRepository或在AccountRepository中添加此方法
+                // accountRepository.generateCreditCardBill(accountId)
                 _uiState.update { 
                     it.copy(
                         isLoading = false,
@@ -61,7 +63,9 @@ class CreditCardBillViewModel @Inject constructor(
     
     suspend fun getBillDetail(billId: String): CreditCardBillEntity? {
         return try {
-            accountRepository.getCurrentCreditCardBill(billId)
+            // TODO: 需要实现BillRepository或在AccountRepository中添加此方法
+            // accountRepository.getCurrentCreditCardBill(billId)
+            null
         } catch (e: Exception) {
             _uiState.update { it.copy(errorMessage = "加载账单详情失败") }
             null

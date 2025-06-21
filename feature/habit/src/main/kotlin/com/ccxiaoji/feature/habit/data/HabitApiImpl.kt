@@ -45,7 +45,7 @@ class HabitApiImpl @Inject constructor(
         color: String,
         icon: String?
     ): Habit {
-        return habitRepository.createHabit(title, description, period, target, color, icon)
+        return habitRepository.createHabit(title, description, period, target, color, icon).getOrThrow()
     }
     
     override suspend fun updateHabit(
@@ -57,15 +57,15 @@ class HabitApiImpl @Inject constructor(
         color: String,
         icon: String?
     ) {
-        habitRepository.updateHabit(habitId, title, description, period, target, color, icon)
+        habitRepository.updateHabit(habitId, title, description, period, target, color, icon).getOrThrow()
     }
     
     override suspend fun checkInHabit(habitId: String, date: LocalDate?) {
         val checkInDate = date ?: kotlinx.datetime.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).date
-        habitRepository.checkInHabit(habitId, checkInDate)
+        habitRepository.checkInHabit(habitId, checkInDate).getOrThrow()
     }
     
     override suspend fun deleteHabit(habitId: String) {
-        habitRepository.deleteHabit(habitId)
+        habitRepository.deleteHabit(habitId).getOrThrow()
     }
 }

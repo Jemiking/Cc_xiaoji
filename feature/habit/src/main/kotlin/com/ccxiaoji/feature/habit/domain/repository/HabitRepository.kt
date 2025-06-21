@@ -1,5 +1,6 @@
 package com.ccxiaoji.feature.habit.domain.repository
 
+import com.ccxiaoji.common.base.BaseResult
 import com.ccxiaoji.feature.habit.domain.model.Habit
 import com.ccxiaoji.feature.habit.domain.model.HabitWithStreak
 import kotlinx.coroutines.flow.Flow
@@ -45,7 +46,7 @@ interface HabitRepository {
         target: Int,
         color: String,
         icon: String?
-    ): Habit
+    ): BaseResult<Habit>
     
     /**
      * 更新习惯
@@ -58,15 +59,15 @@ interface HabitRepository {
         target: Int,
         color: String,
         icon: String?
-    )
+    ): BaseResult<Unit>
     
     /**
      * 习惯打卡
      */
-    suspend fun checkInHabit(habitId: String, date: LocalDate)
+    suspend fun checkInHabit(habitId: String, date: LocalDate): BaseResult<Unit>
     
     /**
      * 删除习惯
      */
-    suspend fun deleteHabit(habitId: String)
+    suspend fun deleteHabit(habitId: String): BaseResult<Unit>
 }

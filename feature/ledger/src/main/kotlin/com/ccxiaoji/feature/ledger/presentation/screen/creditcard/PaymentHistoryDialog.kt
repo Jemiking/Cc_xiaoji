@@ -18,7 +18,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ccxiaoji.feature.ledger.data.local.entity.CreditCardPaymentEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.PaymentType
-import com.ccxiaoji.feature.ledger.data.repository.PaymentStats
+import com.ccxiaoji.feature.ledger.domain.repository.PaymentStats
 import com.ccxiaoji.feature.ledger.domain.model.Account
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -88,7 +88,7 @@ fun PaymentHistoryDialog(
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = "${stats.onTimeRate.toInt()}%",
+                                    text = "${stats.onTimePaymentRate.toInt()}%",
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.primary
@@ -101,7 +101,7 @@ fun PaymentHistoryDialog(
                             
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = "${stats.totalPayments}",
+                                    text = "${stats.paymentCount}",
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -113,7 +113,7 @@ fun PaymentHistoryDialog(
                             
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
-                                    text = formatPaymentCurrency(stats.totalAmountYuan),
+                                    text = formatPaymentCurrency(stats.totalPayments / 100.0),
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold
                                 )

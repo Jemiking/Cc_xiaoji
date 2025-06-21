@@ -23,8 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.ccxiaoji.feature.ledger.data.repository.CategoryWithStats
 import com.ccxiaoji.feature.ledger.domain.model.Category
+import com.ccxiaoji.feature.ledger.domain.model.CategoryWithStats
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.CategoryTab
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.CategoryViewModel
 
@@ -94,7 +94,8 @@ fun CategoryManagementScreen(
                     uiState.incomeCategories
                 }
                 
-                items(categories) { categoryWithStats ->
+                items(categories.size) { index ->
+                    val categoryWithStats = categories[index]
                     CategoryItem(
                         categoryWithStats = categoryWithStats,
                         onEdit = { viewModel.setEditingCategory(categoryWithStats.category) },
