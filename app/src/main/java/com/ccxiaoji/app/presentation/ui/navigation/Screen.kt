@@ -106,6 +106,10 @@ object StatisticsRoute {
     const val route = "statistics"
 }
 
+object AssetOverviewRoute {
+    const val route = "asset_overview"
+}
+
 object RecurringTransactionRoute {
     const val route = "recurring_transaction"
 }
@@ -188,4 +192,9 @@ object ScheduleExportRoute {
 
 object ScheduleAboutRoute {
     const val route = "schedule_about"
+}
+
+// Plan module routes
+object PlanRoute {
+    const val route = "plan"
 }

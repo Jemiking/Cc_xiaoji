@@ -151,6 +151,10 @@ fun CreditCardScreen(
             onViewBills = {
                 navController.navigate("credit_card_bills/${card.id}")
                 selectedCard = null
+            },
+            onNavigateToSettings = {
+                navController.navigate("credit_card_settings/${card.id}")
+                selectedCard = null
             }
         )
     }

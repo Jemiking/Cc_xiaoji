@@ -2,10 +2,12 @@ package com.ccxiaoji.feature.ledger.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ccxiaoji.common.base.BaseResult
 import com.ccxiaoji.feature.ledger.domain.model.Transaction
 import com.ccxiaoji.feature.ledger.domain.model.Account
 import com.ccxiaoji.feature.ledger.domain.model.Category
 import com.ccxiaoji.feature.ledger.domain.usecase.*
+import com.ccxiaoji.feature.ledger.data.cache.LedgerCacheManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -21,19 +23,27 @@ import javax.inject.Inject
 @HiltViewModel
 class LedgerViewModel @Inject constructor(
     private val getTransactionsUseCase: GetTransactionsUseCase,
+    private val getPaginatedTransactionsUseCase: GetPaginatedTransactionsUseCase,
     private val addTransactionUseCase: AddTransactionUseCase,
     private val updateTransactionUseCase: UpdateTransactionUseCase,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
     private val getAccountsUseCase: GetAccountsUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val getMonthlyStatsUseCase: GetMonthlyStatsUseCase,
-    private val checkBudgetUseCase: CheckBudgetUseCase
+    private val checkBudgetUseCase: CheckBudgetUseCase,
+    private val cacheManager: LedgerCacheManager
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(LedgerUiState())
     val uiState: StateFlow<LedgerUiState> = _uiState.asStateFlow()
     
     private val _selectedMonth = MutableStateFlow(YearMonth.now())
     val selectedMonth: StateFlow<YearMonth> = _selectedMonth.asStateFlow()
+    
+    // 分页状态
+    private var currentPage = 0
+    private val pageSize = 20
+    private var hasMoreData = true
+    private var isLoadingMore = false
     
     init {
         loadInitialData()
@@ -48,22 +58,95 @@ class LedgerViewModel @Inject constructor(
     
     fun selectMonth(yearMonth: YearMonth) {
         _selectedMonth.value = yearMonth
+        currentPage = 0
+        hasMoreData = true
         loadTransactions()
         loadMonthlySummary()
     }
     
     private fun loadTransactions() {
         viewModelScope.launch {
-            val accountId = _uiState.value.selectedAccountId
-            val transactionsFlow = if (accountId != null) {
-                getTransactionsUseCase.getByAccount(accountId)
-            } else {
-                getTransactionsUseCase()
-            }
+            _uiState.update { it.copy(isLoading = true) }
+            currentPage = 0
             
-            transactionsFlow.collect { allTransactions ->
-                val filteredByMonth = filterTransactionsByMonth(allTransactions, _selectedMonth.value)
-                _uiState.update { it.copy(transactions = filteredByMonth) }
+            val accountId = _uiState.value.selectedAccountId
+            val selectedMonth = _selectedMonth.value
+            val startDate = LocalDate(selectedMonth.year, selectedMonth.monthValue, 1)
+                .atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+            val endDate = LocalDate(selectedMonth.plusMonths(1).year, selectedMonth.plusMonths(1).monthValue, 1)
+                .atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+            
+            getPaginatedTransactionsUseCase(
+                page = currentPage,
+                pageSize = pageSize,
+                accountId = accountId,
+                startDate = startDate,
+                endDate = endDate
+            ).collect { result ->
+                when (result) {
+                    is BaseResult.Success -> {
+                        val paginatedResult = result.data
+                        _uiState.update { 
+                            it.copy(
+                                transactions = paginatedResult.transactions,
+                                isLoading = false,
+                                hasMoreData = paginatedResult.hasMore
+                            )
+                        }
+                        hasMoreData = paginatedResult.hasMore
+                        
+                        // 更新缓存
+                        cacheManager.updateRecentTransactionsCache(paginatedResult.transactions)
+                    }
+                    is BaseResult.Error -> {
+                        _uiState.update { it.copy(isLoading = false) }
+                    }
+                }
+            }
+        }
+    }
+    
+    fun loadMoreTransactions() {
+        if (isLoadingMore || !hasMoreData) return
+        
+        viewModelScope.launch {
+            isLoadingMore = true
+            _uiState.update { it.copy(isLoadingMore = true) }
+            
+            val accountId = _uiState.value.selectedAccountId
+            val selectedMonth = _selectedMonth.value
+            val startDate = LocalDate(selectedMonth.year, selectedMonth.monthValue, 1)
+                .atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+            val endDate = LocalDate(selectedMonth.plusMonths(1).year, selectedMonth.plusMonths(1).monthValue, 1)
+                .atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+            
+            currentPage++
+            
+            getPaginatedTransactionsUseCase(
+                page = currentPage,
+                pageSize = pageSize,
+                accountId = accountId,
+                startDate = startDate,
+                endDate = endDate
+            ).collect { result ->
+                when (result) {
+                    is BaseResult.Success -> {
+                        val paginatedResult = result.data
+                        _uiState.update { state ->
+                            state.copy(
+                                transactions = state.transactions + paginatedResult.transactions,
+                                isLoadingMore = false,
+                                hasMoreData = paginatedResult.hasMore
+                            )
+                        }
+                        hasMoreData = paginatedResult.hasMore
+                    }
+                    is BaseResult.Error -> {
+                        _uiState.update { it.copy(isLoadingMore = false) }
+                        currentPage-- // 回滚页码
+                    }
+                }
+                isLoadingMore = false
             }
         }
     }
@@ -197,6 +280,8 @@ class LedgerViewModel @Inject constructor(
                         selectedAccountId = accounts.find { acc -> acc.isDefault }?.id
                     )
                 }
+                // 更新缓存
+                cacheManager.updateAccountsCache(accounts)
             }
         }
     }
@@ -205,6 +290,8 @@ class LedgerViewModel @Inject constructor(
         viewModelScope.launch {
             getCategoriesUseCase().collect { categories ->
                 _uiState.update { it.copy(categories = categories) }
+                // 更新缓存
+                cacheManager.updateCategoriesCache(categories)
             }
         }
     }
@@ -212,6 +299,11 @@ class LedgerViewModel @Inject constructor(
     fun selectAccount(accountId: String?) {
         _uiState.update { it.copy(selectedAccountId = accountId) }
         loadTransactions()
+    }
+    
+    fun refreshTransactions() {
+        loadTransactions()
+        loadMonthlySummary()
     }
 }
 
@@ -222,5 +314,8 @@ data class LedgerUiState(
     val monthlyExpense: Double = 0.0,
     val accounts: List<Account> = emptyList(),
     val selectedAccountId: String? = null,
-    val categories: List<Category> = emptyList()
+    val categories: List<Category> = emptyList(),
+    val isLoading: Boolean = false,
+    val isLoadingMore: Boolean = false,
+    val hasMoreData: Boolean = true
 )

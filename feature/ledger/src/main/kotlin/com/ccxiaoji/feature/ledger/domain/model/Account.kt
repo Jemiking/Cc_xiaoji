@@ -17,6 +17,10 @@ data class Account(
     val billingDay: Int? = null,
     val paymentDueDay: Int? = null,
     val gracePeriodDays: Int? = null,
+    val annualFeeAmountCents: Long? = null,
+    val annualFeeWaiverThresholdCents: Long? = null,
+    val cashAdvanceLimitCents: Long? = null,
+    val interestRate: Double? = null,
     
     val createdAt: Instant,
     val updatedAt: Instant
@@ -39,4 +43,16 @@ data class Account(
         get() = if (type == AccountType.CREDIT_CARD && creditLimitCents != null && creditLimitCents > 0) {
             (-balanceCents.toDouble() / creditLimitCents) * 100
         } else null
+    
+    val annualFeeAmountYuan: Double?
+        get() = annualFeeAmountCents?.let { it / 100.0 }
+    
+    val annualFeeWaiverThresholdYuan: Double?
+        get() = annualFeeWaiverThresholdCents?.let { it / 100.0 }
+    
+    val cashAdvanceLimitYuan: Double?
+        get() = cashAdvanceLimitCents?.let { it / 100.0 }
+    
+    val dailyInterestRatePercent: Double?
+        get() = interestRate?.let { it * 100 }
 }

@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Feature模块不需要声明任何内容，除非有特殊需求 -->
+</manifest>

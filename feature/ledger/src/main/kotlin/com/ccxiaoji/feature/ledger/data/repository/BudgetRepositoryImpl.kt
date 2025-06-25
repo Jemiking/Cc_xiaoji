@@ -38,7 +38,7 @@ class BudgetRepositoryImpl @Inject constructor(
             syncStatus = SyncStatus.PENDING
         )
         budgetDao.insertBudget(budget)
-        return 1L // TODO: 返回实际的ID
+        return 1L // 暂时返回1L，因为接口定义返回Long，实际上budget.id是String
     }
 
     override suspend fun updateBudget(budget: Budget) {
@@ -137,6 +137,10 @@ class BudgetRepositoryImpl @Inject constructor(
                 (it.spentAmountCents.toFloat() / it.budgetAmountCents.toFloat()) * 100f
             }
         }
+    }
+    
+    override suspend fun getBudgetById(budgetId: String): Budget? {
+        return budgetDao.getBudgetById(budgetId)?.toDomainModel()
     }
 
     // 创建或更新预算

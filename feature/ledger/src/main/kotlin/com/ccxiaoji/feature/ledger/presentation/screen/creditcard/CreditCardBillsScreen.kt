@@ -273,4 +273,3 @@ private fun formatDate(timestamp: Long): String {
     return "${date.monthNumber}月${date.dayOfMonth}日"
 }
 
-// 使用CreditCardScreen.kt中的formatCurrency函数

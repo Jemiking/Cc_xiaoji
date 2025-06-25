@@ -15,6 +15,7 @@ import com.ccxiaoji.feature.ledger.domain.repository.AccountRepository
 import com.ccxiaoji.feature.ledger.domain.model.Transaction
 import com.ccxiaoji.app.domain.model.Countdown
 import com.ccxiaoji.feature.ledger.domain.model.SavingsGoal
+import com.ccxiaoji.feature.plan.api.PlanApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,7 +35,8 @@ class HomeViewModel @Inject constructor(
     private val budgetRepository: BudgetRepository,
     private val savingsGoalRepository: SavingsGoalRepository,
     private val userApi: UserApi,
-    private val accountRepository: AccountRepository
+    private val accountRepository: AccountRepository,
+    private val planApi: PlanApi
 ) : ViewModel() {
     
     companion object {
@@ -165,6 +167,30 @@ class HomeViewModel @Inject constructor(
             val totalBalance = accountRepository.getTotalBalance()
             _uiState.value = _uiState.value.copy(totalAccountBalance = totalBalance)
         }
+        
+        viewModelScope.launch {
+            // Load plan data
+            try {
+                val activePlans = planApi.getInProgressPlans(100)
+                val todayPlans = planApi.getTodayPlans()
+                
+                // Calculate average progress
+                val averageProgress = if (activePlans.isNotEmpty()) {
+                    activePlans.map { it.progress }.average().toInt()
+                } else {
+                    0
+                }
+                
+                _uiState.value = _uiState.value.copy(
+                    activePlansCount = activePlans.size,
+                    todayPlansCount = todayPlans.size,
+                    planAverageProgress = averageProgress
+                )
+            } catch (e: Exception) {
+                Log.e(TAG, "Error loading plan data", e)
+                // Keep default values on error
+            }
+        }
     }
 }
 
@@ -185,5 +211,8 @@ data class HomeUiState(
     val budgetSpent: Double = 0.0,
     val budgetUsagePercentage: Float = 0f,
     val savingsGoals: List<SavingsGoal> = emptyList(),
-    val totalAccountBalance: Double = 0.0
+    val totalAccountBalance: Double = 0.0,
+    val activePlansCount: Int = 0,
+    val todayPlansCount: Int = 0,
+    val planAverageProgress: Int = 0
 )

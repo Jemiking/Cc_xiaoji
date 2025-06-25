@@ -33,6 +33,7 @@ fun HomeScreen(
     onNavigateToLedger: () -> Unit = {},
     onNavigateToTodo: () -> Unit = {},
     onNavigateToHabit: () -> Unit = {},
+    onNavigateToPlan: () -> Unit = {},
     onQuickAddTransaction: () -> Unit = {},
     onNavigateToStatistics: () -> Unit = {},
     onNavigateToSavingsGoal: () -> Unit = {}
@@ -107,6 +108,16 @@ fun HomeScreen(
                 longestStreak = uiState.longestHabitStreak,
                 onCardClick = onNavigateToHabit,
                 onCheckIn = onNavigateToHabit,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            
+            // 计划模块卡片
+            PlanModuleCard(
+                activePlansCount = uiState.activePlansCount,
+                todayPlansCount = uiState.todayPlansCount,
+                averageProgress = uiState.planAverageProgress,
+                onCardClick = onNavigateToPlan,
+                onViewPlans = onNavigateToPlan,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
             

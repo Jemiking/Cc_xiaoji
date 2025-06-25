@@ -31,6 +31,10 @@ import com.ccxiaoji.feature.ledger.domain.model.Category
 import com.ccxiaoji.feature.ledger.domain.model.CategoryDetails
 import com.ccxiaoji.feature.ledger.domain.model.Transaction
 import com.ccxiaoji.feature.ledger.presentation.component.AccountSelector
+import com.ccxiaoji.feature.ledger.presentation.component.BatchDeleteDialog
+import com.ccxiaoji.feature.ledger.presentation.component.BatchUpdateCategoryDialog
+import com.ccxiaoji.feature.ledger.presentation.component.BatchUpdateAccountDialog
+import com.ccxiaoji.feature.ledger.presentation.component.AdvancedFilterDialog
 import com.ccxiaoji.feature.ledger.presentation.component.ledger.LedgerDrawerContent
 import com.ccxiaoji.feature.ledger.presentation.component.ledger.MonthlyOverviewBar
 import com.ccxiaoji.feature.ledger.presentation.component.ledger.MonthSelector
@@ -91,7 +95,7 @@ fun LedgerScreen(
                     navController?.navigate(LedgerNavigation.StatisticsRoute)
                 },
                 onNavigateToAssetOverview = {
-                    // TODO: 实现资产总览页面
+                    navController?.navigate(LedgerNavigation.AssetOverviewRoute)
                 },
                 onNavigateToAccountManagement = {
                     navController?.navigate(LedgerNavigation.AccountManagementRoute)
@@ -167,20 +171,60 @@ fun LedgerScreen(
                         }
                     },
                     actions = {
+                        var showBatchMenu by remember { mutableStateOf(false) }
+                        
                         IconButton(onClick = { selectionViewModel.selectAllTransactions(uiState.transactions.map { it.id }) }) {
                             Icon(Icons.Default.SelectAll, contentDescription = stringResource(R.string.select_all))
                         }
+                        
+                        // 批量操作菜单
                         IconButton(
-                            onClick = { selectionViewModel.deleteSelectedTransactions { /* 刷新交易列表 */ } },
+                            onClick = { showBatchMenu = true },
                             enabled = selectionState.selectedTransactionIds.isNotEmpty()
                         ) {
-                            Icon(
-                                Icons.Default.Delete, 
-                                contentDescription = stringResource(R.string.delete_selected),
-                                tint = if (selectionState.selectedTransactionIds.isNotEmpty()) 
-                                    MaterialTheme.colorScheme.error 
-                                else 
-                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.batch_operations))
+                        }
+                        
+                        DropdownMenu(
+                            expanded = showBatchMenu,
+                            onDismissRequest = { showBatchMenu = false }
+                        ) {
+                            // 批量删除
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.batch_delete)) },
+                                onClick = {
+                                    showBatchMenu = false
+                                    dialogViewModel.showBatchDeleteDialog()
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Delete, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                }
+                            )
+                            
+                            Divider()
+                            
+                            // 批量修改分类
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.batch_change_category)) },
+                                onClick = {
+                                    showBatchMenu = false
+                                    dialogViewModel.showBatchCategoryDialog()
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Category, contentDescription = null)
+                                }
+                            )
+                            
+                            // 批量修改账户
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.batch_change_account)) },
+                                onClick = {
+                                    showBatchMenu = false
+                                    dialogViewModel.showBatchAccountDialog()
+                                },
+                                leadingIcon = {
+                                    Icon(Icons.Default.AccountBalance, contentDescription = null)
+                                }
                             )
                         }
                     }
@@ -220,6 +264,18 @@ fun LedgerScreen(
                             currentMonth = selectedMonth,
                             onMonthSelected = { viewModel.selectMonth(it) }
                         )
+                        
+                        IconButton(onClick = { dialogViewModel.showFilterDialog() }) {
+                            Icon(
+                                Icons.Default.FilterList, 
+                                contentDescription = stringResource(R.string.filter),
+                                tint = if (filterState.activeFilter != TransactionFilter()) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
+                            )
+                        }
                         
                         IconButton(onClick = { searchViewModel.toggleSearchMode() }) {
                             Icon(Icons.Default.Search, contentDescription = stringResource(R.string.search))
@@ -261,10 +317,11 @@ fun LedgerScreen(
             }
             
             // Transactions List
+            val filteredTransactions = filterViewModel.applyFilter(uiState.transactions)
             val displayTransactions = if (searchState.isSearchMode && searchState.searchQuery.isNotEmpty()) {
                 searchState.searchResults
             } else {
-                uiState.transactions
+                filteredTransactions
             }
             
             LazyColumn(
@@ -345,18 +402,68 @@ fun LedgerScreen(
     }
     
     if (dialogState.showFilterDialog) {
-        FilterTransactionDialog(
+        AdvancedFilterDialog(
             currentFilter = filterState.activeFilter,
             categories = uiState.categories,
+            accounts = uiState.accounts,
+            filterPresets = filterViewModel.getFilterPresets(),
             onDismiss = { dialogViewModel.hideFilterDialog() },
             onConfirm = { filter ->
                 filterViewModel.updateFilter(filter)
+                dialogViewModel.hideFilterDialog()
+            },
+            onPresetSelected = { preset ->
+                filterViewModel.applyPresetFilter(preset)
                 dialogViewModel.hideFilterDialog()
             },
             onClearFilter = {
                 filterViewModel.clearFilter()
                 dialogViewModel.hideFilterDialog()
             }
+        )
+    }
+    
+    // 批量删除对话框
+    if (dialogState.showBatchDeleteDialog) {
+        BatchDeleteDialog(
+            selectedCount = selectionState.selectedCount,
+            onConfirm = {
+                selectionViewModel.batchDeleteTransactions { successCount, deletedIds ->
+                    // TODO: 显示成功提示，支持撤销
+                    viewModel.refreshTransactions()
+                }
+            },
+            onDismiss = { dialogViewModel.hideBatchDeleteDialog() }
+        )
+    }
+    
+    // 批量修改分类对话框
+    if (dialogState.showBatchCategoryDialog) {
+        BatchUpdateCategoryDialog(
+            selectedCount = selectionState.selectedCount,
+            categories = uiState.categories.filter { it.type == Category.Type.EXPENSE },
+            onConfirm = { categoryId ->
+                selectionViewModel.batchUpdateCategory(categoryId) { successCount ->
+                    // TODO: 显示成功提示
+                    viewModel.refreshTransactions()
+                }
+            },
+            onDismiss = { dialogViewModel.hideBatchCategoryDialog() }
+        )
+    }
+    
+    // 批量修改账户对话框
+    if (dialogState.showBatchAccountDialog) {
+        BatchUpdateAccountDialog(
+            selectedCount = selectionState.selectedCount,
+            accounts = uiState.accounts,
+            onConfirm = { accountId ->
+                selectionViewModel.batchUpdateAccount(accountId) { successCount ->
+                    // TODO: 显示成功提示
+                    viewModel.refreshTransactions()
+                }
+            },
+            onDismiss = { dialogViewModel.hideBatchAccountDialog() }
         )
     }
     }

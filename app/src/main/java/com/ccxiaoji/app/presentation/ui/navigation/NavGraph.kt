@@ -20,11 +20,13 @@ import com.ccxiaoji.app.presentation.ui.profile.DataExportScreen
 import com.ccxiaoji.app.presentation.ui.profile.ThemeSettingsScreen
 import com.ccxiaoji.app.presentation.ui.profile.NotificationSettingsScreen
 import com.ccxiaoji.feature.ledger.api.LedgerApi
+import com.ccxiaoji.feature.plan.api.PlanApi
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
     ledgerApi: LedgerApi,
+    planApi: PlanApi,
     startDestination: String = Screen.Home.route,
     modifier: Modifier = Modifier
 ) {
@@ -38,6 +40,7 @@ fun NavGraph(
                 onNavigateToLedger = { navController.navigate(Screen.Ledger.route) },
                 onNavigateToTodo = { navController.navigate(Screen.Todo.route) },
                 onNavigateToHabit = { navController.navigate(Screen.Habit.route) },
+                onNavigateToPlan = { navController.navigate(PlanRoute.route) },
                 onQuickAddTransaction = { navController.navigate(Screen.Ledger.route) },
                 onNavigateToStatistics = { navController.navigate(StatisticsRoute.route) },
                 onNavigateToSavingsGoal = { navController.navigate(SavingsGoalRoute.route) }
@@ -138,6 +141,10 @@ fun NavGraph(
             ledgerApi.getStatisticsScreen(onNavigateBack = { navController.popBackStack() })
         }
         
+        composable(AssetOverviewRoute.route) {
+            ledgerApi.getAssetOverviewScreen(onNavigateBack = { navController.popBackStack() })
+        }
+        
         composable(RecurringTransactionRoute.route) {
             ledgerApi.getRecurringTransactionScreen(onNavigateBack = { navController.popBackStack() })
         }
@@ -161,7 +168,14 @@ fun NavGraph(
         
         // Settings screens - Placeholder implementations
         composable(LedgerSettingsRoute.route) {
-            PlaceholderScreen(title = "记账设置", navController = navController)
+            ledgerApi.getLedgerSettingsScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToCategory = { navController.navigate(CategoryManagementRoute.route) },
+                onNavigateToAccount = { navController.navigate(AccountManagementRoute.route) },
+                onNavigateToBudget = { navController.navigate(BudgetRoute.route) },
+                onNavigateToDataExport = { navController.navigate(DataExportRoute.route) },
+                onNavigateToRecurring = { navController.navigate(RecurringTransactionRoute.route) }
+            )
         }
         
         composable(DataExportRoute.route) {
@@ -252,6 +266,11 @@ fun NavGraph(
             com.ccxiaoji.feature.schedule.presentation.settings.AboutScreen(
                 onBack = { navController.popBackStack() }
             )
+        }
+        
+        // Plan module route
+        composable(PlanRoute.route) {
+            planApi.getPlanScreen()
         }
     }
 }

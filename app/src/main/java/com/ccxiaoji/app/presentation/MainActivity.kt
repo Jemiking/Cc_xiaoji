@@ -15,6 +15,7 @@ import com.ccxiaoji.app.presentation.ui.navigation.NavGraph
 import com.ccxiaoji.app.notification.NotificationScheduler
 import com.ccxiaoji.app.data.sync.SyncManager
 import com.ccxiaoji.feature.ledger.api.LedgerApi
+import com.ccxiaoji.feature.plan.api.PlanApi
 import com.ccxiaoji.feature.ledger.worker.creditcard.CreditCardReminderManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -38,6 +39,9 @@ class MainActivity : ComponentActivity() {
     
     @Inject
     lateinit var ledgerApi: LedgerApi
+    
+    @Inject
+    lateinit var planApi: PlanApi
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,6 +80,7 @@ class MainActivity : ComponentActivity() {
                     NavGraph(
                         navController = navController,
                         ledgerApi = ledgerApi,
+                        planApi = planApi,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

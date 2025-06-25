@@ -2,8 +2,12 @@ package com.ccxiaoji.feature.ledger.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ccxiaoji.common.base.BaseResult
 import com.ccxiaoji.feature.ledger.domain.model.Transaction
 import com.ccxiaoji.feature.ledger.domain.usecase.DeleteTransactionUseCase
+import com.ccxiaoji.feature.ledger.domain.usecase.BatchDeleteTransactionsUseCase
+import com.ccxiaoji.feature.ledger.domain.usecase.BatchUpdateTransactionsCategoryUseCase
+import com.ccxiaoji.feature.ledger.domain.usecase.BatchUpdateTransactionsAccountUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +22,10 @@ import javax.inject.Inject
  */
 @HiltViewModel
 class SelectionViewModel @Inject constructor(
-    private val deleteTransactionUseCase: DeleteTransactionUseCase
+    private val deleteTransactionUseCase: DeleteTransactionUseCase,
+    private val batchDeleteTransactionsUseCase: BatchDeleteTransactionsUseCase,
+    private val batchUpdateTransactionsCategoryUseCase: BatchUpdateTransactionsCategoryUseCase,
+    private val batchUpdateTransactionsAccountUseCase: BatchUpdateTransactionsAccountUseCase
 ) : ViewModel() {
     
     private val _selectionState = MutableStateFlow(SelectionState())
@@ -96,6 +103,63 @@ class SelectionViewModel @Inject constructor(
                 isSelectionMode = false,
                 selectedTransactionIds = emptySet()
             )
+        }
+    }
+    
+    /**
+     * 批量更新分类
+     */
+    fun batchUpdateCategory(newCategoryId: String, onComplete: (Int) -> Unit) {
+        viewModelScope.launch {
+            val selectedIds = _selectionState.value.selectedTransactionIds
+            when (val result = batchUpdateTransactionsCategoryUseCase(selectedIds, newCategoryId)) {
+                is BaseResult.Success -> {
+                    exitSelectionMode()
+                    onComplete(result.data)
+                }
+                is BaseResult.Error -> {
+                    // 处理错误
+                    onComplete(0)
+                }
+            }
+        }
+    }
+    
+    /**
+     * 批量更新账户
+     */
+    fun batchUpdateAccount(newAccountId: String, onComplete: (Int) -> Unit) {
+        viewModelScope.launch {
+            val selectedIds = _selectionState.value.selectedTransactionIds
+            when (val result = batchUpdateTransactionsAccountUseCase(selectedIds, newAccountId)) {
+                is BaseResult.Success -> {
+                    exitSelectionMode()
+                    onComplete(result.data)
+                }
+                is BaseResult.Error -> {
+                    // 处理错误
+                    onComplete(0)
+                }
+            }
+        }
+    }
+    
+    /**
+     * 批量删除（支持撤销）
+     */
+    fun batchDeleteTransactions(onComplete: (Int, List<String>) -> Unit) {
+        viewModelScope.launch {
+            val selectedIds = _selectionState.value.selectedTransactionIds
+            when (val result = batchDeleteTransactionsUseCase(selectedIds)) {
+                is BaseResult.Success -> {
+                    exitSelectionMode()
+                    onComplete(result.data.first, result.data.second)
+                }
+                is BaseResult.Error -> {
+                    // 处理错误
+                    onComplete(0, emptyList())
+                }
+            }
         }
     }
 }

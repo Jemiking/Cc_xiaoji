@@ -9,6 +9,7 @@ object LedgerNavigation {
     const val BudgetRoute = "budget"
     const val SavingsGoalRoute = "savings_goal"
     const val CreditCardRoute = "credit_card"
+    const val AssetOverviewRoute = "asset_overview"
     const val TransactionDetailRoute = "transaction_detail/{transactionId}"
     
     fun transactionDetailRoute(transactionId: String) = "transaction_detail/$transactionId"

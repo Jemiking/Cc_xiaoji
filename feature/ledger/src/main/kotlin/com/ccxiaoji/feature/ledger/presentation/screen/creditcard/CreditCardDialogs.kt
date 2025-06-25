@@ -150,7 +150,8 @@ fun CreditCardDetailDialog(
     onEdit: (creditLimitYuan: Double, usedAmountYuan: Double, billingDay: Int, paymentDueDay: Int) -> Unit,
     onNavigateToTransactions: () -> Unit,
     onViewPaymentHistory: () -> Unit,
-    onViewBills: () -> Unit
+    onViewBills: () -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     var showPaymentDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -350,6 +351,15 @@ fun CreditCardDetailDialog(
                         Icon(Icons.Default.Edit, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("编辑信息")
+                    }
+                    
+                    OutlinedButton(
+                        onClick = onNavigateToSettings,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Settings, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("高级设置")
                     }
                 }
             }

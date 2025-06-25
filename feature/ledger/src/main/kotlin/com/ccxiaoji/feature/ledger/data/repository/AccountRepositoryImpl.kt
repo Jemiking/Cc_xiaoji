@@ -93,7 +93,11 @@ class AccountRepositoryImpl @Inject constructor(
         creditLimitCents: Long? = null,
         billingDay: Int? = null,
         paymentDueDay: Int? = null,
-        gracePeriodDays: Int? = null
+        gracePeriodDays: Int? = null,
+        annualFeeAmountCents: Long? = null,
+        annualFeeWaiverThresholdCents: Long? = null,
+        cashAdvanceLimitCents: Long? = null,
+        interestRate: Double? = null
     ): Account {
         val accountId = UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
@@ -112,6 +116,10 @@ class AccountRepositoryImpl @Inject constructor(
             billingDay = billingDay,
             paymentDueDay = paymentDueDay,
             gracePeriodDays = gracePeriodDays,
+            annualFeeAmountCents = annualFeeAmountCents,
+            annualFeeWaiverThresholdCents = annualFeeWaiverThresholdCents,
+            cashAdvanceLimitCents = cashAdvanceLimitCents,
+            interestRate = interestRate,
             createdAt = now,
             updatedAt = now,
             syncStatus = SyncStatus.PENDING_SYNC
@@ -544,6 +552,10 @@ private fun AccountEntity.toDomainModel(): Account {
         billingDay = billingDay,
         paymentDueDay = paymentDueDay,
         gracePeriodDays = gracePeriodDays,
+        annualFeeAmountCents = annualFeeAmountCents,
+        annualFeeWaiverThresholdCents = annualFeeWaiverThresholdCents,
+        cashAdvanceLimitCents = cashAdvanceLimitCents,
+        interestRate = interestRate,
         createdAt = Instant.fromEpochMilliseconds(createdAt),
         updatedAt = Instant.fromEpochMilliseconds(updatedAt)
     )
@@ -564,6 +576,10 @@ private fun Account.toEntity(userId: String, updatedAt: Long): AccountEntity {
         billingDay = billingDay,
         paymentDueDay = paymentDueDay,
         gracePeriodDays = gracePeriodDays,
+        annualFeeAmountCents = annualFeeAmountCents,
+        annualFeeWaiverThresholdCents = annualFeeWaiverThresholdCents,
+        cashAdvanceLimitCents = cashAdvanceLimitCents,
+        interestRate = interestRate,
         createdAt = createdAt.toEpochMilliseconds(),
         updatedAt = updatedAt,
         syncStatus = SyncStatus.PENDING_SYNC

@@ -50,7 +50,11 @@
       "Bash(./scripts/fix_room_compiler.sh:*)",
       "Bash(./scripts/migrate_to_version_catalog.sh:*)",
       "Bash(./scripts/check_module_configuration.sh:*)",
-      "Bash(./scripts/check_technical_debt.sh:*)"
+      "Bash(./scripts/check_technical_debt.sh:*)",
+      "Bash(git checkout:*)",
+      "Bash(cp:*)",
+      "Bash(./scripts/create_feature_module.sh:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   },

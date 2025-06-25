@@ -3,6 +3,7 @@ package com.ccxiaoji.feature.ledger.api
 import androidx.compose.runtime.Composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.ccxiaoji.common.base.BaseResult
 import com.ccxiaoji.feature.ledger.domain.model.*
 import com.ccxiaoji.feature.ledger.domain.repository.TransactionRepository
 import com.ccxiaoji.feature.ledger.domain.repository.AccountRepository
@@ -15,12 +16,15 @@ import com.ccxiaoji.feature.ledger.presentation.screen.budget.BudgetScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.category.CategoryManagementScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.creditcard.CreditCardBillsScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.creditcard.CreditCardScreen
+import com.ccxiaoji.feature.ledger.presentation.screen.creditcard.CreditCardSettingsScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.ledger.LedgerScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.ledger.TransactionDetailScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.recurring.RecurringTransactionScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.savings.SavingsGoalDetailScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.savings.SavingsGoalScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.statistics.StatisticsScreen
+import com.ccxiaoji.feature.ledger.presentation.screen.AssetOverviewScreen
+import com.ccxiaoji.feature.ledger.presentation.screen.settings.LedgerSettingsScreen
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
@@ -103,18 +107,14 @@ class LedgerApiImpl @Inject constructor(
         accountId: String?,
         createdAt: Long
     ): Transaction {
-        val transactionId = transactionRepository.addTransaction(amountCents, categoryId, note, accountId ?: "")
-        // TODO: 返回完整的Transaction对象而不是仅仅ID
-        return Transaction(
-            id = transactionId.toString(),
-            accountId = accountId ?: "",
-            amountCents = amountCents,
-            categoryId = categoryId,
-            categoryDetails = null,
-            note = note,
-            createdAt = Instant.fromEpochMilliseconds(createdAt),
-            updatedAt = Instant.fromEpochMilliseconds(createdAt)
-        )
+        val result = transactionRepository.addTransaction(amountCents, categoryId, note, accountId ?: "")
+        val transactionId = when (result) {
+            is BaseResult.Success -> result.data
+            is BaseResult.Error -> throw result.exception
+        }
+        // 获取完整的Transaction对象
+        return transactionRepository.getTransactionById(transactionId.toString()) 
+            ?: throw IllegalStateException("创建的交易未找到")
     }
     
     override suspend fun updateTransaction(transaction: Transaction) {
@@ -150,19 +150,9 @@ class LedgerApiImpl @Inject constructor(
             paymentDueDay = null,
             gracePeriodDays = null
         )
-        // TODO: 返回完整的Account对象而不是仅仅ID
-        return Account(
-            id = accountId.toString(),
-            name = name,
-            type = AccountType.valueOf(type),
-            balanceCents = balanceCents,
-            currency = currency,
-            isDefault = isDefault,
-            icon = null,
-            color = "#3A7AFE",
-            createdAt = Instant.fromEpochMilliseconds(System.currentTimeMillis()),
-            updatedAt = Instant.fromEpochMilliseconds(System.currentTimeMillis())
-        )
+        // 获取完整的Account对象
+        return accountRepository.getAccountById(accountId.toString())
+            ?: throw IllegalStateException("创建的账户未找到")
     }
     
     override suspend fun updateAccount(account: Account) {
@@ -411,26 +401,20 @@ class LedgerApiImpl @Inject constructor(
         year: Int,
         month: Int?
     ): Budget {
-        val budgetId = budgetRepository.createBudget(
+        budgetRepository.createBudget(
             year = year,
             month = month ?: 0,
             categoryId = categoryId,
             amountCents = amountCents.toInt()
         )
         
-        // TODO: 返回完整的Budget对象而不是仅仅ID
-        return Budget(
-            id = budgetId.toString(),
-            userId = "",
-            year = year,
-            month = month ?: 0,
-            categoryId = categoryId,
-            budgetAmountCents = amountCents.toInt(),
-            alertThreshold = 0.8f,
-            note = null,
-            createdAt = System.currentTimeMillis(),
-            updatedAt = System.currentTimeMillis()
-        )
+        // 获取刚创建的预算
+        val budgets = budgetRepository.getBudgets().first()
+        val createdBudget = budgets
+            .filter { it.year == year && it.month == (month ?: 0) && it.categoryId == categoryId }
+            .maxByOrNull { it.createdAt }
+            
+        return createdBudget ?: throw IllegalStateException("创建的预算未找到")
     }
     
     override suspend fun updateBudget(budget: Budget) {
@@ -770,6 +754,30 @@ class LedgerApiImpl @Inject constructor(
     }
     
     @Composable
+    override fun getAssetOverviewScreen(onNavigateBack: () -> Unit) {
+        AssetOverviewScreen(onNavigateBack = onNavigateBack)
+    }
+    
+    @Composable
+    override fun getLedgerSettingsScreen(
+        onNavigateBack: () -> Unit,
+        onNavigateToCategory: () -> Unit,
+        onNavigateToAccount: () -> Unit,
+        onNavigateToBudget: () -> Unit,
+        onNavigateToDataExport: () -> Unit,
+        onNavigateToRecurring: () -> Unit
+    ) {
+        LedgerSettingsScreen(
+            onNavigateBack = onNavigateBack,
+            onNavigateToCategoryManagement = onNavigateToCategory,
+            onNavigateToAccountManagement = onNavigateToAccount,
+            onNavigateToBudgetManagement = onNavigateToBudget,
+            onNavigateToDataExport = onNavigateToDataExport,
+            onNavigateToRecurringTransactions = onNavigateToRecurring
+        )
+    }
+    
+    @Composable
     override fun getRecurringTransactionScreen(onNavigateBack: () -> Unit) {
         RecurringTransactionScreen(onNavigateBack = onNavigateBack)
     }
@@ -806,6 +814,14 @@ class LedgerApiImpl @Inject constructor(
     @Composable
     override fun getCreditCardBillsScreen(accountId: String, navController: NavHostController) {
         CreditCardBillsScreen(
+            accountId = accountId,
+            navController = navController
+        )
+    }
+    
+    @Composable
+    override fun getCreditCardSettingsScreen(accountId: String, navController: NavHostController) {
+        CreditCardSettingsScreen(
             accountId = accountId,
             navController = navController
         )

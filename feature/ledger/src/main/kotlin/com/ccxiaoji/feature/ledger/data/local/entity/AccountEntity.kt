@@ -36,6 +36,10 @@ data class AccountEntity(
     val billingDay: Int? = null, // Day of month for billing (1-28)
     val paymentDueDay: Int? = null, // Day of month for payment due (1-28)
     val gracePeriodDays: Int? = null, // Grace period days after billing
+    val annualFeeAmountCents: Long? = null, // Annual fee amount in cents
+    val annualFeeWaiverThresholdCents: Long? = null, // Annual fee waiver threshold in cents
+    val cashAdvanceLimitCents: Long? = null, // Cash advance limit in cents
+    val interestRate: Double? = null, // Interest rate (daily rate, e.g., 0.0005 means 0.05%)
     
     val createdAt: Long,
     val updatedAt: Long,

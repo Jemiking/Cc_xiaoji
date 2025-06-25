@@ -90,6 +90,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE id = :transactionId AND isDeleted = 0")
     fun getTransactionByIdSync(transactionId: String): TransactionEntity?
     
+    @Query("SELECT * FROM transactions WHERE id = :transactionId AND isDeleted = 0")
+    suspend fun getTransactionById(transactionId: String): TransactionEntity?
+    
     @Query("SELECT * FROM transactions WHERE userId = :userId AND accountId = :accountId AND isDeleted = 0 ORDER BY createdAt DESC")
     fun getTransactionsByAccount(userId: String, accountId: String): Flow<List<TransactionEntity>>
     
@@ -126,6 +129,72 @@ interface TransactionDao {
         startDate: Long,
         endDate: Long
     ): Long?
+    
+    // 分页查询交易记录
+    @Transaction
+    suspend fun getTransactionsPaginated(
+        userId: String,
+        offset: Int,
+        limit: Int,
+        accountId: String? = null,
+        startDateMillis: Long? = null,
+        endDateMillis: Long? = null
+    ): Pair<List<TransactionEntity>, Int> {
+        val queryBuilder = StringBuilder("""
+            SELECT * FROM transactions 
+            WHERE userId = :userId AND isDeleted = 0
+        """)
+        
+        if (accountId != null) queryBuilder.append(" AND accountId = :accountId")
+        if (startDateMillis != null) queryBuilder.append(" AND createdAt >= :startDateMillis")
+        if (endDateMillis != null) queryBuilder.append(" AND createdAt <= :endDateMillis")
+        
+        queryBuilder.append(" ORDER BY createdAt DESC LIMIT :limit OFFSET :offset")
+        
+        // 获取数据
+        val transactions = getTransactionsPaginatedData(
+            userId, offset, limit, accountId, startDateMillis, endDateMillis
+        )
+        
+        // 获取总数
+        val totalCount = getTransactionsPaginatedCount(
+            userId, accountId, startDateMillis, endDateMillis
+        )
+        
+        return Pair(transactions, totalCount)
+    }
+    
+    @Query("""
+        SELECT * FROM transactions 
+        WHERE userId = :userId AND isDeleted = 0
+        AND (:accountId IS NULL OR accountId = :accountId)
+        AND (:startDateMillis IS NULL OR createdAt >= :startDateMillis)
+        AND (:endDateMillis IS NULL OR createdAt <= :endDateMillis)
+        ORDER BY createdAt DESC 
+        LIMIT :limit OFFSET :offset
+    """)
+    suspend fun getTransactionsPaginatedData(
+        userId: String,
+        offset: Int,
+        limit: Int,
+        accountId: String?,
+        startDateMillis: Long?,
+        endDateMillis: Long?
+    ): List<TransactionEntity>
+    
+    @Query("""
+        SELECT COUNT(*) FROM transactions 
+        WHERE userId = :userId AND isDeleted = 0
+        AND (:accountId IS NULL OR accountId = :accountId)
+        AND (:startDateMillis IS NULL OR createdAt >= :startDateMillis)
+        AND (:endDateMillis IS NULL OR createdAt <= :endDateMillis)
+    """)
+    suspend fun getTransactionsPaginatedCount(
+        userId: String,
+        accountId: String?,
+        startDateMillis: Long?,
+        endDateMillis: Long?
+    ): Int
 }
 
 

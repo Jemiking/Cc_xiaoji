@@ -177,6 +177,19 @@ interface LedgerApi {
     fun getStatisticsScreen(onNavigateBack: () -> Unit)
     
     @Composable
+    fun getAssetOverviewScreen(onNavigateBack: () -> Unit)
+    
+    @Composable
+    fun getLedgerSettingsScreen(
+        onNavigateBack: () -> Unit,
+        onNavigateToCategory: () -> Unit,
+        onNavigateToAccount: () -> Unit,
+        onNavigateToBudget: () -> Unit,
+        onNavigateToDataExport: () -> Unit,
+        onNavigateToRecurring: () -> Unit
+    )
+    
+    @Composable
     fun getRecurringTransactionScreen(onNavigateBack: () -> Unit)
     
     @Composable
@@ -194,4 +207,7 @@ interface LedgerApi {
     
     @Composable
     fun getCreditCardBillsScreen(accountId: String, navController: NavHostController)
+    
+    @Composable
+    fun getCreditCardSettingsScreen(accountId: String, navController: NavHostController)
 }

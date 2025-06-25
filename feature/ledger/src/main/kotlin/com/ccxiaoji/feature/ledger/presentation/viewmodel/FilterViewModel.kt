@@ -39,6 +39,81 @@ class FilterViewModel @Inject constructor() : ViewModel() {
     }
     
     /**
+     * 应用预设过滤器
+     */
+    fun applyPresetFilter(preset: FilterPreset) {
+        _filterState.update { it.copy(activeFilter = preset.filter) }
+    }
+    
+    /**
+     * 获取预设过滤器列表
+     */
+    fun getFilterPresets(): List<FilterPreset> {
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        val today = now.date
+        
+        return listOf(
+            FilterPreset(
+                id = "today",
+                name = "今日交易",
+                icon = "today",
+                filter = TransactionFilter(
+                    dateRange = DateRange(
+                        startDate = today.toJavaLocalDate(),
+                        endDate = today.toJavaLocalDate()
+                    )
+                )
+            ),
+            FilterPreset(
+                id = "this_week",
+                name = "本周交易",
+                icon = "date_range",
+                filter = TransactionFilter(
+                    dateRange = DateRange(
+                        startDate = today.minus(today.dayOfWeek.value - 1, DateTimeUnit.DAY).toJavaLocalDate(),
+                        endDate = today.toJavaLocalDate()
+                    )
+                )
+            ),
+            FilterPreset(
+                id = "this_month",
+                name = "本月交易",
+                icon = "calendar_month",
+                filter = TransactionFilter(
+                    dateRange = DateRange(
+                        startDate = LocalDate.of(today.year, today.monthNumber, 1),
+                        endDate = today.toJavaLocalDate()
+                    )
+                )
+            ),
+            FilterPreset(
+                id = "income_only",
+                name = "仅收入",
+                icon = "trending_up",
+                filter = TransactionFilter(
+                    transactionType = TransactionType.INCOME
+                )
+            ),
+            FilterPreset(
+                id = "expense_only",
+                name = "仅支出",
+                icon = "trending_down",
+                filter = TransactionFilter(
+                    transactionType = TransactionType.EXPENSE
+                )
+            ),
+            FilterPreset(
+                id = "large_amount",
+                name = "大额交易",
+                icon = "attach_money",
+                filter = TransactionFilter(
+                    minAmount = 500.0
+                )
+            )
+        )
+    }
+    
+    /**
      * 设置分组模式
      */
     fun setGroupingMode(mode: GroupingMode) {
@@ -96,7 +171,14 @@ class FilterViewModel @Inject constructor() : ViewModel() {
             // 按账户过滤
             val accountMatch = filter.accountId == null || transaction.accountId == filter.accountId
             
-            typeMatch && categoryMatch && amountMatch && dateMatch && accountMatch
+            // 按关键词过滤（在备注中搜索）
+            val keywordMatch = if (filter.keyword.isNullOrBlank()) {
+                true
+            } else {
+                transaction.note?.contains(filter.keyword, ignoreCase = true) == true
+            }
+            
+            typeMatch && categoryMatch && amountMatch && dateMatch && accountMatch && keywordMatch
         }
     }
     
@@ -258,7 +340,9 @@ data class TransactionFilter(
     val minAmount: Double? = null,
     val maxAmount: Double? = null,
     val transactionType: TransactionType = TransactionType.ALL,
-    val accountId: String? = null
+    val accountId: String? = null,
+    val keyword: String? = null,  // 备注关键词
+    val tags: Set<String> = emptySet()  // 标签筛选（预留）
 )
 
 /**
@@ -306,3 +390,13 @@ data class TransactionGroup(
     val balanceYuan: Double
         get() = balance / 100.0
 }
+
+/**
+ * 过滤器预设
+ */
+data class FilterPreset(
+    val id: String,
+    val name: String,
+    val icon: String,
+    val filter: TransactionFilter
+)

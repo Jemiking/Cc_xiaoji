@@ -98,6 +98,48 @@ class DialogViewModel @Inject constructor() : ViewModel() {
     fun clearAllDialogs() {
         _dialogState.update { DialogState() }
     }
+    
+    /**
+     * 显示批量删除对话框
+     */
+    fun showBatchDeleteDialog() {
+        _dialogState.update { it.copy(showBatchDeleteDialog = true) }
+    }
+    
+    /**
+     * 隐藏批量删除对话框
+     */
+    fun hideBatchDeleteDialog() {
+        _dialogState.update { it.copy(showBatchDeleteDialog = false) }
+    }
+    
+    /**
+     * 显示批量修改分类对话框
+     */
+    fun showBatchCategoryDialog() {
+        _dialogState.update { it.copy(showBatchCategoryDialog = true) }
+    }
+    
+    /**
+     * 隐藏批量修改分类对话框
+     */
+    fun hideBatchCategoryDialog() {
+        _dialogState.update { it.copy(showBatchCategoryDialog = false) }
+    }
+    
+    /**
+     * 显示批量修改账户对话框
+     */
+    fun showBatchAccountDialog() {
+        _dialogState.update { it.copy(showBatchAccountDialog = true) }
+    }
+    
+    /**
+     * 隐藏批量修改账户对话框
+     */
+    fun hideBatchAccountDialog() {
+        _dialogState.update { it.copy(showBatchAccountDialog = false) }
+    }
 }
 
 /**
@@ -108,6 +150,9 @@ data class DialogState(
     val showAddTransactionDialog: Boolean = false,
     val showEditTransactionDialog: Boolean = false,
     val showFilterDialog: Boolean = false,
+    val showBatchDeleteDialog: Boolean = false,
+    val showBatchCategoryDialog: Boolean = false,
+    val showBatchAccountDialog: Boolean = false,
     
     // 编辑数据
     val editingTransaction: Transaction? = null,

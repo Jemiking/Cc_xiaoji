@@ -154,4 +154,13 @@ object DatabaseModule {
     
     @Provides
     fun provideExportHistoryDao(database: CcDatabase): com.ccxiaoji.feature.schedule.data.local.dao.ExportHistoryDao = database.exportHistoryDao()
+    
+    @Provides
+    fun providePlanDao(database: CcDatabase): com.ccxiaoji.feature.plan.data.local.dao.PlanDao = database.planDao()
+    
+    @Provides
+    fun provideMilestoneDao(database: CcDatabase): com.ccxiaoji.feature.plan.data.local.dao.MilestoneDao = database.milestoneDao()
+    
+    @Provides
+    fun provideTemplateDao(database: CcDatabase): com.ccxiaoji.feature.plan.data.local.dao.TemplateDao = database.templateDao()
 }

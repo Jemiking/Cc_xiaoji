@@ -83,6 +83,11 @@ interface TransactionRepository {
     fun getRecentTransactions(limit: Int = 10): Flow<List<Transaction>>
     
     /**
+     * 根据ID获取交易记录
+     */
+    suspend fun getTransactionById(transactionId: String): Transaction?
+    
+    /**
      * 根据账户和日期范围获取交易记录
      */
     fun getTransactionsByAccountAndDateRange(
@@ -116,4 +121,21 @@ interface TransactionRepository {
         startDate: LocalDate, 
         endDate: LocalDate
     ): BaseResult<Float>
+    
+    /**
+     * 获取分页的交易记录
+     * @param offset 偏移量
+     * @param limit 每页数量
+     * @param accountId 账户ID（可选）
+     * @param startDate 开始时间戳（可选）
+     * @param endDate 结束时间戳（可选）
+     * @return Pair<交易列表, 总数>
+     */
+    fun getTransactionsPaginated(
+        offset: Int,
+        limit: Int,
+        accountId: String? = null,
+        startDate: Long? = null,
+        endDate: Long? = null
+    ): Flow<BaseResult<Pair<List<Transaction>, Int>>>
 }

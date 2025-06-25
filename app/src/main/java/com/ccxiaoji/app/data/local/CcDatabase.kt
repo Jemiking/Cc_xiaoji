@@ -39,6 +39,12 @@ import com.ccxiaoji.feature.schedule.data.local.entity.ShiftEntity
 import com.ccxiaoji.feature.schedule.data.local.entity.ScheduleEntity
 import com.ccxiaoji.feature.schedule.data.local.entity.ExportHistoryEntity
 import com.ccxiaoji.feature.schedule.data.local.entity.PatternEntity
+import com.ccxiaoji.feature.plan.data.local.dao.PlanDao
+import com.ccxiaoji.feature.plan.data.local.dao.MilestoneDao
+import com.ccxiaoji.feature.plan.data.local.dao.TemplateDao
+import com.ccxiaoji.feature.plan.data.local.entity.PlanEntity
+import com.ccxiaoji.feature.plan.data.local.entity.MilestoneEntity
+import com.ccxiaoji.feature.plan.data.local.entity.TemplateEntity
 
 // TODO: 这是临时文件，待所有模块迁移完成后删除
 @Database(
@@ -61,9 +67,12 @@ import com.ccxiaoji.feature.schedule.data.local.entity.PatternEntity
         ShiftEntity::class,
         ScheduleEntity::class,
         ExportHistoryEntity::class,
-        PatternEntity::class
+        PatternEntity::class,
+        PlanEntity::class,
+        MilestoneEntity::class,
+        TemplateEntity::class
     ],
-    version = 5,
+    version = 7,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -84,4 +93,7 @@ abstract class CcDatabase : RoomDatabase() {
     abstract fun shiftDao(): ShiftDao
     abstract fun scheduleDao(): ScheduleDao
     abstract fun exportHistoryDao(): ExportHistoryDao
+    abstract fun planDao(): PlanDao
+    abstract fun milestoneDao(): MilestoneDao
+    abstract fun templateDao(): TemplateDao
 }

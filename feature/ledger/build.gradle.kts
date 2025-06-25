@@ -86,6 +86,9 @@ dependencies {
     // Gson
     implementation(libs.gson)
     
+    // DataStore
+    implementation(libs.androidx.datastore)
+    
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)

@@ -187,4 +187,36 @@
     <string name="last_year">最近1年</string>
     <string name="custom_range">自定义范围</string>
     <string name="no_data">暂无数据</string>
+    
+    <!-- Batch Operations -->
+    <string name="batch_operations">批量操作</string>
+    <string name="batch_delete">批量删除</string>
+    <string name="batch_change_category">批量修改分类</string>
+    <string name="batch_change_account">批量修改账户</string>
+    <string name="batch_delete_confirm_title">确认删除</string>
+    <string name="batch_delete_confirm_message">确定要删除选中的 %d 条交易记录吗？此操作无法撤销。</string>
+    <string name="batch_change_category_message">将 %d 条交易记录的分类修改为：</string>
+    <string name="batch_change_account_message">将 %d 条交易记录的账户修改为：</string>
+    <string name="balance_with_amount">余额：¥%.2f</string>
+    <string name="undo">撤销</string>
+    <string name="batch_operation_success">批量操作成功</string>
+    <string name="batch_delete_success">成功删除 %d 条记录</string>
+    <string name="batch_update_success">成功更新 %d 条记录</string>
+    
+    <!-- Advanced Filter -->
+    <string name="advanced_filter">高级筛选</string>
+    <string name="quick_filter">快速筛选</string>
+    <string name="search_by_note">按备注搜索</string>
+    <string name="search_keyword_hint">输入关键词...</string>
+    <string name="filter_preset_today">今日交易</string>
+    <string name="filter_preset_week">本周交易</string>
+    <string name="filter_preset_month">本月交易</string>
+    <string name="filter_preset_income">仅收入</string>
+    <string name="filter_preset_expense">仅支出</string>
+    <string name="filter_preset_large">大额交易</string>
+    <string name="apply_filter">应用筛选</string>
+    <string name="select_date_range">选择日期范围</string>
+    <string name="filter">筛选</string>
+    <string name="all_accounts">所有账户</string>
+    <string name="all_categories">所有分类</string>
 </resources>

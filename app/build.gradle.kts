@@ -75,6 +75,7 @@ dependencies {
     implementation(project(":feature:habit"))
     implementation(project(":feature:ledger"))
     implementation(project(":feature:schedule"))
+    implementation(project(":feature:plan"))
     
     // Core modules needed for app-specific functionality
     implementation(project(":core:network")) // For TokenProvider

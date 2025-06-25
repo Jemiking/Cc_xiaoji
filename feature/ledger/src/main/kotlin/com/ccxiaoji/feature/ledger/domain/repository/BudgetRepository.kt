@@ -40,6 +40,11 @@ interface BudgetRepository {
     suspend fun deleteBudget(budgetId: String)
     
     /**
+     * 根据ID获取预算
+     */
+    suspend fun getBudgetById(budgetId: String): Budget?
+    
+    /**
      * 检查预算是否即将超支（达到80%）
      */
     suspend fun checkBudgetAlert(year: Int, month: Int, categoryId: String?): Boolean
