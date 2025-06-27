@@ -101,7 +101,7 @@ dependencies {
     implementation(libs.androidx.datastore)
     
     // Immutable Collections
-    implementation("org.jetbrains.kotlinx:kotlinx-collections-immutable:0.3.5")
+    implementation(libs.kotlinx.collections.immutable)
     
     // Desugaring
     coreLibraryDesugaring(libs.desugar.jdk.libs)

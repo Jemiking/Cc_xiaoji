@@ -54,7 +54,9 @@
       "Bash(git checkout:*)",
       "Bash(cp:*)",
       "Bash(./scripts/create_feature_module.sh:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(dos2unix:*)",
+      "Bash(sh gradlew:*)"
     ],
     "deny": []
   },

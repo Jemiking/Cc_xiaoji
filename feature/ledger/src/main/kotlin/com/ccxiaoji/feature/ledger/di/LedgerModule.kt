@@ -63,9 +63,5 @@ abstract class LedgerModule {
         ): PaymentReminderScheduler {
             return PaymentReminderScheduler(context)
         }
-        
-        @Provides
-        @Singleton
-        fun provideGson(): Gson = Gson()
     }
 }
