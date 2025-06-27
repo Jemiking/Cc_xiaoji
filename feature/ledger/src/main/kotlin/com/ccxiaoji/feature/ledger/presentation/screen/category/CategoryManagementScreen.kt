@@ -17,12 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.ccxiaoji.feature.ledger.R
 import com.ccxiaoji.feature.ledger.domain.model.Category
 import com.ccxiaoji.feature.ledger.domain.model.CategoryWithStats
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.CategoryTab
@@ -39,10 +41,10 @@ fun CategoryManagementScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("分类管理") },
+                title = { Text(stringResource(R.string.category_management_title)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 }
             )
@@ -58,7 +60,7 @@ fun CategoryManagementScreen(
                     )
                 }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "添加分类")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.category_add))
             }
         }
     ) { paddingValues ->
@@ -74,12 +76,12 @@ fun CategoryManagementScreen(
                 Tab(
                     selected = uiState.selectedTab == CategoryTab.EXPENSE,
                     onClick = { viewModel.setSelectedTab(CategoryTab.EXPENSE) },
-                    text = { Text("支出分类") }
+                    text = { Text(stringResource(R.string.category_expense_tab)) }
                 )
                 Tab(
                     selected = uiState.selectedTab == CategoryTab.INCOME,
                     onClick = { viewModel.setSelectedTab(CategoryTab.INCOME) },
-                    text = { Text("收入分类") }
+                    text = { Text(stringResource(R.string.category_income_tab)) }
                 )
             }
             
@@ -144,11 +146,11 @@ fun CategoryManagementScreen(
     uiState.errorMessage?.let { message ->
         AlertDialog(
             onDismissRequest = { viewModel.clearError() },
-            title = { Text("提示") },
+            title = { Text(stringResource(R.string.tip)) },
             text = { Text(message) },
             confirmButton = {
                 TextButton(onClick = { viewModel.clearError() }) {
-                    Text("确定")
+                    Text(stringResource(R.string.ok))
                 }
             }
         )
@@ -210,7 +212,7 @@ fun CategoryItem(
                                 color = MaterialTheme.colorScheme.secondaryContainer
                             ) {
                                 Text(
-                                    text = "系统",
+                                    text = stringResource(R.string.category_system_label),
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
@@ -218,7 +220,7 @@ fun CategoryItem(
                         }
                     }
                     Text(
-                        text = "已使用 ${categoryWithStats.transactionCount} 次",
+                        text = stringResource(R.string.category_usage_count, categoryWithStats.transactionCount),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -227,7 +229,7 @@ fun CategoryItem(
             
             Box {
                 IconButton(onClick = { showMenu = true }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "更多选项")
+                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.category_more_options))
                 }
                 
                 DropdownMenu(
@@ -235,7 +237,7 @@ fun CategoryItem(
                     onDismissRequest = { showMenu = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("编辑") },
+                        text = { Text(stringResource(R.string.edit)) },
                         onClick = {
                             onEdit()
                             showMenu = false
@@ -246,7 +248,7 @@ fun CategoryItem(
                     )
                     if (!categoryWithStats.category.isSystem && categoryWithStats.transactionCount == 0) {
                         DropdownMenuItem(
-                            text = { Text("删除") },
+                            text = { Text(stringResource(R.string.delete)) },
                             onClick = {
                                 onDelete()
                                 showMenu = false
@@ -284,7 +286,7 @@ fun AddCategoryDialog(
         onDismissRequest = onDismiss,
         title = { 
             Text(
-                text = if (categoryType == Category.Type.EXPENSE) "添加支出分类" else "添加收入分类"
+                text = stringResource(if (categoryType == Category.Type.EXPENSE) R.string.category_add_expense else R.string.category_add_income)
             ) 
         },
         text = {
@@ -295,14 +297,14 @@ fun AddCategoryDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("分类名称") },
+                    label = { Text(stringResource(R.string.category_name_label)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 
                 // Icon Selection
                 Column {
                     Text(
-                        text = "选择图标",
+                        text = stringResource(R.string.category_select_icon),
                         style = MaterialTheme.typography.labelLarge,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
@@ -349,7 +351,7 @@ fun AddCategoryDialog(
                 // Color Selection
                 Column {
                     Text(
-                        text = "选择颜色",
+                        text = stringResource(R.string.category_select_color),
                         style = MaterialTheme.typography.labelLarge,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
@@ -397,12 +399,12 @@ fun AddCategoryDialog(
                 },
                 enabled = name.isNotBlank()
             ) {
-                Text("添加")
+                Text(stringResource(R.string.add))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text(stringResource(R.string.cancel))
             }
         }
     )
@@ -421,7 +423,7 @@ fun EditCategoryDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("编辑分类") },
+        title = { Text(stringResource(R.string.category_edit_title)) },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -430,14 +432,14 @@ fun EditCategoryDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("分类名称") },
+                    label = { Text(stringResource(R.string.category_name_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !category.isSystem
                 )
                 
                 if (category.isSystem) {
                     Text(
-                        text = "系统分类名称不可修改",
+                        text = stringResource(R.string.category_system_cannot_edit),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -446,7 +448,7 @@ fun EditCategoryDialog(
                 // Icon Selection
                 Column {
                     Text(
-                        text = "选择图标",
+                        text = stringResource(R.string.category_select_icon),
                         style = MaterialTheme.typography.labelLarge,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
@@ -493,7 +495,7 @@ fun EditCategoryDialog(
                 // Color Selection
                 Column {
                     Text(
-                        text = "选择颜色",
+                        text = stringResource(R.string.category_select_color),
                         style = MaterialTheme.typography.labelLarge,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
@@ -541,12 +543,12 @@ fun EditCategoryDialog(
                 },
                 enabled = name.isNotBlank()
             ) {
-                Text("保存")
+                Text(stringResource(R.string.save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text(stringResource(R.string.cancel))
             }
         }
     )

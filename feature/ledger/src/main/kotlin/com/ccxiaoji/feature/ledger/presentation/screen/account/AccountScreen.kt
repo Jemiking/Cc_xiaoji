@@ -44,19 +44,19 @@ fun AccountScreen(
             TopAppBar(
                 title = { 
                     Text(
-                        text = "账户管理",
+                        text = stringResource(R.string.account_management_title),
                         style = MaterialTheme.typography.headlineSmall
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController?.navigateUp() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
                     if (uiState.accounts.size >= 2) {
                         IconButton(onClick = { showTransferDialog = true }) {
-                            Icon(Icons.Default.SwapHoriz, contentDescription = "转账")
+                            Icon(Icons.Default.SwapHoriz, contentDescription = stringResource(R.string.account_transfer))
                         }
                     }
                 }
@@ -66,7 +66,7 @@ fun AccountScreen(
             FloatingActionButton(
                 onClick = { showAddDialog = true }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "添加账户")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_account))
             }
         }
     ) { paddingValues ->
@@ -147,9 +147,9 @@ fun AccountScreen(
                 showDeleteDialog = false
                 selectedAccount = null
             },
-            title = { Text("删除账户") },
+            title = { Text(stringResource(R.string.account_delete_title)) },
             text = { 
-                Text("确定要删除账户 \"${selectedAccount!!.name}\" 吗？删除后该账户的所有交易记录将被保留但无法恢复账户。")
+                Text(stringResource(R.string.account_delete_message, selectedAccount!!.name))
             },
             confirmButton = {
                 TextButton(
@@ -159,7 +159,7 @@ fun AccountScreen(
                         selectedAccount = null
                     }
                 ) {
-                    Text("删除", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
@@ -169,7 +169,7 @@ fun AccountScreen(
                         selectedAccount = null
                     }
                 ) {
-                    Text("取消")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -207,13 +207,13 @@ fun TotalBalanceCard(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "总资产",
+                text = stringResource(R.string.account_total_assets),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onPrimaryContainer
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "¥%.2f".format(totalBalance),
+                text = stringResource(R.string.amount_format, stringResource(R.string.currency_symbol), totalBalance),
                 style = MaterialTheme.typography.headlineLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary
@@ -289,7 +289,7 @@ fun AccountItem(
                                     color = MaterialTheme.colorScheme.primary
                                 ) {
                                     Text(
-                                        text = "默认",
+                                        text = stringResource(R.string.account_default_label),
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onPrimary
@@ -306,7 +306,7 @@ fun AccountItem(
                 }
                 
                 Text(
-                    text = "¥%.2f".format(account.balanceYuan),
+                    text = stringResource(R.string.amount_format, stringResource(R.string.currency_symbol), account.balanceYuan),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = if (account.balanceYuan >= 0) {
@@ -325,7 +325,7 @@ fun AccountItem(
         ) {
             if (!account.isDefault) {
                 DropdownMenuItem(
-                    text = { Text("设为默认") },
+                    text = { Text(stringResource(R.string.account_set_as_default)) },
                     onClick = {
                         onSetDefault()
                         showMenu = false
@@ -336,7 +336,7 @@ fun AccountItem(
                 )
             }
             DropdownMenuItem(
-                text = { Text("编辑") },
+                text = { Text(stringResource(R.string.edit)) },
                 onClick = {
                     onEdit()
                     showMenu = false
@@ -346,7 +346,7 @@ fun AccountItem(
                 }
             )
             DropdownMenuItem(
-                text = { Text("删除") },
+                text = { Text(stringResource(R.string.delete)) },
                 onClick = {
                     onDelete()
                     showMenu = false
@@ -372,7 +372,7 @@ fun AddAccountDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("添加账户") },
+        title = { Text(stringResource(R.string.add_account)) },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -381,7 +381,7 @@ fun AddAccountDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("账户名称") },
+                    label = { Text(stringResource(R.string.account_name)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 
@@ -394,7 +394,7 @@ fun AddAccountDialog(
                         value = "${selectedType.icon} ${selectedType.displayName}",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("账户类型") },
+                        label = { Text(stringResource(R.string.account_type)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = showTypeDropdown) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -420,7 +420,7 @@ fun AddAccountDialog(
                 OutlinedTextField(
                     value = balance,
                     onValueChange = { balance = it.filter { char -> char.isDigit() || char == '.' } },
-                    label = { Text("初始余额") },
+                    label = { Text(stringResource(R.string.initial_balance)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -433,7 +433,7 @@ fun AddAccountDialog(
                 },
                 enabled = name.isNotEmpty()
             ) {
-                Text("添加")
+                Text(stringResource(R.string.account_add))
             }
         },
         dismissButton = {
@@ -456,7 +456,7 @@ fun EditAccountDialog(
     
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("编辑账户") },
+        title = { Text(stringResource(R.string.edit_account)) },
         text = {
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -465,7 +465,7 @@ fun EditAccountDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("账户名称") },
+                    label = { Text(stringResource(R.string.account_name)) },
                     modifier = Modifier.fillMaxWidth()
                 )
                 
@@ -482,7 +482,7 @@ fun EditAccountDialog(
                 OutlinedTextField(
                     value = balance,
                     onValueChange = { balance = it.filter { char -> char.isDigit() || char == '.' || char == '-' } },
-                    label = { Text("当前余额") },
+                    label = { Text(stringResource(R.string.account_current_balance)) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -500,7 +500,7 @@ fun EditAccountDialog(
                 },
                 enabled = name.isNotEmpty()
             ) {
-                Text("保存")
+                Text(stringResource(R.string.save))
             }
         },
         dismissButton = {

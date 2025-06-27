@@ -21,6 +21,7 @@ fun MonthSelector(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
     val currentYearMonth = YearMonth.now()
     
     // Generate list of months (current month and previous 11 months)
@@ -85,12 +86,112 @@ fun MonthSelector(
             DropdownMenuItem(
                 text = { Text("选择其他月份...") },
                 onClick = {
-                    // TODO: Show date picker dialog
+                    showDatePicker = true
                     expanded = false
                 }
             )
         }
     }
+    
+    // Date picker dialog
+    if (showDatePicker) {
+        MonthYearPickerDialog(
+            initialMonth = currentMonth,
+            onMonthSelected = { selectedMonth ->
+                onMonthSelected(selectedMonth)
+                showDatePicker = false
+            },
+            onDismiss = { showDatePicker = false }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MonthYearPickerDialog(
+    initialMonth: YearMonth,
+    onMonthSelected: (YearMonth) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var selectedYear by remember { mutableStateOf(initialMonth.year) }
+    var selectedMonth by remember { mutableStateOf(initialMonth.monthValue) }
+    
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("选择月份") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Year selector
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("年份:", style = MaterialTheme.typography.bodyMedium)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = { selectedYear -= 1 }) {
+                            Text("-")
+                        }
+                        Text(
+                            text = selectedYear.toString(),
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.width(60.dp)
+                        )
+                        TextButton(onClick = { selectedYear += 1 }) {
+                            Text("+")
+                        }
+                    }
+                }
+                
+                // Month selector
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("月份:", style = MaterialTheme.typography.bodyMedium)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(onClick = { 
+                            selectedMonth = if (selectedMonth > 1) selectedMonth - 1 else 12
+                        }) {
+                            Text("-")
+                        }
+                        Text(
+                            text = "${selectedMonth}月",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.width(60.dp)
+                        )
+                        TextButton(onClick = { 
+                            selectedMonth = if (selectedMonth < 12) selectedMonth + 1 else 1
+                        }) {
+                            Text("+")
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onMonthSelected(YearMonth.of(selectedYear, selectedMonth))
+                }
+            ) {
+                Text("确定")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("取消")
+            }
+        }
+    )
 }
 
 private fun formatYearMonth(yearMonth: YearMonth): String {

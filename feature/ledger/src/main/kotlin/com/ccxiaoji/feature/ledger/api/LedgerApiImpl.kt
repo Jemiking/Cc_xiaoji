@@ -9,6 +9,7 @@ import com.ccxiaoji.feature.ledger.domain.repository.TransactionRepository
 import com.ccxiaoji.feature.ledger.domain.repository.AccountRepository
 import com.ccxiaoji.feature.ledger.domain.repository.CategoryRepository
 import com.ccxiaoji.feature.ledger.domain.repository.BudgetRepository
+import com.ccxiaoji.feature.ledger.domain.repository.CreditCardBillRepository
 import com.ccxiaoji.feature.ledger.data.repository.RecurringTransactionRepository
 import com.ccxiaoji.feature.ledger.data.repository.SavingsGoalRepository
 import com.ccxiaoji.feature.ledger.presentation.screen.account.AccountScreen
@@ -49,6 +50,7 @@ class LedgerApiImpl @Inject constructor(
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
     private val budgetRepository: BudgetRepository,
+    private val creditCardBillRepository: CreditCardBillRepository,
     private val recurringTransactionRepository: RecurringTransactionRepository,
     private val savingsGoalRepository: SavingsGoalRepository
 ) : LedgerApi {
@@ -532,9 +534,20 @@ class LedgerApiImpl @Inject constructor(
         val transactions = getTransactionsByAccountAndDateRange(accountId, startDate, endDateExclusive).first()
         val totalAmountCents = transactions.sumOf { it.amountCents.toLong() }
         
-        // 创建账单记录（注：实际应该持久化到数据库）
-        // 这里只是生成账单的基本逻辑，实际实现需要CreditCardBillRepository
-        TODO("需要CreditCardBillRepository来持久化账单数据")
+        // 创建账单记录并持久化到数据库
+        val result = creditCardBillRepository.generateBill(
+            accountId = accountId,
+            periodStart = periodStart,
+            periodEnd = periodEnd
+        )
+        
+        return when (result) {
+            is com.ccxiaoji.common.base.BaseResult.Success -> result.data
+            is com.ccxiaoji.common.base.BaseResult.Error -> {
+                // 如果生成失败，抛出异常
+                throw result.exception
+            }
+        }
     }
     
     override suspend fun recordCreditCardPayment(
@@ -543,16 +556,30 @@ class LedgerApiImpl @Inject constructor(
         paymentDate: LocalDate,
         fromAccountId: String
     ): CreditCardPayment {
-        // 信用卡还款功能暂未实现，返回临时对象
+        // 记录信用卡还款到账单
+        val result = creditCardBillRepository.recordPayment(billId, amountCents.toInt())
+        when (result) {
+            is BaseResult.Error -> throw result.exception
+            is BaseResult.Success -> { /* 记录成功 */ }
+        }
+        
+        // 获取账单信息以确定账户ID
+        val billResult = creditCardBillRepository.getBillById(billId)
+        val bill = when (billResult) {
+            is BaseResult.Success -> billResult.data
+            is BaseResult.Error -> throw billResult.exception
+        }
+        
+        // 创建还款记录
         return CreditCardPayment(
             id = UUID.randomUUID().toString(),
-            userId = "", // 临时值
+            userId = bill.userId,
             accountId = fromAccountId,
             paymentAmountCents = amountCents,
             paymentType = com.ccxiaoji.feature.ledger.data.local.entity.PaymentType.FULL,
             paymentDate = paymentDate.atStartOfDayIn(TimeZone.currentSystemDefault()),
-            dueAmountCents = 0,
-            isOnTime = true,
+            dueAmountCents = bill.totalAmountCents,
+            isOnTime = paymentDate <= bill.paymentDueDate.toLocalDateTime(TimeZone.currentSystemDefault()).date,
             createdAt = Clock.System.now(),
             updatedAt = Clock.System.now()
         )
@@ -572,9 +599,20 @@ class LedgerApiImpl @Inject constructor(
         // 更新信用卡账户的额度和账单日信息
         val account = accountRepository.getAccountById(accountId)
         if (account != null && account.type == AccountType.CREDIT_CARD) {
-            // 更新账户余额为负的信用额度（信用卡余额通常是负数表示已使用额度）
-            // 注：实际实现需要扩展Account实体以包含billingDay和dueDay字段
-            TODO("需要扩展Account实体以支持信用卡特有字段")
+            // 创建更新后的账户对象
+            val updatedAccount = account.copy(
+                creditLimitCents = creditLimitCents,
+                billingDay = billingDay,
+                paymentDueDay = dueDay,
+                updatedAt = Clock.System.now()
+            )
+            
+            // 更新账户
+            val result = accountRepository.updateAccount(updatedAccount)
+            when (result) {
+                is BaseResult.Error -> throw result.exception
+                is BaseResult.Success -> { /* 更新成功 */ }
+            }
         } else {
             throw IllegalArgumentException("账户不存在或不是信用卡账户")
         }

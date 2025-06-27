@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.compose.ui.res.stringResource
+import com.ccxiaoji.feature.ledger.R
 import com.ccxiaoji.feature.ledger.domain.model.Transaction
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerViewModel
 import kotlinx.datetime.TimeZone
@@ -44,18 +46,18 @@ fun TransactionDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("交易详情") },
+                title = { Text(stringResource(R.string.transaction_detail)) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
                 actions = {
                     IconButton(onClick = { showEditDialog = true }) {
-                        Icon(Icons.Default.Edit, contentDescription = "编辑")
+                        Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.edit))
                     }
                     IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "删除")
+                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
                     }
                 }
             )
@@ -92,9 +94,9 @@ fun TransactionDetailScreen(
                     
                     Text(
                         text = if (transaction.categoryDetails?.type == "INCOME") {
-                            "+¥%.2f".format(transaction.amountYuan)
+                            stringResource(R.string.amount_format_positive, stringResource(R.string.currency_symbol), transaction.amountYuan)
                         } else {
-                            "-¥%.2f".format(transaction.amountYuan)
+                            stringResource(R.string.amount_format_negative, stringResource(R.string.currency_symbol), transaction.amountYuan)
                         },
                         style = MaterialTheme.typography.displaySmall,
                         fontWeight = FontWeight.Bold,
@@ -106,7 +108,7 @@ fun TransactionDetailScreen(
                     )
                     
                     Text(
-                        text = transaction.categoryDetails?.name ?: "其他",
+                        text = transaction.categoryDetails?.name ?: stringResource(R.string.transaction_detail_other),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -125,10 +127,10 @@ fun TransactionDetailScreen(
                     // Date and Time
                     DetailRow(
                         icon = Icons.Default.CalendarToday,
-                        label = "日期时间",
+                        label = stringResource(R.string.transaction_detail_date_time),
                         value = transaction.createdAt.toLocalDateTime(TimeZone.currentSystemDefault())
                             .toJavaLocalDateTime()
-                            .format(DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm"))
+                            .format(DateTimeFormatter.ofPattern(stringResource(R.string.transaction_detail_date_format)))
                     )
                     
                     HorizontalDivider()
@@ -136,8 +138,8 @@ fun TransactionDetailScreen(
                     // Note
                     DetailRow(
                         icon = Icons.Default.Note,
-                        label = "备注",
-                        value = transaction.note ?: "无备注"
+                        label = stringResource(R.string.transaction_detail_note),
+                        value = transaction.note ?: stringResource(R.string.transaction_detail_no_note)
                     )
                     
                     HorizontalDivider()
@@ -145,7 +147,7 @@ fun TransactionDetailScreen(
                     // Transaction ID
                     DetailRow(
                         icon = Icons.Default.Tag,
-                        label = "交易ID",
+                        label = stringResource(R.string.transaction_detail_id),
                         value = transaction.id.take(8) + "..."
                     )
                     
@@ -154,7 +156,7 @@ fun TransactionDetailScreen(
                     // Last Update
                     DetailRow(
                         icon = Icons.Default.Update,
-                        label = "最后更新",
+                        label = stringResource(R.string.transaction_detail_last_update),
                         value = transaction.updatedAt.toLocalDateTime(TimeZone.currentSystemDefault())
                             .toJavaLocalDateTime()
                             .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
@@ -175,12 +177,12 @@ fun TransactionDetailScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "即将推出",
+                        text = stringResource(R.string.transaction_detail_coming_soon),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "• 交易位置信息\n• 附件和图片\n• 交易标签\n• 关联账户信息",
+                        text = stringResource(R.string.transaction_detail_coming_features),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -206,8 +208,8 @@ fun TransactionDetailScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("确认删除") },
-            text = { Text("确定要删除这笔交易记录吗？此操作不可恢复。") },
+            title = { Text(stringResource(R.string.transaction_detail_confirm_delete)) },
+            text = { Text(stringResource(R.string.transaction_detail_delete_message)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -219,12 +221,12 @@ fun TransactionDetailScreen(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("删除")
+                    Text(stringResource(R.string.delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )

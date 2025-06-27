@@ -219,4 +219,51 @@
     <string name="filter">筛选</string>
     <string name="all_accounts">所有账户</string>
     <string name="all_categories">所有分类</string>
+    
+    <!-- Currency -->
+    <string name="currency_symbol">¥</string>
+    <string name="amount_format">%s%.2f</string>
+    <string name="amount_format_positive">+%s%.2f</string>
+    <string name="amount_format_negative">-%s%.2f</string>
+    
+    <!-- Transaction Detail Screen -->
+    <string name="transaction_detail">交易详情</string>
+    <string name="transaction_detail_other">其他</string>
+    <string name="transaction_detail_date_time">日期时间</string>
+    <string name="transaction_detail_date_format">yyyy年MM月dd日 HH:mm</string>
+    <string name="transaction_detail_note">备注</string>
+    <string name="transaction_detail_no_note">无备注</string>
+    <string name="transaction_detail_id">交易ID</string>
+    <string name="transaction_detail_last_update">最后更新</string>
+    <string name="transaction_detail_coming_soon">即将推出</string>
+    <string name="transaction_detail_coming_features">• 交易位置信息\n• 附件和图片\n• 交易标签\n• 关联账户信息</string>
+    <string name="transaction_detail_confirm_delete">确认删除</string>
+    <string name="transaction_detail_delete_message">确定要删除这笔交易记录吗？此操作不可恢复。</string>
+    
+    <!-- Account Screen -->
+    <string name="account_management_title">账户管理</string>
+    <string name="account_transfer">转账</string>
+    <string name="account_total_assets">总资产</string>
+    <string name="account_default_label">默认</string>
+    <string name="account_set_as_default">设为默认</string>
+    <string name="account_delete_title">删除账户</string>
+    <string name="account_delete_message">确定要删除账户 \"%s\" 吗？删除后该账户的所有交易记录将被保留但无法恢复账户。</string>
+    <string name="account_current_balance">当前余额</string>
+    <string name="account_add">添加</string>
+    
+    <!-- Category Management Screen -->
+    <string name="category_management_title">分类管理</string>
+    <string name="category_add">添加分类</string>
+    <string name="category_expense_tab">支出分类</string>
+    <string name="category_income_tab">收入分类</string>
+    <string name="category_system_label">系统</string>
+    <string name="category_usage_count">已使用 %d 次</string>
+    <string name="category_more_options">更多选项</string>
+    <string name="category_add_expense">添加支出分类</string>
+    <string name="category_add_income">添加收入分类</string>
+    <string name="category_name_label">分类名称</string>
+    <string name="category_select_icon">选择图标</string>
+    <string name="category_select_color">选择颜色</string>
+    <string name="category_edit_title">编辑分类</string>
+    <string name="category_system_cannot_edit">系统分类名称不可修改</string>
 </resources>

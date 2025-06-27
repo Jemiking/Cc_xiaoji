@@ -538,7 +538,7 @@ fun MonthlySummaryCard(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "¥%.2f".format(monthlyIncome),
+                        text = stringResource(R.string.amount_format, stringResource(R.string.currency_symbol), monthlyIncome),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -551,7 +551,7 @@ fun MonthlySummaryCard(
                 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "¥%.2f".format(monthlyExpense),
+                        text = stringResource(R.string.amount_format, stringResource(R.string.currency_symbol), monthlyExpense),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.error
@@ -564,7 +564,7 @@ fun MonthlySummaryCard(
                 
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "¥%.2f".format(monthlyIncome - monthlyExpense),
+                        text = stringResource(R.string.amount_format, stringResource(R.string.currency_symbol), monthlyIncome - monthlyExpense),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -660,9 +660,9 @@ fun TransactionItem(
             
             Text(
                 text = if (transaction.categoryDetails?.type == "INCOME") {
-                    "+¥%.2f".format(transaction.amountYuan)
+                    stringResource(R.string.amount_format_positive, stringResource(R.string.currency_symbol), transaction.amountYuan)
                 } else {
-                    "-¥%.2f".format(transaction.amountYuan)
+                    stringResource(R.string.amount_format_negative, stringResource(R.string.currency_symbol), transaction.amountYuan)
                 },
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
@@ -1400,7 +1400,7 @@ fun GroupHeader(
                 // Income
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "¥%.2f".format(totalIncome),
+                        text = stringResource(R.string.amount_format, stringResource(R.string.currency_symbol), totalIncome),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary
@@ -1415,7 +1415,7 @@ fun GroupHeader(
                 // Expense
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "¥%.2f".format(totalExpense),
+                        text = stringResource(R.string.amount_format, stringResource(R.string.currency_symbol), totalExpense),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.error
@@ -1430,7 +1430,7 @@ fun GroupHeader(
                 // Balance
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "¥%.2f".format(balance),
+                        text = stringResource(R.string.amount_format, stringResource(R.string.currency_symbol), balance),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = if (balance >= 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error

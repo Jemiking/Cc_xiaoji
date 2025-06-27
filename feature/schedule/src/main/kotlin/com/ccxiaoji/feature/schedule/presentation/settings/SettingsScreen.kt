@@ -35,6 +35,7 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
     var showTimePickerDialog by remember { mutableStateOf(false) }
     var showClearDataDialog by remember { mutableStateOf(false) }
     var showBackupLocationDialog by remember { mutableStateOf(false) }
@@ -179,7 +180,8 @@ fun SettingsScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -380,7 +382,10 @@ fun SettingsScreen(
     // 显示成功消息
     uiState.successMessage?.let { message ->
         LaunchedEffect(message) {
-            // TODO: 显示 Snackbar
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
             viewModel.clearSuccessMessage()
         }
     }

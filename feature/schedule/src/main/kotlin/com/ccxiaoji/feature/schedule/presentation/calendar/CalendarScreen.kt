@@ -50,6 +50,7 @@ fun CalendarScreen(
     val quickSelectDate by viewModel.quickSelectDate.collectAsState()
     val weekStartDay by viewModel.weekStartDay.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
     
     android.util.Log.d("CalendarScreen", "CurrentYearMonth: $currentYearMonth, SchedulesCount: ${schedules.size}")
     
@@ -176,7 +177,8 @@ fun CalendarScreen(
                     }
                 }
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -247,7 +249,10 @@ fun CalendarScreen(
     // 错误提示
     uiState.errorMessage?.let { message ->
         LaunchedEffect(message) {
-            // TODO: 显示Snackbar
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
             viewModel.clearError()
         }
     }

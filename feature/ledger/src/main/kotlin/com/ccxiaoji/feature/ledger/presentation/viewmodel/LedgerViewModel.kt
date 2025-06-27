@@ -3,9 +3,7 @@ package com.ccxiaoji.feature.ledger.presentation.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.common.base.BaseResult
-import com.ccxiaoji.feature.ledger.domain.model.Transaction
-import com.ccxiaoji.feature.ledger.domain.model.Account
-import com.ccxiaoji.feature.ledger.domain.model.Category
+import com.ccxiaoji.feature.ledger.domain.model.*
 import com.ccxiaoji.feature.ledger.domain.usecase.*
 import com.ccxiaoji.feature.ledger.data.cache.LedgerCacheManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -15,11 +13,6 @@ import kotlinx.datetime.*
 import java.time.YearMonth
 import javax.inject.Inject
 
-/**
- * 精简后的LedgerViewModel - 核心交易管理(200行以内)
- * 功能委托：SelectionViewModel(选择)、SearchViewModel(搜索)
- * DialogViewModel(对话框)、FilterViewModel(过滤)
- */
 @HiltViewModel
 class LedgerViewModel @Inject constructor(
     private val getTransactionsUseCase: GetTransactionsUseCase,
@@ -34,22 +27,15 @@ class LedgerViewModel @Inject constructor(
     private val cacheManager: LedgerCacheManager
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(LedgerUiState())
-    val uiState: StateFlow<LedgerUiState> = _uiState.asStateFlow()
-    
+    val uiState = _uiState.asStateFlow()
     private val _selectedMonth = MutableStateFlow(YearMonth.now())
-    val selectedMonth: StateFlow<YearMonth> = _selectedMonth.asStateFlow()
-    
-    // 分页状态
+    val selectedMonth = _selectedMonth.asStateFlow()
     private var currentPage = 0
     private val pageSize = 20
     private var hasMoreData = true
     private var isLoadingMore = false
     
     init {
-        loadInitialData()
-    }
-    
-    private fun loadInitialData() {
         loadAccounts()
         loadCategories()
         loadTransactions()
@@ -64,235 +50,122 @@ class LedgerViewModel @Inject constructor(
         loadMonthlySummary()
     }
     
-    private fun loadTransactions() {
+    private fun getMonthDateRange(month: YearMonth): Pair<Long, Long> {
+        val start = LocalDate(month.year, month.monthValue, 1)
+            .atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val nextMonth = month.plusMonths(1)
+        val end = LocalDate(nextMonth.year, nextMonth.monthValue, 1)
+            .atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        return start to end
+    }
+    
+    private fun loadTransactions(loadMore: Boolean = false) {
+        if (loadMore && (isLoadingMore || !hasMoreData)) return
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            currentPage = 0
+            if (loadMore) {
+                isLoadingMore = true
+                currentPage++
+            } else {
+                currentPage = 0
+            }
+            _uiState.update { it.copy(isLoading = !loadMore, isLoadingMore = loadMore) }
             
-            val accountId = _uiState.value.selectedAccountId
-            val selectedMonth = _selectedMonth.value
-            val startDate = LocalDate(selectedMonth.year, selectedMonth.monthValue, 1)
-                .atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-            val endDate = LocalDate(selectedMonth.plusMonths(1).year, selectedMonth.plusMonths(1).monthValue, 1)
-                .atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-            
+            val (start, end) = getMonthDateRange(_selectedMonth.value)
             getPaginatedTransactionsUseCase(
-                page = currentPage,
-                pageSize = pageSize,
-                accountId = accountId,
-                startDate = startDate,
-                endDate = endDate
+                currentPage, pageSize, _uiState.value.selectedAccountId, start, end
             ).collect { result ->
-                when (result) {
-                    is BaseResult.Success -> {
-                        val paginatedResult = result.data
-                        _uiState.update { 
-                            it.copy(
-                                transactions = paginatedResult.transactions,
-                                isLoading = false,
-                                hasMoreData = paginatedResult.hasMore
-                            )
-                        }
-                        hasMoreData = paginatedResult.hasMore
-                        
-                        // 更新缓存
-                        cacheManager.updateRecentTransactionsCache(paginatedResult.transactions)
-                    }
-                    is BaseResult.Error -> {
-                        _uiState.update { it.copy(isLoading = false) }
-                    }
-                }
+                handleTransactionResult(result, loadMore)
+                if (loadMore) isLoadingMore = false
             }
         }
     }
     
-    fun loadMoreTransactions() {
-        if (isLoadingMore || !hasMoreData) return
-        
-        viewModelScope.launch {
-            isLoadingMore = true
-            _uiState.update { it.copy(isLoadingMore = true) }
-            
-            val accountId = _uiState.value.selectedAccountId
-            val selectedMonth = _selectedMonth.value
-            val startDate = LocalDate(selectedMonth.year, selectedMonth.monthValue, 1)
-                .atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-            val endDate = LocalDate(selectedMonth.plusMonths(1).year, selectedMonth.plusMonths(1).monthValue, 1)
-                .atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-            
-            currentPage++
-            
-            getPaginatedTransactionsUseCase(
-                page = currentPage,
-                pageSize = pageSize,
-                accountId = accountId,
-                startDate = startDate,
-                endDate = endDate
-            ).collect { result ->
-                when (result) {
-                    is BaseResult.Success -> {
-                        val paginatedResult = result.data
-                        _uiState.update { state ->
-                            state.copy(
-                                transactions = state.transactions + paginatedResult.transactions,
-                                isLoadingMore = false,
-                                hasMoreData = paginatedResult.hasMore
-                            )
-                        }
-                        hasMoreData = paginatedResult.hasMore
-                    }
-                    is BaseResult.Error -> {
-                        _uiState.update { it.copy(isLoadingMore = false) }
-                        currentPage-- // 回滚页码
-                    }
-                }
-                isLoadingMore = false
-            }
-        }
-    }
+    fun loadMoreTransactions() = loadTransactions(true)
     
-    private fun filterTransactionsByMonth(
-        transactions: List<Transaction>,
-        yearMonth: YearMonth
-    ): List<Transaction> {
-        return transactions.filter { transaction ->
-            val transactionDate = transaction.createdAt.toLocalDateTime(TimeZone.currentSystemDefault())
-            val transactionMonth = YearMonth.of(transactionDate.year, transactionDate.monthNumber)
-            transactionMonth == yearMonth
+    private fun handleTransactionResult(result: BaseResult<GetPaginatedTransactionsUseCase.PaginatedResult>, loadMore: Boolean) {
+        when (result) {
+            is BaseResult.Success -> {
+                val data = result.data
+                _uiState.update {
+                    it.copy(
+                        transactions = if (loadMore) it.transactions + data.transactions else data.transactions,
+                        isLoading = false,
+                        isLoadingMore = false,
+                        hasMoreData = data.hasMore
+                    )
+                }
+                hasMoreData = data.hasMore
+                cacheManager.updateRecentTransactionsCache(data.transactions)
+            }
+            is BaseResult.Error -> {
+                _uiState.update { it.copy(isLoading = false, isLoadingMore = false) }
+                if (loadMore) currentPage--
+            }
         }
     }
     
     fun addTransaction(
-        amountCents: Int, 
-        categoryId: String, 
-        note: String?, 
-        accountId: String? = null,
-        onBudgetAlert: (String, Boolean) -> Unit = { _, _ -> }
-    ) {
-        viewModelScope.launch {
-            val finalAccountId = accountId ?: _uiState.value.selectedAccountId 
-                ?: _uiState.value.accounts.firstOrNull()?.id ?: return@launch
-            
-            try {
-                addTransactionUseCase(
-                    amountCents = amountCents,
-                    categoryId = categoryId,
-                    note = note,
-                    accountId = finalAccountId
-                )
-                checkBudgetAfterTransaction(categoryId, onBudgetAlert)
-                loadMonthlySummary()
-            } catch (e: Exception) {
-                // 错误处理委托给基类或其他机制
-                e.printStackTrace()
-            }
+        amountCents: Int, categoryId: String, note: String?, 
+        accountId: String? = null, onBudgetAlert: (String, Boolean) -> Unit = { _, _ -> }
+    ) = launch {
+        val finalAccountId = accountId ?: _uiState.value.selectedAccountId 
+            ?: _uiState.value.accounts.firstOrNull()?.id ?: return@launch
+        runCatching {
+            addTransactionUseCase(amountCents, categoryId, note, finalAccountId)
+            checkBudget(categoryId, onBudgetAlert)
+            loadMonthlySummary()
         }
     }
     
-    private suspend fun checkBudgetAfterTransaction(
-        categoryId: String,
-        onBudgetAlert: (String, Boolean) -> Unit
-    ) {
-        try {
-            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-            val status = checkBudgetUseCase.checkBudgetStatus(now.year, now.monthNumber, categoryId)
-            
-            when (status) {
-                is BudgetStatus.Exceeded -> {
-                    onBudgetAlert("该分类预算已超支！", true)
-                }
-                is BudgetStatus.Alert -> {
-                    onBudgetAlert("该分类预算即将用完！", false)
-                }
-                else -> {}
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
+    private suspend fun checkBudget(categoryId: String, onAlert: (String, Boolean) -> Unit) = runCatching {
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        when (val status = checkBudgetUseCase.checkBudgetStatus(now.year, now.monthNumber, categoryId)) {
+            is BudgetStatus.Exceeded -> onAlert("该分类预算已超支！", true)
+            is BudgetStatus.Alert -> onAlert("该分类预算即将用完！", false)
+            else -> Unit
         }
     }
     
-    fun updateTransaction(transaction: Transaction) {
-        viewModelScope.launch {
-            try {
-                updateTransactionUseCase(transaction)
-                loadMonthlySummary()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+    fun updateTransaction(transaction: Transaction) = launch {
+        runCatching { updateTransactionUseCase(transaction); loadMonthlySummary() }
+    }
+    
+    fun deleteTransaction(transactionId: String) = launch {
+        runCatching { deleteTransactionUseCase(transactionId); loadMonthlySummary() }
+    }
+    
+    fun copyTransaction(transaction: Transaction) = launch {
+        runCatching {
+            addTransactionUseCase(
+                transaction.amountCents, transaction.categoryId,
+                "[复制] ${transaction.note ?: ""}", transaction.accountId
+            )
+            loadTransactions()
+            loadMonthlySummary()
         }
     }
     
-    fun deleteTransaction(transactionId: String) {
-        viewModelScope.launch {
-            try {
-                deleteTransactionUseCase(transactionId)
-                loadMonthlySummary()
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+    private fun loadMonthlySummary() = launch {
+        runCatching {
+            val month = _selectedMonth.value
+            val (income, expense) = getMonthlyStatsUseCase(month.year, month.monthValue)
+            _uiState.update { it.copy(monthlyIncome = income / 100.0, monthlyExpense = expense / 100.0) }
         }
     }
     
-    fun copyTransaction(transaction: Transaction) {
-        viewModelScope.launch {
-            try {
-                addTransactionUseCase(
-                    accountId = transaction.accountId,
-                    amountCents = transaction.amountCents,
-                    categoryId = transaction.categoryId,
-                    note = "[复制] ${transaction.note ?: ""}"
-                )
-                loadTransactions()
-                loadMonthlySummary()
-            } catch (e: Exception) {
-                e.printStackTrace()
+    private fun loadAccounts() = launch {
+        getAccountsUseCase().collect { accounts ->
+            _uiState.update {
+                it.copy(accounts = accounts, selectedAccountId = accounts.find { it.isDefault }?.id)
             }
+            cacheManager.updateAccountsCache(accounts)
         }
     }
     
-    private fun loadMonthlySummary() {
-        viewModelScope.launch {
-            try {
-                val selectedMonth = _selectedMonth.value
-                val (income, expense) = getMonthlyStatsUseCase(
-                    selectedMonth.year,
-                    selectedMonth.monthValue
-                )
-                
-                _uiState.update {
-                    it.copy(
-                        monthlyIncome = income / 100.0,
-                        monthlyExpense = expense / 100.0
-                    )
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-    }
-    
-    private fun loadAccounts() {
-        viewModelScope.launch {
-            getAccountsUseCase().collect { accounts ->
-                _uiState.update {
-                    it.copy(
-                        accounts = accounts,
-                        selectedAccountId = accounts.find { acc -> acc.isDefault }?.id
-                    )
-                }
-                // 更新缓存
-                cacheManager.updateAccountsCache(accounts)
-            }
-        }
-    }
-    
-    private fun loadCategories() {
-        viewModelScope.launch {
-            getCategoriesUseCase().collect { categories ->
-                _uiState.update { it.copy(categories = categories) }
-                // 更新缓存
-                cacheManager.updateCategoriesCache(categories)
-            }
+    private fun loadCategories() = launch {
+        getCategoriesUseCase().collect { categories ->
+            _uiState.update { it.copy(categories = categories) }
+            cacheManager.updateCategoriesCache(categories)
         }
     }
     
@@ -305,6 +178,8 @@ class LedgerViewModel @Inject constructor(
         loadTransactions()
         loadMonthlySummary()
     }
+    
+    private fun launch(block: suspend () -> Unit) = viewModelScope.launch { block() }
 }
 
 // UI状态 - 核心数据

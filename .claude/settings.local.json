@@ -56,7 +56,8 @@
       "Bash(./scripts/create_feature_module.sh:*)",
       "Bash(cat:*)",
       "Bash(dos2unix:*)",
-      "Bash(sh gradlew:*)"
+      "Bash(sh gradlew:*)",
+      "Bash(./scripts/check_version_catalog.sh:*)"
     ],
     "deny": []
   },

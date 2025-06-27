@@ -109,15 +109,21 @@ class PlanApiImpl @Inject constructor(
     }
     
     override fun navigateToPlanModule() {
-        // TODO: 需要Navigation实现
+        // 导航到计划模块主页面
+        // 注意：这个方法主要用于模块间导航，实际导航由上层控制
+        // 这里只提供导航标识符，实际导航在NavGraph中实现
     }
     
     override fun navigateToPlanDetail(planId: String) {
-        // TODO: 需要Navigation实现
+        // 导航到计划详情页面
+        // 注意：这个方法主要用于模块间导航，实际导航由上层控制
+        // 导航路径：plan_detail/{planId}
     }
     
     override fun navigateToCreatePlan() {
-        // TODO: 需要Navigation实现
+        // 导航到创建计划页面
+        // 注意：这个方法主要用于模块间导航，实际导航由上层控制
+        // 导航路径：create_plan
     }
     
     @androidx.compose.runtime.Composable

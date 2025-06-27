@@ -39,6 +39,7 @@ fun ScheduleEditScreen(
     val currentSchedule by viewModel.currentSchedule.collectAsState()
     val selectedShift by viewModel.selectedShift.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
     
     // 初始化加载当前日期的排班
     LaunchedEffect(selectedDate) {
@@ -70,7 +71,8 @@ fun ScheduleEditScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -154,7 +156,10 @@ fun ScheduleEditScreen(
     // 错误提示
     uiState.errorMessage?.let { message ->
         LaunchedEffect(message) {
-            // TODO: 显示Snackbar
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
             viewModel.clearError()
         }
     }
