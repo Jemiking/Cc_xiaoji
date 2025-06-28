@@ -129,12 +129,14 @@ class HabitRepositoryTest {
         )
 
         // Then
-        assertThat(result.title).isEqualTo(title)
-        assertThat(result.description).isEqualTo(description)
-        assertThat(result.period).isEqualTo(period)
-        assertThat(result.target).isEqualTo(target)
-        assertThat(result.color).isEqualTo(color)
-        assertThat(result.icon).isEqualTo(icon)
+        assertThat(result).isInstanceOf(com.ccxiaoji.common.base.BaseResult.Success::class.java)
+        val habit = (result as com.ccxiaoji.common.base.BaseResult.Success).data
+        assertThat(habit.title).isEqualTo(title)
+        assertThat(habit.description).isEqualTo(description)
+        assertThat(habit.period).isEqualTo(period)
+        assertThat(habit.target).isEqualTo(target)
+        assertThat(habit.color).isEqualTo(color)
+        assertThat(habit.icon).isEqualTo(icon)
         
         val capturedEntity = habitEntitySlot.captured
         assertThat(capturedEntity.userId).isEqualTo(testUserId)
@@ -154,7 +156,7 @@ class HabitRepositoryTest {
         coEvery { habitDao.updateHabit(any()) } returns Unit
 
         // When
-        habitRepository.updateHabit(
+        val result = habitRepository.updateHabit(
             habitId = habitId,
             title = newTitle,
             description = newDescription,
@@ -165,6 +167,7 @@ class HabitRepositoryTest {
         )
 
         // Then
+        assertThat(result).isInstanceOf(com.ccxiaoji.common.base.BaseResult.Success::class.java)
         coVerify(exactly = 1) { habitDao.getHabitById(habitId) }
         coVerify(exactly = 1) { habitDao.updateHabit(any()) }
     }
@@ -182,9 +185,10 @@ class HabitRepositoryTest {
         coEvery { habitDao.insertHabitRecord(capture(recordSlot)) } returns Unit
 
         // When
-        habitRepository.checkInHabit(habitId, date)
+        val result = habitRepository.checkInHabit(habitId, date)
 
         // Then
+        assertThat(result).isInstanceOf(com.ccxiaoji.common.base.BaseResult.Success::class.java)
         val capturedRecord = recordSlot.captured
         assertThat(capturedRecord.habitId).isEqualTo(habitId)
         assertThat(capturedRecord.recordDate).isEqualTo(recordDate)
@@ -209,9 +213,10 @@ class HabitRepositoryTest {
         coEvery { habitDao.updateHabitRecord(capture(recordSlot)) } returns Unit
 
         // When
-        habitRepository.checkInHabit(habitId, date)
+        val result = habitRepository.checkInHabit(habitId, date)
 
         // Then
+        assertThat(result).isInstanceOf(com.ccxiaoji.common.base.BaseResult.Success::class.java)
         val updatedRecord = recordSlot.captured
         assertThat(updatedRecord.count).isEqualTo(3) // 原本2次，现在3次
         
@@ -227,9 +232,10 @@ class HabitRepositoryTest {
         coEvery { habitDao.softDeleteHabit(any(), any()) } returns Unit
 
         // When
-        habitRepository.deleteHabit(habitId)
+        val result = habitRepository.deleteHabit(habitId)
 
         // Then
+        assertThat(result).isInstanceOf(com.ccxiaoji.common.base.BaseResult.Success::class.java)
         coVerify(exactly = 1) { habitDao.softDeleteHabit(habitId, any()) }
     }
 
