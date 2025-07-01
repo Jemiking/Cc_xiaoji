@@ -132,6 +132,10 @@ object DataExportRoute {
     const val route = "data_export"
 }
 
+object DataImportRoute {
+    const val route = "data_import"
+}
+
 object BatchOperationRoute {
     const val route = "batch_operation"
 }

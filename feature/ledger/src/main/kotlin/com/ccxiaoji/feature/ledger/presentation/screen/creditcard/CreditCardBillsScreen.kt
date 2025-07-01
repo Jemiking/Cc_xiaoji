@@ -8,6 +8,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -15,7 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.ccxiaoji.feature.ledger.data.local.entity.CreditCardBillEntity
+import com.ccxiaoji.feature.ledger.domain.model.CreditCardBill
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.CreditCardBillViewModel
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
@@ -32,12 +34,30 @@ fun CreditCardBillsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val bills by viewModel.getBills(accountId).collectAsStateWithLifecycle(initialValue = emptyList())
+    val snackbarHostState = remember { SnackbarHostState() }
     
     LaunchedEffect(accountId) {
         viewModel.loadAccount(accountId)
     }
     
+    // 显示成功消息
+    uiState.successMessage?.let { message ->
+        LaunchedEffect(message) {
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearMessages()
+        }
+    }
+    
+    // 显示错误消息
+    uiState.errorMessage?.let { message ->
+        LaunchedEffect(message) {
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearMessages()
+        }
+    }
+    
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text(uiState.accountName ?: "信用卡账单") },
@@ -48,7 +68,8 @@ fun CreditCardBillsScreen(
                 },
                 actions = {
                     IconButton(
-                        onClick = { viewModel.generateBillForAccount(accountId) }
+                        onClick = { viewModel.generateBillForAccount(accountId) },
+                        enabled = !uiState.isLoading
                     ) {
                         Icon(Icons.Default.Refresh, contentDescription = "生成账单")
                     }
@@ -107,27 +128,11 @@ fun CreditCardBillsScreen(
         }
     }
     
-    // 显示加载状态
-    if (uiState.isLoading) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator()
-        }
-    }
-    
-    // 显示错误消息
-    uiState.errorMessage?.let { message ->
-        LaunchedEffect(message) {
-            // 显示错误提示
-        }
-    }
 }
 
 @Composable
 fun BillItem(
-    bill: CreditCardBillEntity,
+    bill: CreditCardBill,
     onClick: () -> Unit
 ) {
     Card(
@@ -147,7 +152,7 @@ fun BillItem(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = formatBillingPeriod(bill.billStartDate, bill.billEndDate),
+                    text = formatBillingPeriod(bill.billStartDate.toEpochMilliseconds(), bill.billEndDate.toEpochMilliseconds()),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -248,7 +253,7 @@ fun BillItem(
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
-                    text = "还款日：${formatDate(bill.paymentDueDate)}",
+                    text = "还款日：${formatDate(bill.paymentDueDate.toEpochMilliseconds())}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

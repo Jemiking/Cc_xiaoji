@@ -19,6 +19,7 @@ import com.ccxiaoji.app.presentation.ui.profile.ProfileScreen
 import com.ccxiaoji.app.presentation.ui.profile.DataExportScreen
 import com.ccxiaoji.app.presentation.ui.profile.ThemeSettingsScreen
 import com.ccxiaoji.app.presentation.ui.profile.NotificationSettingsScreen
+import com.ccxiaoji.app.presentation.screen.DataImportScreen
 import com.ccxiaoji.feature.ledger.api.LedgerApi
 import com.ccxiaoji.feature.plan.api.PlanApi
 
@@ -180,7 +181,14 @@ fun NavGraph(
         
         composable(DataExportRoute.route) {
             DataExportScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToImport = { navController.navigate(DataImportRoute.route) }
+            )
+        }
+        
+        composable(DataImportRoute.route) {
+            DataImportScreen(
+                navController = navController
             )
         }
         

@@ -537,12 +537,14 @@ class LedgerApiImpl @Inject constructor(
         // 创建账单记录并持久化到数据库
         val result = creditCardBillRepository.generateBill(
             accountId = accountId,
-            periodStart = periodStart,
-            periodEnd = periodEnd
+            periodStart = startDate,
+            periodEnd = endDateExclusive
         )
         
-        return when (result) {
-            is com.ccxiaoji.common.base.BaseResult.Success -> result.data
+        when (result) {
+            is com.ccxiaoji.common.base.BaseResult.Success -> {
+                // 账单生成成功
+            }
             is com.ccxiaoji.common.base.BaseResult.Error -> {
                 // 如果生成失败，抛出异常
                 throw result.exception
@@ -608,11 +610,8 @@ class LedgerApiImpl @Inject constructor(
             )
             
             // 更新账户
-            val result = accountRepository.updateAccount(updatedAccount)
-            when (result) {
-                is BaseResult.Error -> throw result.exception
-                is BaseResult.Success -> { /* 更新成功 */ }
-            }
+            accountRepository.updateAccount(updatedAccount)
+            // 更新成功
         } else {
             throw IllegalArgumentException("账户不存在或不是信用卡账户")
         }

@@ -63,4 +63,5 @@ interface BudgetRepository {
      * 获取预算使用百分比
      */
     suspend fun getBudgetUsagePercentage(year: Int, month: Int, categoryId: String?): Float?
+    
 }

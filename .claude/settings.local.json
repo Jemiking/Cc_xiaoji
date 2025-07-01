@@ -57,7 +57,21 @@
       "Bash(cat:*)",
       "Bash(dos2unix:*)",
       "Bash(sh gradlew:*)",
-      "Bash(./scripts/check_version_catalog.sh:*)"
+      "Bash(./scripts/check_version_catalog.sh:*)",
+      "Bash(claude mcp:*)",
+      "mcp__kotlin-compiler__set_project_path",
+      "mcp__kotlin-compiler__compile_project",
+      "Bash(./scripts/verify-version-migration.sh:*)",
+      "Bash(ln:*)",
+      "Bash(npm --prefix /mnt/d/kotlin/mcp-kotlin-compiler run build)",
+      "Bash(unzip:*)",
+      "Bash(./scripts/restore-session.sh:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(python3:*)",
+      "Bash(./check-setup.sh:*)",
+      "Bash(timeout:*)",
+      "WebFetch(domain:m3.material.io)",
+      "WebFetch(domain:material.io)"
     ],
     "deny": []
   },

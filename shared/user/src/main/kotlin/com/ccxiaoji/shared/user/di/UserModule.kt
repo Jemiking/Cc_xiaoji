@@ -32,4 +32,5 @@ abstract class UserBindModule {
     abstract fun bindUserApi(
         userApiImpl: UserApiImpl
     ): UserApi
+    
 }

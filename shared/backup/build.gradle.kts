@@ -42,6 +42,7 @@ dependencies {
     // Module dependencies
     implementation(project(":core:common"))
     implementation(project(":core:database"))
+    implementation(project(":shared:sync"))
     
     // Core
     implementation(libs.androidx.core.ktx)
@@ -55,6 +56,9 @@ dependencies {
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    
+    // JSON
+    implementation(libs.gson)
     
     // Testing
     testImplementation(libs.junit)

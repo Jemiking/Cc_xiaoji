@@ -3,7 +3,7 @@ package com.ccxiaoji.shared.backup.data.manager
 import android.content.Context
 import android.os.Environment
 import com.ccxiaoji.common.constants.DatabaseConstants
-import com.ccxiaoji.shared.backup.domain.model.BackupFile
+import com.ccxiaoji.common.data.import.BackupFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -11,6 +11,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 /**
  * 数据库备份管理器
@@ -18,7 +19,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class DatabaseBackupManager @Inject constructor(
-    private val context: Context
+    @ApplicationContext private val context: Context
 ) {
     
     companion object {

@@ -8,11 +8,11 @@ plugins {
 
 android {
     namespace = "com.ccxiaoji.core.network"
-    compileSdk = 34
-    buildToolsVersion = "33.0.2"
+    compileSdk = libs.versions.compileSdk.get().toInt()
+    buildToolsVersion = libs.versions.buildTools.get()
 
     defaultConfig {
-        minSdk = 26
+        minSdk = libs.versions.minSdk.get().toInt()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.pro")
     }

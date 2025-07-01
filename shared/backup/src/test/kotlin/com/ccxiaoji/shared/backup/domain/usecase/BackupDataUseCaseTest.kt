@@ -1,9 +1,9 @@
 package com.ccxiaoji.shared.backup.domain.usecase
 
 import com.ccxiaoji.shared.backup.data.repository.BackupRepository
-import com.ccxiaoji.shared.backup.domain.model.BackupInfo
-import com.ccxiaoji.shared.backup.domain.model.BackupResult
-import com.ccxiaoji.shared.backup.domain.model.RestoreResult
+import com.ccxiaoji.common.data.import.BackupInfo
+import com.ccxiaoji.common.data.import.BackupResult
+import com.ccxiaoji.common.data.import.RestoreResult
 import com.google.common.truth.Truth.assertThat
 import io.mockk.MockKAnnotations
 import io.mockk.coEvery

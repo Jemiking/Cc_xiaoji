@@ -14,6 +14,8 @@ import com.ccxiaoji.shared.user.domain.model.User
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -120,6 +122,8 @@ class UserRepository @Inject constructor(
         // In a real app, this would get the actual logged-in user ID
         return "current_user_id"
     }
+    
+    
 }
 
 private fun UserEntity.toDomainModel(): User {

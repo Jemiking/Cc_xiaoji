@@ -1,6 +1,10 @@
 package com.ccxiaoji.shared.backup.api
 
-import com.ccxiaoji.shared.backup.domain.model.BackupFile
+import android.net.Uri
+import com.ccxiaoji.common.data.import.BackupFile
+import com.ccxiaoji.common.data.import.ImportConfig
+import com.ccxiaoji.common.data.import.ImportResult
+import com.ccxiaoji.common.data.import.ImportValidation
 
 /**
  * 备份模块对外API接口
@@ -30,4 +34,19 @@ interface BackupApi {
      * @return 备份文件路径，如果失败返回null
      */
     suspend fun createMigrationBackup(): String?
+    
+    /**
+     * 验证导入文件
+     * @param uri 文件URI
+     * @return 验证结果
+     */
+    suspend fun validateImportFile(uri: Uri): ImportValidation
+    
+    /**
+     * 导入JSON数据文件
+     * @param uri 文件URI
+     * @param config 导入配置
+     * @return 导入结果
+     */
+    suspend fun importJsonFile(uri: Uri, config: ImportConfig = ImportConfig()): ImportResult
 }
