@@ -48,8 +48,8 @@ class MainActivity : ComponentActivity() {
         Log.d(TAG, "MainActivity onCreate started")
         
         try {
-            enableEdgeToEdge()
-            Log.d(TAG, "Edge to edge enabled")
+            // enableEdgeToEdge()  // 移除以解决顶部空隙问题
+            Log.d(TAG, "Edge to edge disabled to fix top gap")
             
             // 启动每日检查任务
             Log.d(TAG, "Scheduling daily check")

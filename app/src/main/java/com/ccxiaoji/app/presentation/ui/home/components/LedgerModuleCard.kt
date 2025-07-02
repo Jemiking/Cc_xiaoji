@@ -1,14 +1,24 @@
 package com.ccxiaoji.app.presentation.ui.home.components
 
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ccxiaoji.ui.components.FlatButton
+import com.ccxiaoji.ui.components.ModernCard
+import com.ccxiaoji.ui.theme.DesignTokens
 
 @Composable
 fun LedgerModuleCard(
@@ -19,117 +29,224 @@ fun LedgerModuleCard(
     onQuickAdd: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    // 动画效果
+    var animatedBudget by remember { mutableStateOf(0f) }
+    LaunchedEffect(budgetUsagePercentage) {
+        animate(
+            initialValue = animatedBudget,
+            targetValue = budgetUsagePercentage,
+            animationSpec = tween(800, easing = FastOutSlowInEasing)
+        ) { value, _ ->
+            animatedBudget = value
+        }
+    }
+    
+    ModernCard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFE8F5E9) // 淡绿色背景
-        ),
-        onClick = onCardClick
+        onClick = onCardClick,
+        backgroundColor = MaterialTheme.colorScheme.surface,
+        borderColor = DesignTokens.BrandColors.Ledger.copy(alpha = 0.2f)
     ) {
-        Column(
+        // 简洁头部
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.AccountBalanceWallet,
+                    contentDescription = "记账",
+                    tint = DesignTokens.BrandColors.Ledger,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = "记账",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.ArrowForwardIos,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
+        
+        // 今日数据展示
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(vertical = DesignTokens.Spacing.small),
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            // 标题
-            Text(
-                text = "记账",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF4CAF50) // 记账模块主题色
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // 今日数据
+            // 收入
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)
             ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(DesignTokens.BrandColors.Success.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.TrendingUp,
+                        contentDescription = null,
+                        tint = DesignTokens.BrandColors.Success,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
                 Column {
                     Text(
                         text = "收入",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "+¥%.2f".format(todayIncome),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                        color = Color(0xFF4CAF50)
-                    )
-                }
-                Column(
-                    horizontalAlignment = Alignment.End
-                ) {
-                    Text(
-                        text = "支出",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "-¥%.2f".format(todayExpense),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.error
+                        text = "+¥%.0f".format(todayIncome),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = DesignTokens.BrandColors.Success
                     )
                 }
             }
             
-            Spacer(modifier = Modifier.height(12.dp))
+            // 分隔线
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .height(36.dp)
+                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            )
             
-            // 本月预算进度条
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+            // 支出
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)),
+                    contentAlignment = Alignment.Center
                 ) {
+                    Icon(
+                        imageVector = Icons.Default.TrendingDown,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                Column {
+                    Text(
+                        text = "支出",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "-¥%.0f".format(todayExpense),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
+        
+        // 本月预算进度
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.xs)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PieChart,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(16.dp)
+                    )
                     Text(
                         text = "本月预算",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Text(
-                        text = "${budgetUsagePercentage.toInt()}%",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Medium,
-                        color = when {
-                            budgetUsagePercentage > 100 -> MaterialTheme.colorScheme.error
-                            budgetUsagePercentage > 80 -> Color(0xFFFF9800)
-                            else -> Color(0xFF4CAF50)
-                        }
-                    )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                LinearProgressIndicator(
-                    progress = { (budgetUsagePercentage / 100f).coerceIn(0f, 1f) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(4.dp),
+                Text(
+                    text = "${animatedBudget.toInt()}%",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
                     color = when {
-                        budgetUsagePercentage > 100 -> MaterialTheme.colorScheme.error
-                        budgetUsagePercentage > 80 -> Color(0xFFFF9800)
-                        else -> Color(0xFF4CAF50)
-                    },
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant
+                        animatedBudget > 100 -> MaterialTheme.colorScheme.error
+                        animatedBudget > 80 -> DesignTokens.BrandColors.Warning
+                        else -> DesignTokens.BrandColors.Success
+                    }
                 )
             }
             
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
             
-            // 快速操作按钮
-            FilledTonalButton(
-                onClick = onQuickAdd,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = Color(0xFF4CAF50).copy(alpha = 0.2f),
-                    contentColor = Color(0xFF4CAF50)
-                )
+            // 渐进式进度条
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Text("记一笔")
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth((animatedBudget / 100f).coerceIn(0f, 1f))
+                        .background(
+                            brush = when {
+                                animatedBudget > 100 -> DesignTokens.BrandGradients.Error
+                                animatedBudget > 80 -> DesignTokens.BrandGradients.Warning
+                                else -> DesignTokens.BrandGradients.Success
+                            },
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                )
             }
+        }
+        
+        Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
+        
+        // 快速操作按钮
+        FlatButton(
+            onClick = onQuickAdd,
+            modifier = Modifier.fillMaxWidth(),
+            backgroundColor = DesignTokens.BrandColors.Ledger,
+            contentColor = Color.White
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(DesignTokens.Spacing.small))
+            Text(
+                text = "记一笔",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

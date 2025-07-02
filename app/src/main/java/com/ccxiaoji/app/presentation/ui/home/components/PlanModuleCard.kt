@@ -1,14 +1,22 @@
 package com.ccxiaoji.app.presentation.ui.home.components
 
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ccxiaoji.ui.components.FlatButton
+import com.ccxiaoji.ui.theme.DesignTokens
 
 @Composable
 fun PlanModuleCard(
@@ -19,135 +27,187 @@ fun PlanModuleCard(
     onViewPlans: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF3E5F5) // 淡紫色背景
-        ),
-        onClick = onCardClick
+    // 动画效果
+    var animatedProgress by remember { mutableStateOf(0f) }
+    LaunchedEffect(averageProgress) {
+        animate(
+            initialValue = animatedProgress,
+            targetValue = averageProgress.toFloat(),
+            animationSpec = tween(1200, easing = FastOutSlowInEasing)
+        ) { value, _ ->
+            animatedProgress = value
+        }
+    }
+    
+    FlatModuleCard(
+        title = "计划",
+        icon = Icons.Default.Assignment,
+        moduleColor = DesignTokens.BrandColors.Plan,
+        onClick = onCardClick,
+        modifier = modifier
     ) {
-        Column(
+        // 计划统计
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(vertical = DesignTokens.Spacing.small),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // 标题
-            Text(
-                text = "计划",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF9C27B0) // 计划模块主题色（紫色）
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // 计划统计
+            // 进行中计划
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)
             ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(DesignTokens.BrandColors.Plan.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayCircle,
+                        contentDescription = null,
+                        tint = DesignTokens.BrandColors.Plan,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
                 Column {
                     Text(
                         text = "进行中",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    Row(
-                        verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = activePlansCount.toString(),
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF9C27B0)
-                        )
-                        Text(
-                            text = "个",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                    }
-                }
-                
-                Column(
-                    horizontalAlignment = Alignment.End
-                ) {
                     Text(
-                        text = "今日相关",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "$activePlansCount 个",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = DesignTokens.BrandColors.Plan
                     )
-                    Row(
-                        verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = todayPlansCount.toString(),
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = "个",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                    }
                 }
             }
             
-            // 整体进度
-            if (activePlansCount > 0) {
-                Spacer(modifier = Modifier.height(12.dp))
-                
+            // 分隔线
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .height(36.dp)
+                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            )
+            
+            // 今日相关
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(DesignTokens.BrandColors.Info.copy(alpha = 0.1f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Today,
+                        contentDescription = null,
+                        tint = DesignTokens.BrandColors.Info,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
                 Column {
+                    Text(
+                        text = "今日",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "$todayPlansCount 个",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = DesignTokens.BrandColors.Info
+                    )
+                }
+            }
+        }
+        
+        // 平均进度
+        if (activePlansCount > 0) {
+            Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
+            
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.xs)
                     ) {
+                        Icon(
+                            imageVector = Icons.Default.Timeline,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(16.dp)
+                        )
                         Text(
                             text = "平均进度",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Text(
-                            text = "$averageProgress%",
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium,
-                            color = Color(0xFF9C27B0)
-                        )
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    LinearProgressIndicator(
-                        progress = { averageProgress / 100f },
+                    Text(
+                        text = "${animatedProgress.toInt()}%",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = DesignTokens.BrandColors.Plan
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
+                
+                // 进度条
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp),
-                        color = Color(0xFF9C27B0),
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                            .fillMaxHeight()
+                            .fillMaxWidth((animatedProgress / 100f).coerceIn(0f, 1f))
+                            .background(
+                                brush = DesignTokens.BrandGradients.ModulePlan,
+                                shape = RoundedCornerShape(4.dp)
+                            )
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // 快速操作按钮
-            FilledTonalButton(
-                onClick = onViewPlans,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = Color(0xFF9C27B0).copy(alpha = 0.2f),
-                    contentColor = Color(0xFF9C27B0)
-                )
-            ) {
-                Text("查看计划")
-            }
+        }
+        
+        Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
+        
+        // 快速操作按钮
+        FlatButton(
+            onClick = onViewPlans,
+            modifier = Modifier.fillMaxWidth(),
+            backgroundColor = DesignTokens.BrandColors.Plan,
+            contentColor = Color.White
+        ) {
+            Icon(
+                imageVector = Icons.Default.ViewList,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(DesignTokens.Spacing.small))
+            Text(
+                text = "查看计划",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }
