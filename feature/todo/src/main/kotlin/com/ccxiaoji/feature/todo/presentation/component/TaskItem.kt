@@ -1,6 +1,8 @@
 package com.ccxiaoji.feature.todo.presentation.component
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -14,6 +16,9 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.ccxiaoji.feature.todo.R
 import com.ccxiaoji.feature.todo.domain.model.Task
+import com.ccxiaoji.feature.todo.domain.model.Priority
+import com.ccxiaoji.ui.components.ModernCard
+import com.ccxiaoji.ui.theme.DesignTokens
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toLocalDateTime
@@ -32,8 +37,17 @@ fun TaskItem(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth()
+    val priorityColor = when (task.priorityLevel) {
+        Priority.HIGH -> DesignTokens.BrandColors.Error
+        Priority.MEDIUM -> DesignTokens.BrandColors.Warning
+        Priority.LOW -> DesignTokens.BrandColors.Success
+    }
+    
+    ModernCard(
+        modifier = modifier.fillMaxWidth(),
+        backgroundColor = MaterialTheme.colorScheme.surface,
+        borderColor = priorityColor.copy(alpha = 0.2f),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
@@ -45,7 +59,11 @@ fun TaskItem(
             // 完成状态复选框
             Checkbox(
                 checked = task.completed,
-                onCheckedChange = { onToggleComplete() }
+                onCheckedChange = { onToggleComplete() },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = DesignTokens.BrandColors.Todo,
+                    uncheckedColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             )
             
             // 任务信息
@@ -75,13 +93,25 @@ fun TaskItem(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     // 优先级标签
-                    AssistChip(
-                        onClick = { },
-                        label = { Text(task.priorityLevel.displayName) },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(
+                                    color = priorityColor,
+                                    shape = CircleShape
+                                )
                         )
-                    )
+                        Text(
+                            text = task.priorityLevel.displayName,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = priorityColor,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                     
                     // 截止日期
                     task.dueAt?.let { dueAt ->
@@ -100,14 +130,14 @@ fun TaskItem(
             IconButton(onClick = onEdit) {
                 Icon(
                     imageVector = Icons.Default.Edit,
-                    contentDescription = stringResource(R.string.todo_edit)
+                    contentDescription = "编辑"
                 )
             }
             
             IconButton(onClick = onDelete) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = stringResource(R.string.todo_delete_task)
+                    contentDescription = "删除任务"
                 )
             }
         }

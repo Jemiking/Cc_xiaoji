@@ -171,7 +171,10 @@ interface LedgerApi {
     fun getCategoryManagementScreen(navController: NavHostController)
     
     @Composable
-    fun getBudgetScreen(onNavigateBack: () -> Unit)
+    fun getBudgetScreen(
+        onNavigateBack: () -> Unit,
+        onNavigateToAddEditBudget: (categoryId: String?) -> Unit
+    )
     
     @Composable
     fun getStatisticsScreen(onNavigateBack: () -> Unit)
@@ -186,17 +189,28 @@ interface LedgerApi {
         onNavigateToAccount: () -> Unit,
         onNavigateToBudget: () -> Unit,
         onNavigateToDataExport: () -> Unit,
-        onNavigateToRecurring: () -> Unit
+        onNavigateToRecurring: () -> Unit,
+        onNavigateToCurrencySelection: () -> Unit,
+        onNavigateToAccountSelection: () -> Unit,
+        onNavigateToReminderSettings: () -> Unit,
+        onNavigateToHomeDisplaySettings: () -> Unit,
+        navController: NavHostController?
     )
     
     @Composable
-    fun getRecurringTransactionScreen(onNavigateBack: () -> Unit)
+    fun getRecurringTransactionScreen(onNavigateBack: () -> Unit, onNavigateToAddEdit: (String?) -> Unit)
     
     @Composable
-    fun getSavingsGoalScreen(onNavigateBack: () -> Unit, onNavigateToDetail: (Long) -> Unit)
+    fun getSavingsGoalScreen(onNavigateBack: () -> Unit, onNavigateToDetail: (Long) -> Unit, onNavigateToAddGoal: () -> Unit)
     
     @Composable
-    fun getSavingsGoalDetailScreen(goalId: Long, onNavigateBack: () -> Unit)
+    fun getSavingsGoalDetailScreen(
+        goalId: Long,
+        navController: NavHostController,
+        onNavigateBack: () -> Unit,
+        onNavigateToEditGoal: (Long) -> Unit,
+        onNavigateToContribution: (Long) -> Unit
+    )
     
     @Composable
     fun getCreditCardScreen(

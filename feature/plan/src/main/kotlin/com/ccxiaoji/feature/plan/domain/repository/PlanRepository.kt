@@ -1,5 +1,6 @@
 package com.ccxiaoji.feature.plan.domain.repository
 
+import com.ccxiaoji.feature.plan.domain.model.Milestone
 import com.ccxiaoji.feature.plan.domain.model.Plan
 import com.ccxiaoji.feature.plan.domain.model.PlanStatus
 import kotlinx.coroutines.flow.Flow
@@ -84,4 +85,9 @@ interface PlanRepository {
      * 清空所有计划数据
      */
     suspend fun deleteAllPlans()
+    
+    /**
+     * 根据ID获取里程碑
+     */
+    suspend fun getMilestoneById(milestoneId: String): Milestone?
 }

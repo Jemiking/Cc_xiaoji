@@ -21,8 +21,6 @@ data class BudgetUiState(
     val selectedMonth: Int = Calendar.getInstance().get(Calendar.MONTH) + 1,
     val isLoading: Boolean = false,
     val error: String? = null,
-    val showAddEditDialog: Boolean = false,
-    val editingBudget: BudgetWithSpent? = null,
     val totalBudget: BudgetWithSpent? = null
 )
 
@@ -100,69 +98,14 @@ class BudgetViewModel @Inject constructor(
     }
 
     fun showAddBudgetDialog(categoryId: String? = null) {
-        val editingBudget = if (categoryId != null) {
-            _uiState.value.budgets.find { it.categoryId == categoryId }
-        } else {
-            _uiState.value.totalBudget
-        }
-        
-        _uiState.update {
-            it.copy(
-                showAddEditDialog = true,
-                editingBudget = editingBudget
-            )
-        }
+        // 不再使用弹窗，改为导航到独立页面
+        // 这个方法现在只用于触发导航
     }
 
     fun hideAddEditDialog() {
-        _uiState.update {
-            it.copy(
-                showAddEditDialog = false,
-                editingBudget = null
-            )
-        }
+        // 弹窗相关逻辑已移除
     }
 
-    fun saveBudget(
-        budgetAmountCents: Int,
-        categoryId: String? = null,
-        alertThreshold: Float = 0.8f,
-        note: String? = null
-    ) {
-        viewModelScope.launch {
-            try {
-                val existingBudget = _uiState.value.editingBudget
-                if (existingBudget != null) {
-                    // 更新现有预算
-                    // 从BudgetWithSpent创建Budget对象进行更新
-                    val budget = Budget(
-                        id = existingBudget.id,
-                        userId = existingBudget.userId,
-                        year = existingBudget.year,
-                        month = existingBudget.month,
-                        categoryId = existingBudget.categoryId,
-                        budgetAmountCents = budgetAmountCents,
-                        alertThreshold = existingBudget.alertThreshold,
-                        note = existingBudget.note,
-                        createdAt = existingBudget.createdAt,
-                        updatedAt = existingBudget.updatedAt
-                    )
-                    budgetRepository.updateBudget(budget)
-                } else {
-                    // 创建新预算
-                    budgetRepository.createBudget(
-                        year = _uiState.value.selectedYear,
-                        month = _uiState.value.selectedMonth,
-                        categoryId = categoryId,
-                        amountCents = budgetAmountCents
-                    )
-                }
-                hideAddEditDialog()
-            } catch (e: Exception) {
-                _uiState.update { it.copy(error = e.message) }
-            }
-        }
-    }
 
     fun deleteBudget(budgetId: String) {
         viewModelScope.launch {

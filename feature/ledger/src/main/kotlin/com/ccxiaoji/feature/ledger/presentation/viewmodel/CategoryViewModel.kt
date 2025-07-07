@@ -23,7 +23,7 @@ class CategoryViewModel @Inject constructor(
         loadCategories()
     }
     
-    private fun loadCategories() {
+    fun loadCategories() {
         viewModelScope.launch {
             // 简化实现：暂时只获取分类，不包含统计信息
             categoryRepository.getCategories().collect { categories ->

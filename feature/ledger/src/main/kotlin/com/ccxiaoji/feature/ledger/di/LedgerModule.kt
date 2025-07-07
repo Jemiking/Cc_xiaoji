@@ -55,6 +55,12 @@ abstract class LedgerModule {
         impl: CreditCardBillRepositoryImpl
     ): CreditCardBillRepository
     
+    @Binds
+    @Singleton
+    abstract fun bindFilterRepository(
+        impl: FilterRepositoryImpl
+    ): FilterRepository
+    
     companion object {
         @Provides
         @Singleton

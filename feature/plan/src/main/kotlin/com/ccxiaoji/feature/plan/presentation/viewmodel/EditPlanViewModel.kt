@@ -1,4 +1,4 @@
-package com.ccxiaoji.feature.plan.presentation.edit
+package com.ccxiaoji.feature.plan.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

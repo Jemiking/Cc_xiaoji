@@ -50,6 +50,13 @@
     <string name="habit_description_hint">描述（可选）</string>
     <string name="habit_target_count">目标次数</string>
     <string name="habit_target_format">目标 %d 次</string>
+    <string name="edit_habit">编辑习惯</string>
+    <string name="select_icon">选择图标</string>
+    <string name="select_color">选择颜色</string>
+    <string name="random_icon">随机图标</string>
+    <string name="target_count">目标次数</string>
+    <string name="description_optional">描述（可选）</string>
+    <string name="back">返回</string>
     
     <!-- Weekdays -->
     <string name="weekday_mon">一</string>

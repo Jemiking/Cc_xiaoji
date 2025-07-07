@@ -9,17 +9,23 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Observer
+import androidx.navigation.NavController
+import com.ccxiaoji.feature.schedule.presentation.calendar.components.MonthlyStatisticsCard
+import com.ccxiaoji.feature.schedule.presentation.calendar.components.SelectedDateDetailCard
 import com.ccxiaoji.feature.schedule.domain.model.Schedule
-import com.ccxiaoji.feature.schedule.presentation.components.QuickShiftSelector
+import com.ccxiaoji.feature.schedule.domain.model.ScheduleStatistics
 import com.ccxiaoji.feature.schedule.presentation.components.CustomYearMonthPickerDialog
 import com.ccxiaoji.feature.schedule.presentation.viewmodel.CalendarViewModel
 import com.ccxiaoji.feature.schedule.presentation.viewmodel.CalendarViewMode
 import androidx.compose.ui.res.stringResource
 import com.ccxiaoji.feature.schedule.R
+import com.ccxiaoji.feature.schedule.presentation.navigation.Screen
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -37,7 +43,8 @@ fun CalendarScreen(
     onNavigateToSchedulePattern: () -> Unit,
     onNavigateToStatistics: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    viewModel: CalendarViewModel = hiltViewModel()
+    viewModel: CalendarViewModel = hiltViewModel(),
+    navController: NavController? = null
 ) {
     android.util.Log.d("CalendarScreen", "CalendarScreen Composable called")
     
@@ -58,6 +65,38 @@ fun CalendarScreen(
     var showDropdownMenu by remember { mutableStateOf(false) }
     // 年月选择对话框状态
     var showYearMonthPicker by remember { mutableStateOf(false) }
+    
+    // 处理快速班次选择结果
+    navController?.currentBackStackEntry?.savedStateHandle?.let { savedStateHandle ->
+        val lifecycleOwner = LocalLifecycleOwner.current
+        DisposableEffect(lifecycleOwner) {
+            val shiftIdObserver = Observer<Long> { shiftId ->
+                quickSelectDate?.let { date ->
+                    val shift = if (shiftId == null || shiftId == 0L) null else quickShifts.find { it.id == shiftId }
+                    viewModel.quickSetSchedule(date, shift)
+                }
+                savedStateHandle.remove<Long>("selected_shift_id")
+            }
+            
+            val navigateToFullObserver = Observer<Boolean> { shouldNavigate ->
+                if (shouldNavigate == true) {
+                    quickSelectDate?.let { date ->
+                        viewModel.hideQuickSelector()
+                        onNavigateToScheduleEdit(date)
+                    }
+                    savedStateHandle.remove<Boolean>("navigate_to_full_selector")
+                }
+            }
+            
+            savedStateHandle.getLiveData<Long>("selected_shift_id").observe(lifecycleOwner, shiftIdObserver)
+            savedStateHandle.getLiveData<Boolean>("navigate_to_full_selector").observe(lifecycleOwner, navigateToFullObserver)
+            
+            onDispose {
+                savedStateHandle.getLiveData<Long>("selected_shift_id").removeObserver(shiftIdObserver)
+                savedStateHandle.getLiveData<Boolean>("navigate_to_full_selector").removeObserver(navigateToFullObserver)
+            }
+        }
+    }
     
     Scaffold(
         topBar = {
@@ -171,9 +210,18 @@ fun CalendarScreen(
             if (viewMode == CalendarViewMode.COMFORTABLE) {
                 selectedDate?.let { date ->
                     FloatingActionButton(
-                        onClick = { onNavigateToScheduleEdit(date) }
+                        onClick = { onNavigateToScheduleEdit(date) },
+                        containerColor = com.ccxiaoji.ui.theme.DesignTokens.BrandColors.Schedule,
+                        elevation = FloatingActionButtonDefaults.elevation(
+                            defaultElevation = 1.dp,
+                            pressedElevation = 2.dp
+                        )
                     ) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.schedule_calendar_add_schedule))
+                        Icon(
+                            Icons.Default.Add, 
+                            contentDescription = stringResource(R.string.schedule_calendar_add_schedule),
+                            tint = Color.White
+                        )
                     }
                 }
             }
@@ -186,24 +234,10 @@ fun CalendarScreen(
                 .padding(paddingValues)
         ) {
             // 统计信息卡片 - 两个模式都显示
-            statistics?.let { stats ->
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        StatisticItem(stringResource(R.string.schedule_calendar_work_days), stringResource(R.string.schedule_calendar_days_format, stats.workDays))
-                        StatisticItem(stringResource(R.string.schedule_calendar_rest_days), stringResource(R.string.schedule_calendar_days_format, stats.restDays))
-                        StatisticItem(stringResource(R.string.schedule_calendar_total_hours), stringResource(R.string.schedule_calendar_hours_int_format, stats.totalHours.toInt()))
-                    }
-                }
-            }
+            MonthlyStatisticsCard(
+                statistics = statistics,
+                modifier = Modifier.padding(horizontal = com.ccxiaoji.ui.theme.DesignTokens.Spacing.medium, vertical = com.ccxiaoji.ui.theme.DesignTokens.Spacing.small)
+            )
             
             // 日历视图
             CalendarView(
@@ -239,7 +273,7 @@ fun CalendarScreen(
                         schedule = selectedSchedule,
                         onEdit = { onNavigateToScheduleEdit(date) },
                         onDelete = { viewModel.deleteSchedule(date) },
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                        modifier = Modifier.padding(horizontal = com.ccxiaoji.ui.theme.DesignTokens.Spacing.medium, vertical = com.ccxiaoji.ui.theme.DesignTokens.Spacing.small)
                     )
                 }
             }
@@ -267,25 +301,12 @@ fun CalendarScreen(
         }
     }
     
-    // 快速选择对话框
-    quickSelectDate?.let { date ->
-        val currentSchedule = schedules.find { it.date == date }
-        QuickShiftSelector(
-            isVisible = true,
-            selectedDate = date,
-            quickShifts = quickShifts,
-            currentShift = currentSchedule?.shift,
-            onShiftSelected = { shift ->
-                viewModel.quickSetSchedule(date, shift)
-            },
-            onDismiss = {
-                viewModel.hideQuickSelector()
-            },
-            onNavigateToFullSelector = {
-                viewModel.hideQuickSelector()
-                onNavigateToScheduleEdit(date)
-            }
-        )
+    // 快速选择页面导航
+    LaunchedEffect(quickSelectDate) {
+        quickSelectDate?.let { date ->
+            navController?.navigate(Screen.QuickShiftSelection.createRoute(date.toString()))
+            viewModel.hideQuickSelector()
+        }
     }
     
     // 年月选择对话框
@@ -299,160 +320,5 @@ fun CalendarScreen(
             },
             onDismiss = { showYearMonthPicker = false }
         )
-    }
-}
-
-// 旧的年月选择对话框已被 CustomYearMonthPickerDialog 替代
-
-@Composable
-private fun StatisticItem(
-    label: String,
-    value: String
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium
-        )
-    }
-}
-
-/**
- * 选中日期详情卡片
- */
-@Composable
-private fun SelectedDateDetailCard(
-    date: LocalDate,
-    schedule: Schedule?,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            // 日期标题
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column {
-                    Text(
-                        text = date.format(DateTimeFormatter.ofPattern(stringResource(R.string.schedule_calendar_date_format_full))),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = date.dayOfWeek.getDisplayName(TextStyle.FULL, Locale.CHINESE),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                
-                // 操作按钮
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (schedule != null) {
-                        IconButton(
-                            onClick = onDelete,
-                            modifier = Modifier.size(40.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = stringResource(R.string.schedule_calendar_delete_schedule),
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                    IconButton(
-                        onClick = onEdit,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.Edit,
-                            contentDescription = stringResource(R.string.schedule_calendar_edit_schedule)
-                        )
-                    }
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // 班次信息
-            if (schedule != null) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // 班次颜色标识
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .background(
-                                color = Color(schedule.shift.color),
-                                shape = MaterialTheme.shapes.small
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = schedule.shift.name.take(2),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    
-                    // 班次详情
-                    Column {
-                        Text(
-                            text = schedule.shift.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Medium
-                        )
-                        if (schedule.shift.startTime != null && schedule.shift.endTime != null) {
-                            Text(
-                                text = "${schedule.shift.startTime} - ${schedule.shift.endTime}",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = stringResource(R.string.schedule_calendar_work_hours) + stringResource(R.string.schedule_calendar_hours_format, schedule.shift.duration),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-            } else {
-                // 无排班时的提示
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = stringResource(R.string.schedule_calendar_no_schedule),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
     }
 }

@@ -1,0 +1,35 @@
+// 仅编译Kotlin代码的Gradle配置
+// 用于在WSL环境中快速验证代码正确性
+
+allprojects {
+    tasks.whenTaskAdded { task ->
+        // 跳过所有资源相关任务
+        if (task.name.contains("Resource") || 
+            task.name.contains("Assets") || 
+            task.name.contains("Aapt") ||
+            task.name.contains("Manifest")) {
+            task.enabled = false
+        }
+    }
+}
+
+// 创建一个自定义任务来只编译Kotlin
+task compileKotlinOnly {
+    group = "verification"
+    description = "Compile Kotlin code only (skip Android resources)"
+    
+    dependsOn ':app:compileDebugKotlin'
+    dependsOn ':core:common:compileDebugKotlin'
+    dependsOn ':core:ui:compileDebugKotlin'
+    dependsOn ':core:database:compileDebugKotlin'
+    dependsOn ':core:network:compileDebugKotlin'
+    dependsOn ':shared:user:compileDebugKotlin'
+    dependsOn ':shared:sync:compileDebugKotlin'
+    dependsOn ':shared:backup:compileDebugKotlin'
+    dependsOn ':shared:notification:compileDebugKotlin'
+    dependsOn ':feature:todo:compileDebugKotlin'
+    dependsOn ':feature:habit:compileDebugKotlin'
+    dependsOn ':feature:ledger:compileDebugKotlin'
+    dependsOn ':feature:schedule:compileDebugKotlin'
+    dependsOn ':feature:plan:compileDebugKotlin'
+}

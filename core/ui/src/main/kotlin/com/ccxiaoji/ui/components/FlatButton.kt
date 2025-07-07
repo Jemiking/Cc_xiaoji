@@ -48,3 +48,39 @@ fun FlatButton(
         content()
     }
 }
+
+/**
+ * 扁平按钮组件 - 文本版本
+ * 便利函数，用于创建只包含文本的按钮
+ */
+@Composable
+fun FlatButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    backgroundColor: Color = MaterialTheme.colorScheme.primary,
+    contentColor: Color = MaterialTheme.colorScheme.onPrimary,
+    borderColor: Color? = null,
+    contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
+    elevation: ButtonElevation = ButtonDefaults.buttonElevation(
+        defaultElevation = 0.dp,
+        pressedElevation = 0.dp,
+        disabledElevation = 0.dp
+    )
+) {
+    FlatButton(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        backgroundColor = backgroundColor,
+        contentColor = contentColor,
+        borderColor = borderColor,
+        elevation = elevation
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(contentPadding)
+        )
+    }
+}

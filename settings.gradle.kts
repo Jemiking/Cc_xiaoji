@@ -1,10 +1,6 @@
 pluginManagement {
     repositories {
-        // 阿里云镜像优先
-        maven { url = uri("https://maven.aliyun.com/repository/gradle-plugin") }
-        maven { url = uri("https://maven.aliyun.com/repository/google") }
-        maven { url = uri("https://maven.aliyun.com/repository/public") }
-        // 备用源
+        // 直接使用官方源，通过代理访问
         google()
         mavenCentral()
         gradlePluginPortal()
@@ -13,9 +9,7 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
     repositories {
-        // 添加阿里云镜像
-        maven { url = uri("https://maven.aliyun.com/repository/public") }
-        maven { url = uri("https://maven.aliyun.com/repository/google") }
+        // 直接使用官方源，通过代理访问
         google()
         mavenCentral()
     }

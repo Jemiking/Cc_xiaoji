@@ -19,7 +19,7 @@ import com.ccxiaoji.feature.ledger.presentation.screen.creditcard.CreditCardBill
 import com.ccxiaoji.feature.ledger.presentation.screen.creditcard.CreditCardScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.creditcard.CreditCardSettingsScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.ledger.LedgerScreen
-import com.ccxiaoji.feature.ledger.presentation.screen.ledger.TransactionDetailScreen
+import com.ccxiaoji.feature.ledger.presentation.screen.transaction.TransactionDetailScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.recurring.RecurringTransactionScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.savings.SavingsGoalDetailScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.savings.SavingsGoalScreen
@@ -781,8 +781,14 @@ class LedgerApiImpl @Inject constructor(
     }
     
     @Composable
-    override fun getBudgetScreen(onNavigateBack: () -> Unit) {
-        BudgetScreen(onNavigateBack = onNavigateBack)
+    override fun getBudgetScreen(
+        onNavigateBack: () -> Unit,
+        onNavigateToAddEditBudget: (categoryId: String?) -> Unit
+    ) {
+        BudgetScreen(
+            onNavigateBack = onNavigateBack,
+            onNavigateToAddEditBudget = onNavigateToAddEditBudget
+        )
     }
     
     @Composable
@@ -802,7 +808,12 @@ class LedgerApiImpl @Inject constructor(
         onNavigateToAccount: () -> Unit,
         onNavigateToBudget: () -> Unit,
         onNavigateToDataExport: () -> Unit,
-        onNavigateToRecurring: () -> Unit
+        onNavigateToRecurring: () -> Unit,
+        onNavigateToCurrencySelection: () -> Unit,
+        onNavigateToAccountSelection: () -> Unit,
+        onNavigateToReminderSettings: () -> Unit,
+        onNavigateToHomeDisplaySettings: () -> Unit,
+        navController: NavHostController?
     ) {
         LedgerSettingsScreen(
             onNavigateBack = onNavigateBack,
@@ -810,28 +821,46 @@ class LedgerApiImpl @Inject constructor(
             onNavigateToAccountManagement = onNavigateToAccount,
             onNavigateToBudgetManagement = onNavigateToBudget,
             onNavigateToDataExport = onNavigateToDataExport,
-            onNavigateToRecurringTransactions = onNavigateToRecurring
+            onNavigateToRecurringTransactions = onNavigateToRecurring,
+            onNavigateToCurrencySelection = onNavigateToCurrencySelection,
+            onNavigateToAccountSelection = onNavigateToAccountSelection,
+            onNavigateToReminderSettings = onNavigateToReminderSettings,
+            onNavigateToHomeDisplaySettings = onNavigateToHomeDisplaySettings,
+            navController = navController
         )
     }
     
     @Composable
-    override fun getRecurringTransactionScreen(onNavigateBack: () -> Unit) {
-        RecurringTransactionScreen(onNavigateBack = onNavigateBack)
+    override fun getRecurringTransactionScreen(onNavigateBack: () -> Unit, onNavigateToAddEdit: (String?) -> Unit) {
+        RecurringTransactionScreen(
+            onNavigateBack = onNavigateBack,
+            onNavigateToAddEdit = onNavigateToAddEdit
+        )
     }
     
     @Composable
-    override fun getSavingsGoalScreen(onNavigateBack: () -> Unit, onNavigateToDetail: (Long) -> Unit) {
+    override fun getSavingsGoalScreen(onNavigateBack: () -> Unit, onNavigateToDetail: (Long) -> Unit, onNavigateToAddGoal: () -> Unit) {
         SavingsGoalScreen(
             onNavigateBack = onNavigateBack,
-            onNavigateToDetail = onNavigateToDetail
+            onNavigateToDetail = onNavigateToDetail,
+            onNavigateToAddGoal = onNavigateToAddGoal
         )
     }
     
     @Composable
-    override fun getSavingsGoalDetailScreen(goalId: Long, onNavigateBack: () -> Unit) {
+    override fun getSavingsGoalDetailScreen(
+        goalId: Long,
+        navController: NavHostController,
+        onNavigateBack: () -> Unit,
+        onNavigateToEditGoal: (Long) -> Unit,
+        onNavigateToContribution: (Long) -> Unit
+    ) {
         SavingsGoalDetailScreen(
             goalId = goalId,
-            onNavigateBack = onNavigateBack
+            navController = navController,
+            onNavigateBack = onNavigateBack,
+            onNavigateToEditGoal = onNavigateToEditGoal,
+            onNavigateToContribution = onNavigateToContribution
         )
     }
     

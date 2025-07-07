@@ -2,13 +2,18 @@ package com.ccxiaoji.app.presentation.ui.profile.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ccxiaoji.ui.components.ModernCard
+import com.ccxiaoji.ui.theme.DesignTokens
 
 @Composable
 fun SettingsSection(
@@ -19,13 +24,15 @@ fun SettingsSection(
         modifier = Modifier.fillMaxWidth()
     ) {
         // Section title
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-        )
+        if (title.isNotEmpty()) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(horizontal = DesignTokens.Spacing.medium, vertical = DesignTokens.Spacing.small)
+            )
+        }
         
         // Items
         items.forEach { item ->
@@ -40,7 +47,6 @@ fun SettingsSection(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsListItem(
     icon: ImageVector,
@@ -49,35 +55,64 @@ fun SettingsListItem(
     value: String? = null,
     onClick: () -> Unit
 ) {
-    ListItem(
-        headlineContent = { 
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodyLarge
-            )
-        },
-        supportingContent = subtitle?.let {
-            { Text(text = it, style = MaterialTheme.typography.bodyMedium) }
-        },
-        leadingContent = {
+    ModernCard(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = DesignTokens.Spacing.medium, vertical = DesignTokens.Spacing.xs),
+        backgroundColor = MaterialTheme.colorScheme.surface,
+        borderColor = Color.Transparent,
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = DesignTokens.Spacing.medium,
+                    vertical = DesignTokens.Spacing.medium
+                ),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(24.dp)
             )
-        },
-        trailingContent = value?.let {
-            {
+            
+            Spacer(modifier = Modifier.width(DesignTokens.Spacing.medium))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                subtitle?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
+            }
+            
+            value?.let {
                 Text(
                     text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                    modifier = Modifier.padding(horizontal = DesignTokens.Spacing.small)
                 )
             }
-        },
-        modifier = Modifier.clickable { onClick() }
-    )
+            
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
 }
 
 data class SettingsItem(

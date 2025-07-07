@@ -139,6 +139,27 @@ class PlanRepositoryImpl @Inject constructor(
         }
     }
     
+    override suspend fun getMilestoneById(milestoneId: String): Milestone? {
+        return milestoneDao.getMilestoneById(milestoneId)?.let { milestoneEntity ->
+            Milestone(
+                id = milestoneEntity.id,
+                planId = milestoneEntity.planId,
+                title = milestoneEntity.title,
+                description = milestoneEntity.description,
+                targetDate = Instant.fromEpochMilliseconds(milestoneEntity.targetDate)
+                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                    .date,
+                isCompleted = milestoneEntity.isCompleted,
+                completedDate = milestoneEntity.completedDate?.let {
+                    Instant.fromEpochMilliseconds(it)
+                        .toLocalDateTime(TimeZone.currentSystemDefault())
+                        .date
+                },
+                orderIndex = milestoneEntity.orderIndex
+            )
+        }
+    }
+    
     /**
      * 构建计划树形结构 - 优化版本
      * 使用TreeStructureOptimizer提高性能

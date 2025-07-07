@@ -1,4 +1,4 @@
-package com.ccxiaoji.feature.plan.presentation.screen
+package com.ccxiaoji.feature.plan.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel

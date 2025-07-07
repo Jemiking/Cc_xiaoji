@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ccxiaoji.ui.components.ModernCard
+import com.ccxiaoji.ui.theme.DesignTokens
 
 @Composable
 fun PersonalInfoCard(
@@ -22,35 +24,37 @@ fun PersonalInfoCard(
     signature: String?,
     onEditProfile: () -> Unit
 ) {
-    Card(
+    ModernCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .padding(horizontal = DesignTokens.Spacing.medium, vertical = DesignTokens.Spacing.small),
+        backgroundColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.05f),
+        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(DesignTokens.Spacing.large),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Avatar
             Box(
                 modifier = Modifier
-                    .size(72.dp)
+                    .size(64.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = "头像",
-                    modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    modifier = Modifier.size(32.dp),
+                    tint = MaterialTheme.colorScheme.primary
                 )
             }
             
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.width(DesignTokens.Spacing.medium))
             
             // User info
             Column(
@@ -59,7 +63,7 @@ fun PersonalInfoCard(
                 Text(
                     text = username,
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Medium
                 )
                 Text(
                     text = email,
@@ -70,8 +74,8 @@ fun PersonalInfoCard(
                     Text(
                         text = it,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.padding(top = DesignTokens.Spacing.xs)
                     )
                 }
             }

@@ -52,7 +52,7 @@ class LedgerSettingsViewModel @Inject constructor(
     /**
      * 加载设置
      */
-    private fun loadSettings() {
+    fun loadSettings() {
         viewModelScope.launch {
             dataStore.data.map { preferences ->
                 LedgerSettings(

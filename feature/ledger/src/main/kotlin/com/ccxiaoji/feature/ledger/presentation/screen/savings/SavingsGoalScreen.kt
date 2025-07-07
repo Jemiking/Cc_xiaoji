@@ -4,62 +4,90 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.ccxiaoji.feature.ledger.presentation.component.*
+import com.ccxiaoji.feature.ledger.presentation.screen.savings.components.*
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.SavingsGoalViewModel
+import com.ccxiaoji.ui.components.FlatExtendedFAB
+import com.ccxiaoji.ui.theme.DesignTokens
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SavingsGoalScreen(
     onNavigateBack: () -> Unit,
     onNavigateToDetail: (Long) -> Unit,
+    onNavigateToAddGoal: () -> Unit,
     viewModel: SavingsGoalViewModel = hiltViewModel()
 ) {
     val goals by viewModel.activeSavingsGoals.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     
-    var showAddDialog by remember { mutableStateOf(false) }
     
-    LaunchedEffect(uiState.message, uiState.error) {
-        if (uiState.message != null || uiState.error != null) {
-            kotlinx.coroutines.delay(3000)
-            viewModel.clearMessage()
+    // 处理消息显示
+    LaunchedEffect(uiState.message) {
+        uiState.message?.let { message ->
+            scope.launch {
+                snackbarHostState.showSnackbar(message)
+                viewModel.clearMessage()
+            }
+        }
+    }
+    
+    LaunchedEffect(uiState.error) {
+        uiState.error?.let { error ->
+            scope.launch {
+                snackbarHostState.showSnackbar(error)
+                viewModel.clearMessage()
+            }
         }
     }
     
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("储蓄目标") },
+                title = { 
+                    Text(
+                        text = "储蓄目标",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack, 
+                            contentDescription = "返回",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 },
-                actions = {
-                    IconButton(onClick = { showAddDialog = true }) {
-                        Icon(Icons.Default.Add, contentDescription = "添加目标")
-                    }
-                }
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         },
         floatingActionButton = {
             if (goals.isNotEmpty()) {
-                ExtendedFloatingActionButton(
-                    onClick = { showAddDialog = true },
+                FlatExtendedFAB(
+                    text = { Text("新建目标") },
                     icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text("新建目标") }
+                    onClick = onNavigateToAddGoal,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 )
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Box(
             modifier = Modifier
@@ -67,197 +95,41 @@ fun SavingsGoalScreen(
                 .padding(paddingValues)
         ) {
             if (goals.isEmpty()) {
-                EmptyState(
-                    onAddClick = { showAddDialog = true }
+                EmptySavingsState(
+                    onAddClick = onNavigateToAddGoal
                 )
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    contentPadding = PaddingValues(DesignTokens.Spacing.medium),
+                    verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.medium)
                 ) {
-                    // Summary card
+                    // 储蓄概览卡片
                     item {
-                        SummaryCard(goals = goals)
+                        SavingsSummaryCard(goals = goals)
                     }
                     
-                    // Goals list
+                    // 目标列表
                     items(goals) { goal ->
-                        SavingsGoalCard(
+                        SavingsGoalItem(
                             goal = goal,
                             onClick = { onNavigateToDetail(goal.id) }
                         )
                     }
                     
-                    // Add spacing for FAB
+                    // 为FAB添加间距
                     item {
                         Spacer(modifier = Modifier.height(72.dp))
                     }
                 }
             }
             
-            // Show loading or message
+            // 加载指示器
             if (uiState.isLoading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.align(Alignment.Center)
+                    modifier = Modifier.align(Alignment.Center),
+                    color = MaterialTheme.colorScheme.primary
                 )
-            }
-            
-            // Show snackbar for messages
-            uiState.message?.let { message ->
-                LaunchedEffect(message) {
-                    // In a real app, you'd show a snackbar here
-                    // For now, we'll just clear the message after a delay
-                    kotlinx.coroutines.delay(3000)
-                    viewModel.clearMessage()
-                }
-            }
-            
-            uiState.error?.let { error ->
-                LaunchedEffect(error) {
-                    // In a real app, you'd show a snackbar here
-                    // For now, we'll just clear the message after a delay
-                    kotlinx.coroutines.delay(3000)
-                    viewModel.clearMessage()
-                }
-            }
-        }
-    }
-    
-    if (showAddDialog) {
-        SavingsGoalDialog(
-            onDismiss = { showAddDialog = false },
-            onConfirm = { name, targetAmount, targetDate, description, color, iconName ->
-                viewModel.createSavingsGoal(
-                    name = name,
-                    targetAmount = targetAmount,
-                    targetDate = targetDate,
-                    description = description,
-                    color = color,
-                    iconName = iconName
-                )
-                showAddDialog = false
-            }
-        )
-    }
-}
-
-@Composable
-private fun EmptyState(
-    onAddClick: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Default.Savings,
-            contentDescription = null,
-            modifier = Modifier.size(120.dp),
-            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-        )
-        
-        Spacer(modifier = Modifier.height(24.dp))
-        
-        Text(
-            text = "还没有储蓄目标",
-            style = MaterialTheme.typography.headlineSmall,
-            textAlign = TextAlign.Center
-        )
-        
-        Text(
-            text = "创建您的第一个储蓄目标\n开始积累财富吧",
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-        
-        Spacer(modifier = Modifier.height(32.dp))
-        
-        Button(
-            onClick = onAddClick,
-            modifier = Modifier.fillMaxWidth(0.6f)
-        ) {
-            Icon(Icons.Default.Add, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("创建储蓄目标")
-        }
-    }
-}
-
-@Composable
-private fun SummaryCard(goals: List<com.ccxiaoji.feature.ledger.domain.model.SavingsGoal>) {
-    val totalTarget = goals.sumOf { it.targetAmount }
-    val totalSaved = goals.sumOf { it.currentAmount }
-    val overallProgress = if (totalTarget > 0) (totalSaved / totalTarget).toFloat() else 0f
-    val activeGoals = goals.count { it.isActive && !it.isCompleted }
-    val completedGoals = goals.count { it.isCompleted }
-    
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "储蓄概览",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "¥${String.format("%,.2f", totalSaved)}",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Text(
-                        text = "已储蓄",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                    )
-                }
-                
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "${(overallProgress * 100).toInt()}%",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Text(
-                        text = "总进度",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                    )
-                }
-                
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "$activeGoals",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Text(
-                        text = "进行中",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                    )
-                }
             }
         }
     }

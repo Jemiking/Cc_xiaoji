@@ -1,4 +1,4 @@
-package com.ccxiaoji.feature.plan.presentation.plan.list
+package com.ccxiaoji.feature.plan.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -155,6 +155,16 @@ class PlanListViewModel @Inject constructor(
      */
     fun updateFilter(filter: PlanFilter) {
         _uiState.value = _uiState.value.copy(filter = filter)
+        // 清除缓存，强制重新搜索
+        lastSearchParams = null
+        cachedPlans = null
+        performSearch()
+    }
+    
+    /**
+     * 使用当前筛选条件刷新
+     */
+    fun refreshWithCurrentFilter() {
         // 清除缓存，强制重新搜索
         lastSearchParams = null
         cachedPlans = null

@@ -71,4 +71,9 @@ interface HabitRepository {
      */
     suspend fun deleteHabit(habitId: String): BaseResult<Unit>
     
+    /**
+     * 根据ID获取习惯
+     */
+    suspend fun getHabitById(habitId: String): HabitWithStreak?
+    
 }

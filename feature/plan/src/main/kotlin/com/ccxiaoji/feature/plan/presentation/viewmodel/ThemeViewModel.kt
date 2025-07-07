@@ -1,8 +1,9 @@
-package com.ccxiaoji.feature.plan.presentation.theme
+package com.ccxiaoji.feature.plan.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.feature.plan.data.local.preferences.ThemePreferences
+import com.ccxiaoji.feature.plan.domain.model.ThemeMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow

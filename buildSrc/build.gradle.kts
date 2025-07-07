@@ -3,8 +3,10 @@ plugins {
 }
 
 repositories {
+    // 直接使用官方源，通过代理访问
     google()
     mavenCentral()
+    gradlePluginPortal()
 }
 
 dependencies {

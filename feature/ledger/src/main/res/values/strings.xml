@@ -175,6 +175,10 @@
     <string name="add_contribution">添加存款</string>
     <string name="contribution_amount">存款金额</string>
     <string name="goal_achieved">目标已达成</string>
+    <string name="delete_savings_goal">删除储蓄目标</string>
+    <string name="delete_goal_confirm_message">确定要删除「%s」吗？此操作不可恢复。</string>
+    <string name="delete_goal_warning">此操作无法撤销！</string>
+    <string name="delete_goal_contributions_warning">所有相关的存款记录也将被删除。</string>
     
     <!-- Statistics Screen -->
     <string name="income_expense_trend">收支趋势</string>
@@ -196,6 +200,7 @@
     <string name="batch_change_account">批量修改账户</string>
     <string name="batch_delete_confirm_title">确认删除</string>
     <string name="batch_delete_confirm_message">确定要删除选中的 %d 条交易记录吗？此操作无法撤销。</string>
+    <string name="batch_delete_warning">此操作无法撤销！</string>
     <string name="batch_change_category_message">将 %d 条交易记录的分类修改为：</string>
     <string name="batch_change_account_message">将 %d 条交易记录的账户修改为：</string>
     <string name="balance_with_amount">余额：¥%.2f</string>
@@ -251,6 +256,12 @@
     <string name="account_delete_message">确定要删除账户 \"%s\" 吗？删除后该账户的所有交易记录将被保留但无法恢复账户。</string>
     <string name="account_current_balance">当前余额</string>
     <string name="account_add">添加</string>
+    <string name="from_account">从账户</string>
+    <string name="to_account">到账户</string>
+    <string name="transfer_amount">转账金额</string>
+    <string name="available_balance">可用余额</string>
+    <string name="note_optional">备注（可选）</string>
+    <string name="transfer">转账</string>
     
     <!-- Category Management Screen -->
     <string name="category_management_title">分类管理</string>

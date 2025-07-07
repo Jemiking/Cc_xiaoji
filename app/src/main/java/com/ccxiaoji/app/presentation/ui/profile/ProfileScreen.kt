@@ -15,10 +15,9 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.ccxiaoji.app.R
 import com.ccxiaoji.app.presentation.ui.navigation.*
-import com.ccxiaoji.app.presentation.ui.profile.components.PersonalInfoCard
-import com.ccxiaoji.app.presentation.ui.profile.components.SettingsSection
-import com.ccxiaoji.app.presentation.ui.profile.components.SettingsItem
+import com.ccxiaoji.app.presentation.ui.profile.components.*
 import com.ccxiaoji.app.presentation.viewmodel.ProfileViewModel
+import com.ccxiaoji.ui.theme.DesignTokens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,7 +26,26 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var showLogoutDialog by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    
+    // 处理退出登录确认返回结果
+    navController.currentBackStackEntry?.savedStateHandle?.let { savedStateHandle ->
+        val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+        androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+            val observer = androidx.lifecycle.Observer<Boolean> { confirmed ->
+                confirmed?.let {
+                    if (it) {
+                        viewModel.logout()
+                    }
+                    savedStateHandle.remove<Boolean>("logout_confirmed")
+                }
+            }
+            savedStateHandle.getLiveData<Boolean>("logout_confirmed").observe(lifecycleOwner, observer)
+            onDispose {
+                savedStateHandle.getLiveData<Boolean>("logout_confirmed").removeObserver(observer)
+            }
+        }
+    }
     
     Scaffold(
         topBar = {
@@ -37,7 +55,11 @@ fun ProfileScreen(
                         text = "我的",
                         style = MaterialTheme.typography.headlineSmall
                     )
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surface
+                )
             )
         }
     ) { paddingValues ->
@@ -55,32 +77,46 @@ fun ProfileScreen(
                 onEditProfile = { /* TODO: Navigate to edit profile */ }
             )
             
-            // Module Settings
-            SettingsSection(
-                title = "模块设置",
-                items = listOf(
-                    SettingsItem(
-                        icon = Icons.Default.AccountBalance,
-                        title = "记账设置",
-                        subtitle = "默认账户、记账提醒、快速记账",
-                        onClick = { navController.navigate(LedgerSettingsRoute.route) }
-                    ),
-                    SettingsItem(
-                        icon = Icons.Default.Task,
-                        title = "待办设置",
-                        subtitle = "提醒设置、默认优先级",
-                        onClick = { /* TODO: Navigate to todo settings */ }
-                    ),
-                    SettingsItem(
-                        icon = Icons.Default.FitnessCenter,
-                        title = "习惯设置",
-                        subtitle = "打卡提醒、目标设置",
-                        onClick = { /* TODO: Navigate to habit settings */ }
-                    )
-                )
+            // Search bar
+            SettingsSearchBar(
+                value = searchQuery,
+                onValueChange = { searchQuery = it }
             )
             
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            // 根据搜索过滤设置项
+            val filteredModuleSettings = listOf(
+                SettingsItem(
+                    icon = Icons.Default.AccountBalance,
+                    title = "记账设置",
+                    subtitle = "默认账户、记账提醒、快速记账",
+                    onClick = { navController.navigate(LedgerSettingsRoute.route) }
+                ),
+                SettingsItem(
+                    icon = Icons.Default.Task,
+                    title = "待办设置",
+                    subtitle = "提醒设置、默认优先级",
+                    onClick = { /* TODO: Navigate to todo settings */ }
+                ),
+                SettingsItem(
+                    icon = Icons.Default.FitnessCenter,
+                    title = "习惯设置",
+                    subtitle = "打卡提醒、目标设置",
+                    onClick = { /* TODO: Navigate to habit settings */ }
+                )
+            ).filter { item ->
+                searchQuery.isEmpty() || 
+                item.title.contains(searchQuery, ignoreCase = true) ||
+                (item.subtitle?.contains(searchQuery, ignoreCase = true) ?: false)
+            }
+            
+            if (filteredModuleSettings.isNotEmpty()) {
+                SettingsSection(
+                    title = "模块设置",
+                    items = filteredModuleSettings
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
             
             // Data Management
             SettingsSection(
@@ -133,7 +169,7 @@ fun ProfileScreen(
                 )
             )
             
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
             
             // App Settings
             SettingsSection(
@@ -167,7 +203,7 @@ fun ProfileScreen(
                 )
             )
             
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
             
             // Security & Privacy
             SettingsSection(
@@ -195,7 +231,7 @@ fun ProfileScreen(
                 )
             )
             
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
             
             // Other
             SettingsSection(
@@ -225,7 +261,7 @@ fun ProfileScreen(
                 )
             )
             
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
             
             // Logout
             SettingsSection(
@@ -234,36 +270,12 @@ fun ProfileScreen(
                     SettingsItem(
                         icon = Icons.Default.Logout,
                         title = "退出登录",
-                        onClick = { showLogoutDialog = true }
+                        onClick = { navController.navigate(LogoutConfirmationRoute.route) }
                     )
                 )
             )
             
             Spacer(modifier = Modifier.height(16.dp))
         }
-    }
-    
-    // Logout confirmation dialog
-    if (showLogoutDialog) {
-        AlertDialog(
-            onDismissRequest = { showLogoutDialog = false },
-            title = { Text("确认退出") },
-            text = { Text("确定要退出登录吗？") },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.logout()
-                        showLogoutDialog = false
-                    }
-                ) {
-                    Text("确定", color = MaterialTheme.colorScheme.error)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("取消")
-                }
-            }
-        )
     }
 }

@@ -2,19 +2,23 @@ package com.ccxiaoji.app.presentation.ui.profile
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ccxiaoji.app.presentation.ui.profile.notification.NotificationSetting
+import com.ccxiaoji.app.presentation.ui.profile.notification.components.*
 import com.ccxiaoji.app.presentation.viewmodel.NotificationSettingsViewModel
+import com.ccxiaoji.ui.theme.DesignTokens
 
+/**
+ * 通知设置界面 - 扁平化设计
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationSettingsScreen(
@@ -29,9 +33,17 @@ fun NotificationSettingsScreen(
                 title = { Text("通知设置") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack, 
+                            contentDescription = "返回"
+                        )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
+                )
             )
         }
     ) { paddingValues ->
@@ -42,40 +54,10 @@ fun NotificationSettingsScreen(
                 .verticalScroll(rememberScrollState())
         ) {
             // 主开关
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "启用通知",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = "关闭后将不会收到任何通知",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Switch(
-                        checked = uiState.notificationsEnabled,
-                        onCheckedChange = { viewModel.setNotificationsEnabled(it) }
-                    )
-                }
-            }
+            MainNotificationCard(
+                notificationsEnabled = uiState.notificationsEnabled,
+                onToggle = { viewModel.setNotificationsEnabled(it) }
+            )
             
             if (uiState.notificationsEnabled) {
                 // 任务提醒
@@ -169,114 +151,7 @@ fun NotificationSettingsScreen(
                 )
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
         }
     }
 }
-
-@Composable
-private fun NotificationSection(
-    title: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    settings: List<NotificationSetting>
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            settings.forEachIndexed { index, setting ->
-                if (index > 0) {
-                    Divider(modifier = Modifier.padding(vertical = 8.dp))
-                }
-                
-                NotificationSettingItem(setting)
-            }
-        }
-    }
-}
-
-@Composable
-private fun NotificationSettingItem(setting: NotificationSetting) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = setting.title,
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (setting.enabled) {
-                    MaterialTheme.colorScheme.onSurface
-                } else {
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                }
-            )
-            setting.description?.let { desc ->
-                Text(
-                    text = desc,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = if (setting.enabled) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    }
-                )
-            }
-        }
-        
-        when {
-            setting.onToggle != null -> {
-                Switch(
-                    checked = setting.enabled,
-                    onCheckedChange = setting.onToggle,
-                    enabled = true
-                )
-            }
-            setting.onClick != null -> {
-                TextButton(
-                    onClick = setting.onClick,
-                    enabled = setting.enabled
-                ) {
-                    Text(setting.value ?: "设置")
-                }
-            }
-        }
-    }
-}
-
-data class NotificationSetting(
-    val title: String,
-    val description: String? = null,
-    val value: String? = null,
-    val enabled: Boolean,
-    val onToggle: ((Boolean) -> Unit)? = null,
-    val onClick: (() -> Unit)? = null
-)

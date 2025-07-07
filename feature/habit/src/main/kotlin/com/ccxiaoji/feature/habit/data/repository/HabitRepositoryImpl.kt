@@ -229,6 +229,31 @@ class HabitRepositoryImpl @Inject constructor(
         
         // TODO: Log the change for sync through ChangeLogApi
     }
+    
+    override suspend fun getHabitById(habitId: String): HabitWithStreak? {
+        val habitEntity = habitDao.getHabitById(habitId) ?: return null
+        val habit = habitEntity.toDomainModel()
+        
+        val now = Clock.System.now()
+        val today = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val todayMillis = today.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        
+        // 计算当前连续天数
+        val currentStreak = habitDao.getCurrentStreak(habitId, todayMillis)
+        
+        // 计算最长连续天数
+        val longestStreak = habitDao.getLongestStreak(habitId, todayMillis) ?: 0
+        
+        // 计算总完成天数
+        val totalDays = habitDao.getTotalDaysCompleted(habitId, todayMillis)
+        
+        return HabitWithStreak(
+            habit = habit,
+            currentStreak = currentStreak,
+            completedCount = totalDays,
+            longestStreak = longestStreak
+        )
+    }
 }
 
 private fun HabitEntity.toDomainModel(): Habit {

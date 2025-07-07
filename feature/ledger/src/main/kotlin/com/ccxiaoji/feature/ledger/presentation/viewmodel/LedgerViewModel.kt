@@ -114,6 +114,7 @@ class LedgerViewModel @Inject constructor(
             addTransactionUseCase(amountCents, categoryId, note, finalAccountId)
             checkBudget(categoryId, onBudgetAlert)
             loadMonthlySummary()
+            loadTransactions()  // 刷新交易列表
         }
     }
     

@@ -6,8 +6,10 @@ import androidx.work.Configuration
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.WorkManager
 import com.ccxiaoji.feature.ledger.data.local.dao.AccountDao
+import com.ccxiaoji.feature.ledger.data.local.dao.CategoryDao
 import com.ccxiaoji.shared.user.data.local.dao.UserDao
 import com.ccxiaoji.feature.ledger.data.local.entity.AccountEntity
+import com.ccxiaoji.feature.ledger.data.local.entity.CategoryEntity
 import com.ccxiaoji.common.model.SyncStatus
 import com.ccxiaoji.shared.user.data.local.entity.UserEntity
 import com.ccxiaoji.feature.ledger.data.repository.CategoryRepositoryImpl
@@ -18,6 +20,7 @@ import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import javax.inject.Inject
 import android.util.Log
 
@@ -36,6 +39,9 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
     
     @Inject
     lateinit var accountDao: AccountDao
+    
+    @Inject
+    lateinit var categoryDao: CategoryDao
     
     @Inject
     lateinit var creditCardReminderManager: CreditCardReminderManager
@@ -93,8 +99,14 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
                     }
                     
                     // 初始化默认分类
-                    // TODO: 移到适当的初始化位置，例如在首次使用时初始化
-                    Log.d(TAG, "Default categories initialization skipped")
+                    val existingCategories = categoryDao.getCategoriesByUser(defaultUserId).first()
+                    if (existingCategories.isEmpty()) {
+                        // 创建默认分类
+                        createDefaultCategories(categoryDao, defaultUserId)
+                        Log.d(TAG, "Default categories created")
+                    } else {
+                        Log.d(TAG, "Categories already exist: ${existingCategories.size}")
+                    }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error during database initialization", e)
                 }
@@ -134,4 +146,209 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
             .build()
+            
+    private suspend fun createDefaultCategories(categoryDao: CategoryDao, userId: String) {
+        val timestamp = System.currentTimeMillis()
+        val defaultCategories = listOf(
+            // 支出分类（10个）
+            CategoryEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                userId = userId,
+                name = "餐饮",
+                icon = "🍜",
+                color = "#FF5252",
+                type = "EXPENSE",
+                parentId = null,
+                displayOrder = 0,
+                isSystem = true,
+                createdAt = timestamp,
+                updatedAt = timestamp
+            ),
+            CategoryEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                userId = userId,
+                name = "交通",
+                icon = "🚗",
+                color = "#448AFF",
+                type = "EXPENSE",
+                parentId = null,
+                displayOrder = 1,
+                isSystem = true,
+                createdAt = timestamp,
+                updatedAt = timestamp
+            ),
+            CategoryEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                userId = userId,
+                name = "购物",
+                icon = "🛍️",
+                color = "#FF9800",
+                type = "EXPENSE",
+                parentId = null,
+                displayOrder = 2,
+                isSystem = true,
+                createdAt = timestamp,
+                updatedAt = timestamp
+            ),
+            CategoryEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                userId = userId,
+                name = "娱乐",
+                icon = "🎮",
+                color = "#9C27B0",
+                type = "EXPENSE",
+                parentId = null,
+                displayOrder = 3,
+                isSystem = true,
+                createdAt = timestamp,
+                updatedAt = timestamp
+            ),
+            CategoryEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                userId = userId,
+                name = "医疗",
+                icon = "🏥",
+                color = "#00BCD4",
+                type = "EXPENSE",
+                parentId = null,
+                displayOrder = 4,
+                isSystem = true,
+                createdAt = timestamp,
+                updatedAt = timestamp
+            ),
+            CategoryEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                userId = userId,
+                name = "教育",
+                icon = "📚",
+                color = "#FFEB3B",
+                type = "EXPENSE",
+                parentId = null,
+                displayOrder = 5,
+                isSystem = true,
+                createdAt = timestamp,
+                updatedAt = timestamp
+            ),
+            CategoryEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                userId = userId,
+                name = "居住",
+                icon = "🏠",
+                color = "#795548",
+                type = "EXPENSE",
+                parentId = null,
+                displayOrder = 6,
+                isSystem = true,
+                createdAt = timestamp,
+                updatedAt = timestamp
+            ),
+            CategoryEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                userId = userId,
+                name = "水电煤",
+                icon = "💡",
+                color = "#009688",
+                type = "EXPENSE",
+                parentId = null,
+                displayOrder = 7,
+                isSystem = true,
+                createdAt = timestamp,
+                updatedAt = timestamp
+            ),
+            CategoryEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                userId = userId,
+                name = "通讯",
+                icon = "📱",
+                color = "#673AB7",
+                type = "EXPENSE",
+                parentId = null,
+                displayOrder = 8,
+                isSystem = true,
+                createdAt = timestamp,
+                updatedAt = timestamp
+            ),
+            CategoryEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                userId = userId,
+                name = "其他",
+                icon = "📝",
+                color = "#607D8B",
+                type = "EXPENSE",
+                parentId = null,
+                displayOrder = 9,
+                isSystem = true,
+                createdAt = timestamp,
+                updatedAt = timestamp
+            ),
+            // 收入分类（5个）
+            CategoryEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                userId = userId,
+                name = "工资",
+                icon = "💰",
+                color = "#4CAF50",
+                type = "INCOME",
+                parentId = null,
+                displayOrder = 0,
+                isSystem = true,
+                createdAt = timestamp,
+                updatedAt = timestamp
+            ),
+            CategoryEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                userId = userId,
+                name = "奖金",
+                icon = "🎁",
+                color = "#8BC34A",
+                type = "INCOME",
+                parentId = null,
+                displayOrder = 1,
+                isSystem = true,
+                createdAt = timestamp,
+                updatedAt = timestamp
+            ),
+            CategoryEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                userId = userId,
+                name = "投资",
+                icon = "📈",
+                color = "#FFC107",
+                type = "INCOME",
+                parentId = null,
+                displayOrder = 2,
+                isSystem = true,
+                createdAt = timestamp,
+                updatedAt = timestamp
+            ),
+            CategoryEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                userId = userId,
+                name = "兼职",
+                icon = "💼",
+                color = "#00BCD4",
+                type = "INCOME",
+                parentId = null,
+                displayOrder = 3,
+                isSystem = true,
+                createdAt = timestamp,
+                updatedAt = timestamp
+            ),
+            CategoryEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                userId = userId,
+                name = "其他",
+                icon = "💵",
+                color = "#9E9E9E",
+                type = "INCOME",
+                parentId = null,
+                displayOrder = 4,
+                isSystem = true,
+                createdAt = timestamp,
+                updatedAt = timestamp
+            )
+        )
+        
+        categoryDao.insertCategories(defaultCategories)
+    }
 }

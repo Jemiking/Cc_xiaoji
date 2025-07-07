@@ -1,6 +1,7 @@
 package com.ccxiaoji.feature.plan.presentation.theme
 
 import android.app.Activity
+import com.ccxiaoji.feature.plan.domain.model.ThemeMode
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -102,13 +103,6 @@ private val ExtendedLightColors = ExtendedColors(
     divider = DividerLight,
     shadow = ShadowLight
 )
-
-// 主题模式枚举
-enum class ThemeMode {
-    SYSTEM,
-    LIGHT,
-    DARK
-}
 
 @Composable
 fun PlanTheme(

@@ -1,4 +1,4 @@
-package com.ccxiaoji.feature.plan.presentation.plan.list
+package com.ccxiaoji.feature.plan.presentation.screen
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -10,33 +10,25 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -45,21 +37,29 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Observer
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.ccxiaoji.feature.plan.presentation.plan.components.PlanTreeItem
+import com.ccxiaoji.feature.plan.presentation.components.OptimizedPlanTreeItem
+import com.ccxiaoji.feature.plan.presentation.components.ExpandableFAB
+import com.ccxiaoji.feature.plan.presentation.components.EmptyPlanState
 import com.ccxiaoji.feature.plan.presentation.components.SearchBar
-import com.ccxiaoji.feature.plan.presentation.components.PlanFilterDialog
 import com.ccxiaoji.feature.plan.presentation.components.PlanSortMenu
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.ui.text.style.TextAlign
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
+import com.ccxiaoji.ui.theme.DesignTokens
+import com.ccxiaoji.ui.components.ModernCard
+import com.ccxiaoji.feature.plan.presentation.viewmodel.PlanListViewModel
+import com.ccxiaoji.feature.plan.presentation.viewmodel.PerformanceTestState
+import com.ccxiaoji.feature.plan.domain.model.PlanFilter
+import com.ccxiaoji.feature.plan.domain.model.PlanStatus
 
 /**
- * 计划列表页面
+ * 计划列表页面 - 扁平化设计优化版
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,13 +69,14 @@ fun PlanListScreen(
     onNavigateToTemplates: () -> Unit,
     onNavigateToAnalysis: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToFilter: () -> Unit = {},
     modifier: Modifier = Modifier,
-    viewModel: PlanListViewModel = hiltViewModel()
+    viewModel: PlanListViewModel = hiltViewModel(),
+    navController: androidx.navigation.NavController? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     var fabExpanded by remember { mutableStateOf(false) }
-    var showFilterDialog by remember { mutableStateOf(false) }
     var showSortMenu by remember { mutableStateOf(false) }
     
     // 使用derivedStateOf优化计划列表的不可变性
@@ -100,12 +101,22 @@ fun PlanListScreen(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("CC小记计划书") },
+                title = { 
+                    Text(
+                        text = "计划书",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                ),
                 actions = {
                     IconButton(onClick = onNavigateToAnalysis) {
                         Icon(
                             imageVector = Icons.Default.DateRange,
-                            contentDescription = "进度分析"
+                            contentDescription = "进度分析",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     
@@ -113,7 +124,8 @@ fun PlanListScreen(
                     IconButton(onClick = { showMenu = true }) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
-                            contentDescription = "更多选项"
+                            contentDescription = "更多选项",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     
@@ -133,63 +145,12 @@ fun PlanListScreen(
             )
         },
         floatingActionButton = {
-            Column(
-                horizontalAlignment = Alignment.End
-            ) {
-                // 子菜单项
-                AnimatedVisibility(visible = fabExpanded) {
-                    Column(
-                        horizontalAlignment = Alignment.End
-                    ) {
-                        // 从模板创建
-                        ExtendedFloatingActionButton(
-                            onClick = {
-                                fabExpanded = false
-                                onNavigateToTemplates()
-                            },
-                            modifier = Modifier.padding(bottom = 8.dp),
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.List,
-                                contentDescription = "从模板创建",
-                                modifier = Modifier.padding(end = 8.dp)
-                            )
-                            Text("从模板创建")
-                        }
-                        
-                        // 创建新计划
-                        ExtendedFloatingActionButton(
-                            onClick = {
-                                fabExpanded = false
-                                onNavigateToCreatePlan(null)
-                            },
-                            modifier = Modifier.padding(bottom = 16.dp),
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = "创建新计划",
-                                modifier = Modifier.padding(end = 8.dp)
-                            )
-                            Text("创建新计划")
-                        }
-                    }
-                }
-                
-                // 主FAB按钮
-                FloatingActionButton(
-                    onClick = { fabExpanded = !fabExpanded },
-                    containerColor = MaterialTheme.colorScheme.primary
-                ) {
-                    Icon(
-                        imageVector = if (fabExpanded) Icons.Default.Close else Icons.Default.Add,
-                        contentDescription = if (fabExpanded) "关闭" else "创建选项"
-                    )
-                }
-            }
+            ExpandableFAB(
+                expanded = fabExpanded,
+                onExpandedChange = { fabExpanded = it },
+                onCreateNewPlan = { onNavigateToCreatePlan(null) },
+                onCreateFromTemplate = onNavigateToTemplates
+            )
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
@@ -199,11 +160,11 @@ fun PlanListScreen(
                 .padding(paddingValues)
         ) {
             // 搜索栏
-            Box(modifier = Modifier.padding(16.dp)) {
+            Box(modifier = Modifier.padding(DesignTokens.Spacing.medium)) {
                 SearchBar(
                     searchQuery = uiState.searchQuery,
                     onSearchQueryChange = viewModel::updateSearchQuery,
-                    onFilterClick = { showFilterDialog = true },
+                    onFilterClick = onNavigateToFilter,
                     onSortClick = { showSortMenu = true },
                     hasActiveFilters = uiState.filter.isActive
                 )
@@ -228,40 +189,68 @@ fun PlanListScreen(
                 contentAlignment = Alignment.Center
             ) {
                 when {
-                uiState.isLoading -> {
-                    CircularProgressIndicator()
-                }
-                immutablePlans.isEmpty() -> {
-                    Text(
-                        text = "暂无计划\n点击右下角按钮创建第一个计划",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                else -> {
-                    OptimizedPlanList(
-                        plans = immutablePlans,
-                        expandedPlanIds = immutableExpandedPlanIds,
-                        onToggleExpand = viewModel::togglePlanExpanded,
-                        onPlanClick = onNavigateToPlanDetail,
-                        onProgressUpdate = viewModel::updatePlanProgress,
-                        onDeleteClick = viewModel::deletePlan,
-                        onCreateSubPlan = onNavigateToCreatePlan
-                    )
+                    uiState.isLoading -> {
+                        CircularProgressIndicator(
+                            color = DesignTokens.BrandColors.Plan
+                        )
+                    }
+                    immutablePlans.isEmpty() -> {
+                        EmptyPlanState(
+                            onCreatePlan = { onNavigateToCreatePlan(null) }
+                        )
+                    }
+                    else -> {
+                        OptimizedPlanList(
+                            plans = immutablePlans,
+                            expandedPlanIds = immutableExpandedPlanIds,
+                            onToggleExpand = viewModel::togglePlanExpanded,
+                            onPlanClick = onNavigateToPlanDetail,
+                            onProgressUpdate = viewModel::updatePlanProgress,
+                            onDeleteClick = viewModel::deletePlan,
+                            onCreateSubPlan = onNavigateToCreatePlan
+                        )
                     }
                 }
             }
         }
     }
     
-    // 筛选对话框
-    PlanFilterDialog(
-        isOpen = showFilterDialog,
-        currentFilter = uiState.filter,
-        availableTags = emptySet(), // TODO: 从ViewModel获取可用标签
-        onDismiss = { showFilterDialog = false },
-        onConfirm = viewModel::updateFilter
-    )
+    // 处理导航返回结果
+    navController?.currentBackStackEntry?.savedStateHandle?.let { savedStateHandle ->
+        val lifecycleOwner = LocalLifecycleOwner.current
+        DisposableEffect(lifecycleOwner) {
+            val observer = Observer<Boolean> { filterApplied ->
+                if (filterApplied == true) {
+                    // 获取筛选条件
+                    val statuses = savedStateHandle.get<Array<String>>("filter_statuses")
+                        ?.map { PlanStatus.valueOf(it) }
+                        ?.toSet() ?: emptySet()
+                    val tags = savedStateHandle.get<Array<String>>("filter_tags")
+                        ?.toSet() ?: emptySet()
+                    val hasChildren = savedStateHandle.get<Boolean?>("filter_hasChildren")
+                    
+                    // 应用筛选条件
+                    val filter = PlanFilter(
+                        statuses = statuses,
+                        tags = tags,
+                        hasChildren = hasChildren
+                    )
+                    viewModel.updateFilter(filter)
+                    
+                    // 清除返回数据
+                    savedStateHandle.remove<Boolean>("filter_applied")
+                    savedStateHandle.remove<Array<String>>("filter_statuses")
+                    savedStateHandle.remove<Array<String>>("filter_tags")
+                    savedStateHandle.remove<Boolean?>("filter_hasChildren")
+                }
+            }
+            savedStateHandle.getLiveData<Boolean>("filter_applied").observe(lifecycleOwner, observer)
+            
+            onDispose {
+                savedStateHandle.getLiveData<Boolean>("filter_applied").removeObserver(observer)
+            }
+        }
+    }
     
     // 性能测试对话框
     uiState.performanceTest?.let { testState ->
@@ -307,7 +296,7 @@ private fun OptimizedPlanList(
             val onDelete = remember(plan.id) { { onDeleteClick(plan.id) } }
             val onCreateSub = remember(plan.id) { { onCreateSubPlan(plan.id) } }
             
-            PlanTreeItem(
+            OptimizedPlanTreeItem(
                 plan = plan,
                 isExpanded = expandedPlanIds.contains(plan.id),
                 onToggleExpand = onToggle,
@@ -315,7 +304,8 @@ private fun OptimizedPlanList(
                 onProgressUpdate = onProgress,
                 onDeleteClick = onDelete,
                 onCreateSubPlan = onCreateSub,
-                level = 0
+                level = 0,
+                isLastChild = plans.indexOf(plan) == plans.size - 1
             )
         }
     }
@@ -337,28 +327,28 @@ private fun PerformanceTestDialog(
                 Text(state.message)
                 
                 if (state.isRunning) {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
                     LinearProgressIndicator(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        color = DesignTokens.BrandColors.Plan
                     )
                 }
                 
                 state.result?.let { result ->
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Card(
+                    Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
+                    ModernCard(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+                        backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
+                        borderColor = DesignTokens.BrandColors.Plan.copy(alpha = 0.2f)
                     ) {
                         Column(
-                            modifier = Modifier.padding(16.dp)
+                            modifier = Modifier.padding(DesignTokens.Spacing.medium)
                         ) {
                             Text(
                                 text = "测试结果",
                                 style = MaterialTheme.typography.titleMedium
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
                             Text("生成数量: ${result.planCount} 条")
                             Text("耗时: ${result.duration / 1000.0} 秒")
                             Text("平均速度: %.2f 条/秒".format(result.averageSpeed))

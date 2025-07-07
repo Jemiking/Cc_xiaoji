@@ -7,11 +7,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ccxiaoji.feature.todo.R
-import com.ccxiaoji.feature.todo.domain.model.Task
-import com.ccxiaoji.feature.todo.presentation.component.*
+import com.ccxiaoji.feature.todo.presentation.component.TodoSearchBar
+import com.ccxiaoji.feature.todo.presentation.component.TodoFilterBar
+import com.ccxiaoji.feature.todo.presentation.component.GroupedTaskList
 import com.ccxiaoji.feature.todo.presentation.viewmodel.TodoViewModel
+import com.ccxiaoji.ui.theme.DesignTokens
 
 /**
  * 待办事项主屏幕
@@ -21,15 +24,14 @@ import com.ccxiaoji.feature.todo.presentation.viewmodel.TodoViewModel
 @Composable
 fun TodoScreen(
     viewModel: TodoViewModel = hiltViewModel(),
+    onNavigateToAddTask: () -> Unit = {},
+    onNavigateToEditTask: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val errorState by viewModel.errorState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    
-    var showAddDialog by remember { mutableStateOf(false) }
-    var editingTask by remember { mutableStateOf<Task?>(null) }
     
     val snackbarHostState = remember { SnackbarHostState() }
     
@@ -58,11 +60,17 @@ fun TodoScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddDialog = true }
+                onClick = onNavigateToAddTask,
+                containerColor = DesignTokens.BrandColors.Todo,
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 1.dp,
+                    pressedElevation = 2.dp
+                )
             ) {
                 Icon(
                     imageVector = Icons.Default.Add, 
-                    contentDescription = stringResource(R.string.todo_add_task)
+                    contentDescription = stringResource(R.string.todo_add_task),
+                    tint = androidx.compose.ui.graphics.Color.White
                 )
             }
         },
@@ -91,53 +99,25 @@ fun TodoScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = androidx.compose.ui.Alignment.Center
                 ) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(
+                        color = DesignTokens.BrandColors.Todo
+                    )
                 }
             } else {
-                TaskList(
+                GroupedTaskList(
                     tasks = uiState.tasks,
                     onToggleComplete = { task ->
                         viewModel.toggleTaskCompletion(task.id, !task.completed)
                     },
                     onEditTask = { task ->
-                        editingTask = task
+                        onNavigateToEditTask(task.id)
                     },
                     onDeleteTask = { task ->
                         viewModel.deleteTask(task.id)
-                    }
+                    },
+                    onAddTask = onNavigateToAddTask
                 )
             }
         }
-    }
-    
-    // 添加/编辑任务对话框
-    if (showAddDialog || editingTask != null) {
-        AddTaskDialog(
-            onDismiss = { 
-                showAddDialog = false 
-                editingTask = null
-            },
-            onConfirm = { title, description, dueAt, priority ->
-                if (editingTask != null) {
-                    viewModel.updateTask(
-                        editingTask!!.id, 
-                        title, 
-                        description, 
-                        dueAt, 
-                        priority
-                    )
-                } else {
-                    viewModel.addTask(
-                        title, 
-                        description, 
-                        dueAt, 
-                        priority
-                    )
-                }
-                showAddDialog = false
-                editingTask = null
-            },
-            task = editingTask
-        )
     }
 }

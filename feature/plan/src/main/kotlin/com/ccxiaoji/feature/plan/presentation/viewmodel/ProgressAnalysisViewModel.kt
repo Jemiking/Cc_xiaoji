@@ -1,7 +1,8 @@
-package com.ccxiaoji.feature.plan.presentation.analysis
+package com.ccxiaoji.feature.plan.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ccxiaoji.feature.plan.domain.model.ChartType
 import com.ccxiaoji.feature.plan.domain.model.PlanStatistics
 import com.ccxiaoji.feature.plan.domain.usecase.plan.GetPlanStatisticsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -78,12 +79,3 @@ data class ProgressAnalysisUiState(
     val error: String? = null
 )
 
-/**
- * 图表类型
- */
-enum class ChartType {
-    STATUS_PIE,         // 状态饼图
-    PROGRESS_BAR,       // 进度分布柱状图
-    MONTHLY_TREND,      // 月度趋势图
-    TAG_ANALYSIS        // 标签分析
-}
