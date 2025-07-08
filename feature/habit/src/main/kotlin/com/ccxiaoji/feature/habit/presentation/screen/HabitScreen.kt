@@ -34,7 +34,9 @@ import com.ccxiaoji.ui.theme.DesignTokens
 fun HabitScreen(
     viewModel: HabitViewModel = hiltViewModel(),
     onNavigateToAddHabit: () -> Unit = {},
-    onNavigateToEditHabit: (String) -> Unit = {}
+    onNavigateToEditHabit: (String) -> Unit = {},
+    modifier: Modifier = Modifier,
+    showTopBar: Boolean = true
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -57,23 +59,28 @@ fun HabitScreen(
     }
     
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        text = stringResource(R.string.nav_habit),
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                },
-                actions = {
-                    IconButton(onClick = { showStatistics = !showStatistics }) {
-                        Icon(
-                            imageVector = if (showStatistics) Icons.Default.List else Icons.Default.BarChart,
-                            contentDescription = if (showStatistics) "显示列表" else "显示统计"
+        modifier = modifier,
+        topBar = if (showTopBar) {
+            {
+                TopAppBar(
+                    title = { 
+                        Text(
+                            text = stringResource(R.string.nav_habit),
+                            style = MaterialTheme.typography.headlineSmall
                         )
+                    },
+                    actions = {
+                        IconButton(onClick = { showStatistics = !showStatistics }) {
+                            Icon(
+                                imageVector = if (showStatistics) Icons.Default.List else Icons.Default.BarChart,
+                                contentDescription = if (showStatistics) "显示列表" else "显示统计"
+                            )
+                        }
                     }
-                }
-            )
+                )
+            }
+        } else {
+            {} // 空的Composable
         },
         floatingActionButton = {
             if (!showStatistics) {

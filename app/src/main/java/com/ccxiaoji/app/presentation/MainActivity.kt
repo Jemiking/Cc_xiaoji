@@ -7,11 +7,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.ccxiaoji.ui.theme.CcXiaoJiTheme
 import com.ccxiaoji.app.presentation.ui.components.BottomNavBar
 import com.ccxiaoji.app.presentation.ui.navigation.NavGraph
+import com.ccxiaoji.app.presentation.ui.navigation.Screen
 import com.ccxiaoji.app.notification.NotificationScheduler
 import com.ccxiaoji.app.data.sync.SyncManager
 import com.ccxiaoji.feature.ledger.api.LedgerApi
@@ -71,10 +74,25 @@ class MainActivity : ComponentActivity() {
             CcXiaoJiTheme {
                 val navController = rememberNavController()
                 
+                // 获取当前路由
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry?.destination?.route
+                
+                // 定义需要显示底部导航栏的路由
+                val routesWithBottomBar = setOf(
+                    Screen.Home.route,
+                    Screen.Profile.route
+                )
+                
+                // 判断是否显示底部导航栏
+                val showBottomBar = currentRoute in routesWithBottomBar
+                
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
-                        BottomNavBar(navController = navController)
+                        if (showBottomBar) {
+                            BottomNavBar(navController = navController)
+                        }
                     }
                 ) { innerPadding ->
                     NavGraph(

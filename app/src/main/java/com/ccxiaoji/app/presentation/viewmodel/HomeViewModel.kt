@@ -16,6 +16,7 @@ import com.ccxiaoji.feature.ledger.domain.model.Transaction
 import com.ccxiaoji.app.domain.model.Countdown
 import com.ccxiaoji.feature.ledger.domain.model.SavingsGoal
 import com.ccxiaoji.feature.plan.api.PlanApi
+import com.ccxiaoji.app.data.preferences.ModulePreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,7 +37,8 @@ class HomeViewModel @Inject constructor(
     private val savingsGoalRepository: SavingsGoalRepository,
     private val userApi: UserApi,
     private val accountRepository: AccountRepository,
-    private val planApi: PlanApi
+    private val planApi: PlanApi,
+    private val modulePreferences: ModulePreferencesRepository
 ) : ViewModel() {
     
     companion object {
@@ -45,6 +47,17 @@ class HomeViewModel @Inject constructor(
     
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    
+    // 模块偏好设置
+    val useClassicLayout = modulePreferences.useClassicLayout
+    val hiddenModules = modulePreferences.hiddenModules
+    
+    // 切换布局模式
+    fun toggleLayoutMode() {
+        viewModelScope.launch {
+            modulePreferences.toggleLayoutMode()
+        }
+    }
     
     init {
         Log.d(TAG, "HomeViewModel init started")

@@ -9,6 +9,7 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.ccxiaoji.app.presentation.ui.navigation.bottomNavItems
+import com.ccxiaoji.app.presentation.ui.navigation.Screen
 
 @Composable
 fun BottomNavBar(navController: NavController) {
@@ -31,12 +32,16 @@ fun BottomNavBar(navController: NavController) {
                 label = { Text(stringResource(screen.titleRes)) },
                 selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                 onClick = {
-                    navController.navigate(screen.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+                    // 如果当前已经在目标页面，不做任何操作
+                    if (currentDestination?.route != screen.route) {
+                        navController.navigate(screen.route) {
+                            // 使用路由名称而不是ID，确保导航到正确的目标
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
                     }
                 }
             )

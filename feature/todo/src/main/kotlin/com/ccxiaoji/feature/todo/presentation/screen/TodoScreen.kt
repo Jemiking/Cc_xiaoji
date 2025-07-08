@@ -26,7 +26,8 @@ fun TodoScreen(
     viewModel: TodoViewModel = hiltViewModel(),
     onNavigateToAddTask: () -> Unit = {},
     onNavigateToEditTask: (String) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    showTopBar: Boolean = true
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -48,15 +49,19 @@ fun TodoScreen(
     
     Scaffold(
         modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        text = stringResource(R.string.todo_title),
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                }
-            )
+        topBar = if (showTopBar) {
+            {
+                TopAppBar(
+                    title = { 
+                        Text(
+                            text = stringResource(R.string.todo_title),
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                    }
+                )
+            }
+        } else {
+            {} // 空的Composable
         },
         floatingActionButton = {
             FloatingActionButton(

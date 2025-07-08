@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ccxiaoji.app.presentation.ui.home.HomeScreen
+import com.ccxiaoji.app.presentation.ui.home.ModularHomeScreen
 import com.ccxiaoji.feature.todo.presentation.screen.TodoScreen
 import com.ccxiaoji.feature.todo.presentation.screen.DatePickerScreen as TodoDatePickerScreen
 import com.ccxiaoji.feature.habit.presentation.screen.HabitScreen
@@ -21,6 +22,7 @@ import com.ccxiaoji.app.presentation.ui.profile.DataExportScreen
 import com.ccxiaoji.app.presentation.ui.profile.ThemeSettingsScreen
 import com.ccxiaoji.app.presentation.ui.profile.NotificationSettingsScreen
 import com.ccxiaoji.app.presentation.screen.DataImportScreen
+import com.ccxiaoji.app.presentation.ui.components.ModuleTopBar
 import com.ccxiaoji.feature.ledger.api.LedgerApi
 import com.ccxiaoji.feature.plan.api.PlanApi
 
@@ -38,6 +40,13 @@ fun NavGraph(
         modifier = modifier
     ) {
         composable(Screen.Home.route) {
+            // 使用新的模块化首页
+            ModularHomeScreen(
+                navController = navController
+            )
+            
+            // 保留原首页代码，方便回滚
+            /*
             HomeScreen(
                 onNavigateToLedger = { navController.navigate(Screen.Ledger.route) },
                 onNavigateToTodo = { navController.navigate(Screen.Todo.route) },
@@ -47,6 +56,7 @@ fun NavGraph(
                 onNavigateToStatistics = { navController.navigate(StatisticsRoute.route) },
                 onNavigateToSavingsGoal = { navController.navigate(SavingsGoalRoute.route) }
             )
+            */
         }
         
         composable(Screen.Ledger.route) {
@@ -62,45 +72,97 @@ fun NavGraph(
         }
         
         composable(Screen.Todo.route) {
-            TodoScreen(
-                onNavigateToAddTask = {
-                    navController.navigate(AddEditTaskRoute.createRoute())
-                },
-                onNavigateToEditTask = { taskId ->
-                    navController.navigate(AddEditTaskRoute.createRoute(taskId))
+            Scaffold(
+                topBar = {
+                    ModuleTopBar(
+                        title = "待办",
+                        isRootScreen = true,
+                        onNavigationClick = { /* TODO: 菜单功能 */ },
+                        onCloseClick = {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Home.route) { inclusive = true }
+                            }
+                        }
+                    )
                 }
-            )
+            ) { paddingValues ->
+                TodoScreen(
+                    onNavigateToAddTask = {
+                        navController.navigate(AddEditTaskRoute.createRoute())
+                    },
+                    onNavigateToEditTask = { taskId ->
+                        navController.navigate(AddEditTaskRoute.createRoute(taskId))
+                    },
+                    modifier = Modifier.padding(paddingValues),
+                    showTopBar = false
+                )
+            }
         }
         
         composable(Screen.Habit.route) {
-            HabitScreen(
-                onNavigateToAddHabit = {
-                    navController.navigate(AddEditHabitRoute.createRoute())
-                },
-                onNavigateToEditHabit = { habitId ->
-                    navController.navigate(AddEditHabitRoute.createRoute(habitId))
+            Scaffold(
+                topBar = {
+                    ModuleTopBar(
+                        title = "习惯",
+                        isRootScreen = true,
+                        onNavigationClick = { /* TODO: 菜单功能 */ },
+                        onCloseClick = {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Home.route) { inclusive = true }
+                            }
+                        }
+                        // TODO: 需要添加统计/列表切换功能到actions
+                    )
                 }
-            )
+            ) { paddingValues ->
+                HabitScreen(
+                    onNavigateToAddHabit = {
+                        navController.navigate(AddEditHabitRoute.createRoute())
+                    },
+                    onNavigateToEditHabit = { habitId ->
+                        navController.navigate(AddEditHabitRoute.createRoute(habitId))
+                    },
+                    modifier = Modifier.padding(paddingValues),
+                    showTopBar = false
+                )
+            }
         }
         
         composable(Screen.Schedule.route) {
-            com.ccxiaoji.feature.schedule.presentation.calendar.CalendarScreen(
-                onNavigateToShiftManage = {
-                    navController.navigate(ShiftManageRoute.route)
-                },
-                onNavigateToScheduleEdit = { date ->
-                    navController.navigate(ScheduleEditRoute.createRoute(date.toString()))
-                },
-                onNavigateToSchedulePattern = {
-                    navController.navigate(SchedulePatternRoute.route)
-                },
-                onNavigateToStatistics = {
-                    navController.navigate(ScheduleStatisticsRoute.route)
-                },
-                onNavigateToSettings = {
-                    navController.navigate(ScheduleSettingsRoute.route)
+            Scaffold(
+                topBar = {
+                    ModuleTopBar(
+                        title = "排班",
+                        isRootScreen = true,
+                        onNavigationClick = { /* TODO: 菜单功能 */ },
+                        onCloseClick = {
+                            navController.navigate(Screen.Home.route) {
+                                popUpTo(Screen.Home.route) { inclusive = true }
+                            }
+                        }
+                    )
                 }
-            )
+            ) { paddingValues ->
+                Box(modifier = Modifier.padding(paddingValues)) {
+                    com.ccxiaoji.feature.schedule.presentation.calendar.CalendarScreen(
+                        onNavigateToShiftManage = {
+                            navController.navigate(ShiftManageRoute.route)
+                        },
+                        onNavigateToScheduleEdit = { date ->
+                            navController.navigate(ScheduleEditRoute.createRoute(date.toString()))
+                        },
+                        onNavigateToSchedulePattern = {
+                            navController.navigate(SchedulePatternRoute.route)
+                        },
+                        onNavigateToStatistics = {
+                            navController.navigate(ScheduleStatisticsRoute.route)
+                        },
+                        onNavigateToSettings = {
+                            navController.navigate(ScheduleSettingsRoute.route)
+                        }
+                    )
+                }
+            }
         }
         
         composable(Screen.Profile.route) {
@@ -796,6 +858,13 @@ fun NavGraph(
         
         composable(LogoutConfirmationRoute.route) {
             com.ccxiaoji.app.presentation.ui.profile.LogoutConfirmationScreen(
+                navController = navController
+            )
+        }
+        
+        // Module Management
+        composable(ModuleManagementRoute.route) {
+            com.ccxiaoji.app.presentation.ui.settings.ModuleManagementScreen(
                 navController = navController
             )
         }

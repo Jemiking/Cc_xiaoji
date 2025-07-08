@@ -183,6 +183,12 @@ fun ProfileScreen(
                         onClick = { navController.navigate(ThemeSettingsRoute.route) }
                     ),
                     SettingsItem(
+                        icon = Icons.Default.Apps,
+                        title = "模块管理",
+                        subtitle = "自定义首页模块显示",
+                        onClick = { navController.navigate(ModuleManagementRoute.route) }
+                    ),
+                    SettingsItem(
                         icon = Icons.Default.Language,
                         title = "语言设置",
                         value = "中文简体",

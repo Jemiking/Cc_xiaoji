@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Color
 import com.ccxiaoji.app.R
 
 sealed class Screen(
@@ -58,11 +59,24 @@ sealed class Screen(
 
 val bottomNavItems = listOf(
     Screen.Home,
-    Screen.Ledger,
-    Screen.Todo,
-    Screen.Habit,
-    Screen.Schedule,
     Screen.Profile
+    // 注释掉但不删除其他项，方便回滚
+    // Screen.Ledger,
+    // Screen.Todo,
+    // Screen.Habit,
+    // Screen.Schedule,
+)
+
+// 模块信息类
+data class ModuleInfo(
+    val id: String,
+    val name: String,
+    val icon: ImageVector,
+    val color: Color,
+    val route: String,
+    val badge: Int = 0,
+    val enabled: Boolean = true,
+    val order: Int = 0
 )
 
 // Detail screens routes
@@ -378,6 +392,10 @@ object HomeDisplaySettingsRoute {
     const val route = "home_display_settings"
 }
 
+object ModuleManagementRoute {
+    const val route = "module_management"
+}
+
 object BatchUpdateCategoryRoute {
     const val route = "batch_update_category?selectedCount={selectedCount}"
     fun createRoute(selectedCount: Int) = "batch_update_category?selectedCount=$selectedCount"
@@ -410,3 +428,48 @@ object FilterTransactionRoute {
 object LogoutConfirmationRoute {
     const val route = "logout_confirmation"
 }
+
+// 所有模块定义 - 只包含真正的功能模块
+val defaultModules = listOf(
+    ModuleInfo(
+        id = "ledger",
+        name = "记账",
+        icon = Icons.Default.AccountBalanceWallet,
+        color = Color(0xFF66BB6A),  // 使用项目标准的柔和绿色
+        route = Screen.Ledger.route,
+        order = 0
+    ),
+    ModuleInfo(
+        id = "todo", 
+        name = "待办",
+        icon = Icons.Default.CheckCircle,
+        color = Color(0xFF5E7CE0),  // 使用项目标准的柔和蓝色
+        route = Screen.Todo.route,
+        order = 1
+    ),
+    ModuleInfo(
+        id = "habit",
+        name = "习惯", 
+        icon = Icons.Default.EmojiEvents,
+        color = Color(0xFFAB47BC),  // 使用项目标准的柔和紫色
+        route = Screen.Habit.route,
+        order = 2
+    ),
+    ModuleInfo(
+        id = "schedule",
+        name = "排班",
+        icon = Icons.Default.CalendarMonth,
+        color = Color(0xFFFFB74D),  // 使用项目标准的柔和橙色
+        route = Screen.Schedule.route,
+        order = 3
+    ),
+    ModuleInfo(
+        id = "plan",
+        name = "计划",
+        icon = Icons.Default.Timeline,
+        color = Color(0xFF8D6E63),  // 使用项目标准的柔和棕色
+        route = PlanRoute.route,
+        order = 4
+    )
+    // 移除了统计分析、存钱罐、资产总览这些子功能
+)
