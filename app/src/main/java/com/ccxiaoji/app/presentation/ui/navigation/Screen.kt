@@ -230,6 +230,14 @@ object ThemeSettingsRoute {
     const val route = "theme_settings"
 }
 
+object DiscordDemoRoute {
+    const val route = "discord_demo"
+}
+
+object DiscordDemoV2Route {
+    const val route = "discord_demo_v2"
+}
+
 object NotificationSettingsRoute {
     const val route = "notification_settings"
 }

@@ -100,7 +100,12 @@
       "Bash(./scripts/compile-helper.sh:*)",
       "Bash(ANDROID_HOME=/mnt/c/Users/Hua/AppData/Local/Android/Sdk ./gradlew :feature:ledger:compileDebugKotlin --no-daemon --console=plain)",
       "Bash(/compact)",
-      "WebFetch(domain:docs.anthropic.com)"
+      "WebFetch(domain:docs.anthropic.com)",
+      "WebFetch(domain:discord.com)",
+      "WebFetch(domain:support.discord.com)",
+      "Bash(pkill:*)",
+      "Bash(kotlinc:*)",
+      "Bash(./scripts/clean_build_cache.sh:*)"
     ],
     "deny": []
   },

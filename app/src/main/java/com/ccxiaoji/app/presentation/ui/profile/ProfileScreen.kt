@@ -183,6 +183,18 @@ fun ProfileScreen(
                         onClick = { navController.navigate(ThemeSettingsRoute.route) }
                     ),
                     SettingsItem(
+                        icon = Icons.Default.Visibility,
+                        title = "Discord风格预览",
+                        subtitle = "查看Discord风格UI效果",
+                        onClick = { navController.navigate(DiscordDemoRoute.route) }
+                    ),
+                    SettingsItem(
+                        icon = Icons.Default.ViewQuilt,
+                        title = "Discord风格V2",
+                        subtitle = "新架构Discord风格演示",
+                        onClick = { navController.navigate(DiscordDemoV2Route.route) }
+                    ),
+                    SettingsItem(
                         icon = Icons.Default.Apps,
                         title = "模块管理",
                         subtitle = "自定义首页模块显示",

@@ -20,6 +20,16 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
+# Keep application classes
+-keep class com.ccxiaoji.app.** { *; }
+
+# Keep all provide methods in modules
+-keepclassmembers class * {
+    @dagger.Provides *;
+    @dagger.hilt.android.* *;
+    @dagger.Module *;
+}
+
 # Retrofit
 -keepattributes Signature, InnerClasses, EnclosingMethod
 -keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
@@ -82,3 +92,120 @@
 -keep class com.ccxiaoji.app.data.local.entity.** { *; }
 -keep class com.ccxiaoji.app.data.remote.dto.** { *; }
 -keep class com.ccxiaoji.app.domain.model.** { *; }
+
+# Hilt - Enhanced rules
+-keepnames @dagger.hilt.android.lifecycle.HiltViewModel class * extends androidx.lifecycle.ViewModel
+-keepclasseswithmembernames class * {
+    @dagger.hilt.* <fields>;
+}
+-keepclasseswithmembernames class * {
+    @dagger.hilt.* <methods>;
+}
+-keep class dagger.hilt.internal.** { *; }
+-keep class dagger.hilt.android.internal.** { *; }
+-keep class * extends androidx.lifecycle.ViewModel {
+    @javax.inject.Inject <init>(...);
+}
+-keep class * extends androidx.lifecycle.ViewModel {
+    @dagger.hilt.android.lifecycle.HiltViewModel <init>(...);
+}
+-keep class dagger.hilt.** { *; }
+-keep class javax.inject.** { *; }
+-keep class * extends dagger.hilt.android.internal.managers.ViewComponentManager.FragmentContextWrapper { *; }
+-keepclassmembers class * {
+    @dagger.hilt.android.qualifiers.ApplicationContext *;
+    @dagger.hilt.android.qualifiers.ActivityContext *;
+}
+-keepclassmembers class * {
+    @javax.inject.Inject <init>(...);
+}
+-keepclassmembers class * {
+    @javax.inject.Inject <fields>;
+}
+-keepclassmembers class * {
+    @dagger.* <fields>;
+}
+-keepclassmembers class * {
+    @dagger.* <methods>;
+}
+-dontwarn dagger.hilt.android.internal.lifecycle.DefaultViewModelFactories*
+
+# Hilt Workers
+-keep class * extends androidx.work.Worker {
+    @androidx.hilt.work.HiltWorker <init>(...);
+}
+-keep class * extends androidx.work.ListenableWorker {
+    @androidx.hilt.work.HiltWorker <init>(...);
+}
+-keep class androidx.hilt.work.** { *; }
+
+# Keep all modules and generated classes
+-keep class **_HiltModules { *; }
+-keep class **_HiltModules$* { *; }
+-keep class **_Impl { *; }
+-keep class **_Impl$* { *; }
+-keep class **_Factory { *; }
+-keep class **_Factory$* { *; }
+-keep class **_GeneratedInjector { *; }
+-keep class **_MembersInjector { *; }
+-keep class **_ProvideFactory { *; }
+-keep class **_Provide { *; }
+
+# Keep Dagger/Hilt generated classes
+-keep class **$$ModuleAdapter { *; }
+-keep class **$$InjectAdapter { *; }
+-keep class **$$Factory { *; }
+-keep class dagger.internal.** { *; }
+
+# Keep all ViewModels from feature modules
+-keep class com.ccxiaoji.feature.**.viewmodel.** extends androidx.lifecycle.ViewModel { *; }
+-keep class com.ccxiaoji.feature.**.presentation.viewmodel.** extends androidx.lifecycle.ViewModel { *; }
+
+# Keep all APIs from feature modules
+-keep interface com.ccxiaoji.feature.**.api.** { *; }
+-keep class * implements com.ccxiaoji.feature.**.api.** { *; }
+
+# Keep all Retrofit service interfaces
+-keep interface com.ccxiaoji.**.service.** { *; }
+-keep interface com.ccxiaoji.**.api.** { *; }
+-keep interface com.ccxiaoji.**.remote.** { *; }
+
+# Keep AuthApi and related classes
+-keep interface com.ccxiaoji.**.AuthApi { *; }
+-keep class com.ccxiaoji.**.AuthApiImpl { *; }
+-keep class com.ccxiaoji.**.auth.** { *; }
+
+# Keep all API implementations
+-keep class com.ccxiaoji.**.*ApiImpl { *; }
+-keep class com.ccxiaoji.**.*Api { *; }
+
+# Keep entities from all modules
+-keep class com.ccxiaoji.**.entity.** { *; }
+-keep class com.ccxiaoji.**.model.** { *; }
+-keep class com.ccxiaoji.**.dto.** { *; }
+
+# Keep all data classes and their members
+-keepclassmembers class com.ccxiaoji.** {
+    <fields>;
+    <init>(...);
+    <methods>;
+}
+
+# Keep all Retrofit related classes
+-keepclasseswithmembers class * {
+    @retrofit2.* <methods>;
+}
+-keepclasseswithmembers interface * {
+    @retrofit2.* <methods>;
+}
+
+# Keep network module classes
+-keep class com.ccxiaoji.network.** { *; }
+-keep class com.ccxiaoji.core.network.** { *; }
+
+# Prevent stripping of methods/fields annotated with specific annotations
+-keepclassmembers class * {
+    @javax.inject.* *;
+    @dagger.* *;
+    @dagger.hilt.* *;
+}

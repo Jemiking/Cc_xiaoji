@@ -449,6 +449,18 @@ fun NavGraph(
             )
         }
         
+        composable(DiscordDemoRoute.route) {
+            com.ccxiaoji.app.presentation.ui.demo.DiscordMobileLayoutScreen(
+                navController = navController
+            )
+        }
+        
+        composable(DiscordDemoV2Route.route) {
+            com.ccxiaoji.app.presentation.ui.demo.DiscordStyleDemoV2Screen(
+                navController = navController
+            )
+        }
+        
         composable(NotificationSettingsRoute.route) {
             NotificationSettingsScreen(
                 onNavigateBack = { navController.popBackStack() }
