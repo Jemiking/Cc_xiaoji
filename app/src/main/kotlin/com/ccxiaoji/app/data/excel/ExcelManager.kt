@@ -133,9 +133,7 @@ class ExcelManager @Inject constructor(
             }
             
             // 清理资源
-            if (workbook is SXSSFWorkbook) {
-                ExcelPerformanceOptimizer.cleanupStreamingWorkbook(workbook)
-            }
+            // POI 3.17不支持SXSSFWorkbook，直接关闭workbook
             workbook.close()
             
             onProgress(1.0f)
