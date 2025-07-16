@@ -123,6 +123,14 @@ dependencies {
     // Gson
     implementation(libs.gson)
     
+    // Excel处理 - 使用Android兼容版本
+    // 移除原有POI 5.2.4，使用Android Port版本
+    implementation("com.github.SUPERCILEX.poi-android:poi:3.17")
+    
+    // 保留必要的XML处理依赖
+    implementation("org.dom4j:dom4j:2.1.4")
+    implementation("javax.xml.stream:stax-api:1.0-2")
+    
     // Desugaring for Java 8+ APIs
     coreLibraryDesugaring(libs.android.tools.desugar)
     
