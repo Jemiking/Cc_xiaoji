@@ -73,11 +73,8 @@ abstract class BaseWorker(
                 performWork()
             }
             
-            when (result) {
-                is Result.Success -> logInfo("$workerName completed successfully")
-                is Result.Failure -> logError("$workerName failed")
-                is Result.Retry -> logWarning("$workerName will retry")
-            }
+            // Log the result based on the Worker's outcome
+            logInfo("$workerName finished with result: $result")
             
             result
         } catch (e: Exception) {

@@ -1,11 +1,15 @@
 package com.ccxiaoji.shared.notification.data.manager
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
+import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.ccxiaoji.shared.notification.domain.model.NotificationConfig
@@ -14,6 +18,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
+@SuppressLint("MissingPermission")
 class NotificationManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val config: NotificationConfig
@@ -38,6 +43,19 @@ class NotificationManager @Inject constructor(
     
     init {
         createNotificationChannels()
+    }
+    
+    // 检查是否有通知权限
+    private fun hasNotificationPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            // Android 12及以下版本不需要运行时权限
+            true
+        }
     }
     
     private fun createNotificationChannels() {
@@ -136,8 +154,10 @@ class NotificationManager @Inject constructor(
             .setAutoCancel(true)
             .build()
         
-        with(NotificationManagerCompat.from(context)) {
-            notify(NOTIFICATION_ID_TASK_BASE + taskId.hashCode(), notification)
+        if (hasNotificationPermission()) {
+            with(NotificationManagerCompat.from(context)) {
+                notify(NOTIFICATION_ID_TASK_BASE + taskId.hashCode(), notification)
+            }
         }
     }
     
@@ -165,8 +185,10 @@ class NotificationManager @Inject constructor(
             .setAutoCancel(true)
             .build()
         
-        with(NotificationManagerCompat.from(context)) {
-            notify(NOTIFICATION_ID_HABIT_BASE + habitId.hashCode(), notification)
+        if (hasNotificationPermission()) {
+            with(NotificationManagerCompat.from(context)) {
+                notify(NOTIFICATION_ID_HABIT_BASE + habitId.hashCode(), notification)
+            }
         }
     }
     
@@ -199,8 +221,10 @@ class NotificationManager @Inject constructor(
             .setAutoCancel(true)
             .build()
         
-        with(NotificationManagerCompat.from(context)) {
-            notify(NOTIFICATION_ID_BUDGET_BASE + categoryName.hashCode(), notification)
+        if (hasNotificationPermission()) {
+            with(NotificationManagerCompat.from(context)) {
+                notify(NOTIFICATION_ID_BUDGET_BASE + categoryName.hashCode(), notification)
+            }
         }
     }
     
@@ -242,8 +266,10 @@ class NotificationManager @Inject constructor(
             .setDefaults(NotificationCompat.DEFAULT_ALL)
             .build()
         
-        with(NotificationManagerCompat.from(context)) {
-            notify(NOTIFICATION_ID_CREDIT_CARD_BASE + cardId.hashCode(), notification)
+        if (hasNotificationPermission()) {
+            with(NotificationManagerCompat.from(context)) {
+                notify(NOTIFICATION_ID_CREDIT_CARD_BASE + cardId.hashCode(), notification)
+            }
         }
     }
     
@@ -276,8 +302,10 @@ class NotificationManager @Inject constructor(
             .setAutoCancel(true)
             .build()
         
-        with(NotificationManagerCompat.from(context)) {
-            notify(NOTIFICATION_ID_SCHEDULE_BASE, notification)
+        if (hasNotificationPermission()) {
+            with(NotificationManagerCompat.from(context)) {
+                notify(NOTIFICATION_ID_SCHEDULE_BASE, notification)
+            }
         }
     }
     
@@ -303,8 +331,10 @@ class NotificationManager @Inject constructor(
             .setAutoCancel(true)
             .build()
         
-        with(NotificationManagerCompat.from(context)) {
-            notify(notificationId, notification)
+        if (hasNotificationPermission()) {
+            with(NotificationManagerCompat.from(context)) {
+                notify(notificationId, notification)
+            }
         }
     }
     

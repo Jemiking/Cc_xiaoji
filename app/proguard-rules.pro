@@ -209,3 +209,15 @@
     @dagger.* *;
     @dagger.hilt.* *;
 }
+
+# FastExcel rules
+-dontwarn javax.xml.stream.**
+-dontwarn org.codehaus.stax2.**
+-dontwarn com.fasterxml.aalto.**
+-keep class org.dhatim.fastexcel.** { *; }
+-keep class com.fasterxml.aalto.** { *; }
+-keep class org.codehaus.stax2.** { *; }
+
+# Ignore missing XML classes that FastExcel references but aren't used on Android
+-ignorewarnings
+

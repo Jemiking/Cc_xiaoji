@@ -80,6 +80,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
   - 8 fully functional screens with Compose UI
   - Performance optimized for 1000+ plans
 
+### 🎉 Excel Module FastExcel Migration (2025-07-20)
+- **Successfully migrated from Apache POI to FastExcel**
+- **Problem Solved**: Fixed 547 compilation errors caused by accidental file deletion
+- **Migration Scale**: 2 days, comprehensive refactoring
+- **Key Achievements**:
+  - Complete removal of POI dependencies (5MB → 1MB)
+  - Performance improvement: 40% less memory, 2x faster
+  - Created FastExcelAdapter for API compatibility
+  - Added comprehensive test coverage
+- **Technical Implementation**:
+  - Sealed classes for type-safe progress tracking
+  - Adapter pattern for smooth API transition
+  - CI/CD integration to prevent POI regression
+  - Android-specific optimizations
+- **Documentation**: See `doc/Excel模块FastExcel迁移完成总结.md`
+
+### 🚧 数据导出导入功能重构 (2025-07-31)
+- **状态**: 规划中
+- **方案**: FastExcel方案（推倒重新砌墙）
+- **背景**: 经历12个阶段修复后，决定抛弃CSV+ZIP方案
+- **目标**: 
+  - 性能提升：内存占用降低10倍，处理速度提升10倍
+  - 用户体验：标准Excel格式，直接可视化
+  - 维护性：代码简洁，易于扩展
+- **数据规模**: 23个数据库表，4层依赖关系
+- **预计工期**: 32小时（约5天）
+- **文档**: `doc/开发进度/20250731-数据导出和导入问题推倒重新砌墙方案-1.md`
+
 ## Important: Development Workflow
 **Claude Code should NOT attempt to compile or build the project after making changes.**
 
@@ -130,13 +158,24 @@ This approach ensures that:
    - **Solution**: Remove duplicate providers, keep only one in the appropriate module
    - **Example**: NotificationConfig should only be provided by app module
 
+3. **数据模块命名不一致**
+   - **Issue**: Schedule模块使用snake_case，其他模块使用camelCase
+   - **Impact**: 数据导出导入时需要字段名转换
+   - **Solution**: 在映射器中实现自动转换逻辑
+
+4. **数据导出导入重构中**
+   - **Issue**: 原CSV+ZIP方案复杂度高，维护困难
+   - **Solution**: 采用FastExcel流式处理方案
+   - **Status**: 规划阶段，预计2025-08-05完成
+
 ## MCP Server Configuration
 **This project has an Android Compiler MCP server configured for automatic compilation verification.**
 
 ### MCP Server Details
 - **Server Name**: android-compiler
+- **Version**: 2.0.0 (Optimized) - 优化版本已启用
 - **Purpose**: Provides automatic Kotlin/Android compilation capabilities
-- **Location**: `~/android-compiler-mcp/`
+- **Location**: `android-compiler-mcp-windows/`
 
 ### Available Tools
 1. **compile_kotlin** - Compiles the Android Kotlin project
@@ -144,15 +183,25 @@ This approach ensures that:
         - `projectPath`: Project root directory path (use "." for current directory)
         - `module`: Optional - specific module to compile
         - `task`: Compilation task type (compileDebugKotlin, build, clean)
+        - `skipOptimization`: Optional - Skip build optimization (default: false) **[New in v2.0]**
+        - `preBuild`: Optional - Run pre-build tasks (default: true) **[New in v2.0]**
 
 2. **check_gradle** - Checks Gradle and Android environment
     - Parameters:
         - `projectPath`: Project root directory path
 
+3. **prepare_android_build** - Prepare Android build environment **[New in v2.0]**
+    - Parameters:
+        - `projectPath`: Project root directory path
+        - `module`: Optional - specific module to prepare
+
 ### Usage Examples
 ```
 # Check environment
 使用check_gradle工具检查环境，projectPath是"."
+
+# Prepare build environment (recommended for first use or after clean)
+使用prepare_android_build工具准备构建环境，projectPath是"."，module是"app"
 
 # Compile entire project
 使用compile_kotlin工具编译项目，projectPath是"."
@@ -160,15 +209,28 @@ This approach ensures that:
 # Compile specific module
 使用compile_kotlin工具编译feature-ledger模块，projectPath是"."，module是"feature-ledger"
 
+# Compile test code (optimized for v2.0)
+使用compile_kotlin工具编译测试，projectPath是"."，task是"compileDebugUnitTestKotlin"，module是"app"
+
+# Use compatibility mode if needed
+使用compile_kotlin工具，projectPath是"."，skipOptimization是true
+
 # Clean project
 使用compile_kotlin工具清理项目，projectPath是"."，task是"clean"
 ```
 
+### MCP v2.0 Optimization Notes
+The optimized version (v2.0) includes:
+- **Smart exclusion strategy**: Only excludes truly unnecessary tasks
+- **Automatic pre-build**: Generates AndroidManifest.xml and other required files
+- **Test compilation support**: Fixed the test compilation issues
+- **Better error diagnostics**: Provides helpful suggestions when errors occur
+- **Backward compatibility**: Use `skipOptimization=true` for original behavior
+
+To switch between versions, use: `scripts\switch-mcp-version.bat`
+
 ### MCP Server Configuration
-The MCP server is configured at user level and will automatically start when Claude Code launches. The configuration was added using:
-```bash
-claude mcp add android-compiler -s user -- node /home/hua/android-compiler-mcp/index.js
-```
+The MCP server is configured at user level and will automatically start when Claude Code launches.
 
 ## Language Requirement
 **All responses from Claude Code should be in Chinese (中文).** This includes:
@@ -217,7 +279,10 @@ claude mcp add android-compiler -s user -- node /home/hua/android-compiler-mcp/i
 ```
 
 ### Database Management
-- Room database version: 1 (reset from version 6, all historical migrations cleared)
+- Room database version: 7 (当前版本，包含所有业务模块)
+- 数据表数量: 23个表
+- 模块分布: 记账9表，排班4表，计划3表，习惯2表，待办1表，其他4表
+- **架构不一致**: Schedule模块使用snake_case命名，需要在数据处理时注意
 - Schema location: `app/schemas/`
 - **Database Architecture**: Single database shared by all modules with DAO-level isolation
    - All feature modules share the same `CcDatabase` instance
@@ -227,7 +292,6 @@ claude mcp add android-compiler -s user -- node /home/hua/android-compiler-mcp/i
     1. Increment version in `CcDatabase.kt`
     2. Create a migration in `app/src/main/java/com/ccxiaoji/app/data/local/migrations/`
     3. Add migration to `DatabaseMigrations.kt`
-- Note: The database was reset to v1 as the app hasn't been released yet
 
 ## Architecture Overview
 
@@ -426,6 +490,12 @@ class HomeViewModel @Inject constructor(
   - Schema export enabled
   - Multi-module DAO isolation
 
+### 📊 Data Processing
+- **FastExcel**: 0.15.7 (Excel导入导出)
+  - 流式处理，内存效率高
+  - Android优化版本
+  - 替代Apache POI方案
+
 ### 🌐 Networking
 - **Retrofit**: 2.9.0 with Gson Converter
 - **OkHttp**: 4.12.0 with Logging Interceptor
@@ -516,10 +586,14 @@ class HomeViewModel @Inject constructor(
 - 原始债务清单: `/doc/20250620-代码风格统一技术债务.md`
 
 ### ⚠️ Important Reminders
-1. **Database Version**: Now at version 6 (includes schedule and plan tables)
-2. **Bottom Navigation**: Updated to 6 items (may need UI adjustments)
-3. **MCP Server**: Android compiler configured for automatic compilation
-4. **Technical Debt (2025-06-20)**: 10个技术债务项已全部完成 ✅
+1. **Database Version**: 实际版本7（包含所有模块表）
+2. **数据结构**: 23个表，存在命名不一致问题
+   - Schedule模块使用snake_case（shift_id, created_at）
+   - 其他模块使用camelCase（userId, createdAt）
+3. **数据导出导入**: 正在重构中，暂时功能不可用
+4. **Bottom Navigation**: Updated to 6 items (may need UI adjustments)
+5. **MCP Server**: Android compiler configured for automatic compilation
+6. **Technical Debt (2025-06-20)**: 10个技术债务项已全部完成 ✅
    - ✅ TD-001: Room编译器缺失问题已修复
    - ✅ TD-002: 版本目录迁移已完成（100%覆盖）
    - ✅ TD-003: Kotlin编译参数统一已完成
@@ -583,4 +657,4 @@ class HomeViewModel @Inject constructor(
 - 性能优化（分页加载、缓存机制、数据库索引）
 
 ---
-*Last Updated: 2025-06-22 23:45 - 记账功能开发完成！共完成15/15任务。数据库版本7，编译时间保持25秒。*
+*Last Updated: 2025-07-31 10:30 - 数据导出导入功能重构规划完成，开始实施FastExcel方案。数据库版本7，23个表结构分析完成。*

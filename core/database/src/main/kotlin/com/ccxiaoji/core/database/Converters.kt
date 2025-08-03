@@ -1,12 +1,17 @@
 package com.ccxiaoji.core.database
 
 import androidx.room.TypeConverter
+import com.ccxiaoji.common.model.CategoryType
 import com.ccxiaoji.common.model.RecurringFrequency
 import com.ccxiaoji.common.model.SyncStatus
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import java.time.LocalDate
 import java.time.LocalDateTime
+import kotlinx.datetime.Instant
 
 class Converters {
+    private val gson = Gson()
     @TypeConverter
     fun fromSyncStatus(status: SyncStatus): String {
         return status.name
@@ -70,5 +75,41 @@ class Converters {
     @TypeConverter
     fun localDateTimeToTimestamp(dateTime: LocalDateTime?): Long? {
         return dateTime?.toInstant(java.time.ZoneOffset.UTC)?.toEpochMilli()
+    }
+    
+    // CategoryType converters
+    @TypeConverter
+    fun fromCategoryType(type: CategoryType?): String? {
+        return type?.name
+    }
+    
+    @TypeConverter
+    fun toCategoryType(typeString: String?): CategoryType? {
+        return typeString?.let { CategoryType.valueOf(it) }
+    }
+    
+    // Instant converters for kotlinx.datetime
+    @TypeConverter
+    fun fromInstant(instant: Instant?): Long? {
+        return instant?.toEpochMilliseconds()
+    }
+    
+    @TypeConverter
+    fun toInstant(timestamp: Long?): Instant? {
+        return timestamp?.let { Instant.fromEpochMilliseconds(it) }
+    }
+    
+    // String List converters
+    @TypeConverter
+    fun fromStringList(list: List<String>?): String? {
+        return list?.let { gson.toJson(it) }
+    }
+    
+    @TypeConverter
+    fun toStringList(value: String?): List<String>? {
+        return value?.let {
+            val listType = object : TypeToken<List<String>>() {}.type
+            gson.fromJson(it, listType)
+        }
     }
 }

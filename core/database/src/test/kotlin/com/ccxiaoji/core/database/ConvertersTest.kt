@@ -4,9 +4,11 @@ import com.ccxiaoji.common.model.CategoryType
 import com.ccxiaoji.common.model.RecurringFrequency
 import com.ccxiaoji.common.model.SyncStatus
 import com.google.common.truth.Truth.assertThat
-import kotlinx.datetime.*
+import kotlinx.datetime.Instant
 import org.junit.Before
 import org.junit.Test
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 class ConvertersTest {
 
@@ -20,7 +22,7 @@ class ConvertersTest {
     @Test
     fun `LocalDate转换测试`() {
         // Given
-        val date = LocalDate(2024, 1, 15)
+        val date = LocalDate.of(2024, 1, 15)
 
         // When
         val dateString = converters.fromLocalDate(date)
@@ -45,7 +47,7 @@ class ConvertersTest {
     @Test
     fun `LocalDateTime转换测试`() {
         // Given
-        val dateTime = LocalDateTime(2024, 1, 15, 14, 30, 45)
+        val dateTime = LocalDateTime.of(2024, 1, 15, 14, 30, 45)
 
         // When
         val dateTimeString = converters.fromLocalDateTime(dateTime)

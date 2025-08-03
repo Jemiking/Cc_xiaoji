@@ -1480,5 +1480,303 @@ fun DiscordHomeScreen(
 #### 编译注意事项
 代码修改已完成，但由于执行了clean操作，导致build文件夹中的中间文件（如AndroidManifest.xml）被清理。建议在Android Studio中执行完整的Rebuild Project操作。
 
+## 第十阶段：编译错误修复与状态栏问题深入分析（2025-07-12）
+
+### 背景
+第九阶段完成代码清理后，在Android Studio编译时遇到错误，并发现状态栏颜色问题仍未解决。
+
+### 10.1 编译错误及修复
+
+#### 错误列表
+```
+e: Unresolved reference: BackgroundSecondary
+e: Unresolved reference: Border
+```
+
+#### 问题原因
+在DiscordColors.kt中缺少以下颜色定义：
+- `BackgroundSecondary` - 次要背景色
+- `Border` - 边框线颜色
+
+#### 解决方案（已执行）
+在DiscordColors.kt中添加缺失的颜色定义：
+```kotlin
+// Dark主题
+val BackgroundSecondary = Color(0xFF2b2d31) // 次要背景（与侧边栏相同）
+val Border = Color(0xFF3f4147)              // 边框线（与分隔线相同）
+
+// Light主题  
+val BackgroundSecondary = Color(0xFFf9f9f9) // 次要背景
+val Border = Color(0xFFe3e5e8)              // 边框线（与分隔线相同）
+```
+
+✅ **状态**：编译错误已解决
+
+### 10.2 品牌横幅位置调整
+
+#### 问题描述
+用户反馈：demov2中右侧内容区最上面是Dashboard标题，而不是品牌横幅图片，不符合Discord风格。
+
+#### ASCII布局对比
+```
+错误布局：
+┌────┬────────────────┐
+│模块│ Dashboard 🔍    │ ← 标题在最上
+│栏  ├────────────────┤
+│    │ [品牌横幅]     │ ← 横幅在内容中
+│    │ 待处理事项     │
+└────┴────────────────┘
+
+正确布局：
+┌────┬────────────────┐
+│模块│ [品牌横幅]     │ ← 横幅在最顶部
+│栏  ├────────────────┤
+│    │ Dashboard 🔍    │ ← 标题在横幅下
+│    ├────────────────┤
+│    │ 待处理事项     │
+└────┴────────────────┘
+```
+
+#### 解决方案（已执行）
+将品牌横幅从DashboardContent移到右侧Surface内Column的最顶部：
+```kotlin
+Surface(右侧内容区) {
+    Column {
+        // 品牌横幅 - 现在在最顶部
+        Box(品牌横幅)
+        
+        // 模块标题栏
+        ModuleHeader(Dashboard/记账/待办等)
+        
+        // 模块内容
+        when(selectedModule) { ... }
+    }
+}
+```
+
+✅ **状态**：布局调整已完成
+
+### 10.3 状态栏颜色问题深入分析
+
+#### 问题描述
+- 浅色主题：左侧模块栏灰色，但状态栏白色 ❌
+- 深色主题：左侧模块栏黑色，但状态栏仍白色 ❌
+
+期望：状态栏背景色应与左侧模块栏背景色一致，实现Discord的沉浸式效果。
+
+#### 尝试过的方案及失败原因
+
+##### 方案一：调整布局结构（失败）
+```kotlin
+// 移除Row的topPadding，让背景延伸到状态栏
+Row(
+    modifier = Modifier
+        .fillMaxSize()
+        .padding(bottom = paddingValues.calculateBottomPadding())
+) {
+    DiscordModuleBar(
+        modifier = Modifier
+            .width(72.dp)
+            .padding(top = topPadding) // padding移到内部
+    )
+}
+```
+**失败原因**：视觉效果没有任何改变
+
+##### 方案二：设置状态栏透明（失败）
+```kotlin
+LaunchedEffect(Unit) {
+    val window = (view.context as? Activity)?.window
+    window?.let {
+        WindowCompat.setDecorFitsSystemWindows(it, false)
+        it.statusBarColor = android.graphics.Color.TRANSPARENT
+    }
+}
+```
+**失败原因**：视觉效果仍然没有改变
+
+#### 深入分析：系统层级关系
+
+```
+Android系统层级（Z轴从高到低）
+┌────────────────────────────────────────┐
+│ 系统状态栏 (System UI Layer)           │ ← 最高层
+├────────────────────────────────────────┤
+│ 应用窗口 (Application Window)          │
+│ ┌────────────────────────────────────┐ │
+│ │ Scaffold                          │ │
+│ │ ├─ 内容区域 (paddingValues)       │ │
+│ │ │  └─ DiscordHomeScreen          │ │
+│ │ │     └─ Box (BackgroundDeepest) │ │
+│ │ └─ BottomBar                     │ │
+│ └────────────────────────────────────┘ │
+└────────────────────────────────────────┘
+```
+
+#### 关键认识
+
+1. **系统状态栏是独立的系统UI层**
+   - 有自己的背景色（默认白色）
+   - 浮在应用内容上方
+
+2. **edge-to-edge模式的真实作用**
+   - `setDecorFitsSystemWindows(false)`只是允许内容延伸到状态栏下方
+   - 不会自动让状态栏变透明
+
+3. **可能的问题根源**
+   - Scaffold可能在处理WindowInsets，限制了内容的绘制区域
+   - 状态栏可能有默认的scrim效果
+   - 可能需要在Activity或主题级别设置，而不是在Composable中
+
+4. **26%的topPadding问题**
+   - 当前使用26%的状态栏高度作为padding
+   - 这可能阻止了背景色真正延伸到状态栏顶部
+
+### 10.4 当前状态总结
+
+#### 已完成
+- ✅ 编译错误修复（添加缺失颜色定义）
+- ✅ 品牌横幅位置调整（移到右侧内容区顶部）
+- ✅ 代码从3900行精简到1491行
+
+#### 待解决
+- ❌ 状态栏背景色问题
+- ❓ 需要进一步研究Scaffold与WindowInsets的交互
+- ❓ 可能需要在Activity级别或主题中处理
+
+### 10.5 下一步建议
+
+1. **检查主Activity**
+   - 查看是否有其他地方设置了状态栏颜色
+   - 检查主题配置
+
+2. **尝试新方案**
+   - 在Activity onCreate中设置状态栏
+   - 使用Theme.kt中的配置
+   - 考虑使用`systemBarsPadding()`而不是自定义padding
+
+3. **调试方法**
+   - 使用Layout Inspector查看实际的视图层级
+   - 检查WindowInsets的实际值
+   - 验证背景色是否真的延伸到了状态栏区域
+
+## 第十一阶段：状态栏图标颜色修复（2025-07-14）
+
+### 背景
+第十阶段修复状态栏背景色后，发现新问题：
+- 深色主题：系统状态栏图标清晰可见 ✅
+- 浅色主题：系统状态栏图标看不清 ❌
+
+### 11.1 问题分析
+
+#### 状态栏图标逻辑
+```kotlin
+// 原代码逻辑
+val darkIcons = !isDarkTheme && selectedTab == 2 // 只有浅色主题的个人中心用深色图标
+```
+
+#### 问题表现
+| 主题模式 | 页面 | 状态栏背景色 | 系统图标颜色 | 视觉效果 |
+|---------|------|-------------|-------------|---------|
+| 深色 | 所有页面 | 深色 | 白色 | ✅ 清晰可见 |
+| 浅色 | 主页 | #f2f3f5（浅灰） | 白色 | ❌ 看不清 |
+| 浅色 | 通知 | #ffffff（白色） | 白色 | ❌ 看不清 |
+| 浅色 | 个人中心 | #f9f9f9（浅灰） | 黑色 | ✅ 清晰可见 |
+
+**问题根源**：浅色主题下，只有个人中心使用黑色图标，其他页面仍使用白色图标，导致在浅色背景上看不清。
+
+### 11.2 解决方案
+
+#### 修改StatusBarEffect逻辑
+```kotlin
+// 修改前
+val darkIcons = !isDarkTheme && selectedTab == 2 // 只有浅色主题的个人中心用深色图标
+
+// 修改后
+val darkIcons = !isDarkTheme // 浅色主题使用深色图标，深色主题使用浅色图标
+```
+
+**效果**：
+- 深色主题：所有页面都显示白色系统图标
+- 浅色主题：所有页面都显示黑色系统图标
+
+### 11.3 MCP编译问题修复
+
+#### 问题描述
+执行编译时遇到多个错误：
+1. `java.io.IOException: Input/output error`
+2. `mergedManifestFile doesn't exist`
+3. `Unresolved reference: BuildConfig`
+
+#### 根本原因
+- 之前执行的clean操作清理了build文件夹
+- MCP编译命令跳过了关键任务
+- ANDROID_HOME环境变量丢失
+
+#### 解决步骤
+1. ✅ 停止Gradle daemon进程
+   ```bash
+   ./gradlew --stop
+   ```
+
+2. ✅ 清理Gradle缓存
+   ```bash
+   rm -rf .gradle/configuration-cache
+   rm -rf .gradle/file-system.probe
+   ```
+
+3. ✅ 设置环境变量并生成必要文件
+   ```bash
+   export ANDROID_HOME=/mnt/c/Users/Hua/AppData/Local/Android/Sdk
+   ./gradlew :app:processDebugManifest --no-daemon
+   ./gradlew :app:generateDebugBuildConfig --no-daemon
+   ```
+
+4. ✅ 执行完整编译
+   ```bash
+   ./gradlew :app:compileDebugKotlin --no-daemon
+   ```
+
+**结果**：
+```
+BUILD SUCCESSFUL in 2m 54s
+227 actionable tasks: 49 executed, 1 from cache, 177 up-to-date
+```
+
+### 11.4 完成状态
+
+#### 修复完成
+- ✅ 状态栏图标颜色问题解决
+- ✅ MCP编译环境恢复正常
+- ✅ 所有模块编译成功
+
+#### 最终效果
+1. **主页**：
+   - 深色主题：深灰背景 + 白色系统图标
+   - 浅色主题：浅灰背景 + 黑色系统图标
+
+2. **通知页面**：
+   - 深色主题：浅灰背景 + 白色系统图标
+   - 浅色主题：白色背景 + 黑色系统图标
+
+3. **个人中心**：
+   - 深色主题：次灰背景 + 白色系统图标
+   - 浅色主题：浅灰背景 + 黑色系统图标
+
+### 11.5 技术总结
+
+1. **isAppearanceLightStatusBars属性**：
+   - `true`：显示深色系统图标（适合浅色背景）
+   - `false`：显示浅色系统图标（适合深色背景）
+
+2. **最佳实践**：
+   - 根据主题统一设置系统图标颜色
+   - 避免页面级别的特殊处理，保持一致性
+
+3. **MCP编译注意事项**：
+   - 确保ANDROID_HOME环境变量正确设置
+   - clean后需要重新生成必要的中间文件
+   - 使用--no-daemon避免daemon进程问题
+
 ---
-*最后更新：2025-07-12*
+*最后更新：2025-07-14*

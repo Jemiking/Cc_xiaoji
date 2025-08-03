@@ -60,6 +60,21 @@ git clone https://github.com/Jemiking/Cc_xiaoji.git
 
 4. 运行应用
 
+### Excel功能构建说明
+
+本项目使用 `cn.idev.excel:fastexcel` 处理Excel导入导出功能，采用了POI包名重定位技术来避免依赖冲突：
+
+- **自动构建**：构建过程会自动执行POI重定位，无需额外操作
+- **Shadow任务**：`shadowPoi` 任务会在 `preBuild` 时自动执行
+- **重定位JAR**：生成的POI JAR位于 `app/build/relocated/` 目录
+
+如需手动执行POI重定位：
+```bash
+./gradlew shadowPoi
+```
+
+详细技术方案请参考：[FastExcel-POI重定位方案文档](doc/FastExcel-POI重定位方案文档.md)
+
 ## 项目结构
 
 ```

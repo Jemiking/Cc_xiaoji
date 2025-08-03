@@ -127,6 +127,43 @@ class LedgerApiImpl @Inject constructor(
         transactionRepository.deleteTransaction(transactionId)
     }
     
+    // Batch operations
+    override suspend fun insertTransactionsBatch(
+        transactions: List<TransactionBatchItem>
+    ): BatchInsertResult {
+        val results = mutableListOf<Long>()
+        val errors = mutableListOf<BatchInsertError>()
+        
+        // 使用事务批量插入
+        transactions.forEachIndexed { index, item ->
+            try {
+                val result = transactionRepository.addTransaction(
+                    amountCents = item.amountCents,
+                    categoryId = item.categoryId,
+                    note = item.note,
+                    accountId = item.accountId
+                )
+                when (result) {
+                    is BaseResult.Success -> results.add(result.data)
+                    is BaseResult.Error -> errors.add(BatchInsertError(index, result.exception.message ?: "Unknown error"))
+                }
+            } catch (e: Exception) {
+                errors.add(BatchInsertError(index, e.message ?: "Unknown error"))
+            }
+        }
+        
+        return BatchInsertResult(
+            successCount = results.size,
+            failedCount = errors.size,
+            insertedIds = results,
+            errors = errors
+        )
+    }
+    
+    override suspend fun getTransactionCount(): Int {
+        return transactionRepository.getTransactions().first().size
+    }
+    
     // Account methods
     override fun getAccounts(): Flow<List<Account>> {
         return accountRepository.getAccounts()

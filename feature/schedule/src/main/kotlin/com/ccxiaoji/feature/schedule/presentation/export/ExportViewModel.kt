@@ -111,12 +111,6 @@ class ExportViewModel @Inject constructor(
                     ExportFormat.CSV -> {
                         exportScheduleDataUseCase.exportToCsv(startDate, endDate, outputFile)
                     }
-                    ExportFormat.JSON -> {
-                        exportScheduleDataUseCase.exportToJson(startDate, endDate, outputFile)
-                    }
-                    ExportFormat.REPORT -> {
-                        exportScheduleDataUseCase.exportStatisticsReport(startDate, endDate, outputFile)
-                    }
                 }
                 
                 result.fold(

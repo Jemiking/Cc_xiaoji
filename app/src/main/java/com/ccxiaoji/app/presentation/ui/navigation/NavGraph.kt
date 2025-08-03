@@ -19,9 +19,9 @@ import com.ccxiaoji.feature.todo.presentation.screen.DatePickerScreen as TodoDat
 import com.ccxiaoji.feature.habit.presentation.screen.HabitScreen
 import com.ccxiaoji.app.presentation.ui.profile.ProfileScreen
 import com.ccxiaoji.app.presentation.ui.profile.DataExportScreen
+import com.ccxiaoji.app.presentation.ui.profile.DataImportScreen
 import com.ccxiaoji.app.presentation.ui.profile.ThemeSettingsScreen
 import com.ccxiaoji.app.presentation.ui.profile.NotificationSettingsScreen
-import com.ccxiaoji.app.presentation.screen.DataImportScreen
 import com.ccxiaoji.app.presentation.ui.components.ModuleTopBar
 import com.ccxiaoji.feature.ledger.api.LedgerApi
 import com.ccxiaoji.feature.plan.api.PlanApi
@@ -435,7 +435,8 @@ fun NavGraph(
         
         composable(DataImportRoute.route) {
             DataImportScreen(
-                navController = navController
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToGuide = { /* TODO: 实现帮助指南导航 */ }
             )
         }
         

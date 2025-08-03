@@ -1,13 +1,15 @@
 package com.ccxiaoji.shared.backup.api
 
-import android.net.Uri
-import com.ccxiaoji.common.data.import.BackupFile
-import com.ccxiaoji.common.data.import.ImportConfig
-import com.ccxiaoji.common.data.import.ImportResult
-import com.ccxiaoji.common.data.import.ImportValidation
+// import android.net.Uri
+// import com.ccxiaoji.common.data.import.BackupFile
+// import com.ccxiaoji.common.data.import.ImportConfig
+// import com.ccxiaoji.common.data.import.ImportResult
+// import com.ccxiaoji.common.data.import.ImportValidation
 
 /**
  * 备份模块对外API接口
+ * 
+ * 注意：数据导入导出功能正在重构中，预计2025年8月4日完成
  */
 interface BackupApi {
     /**
@@ -23,6 +25,8 @@ interface BackupApi {
      */
     suspend fun restoreBackup(backupPath: String): Boolean
     
+    // 以下方法暂时注释，等待重构完成
+    /*
     /**
      * 获取所有备份文件
      * @return 备份文件列表，按时间倒序排列
@@ -49,4 +53,5 @@ interface BackupApi {
      * @return 导入结果
      */
     suspend fun importJsonFile(uri: Uri, config: ImportConfig = ImportConfig()): ImportResult
+    */
 }

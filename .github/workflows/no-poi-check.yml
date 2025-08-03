@@ -1,0 +1,27 @@
+name: No POI Check
+
+on: [push, pull_request]
+
+jobs:
+  check-no-poi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      
+      - name: Check for POI imports
+        run: |
+          if grep -r "import org.apache.poi" --include="*.kt" .; then
+            echo "ERROR: POI imports found!"
+            exit 1
+          fi
+          echo "✅ No POI imports found"
+          
+      - name: Check dependencies
+        run: |
+          ./gradlew checkNoPOI

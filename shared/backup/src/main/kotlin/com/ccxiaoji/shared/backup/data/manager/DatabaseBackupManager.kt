@@ -3,7 +3,7 @@ package com.ccxiaoji.shared.backup.data.manager
 import android.content.Context
 import android.os.Environment
 import com.ccxiaoji.common.constants.DatabaseConstants
-import com.ccxiaoji.common.data.import.BackupFile
+// import com.ccxiaoji.common.data.import.BackupFile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -130,6 +130,8 @@ class DatabaseBackupManager @Inject constructor(
         }
     }
     
+    // 以下方法暂时注释，等待重构完成
+    /*
     /**
      * 获取所有备份文件
      * @return 备份文件列表，按时间倒序排列
@@ -156,7 +158,9 @@ class DatabaseBackupManager @Inject constructor(
             emptyList()
         }
     }
+    */
     
+    /*
     /**
      * 在迁移前自动创建备份
      */
@@ -183,6 +187,7 @@ class DatabaseBackupManager @Inject constructor(
             null
         }
     }
+    */
     
     /**
      * 清理旧备份文件

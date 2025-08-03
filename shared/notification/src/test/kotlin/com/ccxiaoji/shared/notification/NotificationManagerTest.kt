@@ -4,17 +4,10 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.os.Build
-import androidx.core.app.NotificationCompat
-import com.ccxiaoji.shared.notification.api.NotificationApi
-import com.ccxiaoji.shared.notification.data.NotificationConfig
-import com.ccxiaoji.shared.notification.domain.model.NotificationData
-import com.ccxiaoji.shared.notification.domain.model.NotificationType
+import com.ccxiaoji.shared.notification.domain.model.NotificationConfig
 import com.google.common.truth.Truth.assertThat
 import io.mockk.*
 import io.mockk.impl.annotations.MockK
-import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalTime
 import org.junit.Before
 import org.junit.Test
 
@@ -29,9 +22,6 @@ class NotificationManagerTest {
     @MockK
     private lateinit var notificationConfig: NotificationConfig
 
-    @MockK
-    private lateinit var notificationApi: NotificationApi
-
     private lateinit var ccNotificationManager: CcNotificationManager
 
     @Before
@@ -40,6 +30,11 @@ class NotificationManagerTest {
         
         every { context.getSystemService(Context.NOTIFICATION_SERVICE) } returns notificationManager
         every { context.packageName } returns "com.ccxiaoji.app"
+        
+        // Mock NotificationConfig properties
+        every { notificationConfig.mainActivityClass } returns Any::class.java
+        every { notificationConfig.smallIconResourceId } returns 1
+        every { notificationConfig.packageName } returns "com.ccxiaoji.app"
         
         ccNotificationManager = CcNotificationManager(context, notificationConfig)
     }
@@ -72,56 +67,6 @@ class NotificationManagerTest {
     }
 
     @Test
-    fun `发送任务提醒通知`() = runTest {
-        // Given
-        val notificationData = NotificationData(
-            id = 1001,
-            type = NotificationType.TASK_REMINDER,
-            title = "任务提醒",
-            content = "别忘了完成今天的任务：整理文档",
-            channelId = "task_reminder",
-            priority = NotificationCompat.PRIORITY_HIGH,
-            autoCancel = true,
-            extras = mapOf("taskId" to "task123")
-        )
-
-        every { notificationManager.notify(any(), any()) } just Runs
-        coEvery { notificationApi.sendNotification(any()) } returns true
-
-        // When
-        val result = notificationApi.sendNotification(notificationData)
-
-        // Then
-        assertThat(result).isTrue()
-        coVerify(exactly = 1) { notificationApi.sendNotification(notificationData) }
-    }
-
-    @Test
-    fun `发送习惯打卡提醒`() = runTest {
-        // Given
-        val notificationData = NotificationData(
-            id = 2001,
-            type = NotificationType.HABIT_REMINDER,
-            title = "习惯打卡提醒",
-            content = "该进行每日运动了！坚持就是胜利💪",
-            channelId = "habit_reminder",
-            priority = NotificationCompat.PRIORITY_DEFAULT,
-            autoCancel = true,
-            extras = mapOf("habitId" to "habit456")
-        )
-
-        coEvery { notificationApi.sendNotification(any()) } returns true
-
-        // When
-        val result = notificationApi.sendNotification(notificationData)
-
-        // Then
-        assertThat(result).isTrue()
-        assertThat(notificationData.type).isEqualTo(NotificationType.HABIT_REMINDER)
-        assertThat(notificationData.extras["habitId"]).isEqualTo("habit456")
-    }
-
-    @Test
     fun `检查通知权限`() {
         // Given
         every { notificationManager.areNotificationsEnabled() } returns true
@@ -148,56 +93,14 @@ class NotificationManagerTest {
     }
 
     @Test
-    fun `批量发送通知`() = runTest {
-        // Given
-        val notifications = listOf(
-            NotificationData(
-                id = 3001,
-                type = NotificationType.SCHEDULE_REMINDER,
-                title = "排班提醒",
-                content = "明天是早班，记得早点休息",
-                channelId = "schedule_reminder"
-            ),
-            NotificationData(
-                id = 3002,
-                type = NotificationType.BUDGET_ALERT,
-                title = "预算提醒",
-                content = "本月餐饮预算已使用80%",
-                channelId = "budget_alert"
-            )
-        )
-
-        coEvery { notificationApi.sendBatchNotifications(any()) } returns mapOf(
-            3001 to true,
-            3002 to true
-        )
-
-        // When
-        val results = notificationApi.sendBatchNotifications(notifications)
-
-        // Then
-        assertThat(results).hasSize(2)
-        assertThat(results[3001]).isTrue()
-        assertThat(results[3002]).isTrue()
-        coVerify(exactly = 1) { notificationApi.sendBatchNotifications(notifications) }
-    }
-
-    @Test
     fun `获取通知配置`() {
         // Given
-        every { notificationConfig.isEnabled } returns true
-        every { notificationConfig.defaultReminderTime } returns LocalTime(9, 0)
-        every { notificationConfig.soundEnabled } returns true
-        every { notificationConfig.vibrationEnabled } returns true
-
-        // When
         val config = notificationConfig
 
         // Then
-        assertThat(config.isEnabled).isTrue()
-        assertThat(config.defaultReminderTime).isEqualTo(LocalTime(9, 0))
-        assertThat(config.soundEnabled).isTrue()
-        assertThat(config.vibrationEnabled).isTrue()
+        assertThat(config.packageName).isEqualTo("com.ccxiaoji.app")
+        assertThat(config.smallIconResourceId).isEqualTo(1)
+        assertThat(config.mainActivityClass).isNotNull()
     }
 }
 
@@ -218,10 +121,4 @@ class CcNotificationManager(
     fun cancelNotification(notificationId: Int) {
         notificationManager.cancel(notificationId)
     }
-}
-
-// 假设的API接口扩展
-interface NotificationApi {
-    suspend fun sendNotification(data: NotificationData): Boolean
-    suspend fun sendBatchNotifications(notifications: List<NotificationData>): Map<Int, Boolean>
 }

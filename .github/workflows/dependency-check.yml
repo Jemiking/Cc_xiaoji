@@ -1,0 +1,147 @@
+name: Dependency Check
+
+on: 
+  pull_request:
+    paths:
+      - '**.kt'
+      - '**/build.gradle.kts'
+      - '**.java'
+  push:
+    branches:
+      - main
+      - develop
+      - 'feature/**'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # 需要完整历史来分析文件变更
+          
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        
+      - name: Check deleted files
+        run: |
+          echo "=== Checking for deleted files ==="
+          DELETED_FILES=$(git diff --name-only --diff-filter=D origin/main 2>/dev/null || echo "")
+          if [ ! -z "$DELETED_FILES" ]; then
+            echo "⚠️ Found deleted files:"
+            echo "$DELETED_FILES" | sed 's/^/  - /'
+            echo ""
+            echo "Running dependency check..."
+            
+            # 保存删除的文件列表供后续使用
+            echo "$DELETED_FILES" > deleted_files.txt
+          else
+            echo "✅ No deleted files in this change"
+          fi
+          
+      - name: Compile check
+        run: |
+          echo "=== Running compilation check ==="
+          ./gradlew :app:compileDebugKotlin --no-daemon --stacktrace
+          
+      - name: Run safe delete check
+        if: always()  # 即使编译失败也要运行
+        run: |
+          echo "=== Running safe delete check ==="
+          ./gradlew checkUnusedFiles --no-daemon
+          
+      - name: Check for missing dependencies
+        if: always()
+        run: |
+          if [ -f deleted_files.txt ]; then
+            echo "=== Analyzing impact of deleted files ==="
+            while IFS= read -r file; do
+              if [[ $file == *.kt ]]; then
+                CLASS_NAME=$(basename "$file" .kt)
+                echo "Checking references to: $CLASS_NAME"
+                
+                # 在源代码中搜索引用
+                REFERENCES=$(grep -r "import.*$CLASS_NAME" --include="*.kt" --include="*.java" app/src || true)
+                if [ ! -z "$REFERENCES" ]; then
+                  echo "  ⚠️ Found references:"
+                  echo "$REFERENCES" | sed 's/^/    /'
+                else
+                  echo "  ✅ No references found"
+                fi
+                echo ""
+              fi
+            done < deleted_files.txt
+          fi
+          
+      - name: Generate dependency report
+        if: always()
+        run: |
+          echo "=== Generating dependency report ==="
+          # 创建一个简单的依赖关系报告
+          find app/src -name "*.kt" -type f | head -20 | while read file; do
+            echo "File: $file"
+            grep "^import" "$file" | grep -v "^import java" | grep -v "^import kotlin" | head -5 | sed 's/^/  /'
+            echo ""
+          done > dependency_report.txt
+          
+          echo "Report preview:"
+          head -50 dependency_report.txt
+          
+      - name: Comment PR
+        if: github.event_name == 'pull_request' && failure()
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            let comment = '## ⚠️ Dependency Check Failed\n\n';
+            
+            // 读取删除的文件
+            try {
+              const deletedFiles = fs.readFileSync('deleted_files.txt', 'utf8').trim();
+              if (deletedFiles) {
+                comment += '### Deleted Files:\n';
+                deletedFiles.split('\n').forEach(file => {
+                  comment += `- ${file}\n`;
+                });
+                comment += '\n';
+              }
+            } catch (e) {
+              // 文件不存在，忽略
+            }
+            
+            comment += '### Action Required:\n';
+            comment += '1. Check if deleted files are still being referenced\n';
+            comment += '2. Update imports in affected files\n';
+            comment += '3. Run `./gradlew checkUnusedFiles` locally\n';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+            
+  lint-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          
+      - name: Run ktlint
+        run: |
+          echo "=== Running code style check ==="
+          ./gradlew ktlintCheck --no-daemon

@@ -206,9 +206,7 @@ enum class ExportFormat(
     val description: String,
     val extension: String
 ) {
-    CSV("", "", "csv"),
-    JSON("", "", "json"),
-    REPORT("", "", "txt")
+    CSV("", "", "csv")
 }
 
 /**

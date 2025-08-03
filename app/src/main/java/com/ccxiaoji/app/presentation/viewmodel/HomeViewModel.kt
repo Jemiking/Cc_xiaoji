@@ -23,7 +23,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import kotlinx.datetime.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.plus
+import kotlinx.datetime.DateTimeUnit
+// DateTimeUtils已移除 - 使用kotlinx.datetime替代
 import javax.inject.Inject
 import android.util.Log
 
@@ -81,7 +87,7 @@ class HomeViewModel @Inject constructor(
                 0
             }
             val todayStart = now.date.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-            val todayEnd = now.date.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+            val todayEnd = now.date.plus(1, kotlinx.datetime.DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
             
             transactionRepository.getTransactionsByDateRange(
                 now.date,

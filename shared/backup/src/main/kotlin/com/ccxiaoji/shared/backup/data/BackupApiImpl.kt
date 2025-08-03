@@ -1,22 +1,24 @@
 package com.ccxiaoji.shared.backup.data
 
-import android.net.Uri
+// import android.net.Uri
 import android.content.Context
 import com.ccxiaoji.shared.backup.api.BackupApi
 import com.ccxiaoji.shared.backup.data.manager.DatabaseBackupManager
-import com.ccxiaoji.common.data.import.BackupFile
-import com.ccxiaoji.common.data.import.ImportConfig
-import com.ccxiaoji.common.data.import.ImportResult
-import com.ccxiaoji.common.data.import.ImportValidation
-import com.ccxiaoji.common.data.import.ImportError
-import com.ccxiaoji.common.data.import.ImportData
-import com.google.gson.Gson
+// import com.ccxiaoji.common.data.import.BackupFile
+// import com.ccxiaoji.common.data.import.ImportConfig
+// import com.ccxiaoji.common.data.import.ImportResult
+// import com.ccxiaoji.common.data.import.ImportValidation
+// import com.ccxiaoji.common.data.import.ImportError
+// import com.ccxiaoji.common.data.import.ImportData
+// import com.google.gson.Gson
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
  * BackupApi的实现类
+ * 
+ * 注意：数据导入导出功能正在重构中，预计2025年8月4日完成
  */
 @Singleton
 class BackupApiImpl @Inject constructor(
@@ -32,6 +34,8 @@ class BackupApiImpl @Inject constructor(
         return databaseBackupManager.restoreBackup(backupPath)
     }
     
+    // 以下方法暂时注释，等待重构完成
+    /*
     override suspend fun getBackupFiles(): List<BackupFile> {
         return databaseBackupManager.getBackupFiles()
     }
@@ -108,4 +112,5 @@ class BackupApiImpl @Inject constructor(
             moduleResults = emptyMap()
         )
     }
+    */
 }

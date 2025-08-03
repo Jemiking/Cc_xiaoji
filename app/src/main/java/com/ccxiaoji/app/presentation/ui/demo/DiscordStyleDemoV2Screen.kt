@@ -33,6 +33,7 @@ import com.ccxiaoji.ui.theme.DiscordColors
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import android.app.Activity
+import androidx.compose.ui.graphics.toArgb
 
 // 最优顶部间距百分比
 private const val OPTIMAL_TOP_PADDING_PERCENTAGE = 26f
@@ -161,13 +162,35 @@ private fun calculateOptimalTopPadding(): Dp {
 @Composable
 private fun StatusBarEffect(selectedTab: Int, isDarkTheme: Boolean) {
     val view = LocalView.current
-    val darkIcons = !isDarkTheme && selectedTab == 2 // 个人中心页面且浅色主题时使用深色图标
+    val darkIcons = !isDarkTheme // 浅色主题使用深色图标，深色主题使用浅色图标
     
     DisposableEffect(selectedTab, isDarkTheme) {
         val window = (view.context as? Activity)?.window
         window?.let {
             val insetsController = WindowCompat.getInsetsController(it, view)
             insetsController.isAppearanceLightStatusBars = darkIcons
+            
+            // 设置状态栏背景色
+            val statusBarColor = when (selectedTab) {
+                0 -> {
+                    // 主页：使用BackgroundDeepest颜色，与左侧模块栏一致
+                    if (isDarkTheme) DiscordColors.Dark.BackgroundDeepest.toArgb()
+                    else DiscordColors.Light.BackgroundDeepest.toArgb()
+                }
+                else -> {
+                    // 其他页面：使用BackgroundPrimary或BackgroundSecondary
+                    if (selectedTab == 2) {
+                        // 个人中心使用BackgroundSecondary
+                        if (isDarkTheme) DiscordColors.Dark.BackgroundSecondary.toArgb()
+                        else DiscordColors.Light.BackgroundSecondary.toArgb()
+                    } else {
+                        // 通知页面使用BackgroundPrimary
+                        if (isDarkTheme) DiscordColors.Dark.BackgroundPrimary.toArgb()
+                        else DiscordColors.Light.BackgroundPrimary.toArgb()
+                    }
+                }
+            }
+            window.statusBarColor = statusBarColor
         }
         
         onDispose { }
@@ -220,6 +243,31 @@ private fun DiscordHomeScreen(
                 shadowElevation = 4.dp
             ) {
                 Column {
+                    // 品牌横幅 - 移到最顶部
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(120.dp)
+                            .background(DiscordColors.Blurple),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "CC小记品牌横幅",
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Text(
+                                "Life Manager",
+                                fontSize = 16.sp,
+                                color = Color.White.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+                    
                     // 模块标题栏
                     ModuleHeader(
                         moduleName = when (selectedModule) {
@@ -838,33 +886,6 @@ private fun DashboardContent(isDarkTheme: Boolean) {
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        // 品牌横幅
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp)
-                .background(DiscordColors.Blurple),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    "CC小记品牌横幅",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Text(
-                    "Life Manager",
-                    fontSize = 16.sp,
-                    color = Color.White.copy(alpha = 0.8f)
-                )
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
         // 待处理事项区块
         PendingItemsSection(
             isExpanded = expandedCategories["pending"] != false,

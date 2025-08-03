@@ -44,8 +44,6 @@ fun ExportHistoryItem(
             Icon(
                 when (exportInfo.format) {
                     ExportFormat.CSV -> Icons.Default.TableChart
-                    ExportFormat.JSON -> Icons.Default.Code
-                    ExportFormat.REPORT -> Icons.Default.Description
                 },
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,

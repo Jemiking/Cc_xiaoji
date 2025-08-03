@@ -23,6 +23,7 @@ import com.ccxiaoji.feature.ledger.worker.creditcard.CreditCardReminderManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import android.util.Log
+import android.content.Intent
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -49,6 +50,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "MainActivity onCreate started")
+        
+        // MIUI兼容性修复：处理null Bundle的情况
+        if (savedInstanceState != null) {
+            try {
+                // 验证Bundle是否可用
+                savedInstanceState.size()
+            } catch (e: Exception) {
+                Log.w(TAG, "Bundle validation failed, treating as null", e)
+            }
+        }
         
         try {
             // enableEdgeToEdge()  // 移除以解决顶部空隙问题

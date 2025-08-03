@@ -67,8 +67,6 @@ fun ExportFormatSection(
                         Text(
                             when (format) {
                                 ExportFormat.CSV -> stringResource(R.string.schedule_export_format_csv)
-                                ExportFormat.JSON -> stringResource(R.string.schedule_export_format_json)
-                                ExportFormat.REPORT -> stringResource(R.string.schedule_export_format_report)
                             },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface
@@ -76,8 +74,6 @@ fun ExportFormatSection(
                         Text(
                             when (format) {
                                 ExportFormat.CSV -> stringResource(R.string.schedule_export_format_csv_desc)
-                                ExportFormat.JSON -> stringResource(R.string.schedule_export_format_json_desc)
-                                ExportFormat.REPORT -> stringResource(R.string.schedule_export_format_report_desc)
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -87,8 +83,6 @@ fun ExportFormatSection(
                     Icon(
                         when (format) {
                             ExportFormat.CSV -> Icons.Default.TableChart
-                            ExportFormat.JSON -> Icons.Default.Code
-                            ExportFormat.REPORT -> Icons.Default.Description
                         },
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,

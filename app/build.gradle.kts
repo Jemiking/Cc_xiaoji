@@ -15,12 +15,26 @@ android {
         applicationId = "com.ccxiaoji.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 250  // v2.5.0 - FastExcel重构版本，完全重写导入导出功能
+        versionName = "2.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
+        }
+        
+        // 版本特性标记
+        buildConfigField("String", "VERSION_FEATURES", "\"EXCEL_NATIVE,FASTEXCEL,STREAM_PROCESSING,HIGH_PERFORMANCE\"")
+        buildConfigField("boolean", "FASTEXCEL_ENABLED", "true")
+        buildConfigField("boolean", "INTEGRATION_TESTS_ENABLED", "true")
+        buildConfigField("String", "BACKUP_FORMAT_VERSION", "\"3.0\"")
+        buildConfigField("String", "SUPPORTED_FORMATS", "\"xlsx\"")
+        buildConfigField("long", "BUILD_TIMESTAMP", "${System.currentTimeMillis()}L")
+    }
+    
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
         }
     }
 
@@ -29,9 +43,11 @@ android {
             isMinifyEnabled = true  // 已添加Hilt ProGuard规则
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                "proguard-rules.pro",
             )
             signingConfig = signingConfigs.getByName("debug")
+        }
+        debug {
         }
     }
     compileOptions {
@@ -56,6 +72,8 @@ android {
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "/META-INF/LICENSE.md"
+            excludes += "/META-INF/LICENSE-notice.md"
         }
     }
 }
@@ -123,13 +141,12 @@ dependencies {
     // Gson
     implementation(libs.gson)
     
-    // Excel处理 - 使用Android兼容版本
-    // 移除原有POI 5.2.4，使用Android Port版本
-    implementation("com.github.SUPERCILEX.poi-android:poi:3.17")
+    // Excel处理 (FastExcel)
+    implementation("org.dhatim:fastexcel:0.15.7")
+    implementation("org.dhatim:fastexcel-reader:0.15.7")
     
-    // 保留必要的XML处理依赖
-    implementation("org.dom4j:dom4j:2.1.4")
-    implementation("javax.xml.stream:stax-api:1.0-2")
+    // CSV处理
+    implementation("com.github.doyaaaaaken:kotlin-csv-jvm:1.9.3")
     
     // Desugaring for Java 8+ APIs
     coreLibraryDesugaring(libs.android.tools.desugar)
@@ -153,3 +170,4 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
+

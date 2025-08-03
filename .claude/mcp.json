@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "o3mcp": {
+      "command": "node",
+      "args": ["D:\\开发项目\\mcp\\o3mcp\\dist\\index.js"],
+      "env": {
+        "OPENAI_API_KEY": "sk-AjLiv6wVrbxtroActCAuqeirwwBhgLx1dBy6VQaLL8hnHAGgB2ET",
+        "OPENAI_BASE_URL": "https://api.oaipro.com/v1",
+        "O3_MODEL": "o3-2025-04-16",
+        "NODE_ENV": "development",
+        "LOG_LEVEL": "debug"
+      }
+    },
+    "android-compiler": {
+      "command": "node",
+      "args": ["D:/kotlin/Cc_xiaoji/android-compiler-mcp-windows/index.js"],
+      "env": {
+        "NODE_ENV": "development"
+      }
+    }
+  }
+}

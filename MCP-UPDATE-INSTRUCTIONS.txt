@@ -1,0 +1,33 @@
+MCP Configuration Update Instructions
+=====================================
+
+The MCP has been migrated from WSL to Windows native.
+
+To update your configuration:
+
+1. Open a NEW Command Prompt or PowerShell window (NOT inside Claude Code)
+
+2. Run ONE of these commands:
+   
+   Command Prompt:
+   cd D:\kotlin\Cc_xiaoji
+   update-mcp-en.bat
+   
+   OR PowerShell:
+   cd D:\kotlin\Cc_xiaoji
+   .\update-mcp-en.bat
+
+3. After the script completes:
+   - Type "exit" in Claude Code to quit
+   - Start Claude Code again with "claude"
+   - The MCP should now run on Windows
+
+To verify the configuration is working:
+- Run: diagnose-mcp-en.bat
+
+Files created:
+- android-compiler-mcp-windows/     (Windows MCP server)
+- update-mcp-en.bat                 (Update script)
+- diagnose-mcp-en.bat               (Diagnostic script)
+
+The Windows MCP server is already tested and working.

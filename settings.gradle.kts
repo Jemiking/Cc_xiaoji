@@ -7,11 +7,15 @@ pluginManagement {
     }
 }
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        // 直接使用官方源，通过代理访问
-        google()
+        // 优先使用官方仓库
         mavenCentral()
+        google()
+        // 阿里云Maven镜像（备用）
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
+        // JitPack仓库（用于poi-android）
+        maven { url = uri("https://jitpack.io") }
     }
 }
 

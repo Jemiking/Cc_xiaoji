@@ -20,6 +20,7 @@ import com.google.gson.Gson
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.catch
 import kotlinx.datetime.*
 import java.util.UUID
 import javax.inject.Inject
@@ -319,34 +320,32 @@ class TransactionRepositoryImpl @Inject constructor(
         accountId: String?,
         startDate: Long?,
         endDate: Long?
-    ): Flow<BaseResult<Pair<List<Transaction>, Int>>> = flow {
-        try {
-            val result = transactionDao.getTransactionsPaginated(
-                userId = userApi.getCurrentUserId(),
-                offset = offset,
-                limit = limit,
-                accountId = accountId,
-                startDateMillis = startDate,
-                endDateMillis = endDate
-            )
-            
-            val transactions = result.first.map { entity ->
-                val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
-                    CategoryDetails(
-                        id = category.id,
-                        name = category.name,
-                        icon = category.icon,
-                        color = category.color,
-                        type = category.type
-                    )
-                }
-                entity.toDomainModel(categoryDetails)
+    ): Flow<BaseResult<Pair<List<Transaction>, Int>>> = flow<BaseResult<Pair<List<Transaction>, Int>>> {
+        val result = transactionDao.getTransactionsPaginated(
+            userId = userApi.getCurrentUserId(),
+            offset = offset,
+            limit = limit,
+            accountId = accountId,
+            startDateMillis = startDate,
+            endDateMillis = endDate
+        )
+        
+        val transactions = result.first.map { entity ->
+            val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
+                CategoryDetails(
+                    id = category.id,
+                    name = category.name,
+                    icon = category.icon,
+                    color = category.color,
+                    type = category.type
+                )
             }
-            
-            emit(BaseResult.Success(Pair(transactions, result.second)))
-        } catch (e: Exception) {
-            emit(BaseResult.Error(e))
+            entity.toDomainModel(categoryDetails)
         }
+        
+        emit(BaseResult.Success(Pair(transactions, result.second)))
+    }.catch { e ->
+        emit(BaseResult.Error(if (e is Exception) e else Exception(e)))
     }
     
 }

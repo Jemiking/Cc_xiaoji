@@ -34,6 +34,13 @@ interface LedgerApi {
     suspend fun updateTransaction(transaction: Transaction)
     suspend fun deleteTransaction(transactionId: String)
     
+    // Batch operations
+    suspend fun insertTransactionsBatch(
+        transactions: List<TransactionBatchItem>
+    ): BatchInsertResult
+    
+    suspend fun getTransactionCount(): Int
+    
     // Account methods
     fun getAccounts(): Flow<List<Account>>
     suspend fun getAccountById(accountId: String): Account?
@@ -225,3 +232,32 @@ interface LedgerApi {
     @Composable
     fun getCreditCardSettingsScreen(accountId: String, navController: NavHostController)
 }
+
+/**
+ * 批量插入交易数据项
+ */
+data class TransactionBatchItem(
+    val amountCents: Int,
+    val categoryId: String,
+    val accountId: String,
+    val note: String,
+    val createdAt: Long
+)
+
+/**
+ * 批量插入结果
+ */
+data class BatchInsertResult(
+    val successCount: Int,
+    val failedCount: Int,
+    val insertedIds: List<Long>,
+    val errors: List<BatchInsertError>
+)
+
+/**
+ * 批量插入错误信息
+ */
+data class BatchInsertError(
+    val index: Int,
+    val message: String
+)
