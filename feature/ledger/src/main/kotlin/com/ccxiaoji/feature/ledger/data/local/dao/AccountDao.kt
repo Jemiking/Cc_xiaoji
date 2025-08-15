@@ -73,4 +73,10 @@ interface AccountDao {
         gracePeriodDays: Int,
         timestamp: Long
     )
+    
+    @Query("SELECT * FROM accounts WHERE name = :name AND userId = :userId AND isDeleted = 0 LIMIT 1")
+    suspend fun findByName(name: String, userId: String): AccountEntity?
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(account: AccountEntity)
 }

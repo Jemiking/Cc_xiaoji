@@ -24,6 +24,8 @@ import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 import android.util.Log
 import android.content.Intent
+import com.ccxiaoji.app.BuildConfig
+import android.widget.Toast
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -48,6 +50,21 @@ class MainActivity : ComponentActivity() {
     lateinit var planApi: PlanApi
     
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 使用System.out作为备用输出
+        System.out.println("========== CC小记启动 ==========")
+        System.out.println("版本: ${BuildConfig.VERSION_NAME}")
+        System.out.println("Debug: ${BuildConfig.DEBUG}")
+        
+        // 同时使用多种日志级别确保输出
+        android.util.Log.e("CC_DEBUG", "========== MainActivity启动 ==========")
+        android.util.Log.w("CC_DEBUG", "版本: ${BuildConfig.VERSION_NAME}")
+        android.util.Log.i("CC_DEBUG", "Debug模式: ${BuildConfig.DEBUG}")
+        android.util.Log.d("CC_DEBUG", "时间: ${java.util.Date()}")
+        android.util.Log.v("CC_DEBUG", "onCreate开始执行")
+        
+        // 添加Toast提示确认应用启动
+        android.widget.Toast.makeText(this, "CC小记启动中...", android.widget.Toast.LENGTH_LONG).show()
+        
         super.onCreate(savedInstanceState)
         Log.d(TAG, "MainActivity onCreate started")
         

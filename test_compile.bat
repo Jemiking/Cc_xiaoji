@@ -1,5 +1,15 @@
 @echo off
-echo Starting compilation...
-gradlew.bat :feature:ledger:compileDebugKotlin --console=plain > compile_output.txt 2>&1
-echo Compilation finished. Check compile_output.txt for results.
-type compile_output.txt
+echo 测试编译ledger模块...
+call gradlew.bat :feature:ledger:compileDebugKotlin --console=plain
+if %ERRORLEVEL% EQU 0 (
+    echo.
+    echo ===================================
+    echo 编译成功！
+    echo ===================================
+) else (
+    echo.
+    echo ===================================
+    echo 编译失败，请检查错误信息
+    echo ===================================
+)
+pause

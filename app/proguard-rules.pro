@@ -221,3 +221,15 @@
 # Ignore missing XML classes that FastExcel references but aren't used on Android
 -ignorewarnings
 
+# 保留日志输出 - 不要移除Log调用
+# 注意：-assumenosideeffects会移除这些调用，所以我们不使用它
+# 如果需要在发布版本中移除日志，请取消下面的注释
+# -assumenosideeffects class android.util.Log {
+#     public static int v(...);
+#     public static int d(...);
+# }
+
+# 保留所有日志类
+-keep class android.util.Log { *; }
+-keep class java.io.PrintStream { *; }
+

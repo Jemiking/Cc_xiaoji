@@ -47,6 +47,9 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
         debug {
+            isMinifyEnabled = false
+            isShrinkResources = false
+            isDebuggable = true
         }
     }
     compileOptions {

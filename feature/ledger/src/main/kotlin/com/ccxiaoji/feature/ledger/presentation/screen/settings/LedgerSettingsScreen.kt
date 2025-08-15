@@ -29,8 +29,8 @@ fun LedgerSettingsScreen(
     onNavigateToCategoryManagement: () -> Unit,
     onNavigateToAccountManagement: () -> Unit,
     onNavigateToBudgetManagement: () -> Unit,
-    onNavigateToDataExport: () -> Unit,
     onNavigateToDataImport: () -> Unit = {},
+    onNavigateToQianjiImport: () -> Unit = {},
     onNavigateToRecurringTransactions: () -> Unit,
     onNavigateToCurrencySelection: () -> Unit = {},
     onNavigateToAccountSelection: () -> Unit = {},
@@ -172,8 +172,8 @@ fun LedgerSettingsScreen(
                     onNavigateToCategoryManagement = onNavigateToCategoryManagement,
                     onNavigateToAccountManagement = onNavigateToAccountManagement,
                     onNavigateToBudgetManagement = onNavigateToBudgetManagement,
-                    onNavigateToDataExport = onNavigateToDataExport,
-                    onNavigateToDataImport = onNavigateToDataImport
+                    onNavigateToDataImport = onNavigateToDataImport,
+                    onNavigateToQianjiImport = onNavigateToQianjiImport
                 )
             }
             

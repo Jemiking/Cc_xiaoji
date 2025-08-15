@@ -10,7 +10,6 @@ import com.ccxiaoji.feature.schedule.presentation.shift.QuickShiftSelectionScree
 import com.ccxiaoji.feature.schedule.presentation.pattern.SchedulePatternScreen
 import com.ccxiaoji.feature.schedule.presentation.schedule.ScheduleEditScreen
 import com.ccxiaoji.feature.schedule.presentation.statistics.ScheduleStatisticsScreen
-import com.ccxiaoji.feature.schedule.presentation.export.ExportScreen
 import com.ccxiaoji.feature.schedule.presentation.settings.SettingsScreen
 import com.ccxiaoji.feature.schedule.presentation.settings.AboutScreen
 import com.ccxiaoji.feature.schedule.presentation.screen.ErrorScreen
@@ -35,7 +34,6 @@ sealed class Screen(val route: String) {
     }
     object SchedulePattern : Screen("schedule_pattern")
     object ScheduleStatistics : Screen("schedule_statistics")
-    object Export : Screen("export")
     object Settings : Screen("settings")
     object About : Screen("about")
     object Error : Screen("error/{message}") {
@@ -143,19 +141,6 @@ fun ScheduleNavHost(
         composable(Screen.ScheduleStatistics.route) {
             android.util.Log.d("ScheduleNavHost", "Navigating to ScheduleStatistics screen")
             ScheduleStatisticsScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                },
-                onNavigateToExport = {
-                    navController.navigate(Screen.Export.route)
-                }
-            )
-        }
-        
-        // 数据导出界面
-        composable(Screen.Export.route) {
-            android.util.Log.d("ScheduleNavHost", "Navigating to Export screen")
-            ExportScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }

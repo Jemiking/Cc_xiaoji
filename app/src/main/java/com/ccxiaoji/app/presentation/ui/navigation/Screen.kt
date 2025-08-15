@@ -276,10 +276,6 @@ object ScheduleSettingsRoute {
     const val route = "schedule_settings"
 }
 
-object ScheduleExportRoute {
-    const val route = "schedule_export"
-}
-
 object ScheduleAboutRoute {
     const val route = "schedule_about"
 }
@@ -429,12 +425,13 @@ object LogoutConfirmationRoute {
     const val route = "logout_confirmation"
 }
 
-object LedgerExportRoute {
-    const val route = "ledger_export"
-}
-
 object LedgerImportRoute {
     const val route = "ledger_import"
+}
+
+// 钱迹数据导入路由
+object QianjiImportRoute {
+    const val route = "qianji_import"
 }
 
 // 统一数据导出路由

@@ -58,6 +58,12 @@ interface CategoryDao {
     
     @Query("SELECT * FROM categories WHERE id = :categoryId AND isDeleted = 0")
     fun getCategoryByIdSync(categoryId: String): CategoryEntity?
+    
+    @Query("SELECT * FROM categories WHERE name = :name AND type = :type AND userId = :userId AND isDeleted = 0 LIMIT 1")
+    suspend fun findByNameAndType(name: String, type: String, userId: String): CategoryEntity?
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(category: CategoryEntity)
 }
 
 data class CategoryWithCount(

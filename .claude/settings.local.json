@@ -178,7 +178,9 @@
       "Bash(do echo \"处理: $file\")",
       "Bash(do echo \"修复图标: $icon\")",
       "Bash(D:kotlinCc_xiaojigradlew.bat :feature:ledger:compileDebugKotlin --console=plain)",
-      "Bash(compile_test.bat)"
+      "Bash(compile_test.bat)",
+      "Bash(compile_ledger.bat)",
+      "Bash(D:\\kotlin\\Cc_xiaoji\\gradlew.bat :feature:ledger:compileDebugKotlin --console=plain)"
     ],
     "deny": []
   },

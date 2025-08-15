@@ -142,12 +142,6 @@ fun ProfileScreen(
                         onClick = { viewModel.restoreData() }
                     ),
                     SettingsItem(
-                        icon = Icons.Default.FileDownload,
-                        title = "记账数据导出",
-                        subtitle = "导出记账模块数据为CSV/JSON格式",
-                        onClick = { navController.navigate(LedgerExportRoute.route) }
-                    ),
-                    SettingsItem(
                         icon = Icons.Default.FolderOpen,
                         title = "数据导出中心",
                         subtitle = "统一导出所有模块数据",

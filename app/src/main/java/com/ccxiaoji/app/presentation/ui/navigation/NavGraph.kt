@@ -22,8 +22,8 @@ import com.ccxiaoji.app.presentation.ui.profile.ThemeSettingsScreen
 import com.ccxiaoji.app.presentation.ui.profile.NotificationSettingsScreen
 import com.ccxiaoji.app.presentation.ui.components.ModuleTopBar
 import com.ccxiaoji.feature.ledger.api.LedgerApi
-import com.ccxiaoji.feature.ledger.presentation.screen.export.LedgerExportScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.import.LedgerImportScreen
+import com.ccxiaoji.feature.ledger.presentation.screen.import.QianjiImportScreen
 import com.ccxiaoji.feature.plan.api.PlanApi
 
 @Composable
@@ -416,8 +416,8 @@ fun NavGraph(
                 onNavigateToCategory = { navController.navigate(CategoryManagementRoute.route) },
                 onNavigateToAccount = { navController.navigate(AccountManagementRoute.route) },
                 onNavigateToBudget = { navController.navigate(BudgetRoute.route) },
-                onNavigateToDataExport = { navController.navigate(LedgerExportRoute.route) },
                 onNavigateToDataImport = { navController.navigate(LedgerImportRoute.route) },
+                onNavigateToQianjiImport = { navController.navigate(QianjiImportRoute.route) },
                 onNavigateToRecurring = { navController.navigate(RecurringTransactionRoute.route) },
                 onNavigateToCurrencySelection = { navController.navigate(CurrencySelectionRoute.route) },
                 onNavigateToAccountSelection = { navController.navigate(AccountSelectionRoute.route) },
@@ -427,12 +427,14 @@ fun NavGraph(
             )
         }
         
-        composable(LedgerExportRoute.route) {
-            LedgerExportScreen(navController = navController)
-        }
-        
         composable(LedgerImportRoute.route) {
             LedgerImportScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(QianjiImportRoute.route) {
+            QianjiImportScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -511,8 +513,7 @@ fun NavGraph(
         
         composable(ScheduleStatisticsRoute.route) {
             com.ccxiaoji.feature.schedule.presentation.statistics.ScheduleStatisticsScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToExport = { navController.navigate(ScheduleExportRoute.route) }
+                onNavigateBack = { navController.popBackStack() }
             )
         }
         
@@ -521,12 +522,6 @@ fun NavGraph(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToAbout = { navController.navigate(ScheduleAboutRoute.route) },
                 onNavigateToShiftManage = { navController.navigate(ShiftManageRoute.route) }
-            )
-        }
-        
-        composable(ScheduleExportRoute.route) {
-            com.ccxiaoji.feature.schedule.presentation.export.ExportScreen(
-                onNavigateBack = { navController.popBackStack() }
             )
         }
         
@@ -868,12 +863,6 @@ fun NavGraph(
         
         composable(LogoutConfirmationRoute.route) {
             com.ccxiaoji.app.presentation.ui.profile.LogoutConfirmationScreen(
-                navController = navController
-            )
-        }
-        
-        composable(LedgerExportRoute.route) {
-            com.ccxiaoji.feature.ledger.presentation.screen.export.LedgerExportScreen(
                 navController = navController
             )
         }

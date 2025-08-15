@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Download
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,7 +24,6 @@ import com.ccxiaoji.ui.theme.DesignTokens
 @Composable
 fun ScheduleStatisticsScreen(
     onNavigateBack: () -> Unit,
-    onNavigateToExport: () -> Unit,
     viewModel: ScheduleStatisticsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -57,14 +55,6 @@ fun ScheduleStatisticsScreen(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack, 
                             contentDescription = stringResource(R.string.schedule_back)
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onNavigateToExport) {
-                        Icon(
-                            Icons.Default.Download, 
-                            contentDescription = stringResource(R.string.schedule_statistics_export_data)
                         )
                     }
                 },

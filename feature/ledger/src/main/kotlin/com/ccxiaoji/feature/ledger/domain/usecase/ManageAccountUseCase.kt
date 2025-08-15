@@ -3,6 +3,7 @@ package com.ccxiaoji.feature.ledger.domain.usecase
 import com.ccxiaoji.feature.ledger.domain.repository.AccountRepository
 import com.ccxiaoji.feature.ledger.domain.model.Account
 import com.ccxiaoji.feature.ledger.domain.model.AccountType
+import com.ccxiaoji.feature.ledger.domain.model.AccountTypeMapping
 import javax.inject.Inject
 
 /**
@@ -27,7 +28,7 @@ class ManageAccountUseCase @Inject constructor(
         require(name.isNotBlank()) { "账户名称不能为空" }
         require(type.isNotBlank()) { "账户类型不能为空" }
         
-        val accountType = AccountType.valueOf(type)
+        val accountType = AccountTypeMapping.safeValueOf(type)
         return repository.createAccount(
             name = name,
             type = accountType,

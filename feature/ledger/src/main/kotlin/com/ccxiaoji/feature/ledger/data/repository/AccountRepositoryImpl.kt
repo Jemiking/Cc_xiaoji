@@ -13,6 +13,7 @@ import com.ccxiaoji.feature.ledger.data.local.entity.PaymentType
 import com.ccxiaoji.common.model.SyncStatus
 import com.ccxiaoji.feature.ledger.domain.model.Account
 import com.ccxiaoji.feature.ledger.domain.model.AccountType
+import com.ccxiaoji.feature.ledger.domain.model.AccountTypeMapping
 import com.ccxiaoji.feature.ledger.domain.model.Transaction
 import com.ccxiaoji.feature.ledger.domain.repository.AccountRepository
 import com.ccxiaoji.common.utils.CreditCardDateUtils
@@ -544,7 +545,7 @@ private fun AccountEntity.toDomainModel(): Account {
     return Account(
         id = id,
         name = name,
-        type = AccountType.valueOf(type),
+        type = AccountTypeMapping.safeValueOf(type),
         balanceCents = balanceCents,
         currency = currency,
         icon = icon,

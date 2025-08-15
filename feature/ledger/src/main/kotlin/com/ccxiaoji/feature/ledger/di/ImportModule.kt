@@ -5,6 +5,9 @@ import com.ccxiaoji.feature.ledger.data.importer.CsvParser
 import com.ccxiaoji.feature.ledger.data.importer.converter.*
 import com.ccxiaoji.feature.ledger.data.importer.validator.DataValidator
 import com.ccxiaoji.feature.ledger.data.importer.resolver.ConflictResolver
+import com.ccxiaoji.feature.ledger.data.importer.qianji.QianjiImporter
+import com.ccxiaoji.feature.ledger.data.importer.qianji.QianjiMapper
+import com.ccxiaoji.feature.ledger.data.importer.qianji.QianjiParser
 import com.ccxiaoji.feature.ledger.domain.importer.LedgerImporter
 import dagger.Binds
 import dagger.Module
@@ -74,6 +77,32 @@ abstract class ImportModule {
             transactionDao: com.ccxiaoji.feature.ledger.data.local.dao.TransactionDao
         ): ConflictResolver {
             return ConflictResolver(accountDao, categoryDao, transactionDao)
+        }
+        
+        @Provides
+        @Singleton
+        fun provideQianjiParser(): QianjiParser {
+            return QianjiParser()
+        }
+        
+        @Provides
+        @Singleton
+        fun provideQianjiMapper(
+            categoryDao: com.ccxiaoji.feature.ledger.data.local.dao.CategoryDao,
+            accountDao: com.ccxiaoji.feature.ledger.data.local.dao.AccountDao,
+            transactionDao: com.ccxiaoji.feature.ledger.data.local.dao.TransactionDao
+        ): QianjiMapper {
+            return QianjiMapper(categoryDao, accountDao, transactionDao)
+        }
+        
+        @Provides
+        @Singleton
+        fun provideQianjiImporter(
+            parser: QianjiParser,
+            mapper: QianjiMapper,
+            transactionDao: com.ccxiaoji.feature.ledger.data.local.dao.TransactionDao
+        ): QianjiImporter {
+            return QianjiImporter(parser, mapper, transactionDao)
         }
     }
 }

@@ -4,6 +4,7 @@ import com.ccxiaoji.feature.ledger.data.importer.DataLine
 import com.ccxiaoji.feature.ledger.data.local.entity.AccountEntity
 import com.ccxiaoji.feature.ledger.domain.importer.ImportError
 import com.ccxiaoji.feature.ledger.domain.model.AccountType
+import com.ccxiaoji.feature.ledger.domain.model.AccountTypeMapping
 import java.util.UUID
 import javax.inject.Inject
 
@@ -41,11 +42,7 @@ class AccountConverter @Inject constructor() : DataConverter<AccountEntity>() {
             }
             
             // 解析账户类型
-            val accountType = try {
-                AccountType.valueOf(typeStr).name
-            } catch (e: Exception) {
-                "CASH" // 默认现金账户
-            }
+            val accountType = AccountTypeMapping.safeValueOf(typeStr).name
             
             // 创建账户实体
             val account = AccountEntity(

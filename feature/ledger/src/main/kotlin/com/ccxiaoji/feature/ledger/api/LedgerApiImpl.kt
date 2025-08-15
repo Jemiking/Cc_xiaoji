@@ -183,7 +183,7 @@ class LedgerApiImpl @Inject constructor(
     ): Account {
         val accountId = accountRepository.createAccount(
             name = name,
-            type = AccountType.valueOf(type),
+            type = AccountTypeMapping.safeValueOf(type),
             initialBalanceCents = balanceCents,
             creditLimitCents = null,
             billingDay = null,
@@ -846,8 +846,8 @@ class LedgerApiImpl @Inject constructor(
         onNavigateToCategory: () -> Unit,
         onNavigateToAccount: () -> Unit,
         onNavigateToBudget: () -> Unit,
-        onNavigateToDataExport: () -> Unit,
         onNavigateToDataImport: () -> Unit,
+        onNavigateToQianjiImport: () -> Unit,
         onNavigateToRecurring: () -> Unit,
         onNavigateToCurrencySelection: () -> Unit,
         onNavigateToAccountSelection: () -> Unit,
@@ -860,8 +860,8 @@ class LedgerApiImpl @Inject constructor(
             onNavigateToCategoryManagement = onNavigateToCategory,
             onNavigateToAccountManagement = onNavigateToAccount,
             onNavigateToBudgetManagement = onNavigateToBudget,
-            onNavigateToDataExport = onNavigateToDataExport,
             onNavigateToDataImport = onNavigateToDataImport,
+            onNavigateToQianjiImport = onNavigateToQianjiImport,
             onNavigateToRecurringTransactions = onNavigateToRecurring,
             onNavigateToCurrencySelection = onNavigateToCurrencySelection,
             onNavigateToAccountSelection = onNavigateToAccountSelection,

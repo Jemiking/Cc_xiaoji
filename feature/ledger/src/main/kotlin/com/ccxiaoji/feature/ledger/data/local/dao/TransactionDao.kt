@@ -195,6 +195,32 @@ interface TransactionDao {
         startDateMillis: Long?,
         endDateMillis: Long?
     ): Int
+    
+    @Query("SELECT EXISTS(SELECT 1 FROM transactions WHERE note LIKE :pattern AND userId = :userId AND isDeleted = 0)")
+    suspend fun existsByNote(pattern: String, userId: String): Boolean
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(transactions: List<TransactionEntity>)
+    
+    // 调试方法：查询所有交易记录（不限制用户ID）
+    @Query("SELECT COUNT(*) FROM transactions WHERE isDeleted = 0")
+    suspend fun getAllTransactionsCount(): Int
+    
+    // 调试方法：查询指定用户的所有交易记录数量
+    @Query("SELECT COUNT(*) FROM transactions WHERE userId = :userId AND isDeleted = 0")
+    suspend fun getUserTransactionsCount(userId: String): Int
+    
+    // 调试方法：获取前10条交易记录（调试用）
+    @Query("SELECT * FROM transactions WHERE isDeleted = 0 ORDER BY createdAt DESC LIMIT 10")
+    suspend fun getRecentTransactions(): List<TransactionEntity>
+    
+    // 获取指定用户的所有交易（suspend版本）
+    @Query("SELECT * FROM transactions WHERE userId = :userId AND isDeleted = 0 ORDER BY createdAt DESC")
+    suspend fun getTransactionsByUserSync(userId: String): List<TransactionEntity>
+    
+    // 获取最新的N条交易
+    @Query("SELECT * FROM transactions WHERE isDeleted = 0 ORDER BY createdAt DESC LIMIT :limit")
+    suspend fun getLatestTransactions(limit: Int): List<TransactionEntity>
 }
 
 
