@@ -23,8 +23,8 @@ class SyncManager @Inject constructor(
     fun startPeriodicSync() {
         Log.d(TAG, "Starting periodic sync")
         try {
-        val periodicSyncRequest = SyncWorker.buildPeriodicWorkRequest()
-        
+            val periodicSyncRequest = SyncWorker.buildPeriodicWorkRequest()
+            
             workManager.enqueueUniquePeriodicWork(
                 SyncWorker.SYNC_WORK_NAME,
                 ExistingPeriodicWorkPolicy.KEEP,

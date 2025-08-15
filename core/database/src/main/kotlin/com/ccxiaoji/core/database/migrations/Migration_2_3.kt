@@ -8,9 +8,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * 添加信用卡还款记录表
  */
 val MIGRATION_2_3 = object : Migration(2, 3) {
-    override fun migrate(database: SupportSQLiteDatabase) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         // 创建信用卡还款记录表
-        database.execSQL("""
+        db.execSQL("""
             CREATE TABLE IF NOT EXISTS credit_card_payments (
                 id TEXT PRIMARY KEY NOT NULL,
                 userId TEXT NOT NULL,
@@ -31,8 +31,8 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
         """.trimIndent())
         
         // 创建索引
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_payments_accountId ON credit_card_payments(accountId)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_payments_userId ON credit_card_payments(userId)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_payments_paymentDate ON credit_card_payments(paymentDate)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_payments_accountId ON credit_card_payments(accountId)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_payments_userId ON credit_card_payments(userId)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_credit_card_payments_paymentDate ON credit_card_payments(paymentDate)")
     }
 }

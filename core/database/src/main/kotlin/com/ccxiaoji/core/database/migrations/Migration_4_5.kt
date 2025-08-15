@@ -12,9 +12,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * - 排班模式表 (patterns)
  */
 val MIGRATION_4_5 = object : Migration(4, 5) {
-    override fun migrate(database: SupportSQLiteDatabase) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         // 创建班次表
-        database.execSQL("""
+        db.execSQL("""
             CREATE TABLE IF NOT EXISTS shifts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 name TEXT NOT NULL,
@@ -30,7 +30,7 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
         """)
         
         // 创建排班表
-        database.execSQL("""
+        db.execSQL("""
             CREATE TABLE IF NOT EXISTS schedules (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 date INTEGER NOT NULL,
@@ -46,7 +46,7 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
         """)
         
         // 创建导出历史表
-        database.execSQL("""
+        db.execSQL("""
             CREATE TABLE IF NOT EXISTS export_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 file_name TEXT NOT NULL,
@@ -65,7 +65,7 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
         """)
         
         // 创建排班模式表
-        database.execSQL("""
+        db.execSQL("""
             CREATE TABLE IF NOT EXISTS patterns (
                 id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
                 name TEXT NOT NULL,
@@ -80,10 +80,10 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
         """)
         
         // 创建索引
-        database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_schedules_date ON schedules(date)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_schedules_shift_id ON schedules(shift_id)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_export_history_export_time ON export_history(export_time)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_patterns_start_date ON patterns(start_date)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_patterns_end_date ON patterns(end_date)")
+        db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_schedules_date ON schedules(date)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_schedules_shift_id ON schedules(shift_id)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_export_history_export_time ON export_history(export_time)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_patterns_start_date ON patterns(start_date)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_patterns_end_date ON patterns(end_date)")
     }
 }

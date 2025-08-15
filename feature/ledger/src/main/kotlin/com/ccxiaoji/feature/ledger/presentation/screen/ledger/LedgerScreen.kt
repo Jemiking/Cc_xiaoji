@@ -232,7 +232,7 @@ fun LedgerScreen(
                                 }
                             )
                             
-                            Divider()
+                            HorizontalDivider()
                             
                             // 批量修改分类
                             DropdownMenuItem(
@@ -351,7 +351,7 @@ fun LedgerScreen(
                 monthlyExpense = uiState.monthlyExpense
             )
             
-            Divider()
+            HorizontalDivider()
             
             // Budget Alert
             dialogState.budgetAlert?.let { alert ->

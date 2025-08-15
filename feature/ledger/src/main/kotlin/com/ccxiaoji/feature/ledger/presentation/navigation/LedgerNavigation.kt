@@ -30,6 +30,8 @@ object LedgerNavigation {
     const val AddEditRecurringTransactionRoute = "add_edit_recurring_transaction?recurringId={recurringId}"
     const val PaymentHistoryRoute = "payment_history/{accountId}"
     const val DeleteTransactionRoute = "delete_transaction/{transactionId}"
+    const val DataExportRoute = "data_export"
+    const val DataImportRoute = "data_import"
     
     fun transactionDetailRoute(transactionId: String) = "transaction_detail/$transactionId"
     fun deleteTransaction(transactionId: String) = "delete_transaction/$transactionId"

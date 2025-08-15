@@ -153,6 +153,10 @@ interface LedgerApi {
     suspend fun getExpenseStructure(year: Int, month: Int): Map<String, Float>
     suspend fun getAccountBalanceTrend(accountId: String, days: Int = 30): List<Pair<LocalDate, Long>>
     
+    // Export methods
+    suspend fun getExportStatistics(): LedgerExportStats
+    suspend fun exportAllData(config: com.ccxiaoji.feature.ledger.domain.export.ExportConfig): java.io.File
+    
     // Navigation
     fun navigateToAddTransaction()
     fun navigateToTransactionDetail(transactionId: String)
@@ -196,6 +200,7 @@ interface LedgerApi {
         onNavigateToAccount: () -> Unit,
         onNavigateToBudget: () -> Unit,
         onNavigateToDataExport: () -> Unit,
+        onNavigateToDataImport: () -> Unit,
         onNavigateToRecurring: () -> Unit,
         onNavigateToCurrencySelection: () -> Unit,
         onNavigateToAccountSelection: () -> Unit,
@@ -260,4 +265,17 @@ data class BatchInsertResult(
 data class BatchInsertError(
     val index: Int,
     val message: String
+)
+
+/**
+ * 记账模块导出统计信息
+ */
+data class LedgerExportStats(
+    val transactionCount: Int,
+    val accountCount: Int,
+    val categoryCount: Int,
+    val budgetCount: Int,
+    val recurringCount: Int,
+    val savingsCount: Int,
+    val lastModified: Long
 )

@@ -42,7 +42,7 @@ fun LedgerDrawerContent(
             currentAccountName = currentAccountName
         )
         
-        Divider()
+        HorizontalDivider()
         
         // 数据查看
         DrawerSectionTitle(title = "数据查看")
@@ -63,7 +63,7 @@ fun LedgerDrawerContent(
             }
         )
         
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         
         // 账务管理
         DrawerSectionTitle(title = "账务管理")
@@ -100,7 +100,7 @@ fun LedgerDrawerContent(
             }
         )
         
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         
         // 财务规划
         DrawerSectionTitle(title = "财务规划")

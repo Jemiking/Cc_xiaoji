@@ -89,7 +89,7 @@ class ScheduleNotificationScheduler @Inject constructor(
         // 使用唯一工作名称，确保只有一个活动的定期任务
         workManager.enqueueUniquePeriodicWork(
             ScheduleNotificationWorker.WORK_NAME,
-            ExistingPeriodicWorkPolicy.REPLACE,
+            ExistingPeriodicWorkPolicy.UPDATE,
             dailyWorkRequest
         )
     }

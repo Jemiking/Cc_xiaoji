@@ -5,6 +5,7 @@ import java.time.LocalDateTime
 
 data class SavingsGoal(
     val id: Long = 0,
+    val userId: String,
     val name: String,
     val targetAmount: Double,
     val currentAmount: Double = 0.0,

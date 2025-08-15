@@ -8,6 +8,7 @@ import com.ccxiaoji.feature.todo.domain.model.Task
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.datetime.*
 import javax.inject.Inject
 
@@ -36,6 +37,7 @@ class TodoViewModel @Inject constructor(
         observeTasksWithFilters()
     }
     
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeTasksWithFilters() {
         viewModelScope.launch {
             combine(

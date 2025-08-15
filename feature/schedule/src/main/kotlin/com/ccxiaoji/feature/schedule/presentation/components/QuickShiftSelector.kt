@@ -75,7 +75,7 @@ fun QuickShiftSelector(
                     }
                 }
                 
-                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 
                 // 快速班次选项
                 Column(

@@ -15,7 +15,7 @@ android {
         applicationId = "com.ccxiaoji.app"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 250  // v2.5.0 - FastExcel重构版本，完全重写导入导出功能
+        versionCode = 250  // v2.5.0 - 模块化导出架构
         versionName = "2.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -24,8 +24,7 @@ android {
         }
         
         // 版本特性标记
-        buildConfigField("String", "VERSION_FEATURES", "\"EXCEL_NATIVE,FASTEXCEL,STREAM_PROCESSING,HIGH_PERFORMANCE\"")
-        buildConfigField("boolean", "FASTEXCEL_ENABLED", "true")
+        buildConfigField("String", "VERSION_FEATURES", "\"MODULAR_EXPORT,CSV_EXPORT,HIGH_PERFORMANCE\"")
         buildConfigField("boolean", "INTEGRATION_TESTS_ENABLED", "true")
         buildConfigField("String", "BACKUP_FORMAT_VERSION", "\"3.0\"")
         buildConfigField("String", "SUPPORTED_FORMATS", "\"xlsx\"")
@@ -88,7 +87,6 @@ dependencies {
     // Module dependencies - Only direct feature and shared modules needed
     implementation(project(":shared:user"))
     implementation(project(":shared:sync"))
-    implementation(project(":shared:backup"))
     implementation(project(":shared:notification"))
     implementation(project(":feature:todo"))
     implementation(project(":feature:habit"))
@@ -140,10 +138,6 @@ dependencies {
     
     // Gson
     implementation(libs.gson)
-    
-    // Excel处理 (FastExcel)
-    implementation("org.dhatim:fastexcel:0.15.7")
-    implementation("org.dhatim:fastexcel-reader:0.15.7")
     
     // CSV处理
     implementation("com.github.doyaaaaaken:kotlin-csv-jvm:1.9.3")

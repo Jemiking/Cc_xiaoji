@@ -104,7 +104,7 @@ fun UserEducationCard(
                         description = "在新设备上选择导入，选择备份文件即可"
                     )
                     
-                    Divider(modifier = Modifier.padding(vertical = 12.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
                     
                     // 支持的应用
                     Text(

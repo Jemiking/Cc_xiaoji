@@ -31,7 +31,6 @@ include(":core:network")
 // Shared modules
 include(":shared:user")
 include(":shared:sync")
-include(":shared:backup")
 include(":shared:notification")
 
 // Feature modules

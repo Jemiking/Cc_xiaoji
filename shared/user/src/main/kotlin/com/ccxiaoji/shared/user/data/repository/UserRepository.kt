@@ -80,10 +80,15 @@ class UserRepository @Inject constructor(
     }
     
     suspend fun getCurrentUser(): User? {
+        // 先从DataStore获取用户ID
         val userId = dataStore.data.map { it[KEY_USER_ID] }.firstOrNull()
-        return userId?.let { id ->
-            userDao.getUserById(id)?.toDomainModel()
-        }
+        
+        // 如果DataStore中没有，使用默认的用户ID
+        // 这确保了即使用户未登录，也能使用默认用户进行本地操作
+        val finalUserId = userId ?: "current_user_id"
+        
+        // 从数据库获取用户
+        return userDao.getUserById(finalUserId)?.toDomainModel()
     }
     
     suspend fun getAccessToken(): String? {

@@ -143,16 +143,23 @@ fun ProfileScreen(
                     ),
                     SettingsItem(
                         icon = Icons.Default.FileDownload,
-                        title = "数据导出",
-                        subtitle = "导出各模块数据",
-                        onClick = { navController.navigate(DataExportRoute.route) }
+                        title = "记账数据导出",
+                        subtitle = "导出记账模块数据为CSV/JSON格式",
+                        onClick = { navController.navigate(LedgerExportRoute.route) }
                     ),
                     SettingsItem(
-                        icon = Icons.Default.FileUpload,
-                        title = "数据导入",
-                        subtitle = "从文件导入数据",
-                        onClick = { navController.navigate(DataImportRoute.route) }
+                        icon = Icons.Default.FolderOpen,
+                        title = "数据导出中心",
+                        subtitle = "统一导出所有模块数据",
+                        onClick = { navController.navigate(DataExportRoute.route) }
                     ),
+                    // TODO: 数据导入功能正在重新实现
+                    // SettingsItem(
+                    //     icon = Icons.Default.FileUpload,
+                    //     title = "数据导入",
+                    //     subtitle = "从文件导入数据",
+                    //     onClick = { /* TODO: 实现新的导入功能 */ }
+                    // ),
                     SettingsItem(
                         icon = Icons.Default.Build,
                         title = "批量操作",

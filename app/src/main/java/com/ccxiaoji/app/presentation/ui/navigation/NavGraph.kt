@@ -18,12 +18,12 @@ import com.ccxiaoji.feature.todo.presentation.screen.TodoScreen
 import com.ccxiaoji.feature.todo.presentation.screen.DatePickerScreen as TodoDatePickerScreen
 import com.ccxiaoji.feature.habit.presentation.screen.HabitScreen
 import com.ccxiaoji.app.presentation.ui.profile.ProfileScreen
-import com.ccxiaoji.app.presentation.ui.profile.DataExportScreen
-import com.ccxiaoji.app.presentation.ui.profile.DataImportScreen
 import com.ccxiaoji.app.presentation.ui.profile.ThemeSettingsScreen
 import com.ccxiaoji.app.presentation.ui.profile.NotificationSettingsScreen
 import com.ccxiaoji.app.presentation.ui.components.ModuleTopBar
 import com.ccxiaoji.feature.ledger.api.LedgerApi
+import com.ccxiaoji.feature.ledger.presentation.screen.export.LedgerExportScreen
+import com.ccxiaoji.feature.ledger.presentation.screen.import.LedgerImportScreen
 import com.ccxiaoji.feature.plan.api.PlanApi
 
 @Composable
@@ -416,7 +416,8 @@ fun NavGraph(
                 onNavigateToCategory = { navController.navigate(CategoryManagementRoute.route) },
                 onNavigateToAccount = { navController.navigate(AccountManagementRoute.route) },
                 onNavigateToBudget = { navController.navigate(BudgetRoute.route) },
-                onNavigateToDataExport = { navController.navigate(DataExportRoute.route) },
+                onNavigateToDataExport = { navController.navigate(LedgerExportRoute.route) },
+                onNavigateToDataImport = { navController.navigate(LedgerImportRoute.route) },
                 onNavigateToRecurring = { navController.navigate(RecurringTransactionRoute.route) },
                 onNavigateToCurrencySelection = { navController.navigate(CurrencySelectionRoute.route) },
                 onNavigateToAccountSelection = { navController.navigate(AccountSelectionRoute.route) },
@@ -426,17 +427,13 @@ fun NavGraph(
             )
         }
         
-        composable(DataExportRoute.route) {
-            DataExportScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToImport = { navController.navigate(DataImportRoute.route) }
-            )
+        composable(LedgerExportRoute.route) {
+            LedgerExportScreen(navController = navController)
         }
         
-        composable(DataImportRoute.route) {
-            DataImportScreen(
-                onNavigateBack = { navController.popBackStack() },
-                onNavigateToGuide = { /* TODO: 实现帮助指南导航 */ }
+        composable(LedgerImportRoute.route) {
+            LedgerImportScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
         
@@ -871,6 +868,19 @@ fun NavGraph(
         
         composable(LogoutConfirmationRoute.route) {
             com.ccxiaoji.app.presentation.ui.profile.LogoutConfirmationScreen(
+                navController = navController
+            )
+        }
+        
+        composable(LedgerExportRoute.route) {
+            com.ccxiaoji.feature.ledger.presentation.screen.export.LedgerExportScreen(
+                navController = navController
+            )
+        }
+        
+        // 统一数据导出中心
+        composable(DataExportRoute.route) {
+            com.ccxiaoji.app.presentation.ui.export.UnifiedExportScreen(
                 navController = navController
             )
         }

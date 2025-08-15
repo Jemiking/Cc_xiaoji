@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.datetime.*
 import kotlinx.datetime.DateTimePeriod
 import kotlinx.datetime.TimeZone
@@ -57,6 +58,7 @@ class HabitRepositoryImpl @Inject constructor(
             .map { entities -> entities.map { it.toDomainModel() } }
     }
     
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun getHabitsWithStreaks(): Flow<List<HabitWithStreak>> {
         return getHabits().flatMapLatest { habits ->
             flow {

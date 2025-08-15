@@ -75,6 +75,7 @@ class SavingsGoalRepository @Inject constructor(
 // Extension functions for mapping between entity and domain models
 private fun SavingsGoalEntity.toDomainModel() = SavingsGoal(
     id = id,
+    userId = userId,
     name = name,
     targetAmount = targetAmount,
     currentAmount = currentAmount,
@@ -89,6 +90,7 @@ private fun SavingsGoalEntity.toDomainModel() = SavingsGoal(
 
 private fun SavingsGoal.toEntity() = SavingsGoalEntity(
     id = id,
+    userId = userId,
     name = name,
     targetAmount = targetAmount,
     currentAmount = currentAmount,

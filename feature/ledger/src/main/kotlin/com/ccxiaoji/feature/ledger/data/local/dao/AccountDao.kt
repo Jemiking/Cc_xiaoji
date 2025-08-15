@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.Flow
 interface AccountDao {
     @Query("SELECT * FROM accounts WHERE userId = :userId AND isDeleted = 0 ORDER BY isDefault DESC, createdAt DESC")
     fun getAccountsByUser(userId: String): Flow<List<AccountEntity>>
+    
+    @Query("SELECT * FROM accounts WHERE userId = :userId AND isDeleted = 0 ORDER BY isDefault DESC, createdAt DESC")
+    suspend fun getAccountsByUserSync(userId: String): List<AccountEntity>
 
     @Query("SELECT * FROM accounts WHERE id = :accountId AND isDeleted = 0")
     suspend fun getAccountById(accountId: String): AccountEntity?

@@ -8,11 +8,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * 为账户表添加信用卡相关字段
  */
 val MIGRATION_6_7 = object : Migration(6, 7) {
-    override fun migrate(database: SupportSQLiteDatabase) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         // 为accounts表添加信用卡相关字段
-        database.execSQL("ALTER TABLE accounts ADD COLUMN annualFeeAmountCents INTEGER DEFAULT NULL")
-        database.execSQL("ALTER TABLE accounts ADD COLUMN annualFeeWaiverThresholdCents INTEGER DEFAULT NULL")
-        database.execSQL("ALTER TABLE accounts ADD COLUMN cashAdvanceLimitCents INTEGER DEFAULT NULL")
-        database.execSQL("ALTER TABLE accounts ADD COLUMN interestRate REAL DEFAULT NULL")
+        db.execSQL("ALTER TABLE accounts ADD COLUMN annualFeeAmountCents INTEGER DEFAULT NULL")
+        db.execSQL("ALTER TABLE accounts ADD COLUMN annualFeeWaiverThresholdCents INTEGER DEFAULT NULL")
+        db.execSQL("ALTER TABLE accounts ADD COLUMN cashAdvanceLimitCents INTEGER DEFAULT NULL")
+        db.execSQL("ALTER TABLE accounts ADD COLUMN interestRate REAL DEFAULT NULL")
     }
 }

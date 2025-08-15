@@ -80,17 +80,17 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
                     val defaultAccount = accountDao.getDefaultAccount(defaultUserId)
                     if (defaultAccount == null) {
                         Log.d(TAG, "Creating default account")
-                val newAccount = AccountEntity(
-                    id = java.util.UUID.randomUUID().toString(),
-                    userId = defaultUserId,
-                    name = "现金账户",
-                    type = "CASH",
-                    balanceCents = 0,
-                    currency = "CNY",
-                    isDefault = true,
-                    createdAt = System.currentTimeMillis(),
-                    updatedAt = System.currentTimeMillis(),
-                    syncStatus = SyncStatus.SYNCED
+                        val newAccount = AccountEntity(
+                            id = java.util.UUID.randomUUID().toString(),
+                            userId = defaultUserId,
+                            name = "现金账户",
+                            type = "CASH",
+                            balanceCents = 0,
+                            currency = "CNY",
+                            isDefault = true,
+                            createdAt = System.currentTimeMillis(),
+                            updatedAt = System.currentTimeMillis(),
+                            syncStatus = SyncStatus.SYNCED
                         )
                         accountDao.insertAccount(newAccount)
                         Log.d(TAG, "Default account created")

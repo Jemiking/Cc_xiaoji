@@ -22,7 +22,8 @@ fun AdvancedSettingsSection(
     onNavigateToCategoryManagement: () -> Unit,
     onNavigateToAccountManagement: () -> Unit,
     onNavigateToBudgetManagement: () -> Unit,
-    onNavigateToDataExport: () -> Unit
+    onNavigateToDataExport: () -> Unit,
+    onNavigateToDataImport: () -> Unit = {}
 ) {
     ModernCard(
         modifier = Modifier
@@ -63,12 +64,22 @@ fun AdvancedSettingsSection(
             
             Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
             
-            // 数据导入导出
+            // 数据导出
             SettingItem(
-                icon = Icons.Default.ImportExport,
-                title = "数据导入导出",
-                subtitle = "导入或导出记账数据",
+                icon = Icons.Default.FileDownload,
+                title = "数据导出",
+                subtitle = "导出记账数据",
                 onClick = onNavigateToDataExport
+            )
+            
+            Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
+            
+            // 数据导入
+            SettingItem(
+                icon = Icons.Default.FileUpload,
+                title = "数据导入",
+                subtitle = "从CSV文件导入数据",
+                onClick = onNavigateToDataImport
             )
             
             Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))

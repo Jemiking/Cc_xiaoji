@@ -30,6 +30,7 @@ fun LedgerSettingsScreen(
     onNavigateToAccountManagement: () -> Unit,
     onNavigateToBudgetManagement: () -> Unit,
     onNavigateToDataExport: () -> Unit,
+    onNavigateToDataImport: () -> Unit = {},
     onNavigateToRecurringTransactions: () -> Unit,
     onNavigateToCurrencySelection: () -> Unit = {},
     onNavigateToAccountSelection: () -> Unit = {},
@@ -171,7 +172,8 @@ fun LedgerSettingsScreen(
                     onNavigateToCategoryManagement = onNavigateToCategoryManagement,
                     onNavigateToAccountManagement = onNavigateToAccountManagement,
                     onNavigateToBudgetManagement = onNavigateToBudgetManagement,
-                    onNavigateToDataExport = onNavigateToDataExport
+                    onNavigateToDataExport = onNavigateToDataExport,
+                    onNavigateToDataImport = onNavigateToDataImport
                 )
             }
             

@@ -80,7 +80,7 @@ fun MonthSelector(
                 )
             }
             
-            Divider()
+            HorizontalDivider()
             
             // Option to select custom month
             DropdownMenuItem(

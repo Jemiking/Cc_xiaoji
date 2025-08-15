@@ -8,9 +8,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * 添加计划管理模块的数据表
  */
 val MIGRATION_5_6 = object : Migration(5, 6) {
-    override fun migrate(database: SupportSQLiteDatabase) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         // 创建plan_table
-        database.execSQL("""
+        db.execSQL("""
             CREATE TABLE IF NOT EXISTS plan_table (
                 id TEXT PRIMARY KEY NOT NULL,
                 parent_id TEXT,
@@ -35,7 +35,7 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         """)
         
         // 创建milestone_table
-        database.execSQL("""
+        db.execSQL("""
             CREATE TABLE IF NOT EXISTS milestone_table (
                 id TEXT PRIMARY KEY NOT NULL,
                 plan_id TEXT NOT NULL,
@@ -52,7 +52,7 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         """)
         
         // 创建template_table
-        database.execSQL("""
+        db.execSQL("""
             CREATE TABLE IF NOT EXISTS template_table (
                 id TEXT PRIMARY KEY NOT NULL,
                 title TEXT NOT NULL,
@@ -71,15 +71,15 @@ val MIGRATION_5_6 = object : Migration(5, 6) {
         """)
         
         // 创建索引
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_plan_table_parent_id ON plan_table(parent_id)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_plan_table_status ON plan_table(status)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_plan_table_sync_status ON plan_table(sync_status)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_milestone_table_plan_id ON milestone_table(plan_id)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_milestone_table_is_completed ON milestone_table(is_completed)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_milestone_table_sync_status ON milestone_table(sync_status)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_template_table_category ON template_table(category)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_template_table_is_system ON template_table(is_system)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_template_table_is_public ON template_table(is_public)")
-        database.execSQL("CREATE INDEX IF NOT EXISTS index_template_table_sync_status ON template_table(sync_status)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_plan_table_parent_id ON plan_table(parent_id)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_plan_table_status ON plan_table(status)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_plan_table_sync_status ON plan_table(sync_status)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_milestone_table_plan_id ON milestone_table(plan_id)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_milestone_table_is_completed ON milestone_table(is_completed)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_milestone_table_sync_status ON milestone_table(sync_status)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_template_table_category ON template_table(category)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_template_table_is_system ON template_table(is_system)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_template_table_is_public ON template_table(is_public)")
+        db.execSQL("CREATE INDEX IF NOT EXISTS index_template_table_sync_status ON template_table(sync_status)")
     }
 }

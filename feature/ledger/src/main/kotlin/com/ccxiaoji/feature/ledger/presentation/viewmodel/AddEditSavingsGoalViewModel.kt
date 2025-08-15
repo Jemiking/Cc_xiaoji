@@ -163,6 +163,7 @@ class AddEditSavingsGoalViewModel @Inject constructor(
                 if (goalId == null) {
                     // Create new goal
                     val newGoal = SavingsGoal(
+                        userId = "default_user", // TODO: Get from current user context
                         name = _uiState.value.name,
                         targetAmount = targetAmount!!,
                         targetDate = _uiState.value.targetDate,

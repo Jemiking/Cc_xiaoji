@@ -14,14 +14,29 @@ interface SavingsGoalDao {
     @Query("SELECT * FROM savings_goals ORDER BY isActive DESC, createdAt DESC")
     fun getAllSavingsGoals(): Flow<List<SavingsGoalEntity>>
     
+    @Query("SELECT * FROM savings_goals ORDER BY isActive DESC, createdAt DESC")
+    suspend fun getAllSavingsGoalsSync(): List<SavingsGoalEntity>
+    
     @Query("SELECT * FROM savings_goals WHERE id = :goalId")
     suspend fun getSavingsGoalById(goalId: Long): SavingsGoalEntity?
+    
+    @Query("SELECT * FROM savings_goals WHERE userId = :userId ORDER BY createdAt DESC")
+    fun getSavingsGoalsByUser(userId: String): Flow<List<SavingsGoalEntity>>
+    
+    @Query("SELECT * FROM savings_goals WHERE userId = :userId ORDER BY createdAt DESC")
+    suspend fun getSavingsGoalsByUserSync(userId: String): List<SavingsGoalEntity>
     
     @Insert
     suspend fun insertSavingsGoal(goal: SavingsGoalEntity): Long
     
+    @Insert
+    suspend fun insertAll(goals: List<SavingsGoalEntity>)
+    
     @Update
     suspend fun updateSavingsGoal(goal: SavingsGoalEntity)
+    
+    @Update  
+    suspend fun update(goal: SavingsGoalEntity)
     
     @Delete
     suspend fun deleteSavingsGoal(goal: SavingsGoalEntity)

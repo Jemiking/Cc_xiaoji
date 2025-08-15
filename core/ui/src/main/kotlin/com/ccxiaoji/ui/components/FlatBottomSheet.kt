@@ -118,7 +118,7 @@ fun <T> FlatSelectionBottomSheet(
                 )
             )
             
-            Divider(
+            HorizontalDivider(
                 modifier = Modifier.padding(vertical = DesignTokens.Spacing.small),
                 color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
             )

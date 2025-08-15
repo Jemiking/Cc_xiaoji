@@ -9,6 +9,9 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE userId = :userId AND isDeleted = 0 ORDER BY type, displayOrder, name")
     fun getCategoriesByUser(userId: String): Flow<List<CategoryEntity>>
     
+    @Query("SELECT * FROM categories WHERE userId = :userId AND isDeleted = 0 ORDER BY type, displayOrder, name")
+    suspend fun getCategoriesByUserSync(userId: String): List<CategoryEntity>
+    
     @Query("SELECT * FROM categories WHERE userId = :userId AND type = :type AND isDeleted = 0 ORDER BY displayOrder, name")
     fun getCategoriesByType(userId: String, type: String): Flow<List<CategoryEntity>>
     

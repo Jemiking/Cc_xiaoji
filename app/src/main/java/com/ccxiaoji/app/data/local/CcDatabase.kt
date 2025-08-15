@@ -72,7 +72,7 @@ import com.ccxiaoji.feature.plan.data.local.entity.TemplateEntity
         MilestoneEntity::class,
         TemplateEntity::class
     ],
-    version = 7,
+    version = 8,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

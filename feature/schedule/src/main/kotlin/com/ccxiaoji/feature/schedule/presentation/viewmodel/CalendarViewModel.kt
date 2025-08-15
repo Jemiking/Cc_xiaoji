@@ -14,6 +14,7 @@ import com.ccxiaoji.feature.schedule.presentation.theme.ThemeManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
@@ -23,6 +24,7 @@ import javax.inject.Inject
  * 日历视图的ViewModel
  * 管理排班日历的状态和业务逻辑
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     private val getMonthScheduleUseCase: GetMonthScheduleUseCase,

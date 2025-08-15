@@ -169,7 +169,16 @@
       "Bash(compile_kotlin)",
       "Bash(D:kotlinCc_xiaojidiagnose-mcp-en.bat)",
       "Bash(diagnose-mcp-en.bat)",
-      "Bash(git tag:*)"
+      "Bash(git tag:*)",
+      "Bash(scriptscheck-ide-env.bat)",
+      "Bash(./scripts/check-ide-env.bat)",
+      "Bash(./scripts/setup-ide-env.bat)",
+      "Bash(D:kotlinCc_xiaojigradlew.bat :app:compileDebugKotlin --no-daemon --console=plain)",
+      "Bash(do echo \"Processing: $file\")",
+      "Bash(do echo \"处理: $file\")",
+      "Bash(do echo \"修复图标: $icon\")",
+      "Bash(D:kotlinCc_xiaojigradlew.bat :feature:ledger:compileDebugKotlin --console=plain)",
+      "Bash(compile_test.bat)"
     ],
     "deny": []
   },

@@ -57,6 +57,7 @@ class SavingsGoalViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 val goal = SavingsGoal(
+                    userId = "default_user", // TODO: Get from current user context
                     name = name,
                     targetAmount = targetAmount,
                     targetDate = targetDate,

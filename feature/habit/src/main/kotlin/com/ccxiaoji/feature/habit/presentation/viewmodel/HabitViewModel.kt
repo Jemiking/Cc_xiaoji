@@ -7,6 +7,7 @@ import com.ccxiaoji.feature.habit.domain.model.HabitWithStreak
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.datetime.*
 import javax.inject.Inject
 
@@ -31,6 +32,7 @@ class HabitViewModel @Inject constructor(
         loadCheckedToday()
     }
     
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeHabitsWithSearch() {
         viewModelScope.launch {
             searchQuery
