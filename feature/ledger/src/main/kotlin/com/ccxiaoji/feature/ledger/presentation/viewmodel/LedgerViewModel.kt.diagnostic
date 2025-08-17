@@ -1,0 +1,38 @@
+// 扩展：添加手动诊断方法到LedgerViewModel
+
+/**
+ * 手动触发完整诊断
+ * 可以在UI中添加一个调试按钮调用此方法
+ */
+fun runManualDiagnostic() = viewModelScope.launch {
+    android.util.Log.e("LEDGER_DEBUG", "手动触发诊断...")
+    val userId = userApi.getCurrentUserId()
+    
+    // 1. 运行完整诊断
+    val report = diagnosticTool.runFullDiagnostic(userId)
+    
+    // 2. 输出建议
+    android.util.Log.e("LEDGER_DEBUG", "")
+    android.util.Log.e("LEDGER_DEBUG", "【修复建议】")
+    android.util.Log.e("LEDGER_DEBUG", "========================================")
+    
+    if (report.problemAccounts.isNotEmpty()) {
+        android.util.Log.e("LEDGER_DEBUG", "发现 ${report.problemAccounts.size} 个问题账户")
+        android.util.Log.e("LEDGER_DEBUG", "建议执行以下操作：")
+        android.util.Log.e("LEDGER_DEBUG", "1. 将所有临时账户的交易迁移到默认账户")
+        android.util.Log.e("LEDGER_DEBUG", "2. 删除临时账户")
+        android.util.Log.e("LEDGER_DEBUG", "")
+        android.util.Log.e("LEDGER_DEBUG", "是否执行自动修复？（需要在UI添加确认对话框）")
+    } else {
+        android.util.Log.e("LEDGER_DEBUG", "✓ 未发现数据问题")
+    }
+    
+    // 3. 分析当前查询
+    val (start, end) = getMonthDateRange(_selectedMonth.value)
+    diagnosticTool.analyzeQueryLogic(
+        userId = userId,
+        selectedAccountId = _uiState.value.selectedAccountId,
+        startDate = start,
+        endDate = end
+    )
+}

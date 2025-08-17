@@ -1,5 +1,6 @@
 package com.ccxiaoji.feature.ledger.presentation.screen.account
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -21,10 +22,26 @@ fun EditAccountScreen(
     navController: NavController,
     viewModel: EditAccountViewModel = hiltViewModel()
 ) {
+    val TAG = "EditAccountScreen"
     val uiState by viewModel.uiState.collectAsState()
     
+    // 调试初始化信息
     LaunchedEffect(accountId) {
-        viewModel.loadAccount(accountId)
+        Log.d(TAG, "EditAccountScreen初始化，账户ID: $accountId")
+        try {
+            viewModel.loadAccount(accountId)
+            Log.d(TAG, "成功调用loadAccount")
+        } catch (e: Exception) {
+            Log.e(TAG, "调用loadAccount时异常", e)
+        }
+    }
+    
+    // 调试状态变化
+    LaunchedEffect(uiState) {
+        Log.d(TAG, "UIState更新: isLoading=${uiState.isLoading}, account=${uiState.account?.name}")
+        if (uiState.errorMessage != null) {
+            Log.e(TAG, "EditAccount错误: ${uiState.errorMessage}")
+        }
     }
     
     Scaffold(

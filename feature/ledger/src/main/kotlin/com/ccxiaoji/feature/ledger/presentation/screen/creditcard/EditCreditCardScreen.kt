@@ -1,5 +1,6 @@
 package com.ccxiaoji.feature.ledger.presentation.screen.creditcard
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -30,19 +31,36 @@ fun EditCreditCardScreen(
     navController: NavController,
     viewModel: EditCreditCardViewModel = hiltViewModel()
 ) {
+    val TAG = "EditCreditCardScreen"
     val uiState by viewModel.uiState.collectAsState()
     var creditLimit by remember { mutableStateOf("") }
     var usedAmount by remember { mutableStateOf("") }
     var billingDay by remember { mutableStateOf("") }
     var paymentDueDay by remember { mutableStateOf("") }
     
+    // 调试初始化信息
+    LaunchedEffect(accountId) {
+        Log.d(TAG, "EditCreditCardScreen初始化，信用卡ID: $accountId")
+        Log.d(TAG, "ViewModel将自动加载信用卡数据")
+    }
+    
+    // 调试状态变化
+    LaunchedEffect(uiState) {
+        Log.d(TAG, "UIState更新: isLoading=${uiState.isLoading}, creditCard=${uiState.creditCard?.name}")
+        if (uiState.errorMessage != null) {
+            Log.e(TAG, "EditCreditCard错误: ${uiState.errorMessage}")
+        }
+    }
+    
     // 初始化数据
     LaunchedEffect(uiState.creditCard) {
         uiState.creditCard?.let { card ->
+            Log.d(TAG, "初始化信用卡数据: ${card.name}")
             creditLimit = (card.creditLimitYuan ?: 0.0).toString()
             usedAmount = (-card.balanceYuan).toString()
             billingDay = (card.billingDay ?: 1).toString()
             paymentDueDay = (card.paymentDueDay ?: 20).toString()
+            Log.d(TAG, "数据初始化完成 - 额度: $creditLimit, 已用: $usedAmount")
         }
     }
     

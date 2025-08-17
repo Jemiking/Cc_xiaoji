@@ -103,6 +103,12 @@ interface BudgetDao {
     
     @Query("SELECT * FROM budgets WHERE id = :budgetId AND isDeleted = 0")
     fun getBudgetByIdSync(budgetId: String): BudgetEntity?
+    
+    @Query("SELECT * FROM budgets WHERE userId = :userId AND year = :year AND month = :month AND (:categoryId IS NULL AND categoryId IS NULL OR categoryId = :categoryId) AND isDeleted = 0 LIMIT 1")
+    suspend fun findByYearMonth(userId: String, year: Int, month: Int, categoryId: String?): BudgetEntity?
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(budget: BudgetEntity)
 }
 
 data class BudgetWithSpent(

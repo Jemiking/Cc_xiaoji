@@ -1,5 +1,6 @@
 package com.ccxiaoji.feature.ledger.presentation.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.feature.ledger.domain.model.Account
@@ -17,6 +18,10 @@ class EditAccountViewModel @Inject constructor(
     private val accountRepository: AccountRepository
 ) : ViewModel() {
     
+    companion object {
+        private const val TAG = "EditAccountViewModel"
+    }
+    
     data class EditAccountUiState(
         val isLoading: Boolean = false,
         val name: String = "",
@@ -25,27 +30,45 @@ class EditAccountViewModel @Inject constructor(
         val nameError: String? = null,
         val balanceError: String? = null,
         val isSaved: Boolean = false,
-        val account: Account? = null
+        val account: Account? = null,
+        val errorMessage: String? = null
     )
     
     private val _uiState = MutableStateFlow(EditAccountUiState())
     val uiState: StateFlow<EditAccountUiState> = _uiState.asStateFlow()
     
     fun loadAccount(accountId: String) {
+        Log.d(TAG, "开始加载账户，ID: $accountId")
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            Log.d(TAG, "设置加载状态为true")
             try {
-                accountRepository.getAccountById(accountId)?.let { account ->
+                Log.d(TAG, "调用accountRepository.getAccountById")
+                val account = accountRepository.getAccountById(accountId)
+                if (account != null) {
+                    Log.d(TAG, "成功获取账户: ${account.name}, 余额: ${account.balanceYuan}")
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         name = account.name,
                         balance = account.balanceYuan.toString(),
                         accountTypeDisplay = "${account.type.icon} ${account.type.displayName}",
-                        account = account
+                        account = account,
+                        errorMessage = null
+                    )
+                    Log.d(TAG, "成功更新UI状态")
+                } else {
+                    Log.e(TAG, "未找到账户，ID: $accountId")
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "未找到指定账户"
                     )
                 }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false)
+                Log.e(TAG, "加载账户时异常", e)
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "加载账户失败: ${e.message}"
+                )
             }
         }
     }

@@ -23,7 +23,8 @@ fun AdvancedSettingsSection(
     onNavigateToAccountManagement: () -> Unit,
     onNavigateToBudgetManagement: () -> Unit,
     onNavigateToDataImport: () -> Unit = {},
-    onNavigateToQianjiImport: () -> Unit = {}
+    onNavigateToQianjiImport: () -> Unit = {},
+    onNavigateToDesignDemo: () -> Unit = {}
 ) {
     ModernCard(
         modifier = Modifier
@@ -80,6 +81,16 @@ fun AdvancedSettingsSection(
                 title = "导入钱迹数据",
                 subtitle = "从钱迹APP导入数据",
                 onClick = onNavigateToQianjiImport
+            )
+            
+            Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
+            
+            // 设计方案Demo
+            SettingItem(
+                icon = Icons.Default.Palette,
+                title = "界面设计Demo",
+                subtitle = "预览不同的界面设计方案",
+                onClick = onNavigateToDesignDemo
             )
             
             Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))

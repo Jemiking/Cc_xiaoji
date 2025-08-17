@@ -95,7 +95,7 @@ CC小记 (CC Xiaoji) is a **Life Management Companion App** that integrates mult
 - **TargetSdk**: 34 (Android 14)
 
 ## Database Management
-- **Room database version**: 8 (Current - Added userId to SavingsGoalEntity)
+- **Room database version**: 9 (Current - Added two-level category support)
 - **Tables**: 23 tables total
 - **Distribution**: 
   - Ledger: 9 tables
@@ -108,7 +108,8 @@ CC小记 (CC Xiaoji) is a **Life Management Companion App** that integrates mult
   - v5: Schedule module integration
   - v6: Plan module integration
   - v7: Credit card fields
-  - v8: SavingsGoal userId field (2025-08-15)
+  - v8: SavingsGoal userId field
+  - v9: Two-level category support (2025-08-15)
 - **Architecture Note**: Schedule module uses snake_case, others use camelCase
 - **Schema location**: `app/schemas/`
 
@@ -191,7 +192,7 @@ feature-[name]/
 1. **Architecture Migration**: 100% complete with 13 modules
 2. **Navigation**: 2 active bottom navigation items (Home, Profile)
    - Other modules (Ledger, Todo, Habit, Schedule) are commented but ready
-3. **Database**: Version 8 with all tables integrated
+3. **Database**: Version 9 with two-level category support
 4. **Core Features**: Todo, Habit, Ledger all functional
 5. **Schedule Module**: Successfully integrated
 6. **Plan Module**: Successfully integrated with tree structure
@@ -209,6 +210,24 @@ feature-[name]/
   - Internationalization: Ledger module has 41 files pending
 
 ### ✅ Recent Updates
+
+#### 二级分类系统完成（2025-08-15）
+**进度：Phase 7/7 完成 ✅**
+- ✅ Phase 1: 数据模型优化（数据库v8→v9）
+- ✅ Phase 2: Repository和业务逻辑层（11个新方法+5个UseCase）
+- ✅ Phase 3: ViewModel层改造（4个ViewModel支持二级分类）
+- ✅ Phase 4: UI组件开发（CategoryPicker、CategoryPathDisplay、CategoryEditDialog）
+- ✅ Phase 5: 默认分类初始化（80+个预设分类）
+- ✅ Phase 6: 导入导出适配（支持钱迹数据映射、CSV导入导出）
+- ✅ Phase 7: 测试优化（单元测试、性能缓存、代码清理）
+
+**新增功能**:
+- 完整的二级分类系统（父分类-子分类结构）
+- 智能分类选择器with搜索功能
+- 默认分类自动初始化（新用户友好）
+- 钱迹数据智能映射到二级分类
+- 分类缓存机制提升性能
+- 全面的单元测试覆盖
 
 #### 记账功能开发完成（2024-06-22）
 - ✅ Credit card management
@@ -283,7 +302,7 @@ feature-[name]/
    - Solution: Handle conversion in mappers
 
 ## Important Reminders
-1. **Database Version**: Currently at version 8
+1. **Database Version**: Currently at version 9 (two-level categories)
 2. **Navigation**: Only 2 items active (Home, Profile)
 3. **Technical Debt**: Ongoing cleanup, ~79% healthy
 4. **Import/Export**: Fully functional with recent fixes
@@ -296,4 +315,4 @@ feature-[name]/
 - `doc/20250627-技术债务真实状态评估报告.md` - Technical debt assessment
 
 ---
-*Last Updated: 2025-08-15 - Fixed data import issues, database upgraded to v8*
+*Last Updated: 2025-08-15 - Two-level category system fully implemented (Phase 7/7 complete), database at v9, comprehensive testing and optimization completed*

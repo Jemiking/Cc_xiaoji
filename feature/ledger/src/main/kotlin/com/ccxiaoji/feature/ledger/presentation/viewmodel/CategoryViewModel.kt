@@ -4,8 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.feature.ledger.domain.repository.CategoryRepository
 import com.ccxiaoji.feature.ledger.domain.model.Category
+import com.ccxiaoji.feature.ledger.domain.model.CategoryGroup
 import com.ccxiaoji.feature.ledger.domain.model.CategoryWithStats
-import com.ccxiaoji.feature.ledger.data.repository.CategoryRepositoryImpl
+import com.ccxiaoji.feature.ledger.domain.usecase.GetCategoryTreeUseCase
+import com.ccxiaoji.feature.ledger.domain.usecase.ManageCategoryUseCase
+import com.ccxiaoji.feature.ledger.domain.usecase.ValidateCategoryUseCase
+import com.ccxiaoji.shared.user.api.UserApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -13,7 +17,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CategoryViewModel @Inject constructor(
-    private val categoryRepository: CategoryRepository
+    private val categoryRepository: CategoryRepository,
+    private val getCategoryTree: GetCategoryTreeUseCase,
+    private val manageCategory: ManageCategoryUseCase,
+    private val validateCategory: ValidateCategoryUseCase,
+    private val userApi: UserApi
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(CategoryUiState())
@@ -25,19 +33,26 @@ class CategoryViewModel @Inject constructor(
     
     fun loadCategories() {
         viewModelScope.launch {
-            // 简化实现：暂时只获取分类，不包含统计信息
-            categoryRepository.getCategories().collect { categories ->
-                val expenseCategories = categories
-                    .filter { it.type == Category.Type.EXPENSE }
-                    .map { CategoryWithStats(it, 0, 0L) }
-                val incomeCategories = categories
-                    .filter { it.type == Category.Type.INCOME }
-                    .map { CategoryWithStats(it, 0, 0L) }
+            _uiState.update { it.copy(isLoading = true) }
+            
+            try {
+                val userId = userApi.getCurrentUserId()
+                
+                // 获取分类树
+                val expenseTree = getCategoryTree.getExpenseTree(userId)
+                val incomeTree = getCategoryTree.getIncomeTree(userId)
                 
                 _uiState.update { 
                     it.copy(
-                        expenseCategories = expenseCategories,
-                        incomeCategories = incomeCategories,
+                        expenseCategoryGroups = expenseTree,
+                        incomeCategoryGroups = incomeTree,
+                        isLoading = false
+                    )
+                }
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(
+                        errorMessage = e.message ?: "加载分类失败",
                         isLoading = false
                     )
                 }
@@ -45,7 +60,10 @@ class CategoryViewModel @Inject constructor(
         }
     }
     
-    fun createCategory(
+    /**
+     * 创建父分类（一级分类）
+     */
+    fun createParentCategory(
         name: String,
         type: Category.Type,
         icon: String,
@@ -53,16 +71,64 @@ class CategoryViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             try {
-                categoryRepository.createCategory(
+                val userId = userApi.getCurrentUserId()
+                
+                // 验证分类名称
+                val validation = validateCategory.validateCategoryName(
+                    name = name,
+                    parentId = null,
+                    userId = userId,
+                    type = type.name
+                )
+                
+                if (!validation.isValid) {
+                    _uiState.update { 
+                        it.copy(errorMessage = validation.errorMessage)
+                    }
+                    return@launch
+                }
+                
+                manageCategory.createParentCategory(
+                    userId = userId,
                     name = name,
                     type = type.name,
                     icon = icon,
-                    color = color,
-                    parentId = null
+                    color = color
                 )
+                
+                // 刷新分类列表
+                loadCategories()
             } catch (e: Exception) {
                 _uiState.update { 
                     it.copy(errorMessage = e.message ?: "创建分类失败")
+                }
+            }
+        }
+    }
+    
+    /**
+     * 创建子分类（二级分类）
+     */
+    fun createSubcategory(
+        parentId: String,
+        name: String,
+        icon: String,
+        color: String? = null
+    ) {
+        viewModelScope.launch {
+            try {
+                manageCategory.createSubcategory(
+                    parentId = parentId,
+                    name = name,
+                    icon = icon,
+                    color = color
+                )
+                
+                // 刷新分类列表
+                loadCategories()
+            } catch (e: Exception) {
+                _uiState.update { 
+                    it.copy(errorMessage = e.message ?: "创建子分类失败")
                 }
             }
         }
@@ -98,7 +164,20 @@ class CategoryViewModel @Inject constructor(
     fun deleteCategory(categoryId: String) {
         viewModelScope.launch {
             try {
+                // 验证是否可以删除
+                val validation = validateCategory.canDeleteCategory(categoryId)
+                
+                if (!validation.isValid) {
+                    _uiState.update { 
+                        it.copy(errorMessage = validation.errorMessage)
+                    }
+                    return@launch
+                }
+                
                 categoryRepository.deleteCategory(categoryId)
+                
+                // 刷新分类列表
+                loadCategories()
             } catch (e: Exception) {
                 _uiState.update { 
                     it.copy(
@@ -113,11 +192,28 @@ class CategoryViewModel @Inject constructor(
         _uiState.update { it.copy(editingCategory = category) }
     }
     
-    fun toggleAddDialog(type: Category.Type? = null) {
+    fun setEditingParentCategory(parentId: String?) {
+        _uiState.update { it.copy(editingParentId = parentId) }
+    }
+    
+    fun toggleAddDialog(type: Category.Type? = null, parentId: String? = null) {
         _uiState.update { 
             it.copy(
                 showAddDialog = !it.showAddDialog,
-                addingCategoryType = type ?: Category.Type.EXPENSE
+                addingCategoryType = type ?: Category.Type.EXPENSE,
+                editingParentId = parentId
+            )
+        }
+    }
+    
+    /**
+     * 展开/折叠分类组
+     */
+    fun toggleGroupExpansion(groupId: String) {
+        _uiState.update { state ->
+            val currentExpanded = state.expandedGroups[groupId] ?: false
+            state.copy(
+                expandedGroups = state.expandedGroups + (groupId to !currentExpanded)
             )
         }
     }
@@ -132,10 +228,12 @@ class CategoryViewModel @Inject constructor(
 }
 
 data class CategoryUiState(
-    val expenseCategories: List<CategoryWithStats> = emptyList(),
-    val incomeCategories: List<CategoryWithStats> = emptyList(),
+    val expenseCategoryGroups: List<CategoryGroup> = emptyList(),
+    val incomeCategoryGroups: List<CategoryGroup> = emptyList(),
+    val expandedGroups: Map<String, Boolean> = emptyMap(),
     val isLoading: Boolean = true,
     val editingCategory: Category? = null,
+    val editingParentId: String? = null,
     val showAddDialog: Boolean = false,
     val addingCategoryType: Category.Type = Category.Type.EXPENSE,
     val errorMessage: String? = null,

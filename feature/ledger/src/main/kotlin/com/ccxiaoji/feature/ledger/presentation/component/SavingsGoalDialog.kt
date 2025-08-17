@@ -1,5 +1,6 @@
 package com.ccxiaoji.feature.ledger.presentation.component
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -33,6 +34,7 @@ fun SavingsGoalDialog(
     onDismiss: () -> Unit,
     onConfirm: (name: String, targetAmount: Double, targetDate: LocalDate?, description: String?, color: String, iconName: String) -> Unit
 ) {
+    val TAG = "SavingsGoalDialog"
     var name by remember { mutableStateOf(goal?.name ?: "") }
     var targetAmount by remember { mutableStateOf(goal?.targetAmount?.toString() ?: "") }
     var description by remember { mutableStateOf(goal?.description ?: "") }
@@ -43,6 +45,16 @@ fun SavingsGoalDialog(
     var nameError by remember { mutableStateOf<String?>(null) }
     var amountError by remember { mutableStateOf<String?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
+    
+    // 调试初始化信息
+    LaunchedEffect(Unit) {
+        Log.d(TAG, "SavingsGoalDialog初始化")
+        if (goal != null) {
+            Log.d(TAG, "编辑模式 - 目标: ${goal.name}, 金额: ${goal.targetAmount}")
+        } else {
+            Log.d(TAG, "创建模式")
+        }
+    }
     
     val colors = listOf(
         "#4CAF50", "#2196F3", "#FF9800", "#9C27B0",
@@ -211,20 +223,34 @@ fun SavingsGoalDialog(
                     
                     Button(
                         onClick = {
+                            Log.d(TAG, "点击确认按钮")
+                            Log.d(TAG, "输入数据 - 名称: '$name', 金额: '$targetAmount'")
+                            Log.d(TAG, "输入数据 - 描述: '$description', 日期: $selectedDate")
+                            Log.d(TAG, "输入数据 - 颜色: '$selectedColor', 图标: '$selectedIcon'")
+                            
                             when {
-                                name.isBlank() -> nameError = "请输入目标名称"
+                                name.isBlank() -> {
+                                    Log.e(TAG, "验证失败：名称为空")
+                                    nameError = "请输入目标名称"
+                                }
                                 targetAmount.toDoubleOrNull() == null || targetAmount.toDouble() <= 0 -> {
+                                    Log.e(TAG, "验证失败：金额无效 - '$targetAmount'")
                                     amountError = "请输入有效金额"
                                 }
                                 else -> {
+                                    Log.d(TAG, "验证通过，调用onConfirm回调")
+                                    val amount = targetAmount.toDouble()
+                                    Log.d(TAG, "确认参数 - 名称: '$name', 金额: $amount, 日期: $selectedDate")
+                                    
                                     onConfirm(
                                         name,
-                                        targetAmount.toDouble(),
+                                        amount,
                                         selectedDate,
                                         description.ifBlank { null },
                                         selectedColor,
                                         selectedIcon
                                     )
+                                    Log.d(TAG, "onConfirm回调已调用")
                                 }
                             }
                         }

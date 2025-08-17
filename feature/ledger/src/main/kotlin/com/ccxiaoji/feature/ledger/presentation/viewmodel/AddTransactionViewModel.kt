@@ -5,9 +5,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.feature.ledger.domain.model.Account
 import com.ccxiaoji.feature.ledger.domain.model.Category
+import com.ccxiaoji.feature.ledger.domain.model.CategoryGroup
+import com.ccxiaoji.feature.ledger.domain.model.SelectedCategoryInfo
 import com.ccxiaoji.feature.ledger.domain.repository.AccountRepository
 import com.ccxiaoji.feature.ledger.domain.repository.CategoryRepository
 import com.ccxiaoji.feature.ledger.domain.repository.TransactionRepository
+import com.ccxiaoji.feature.ledger.domain.usecase.GetCategoryTreeUseCase
+import com.ccxiaoji.feature.ledger.domain.usecase.GetFrequentCategoriesUseCase
+import com.ccxiaoji.feature.ledger.domain.usecase.ManageCategoryUseCase
 import com.ccxiaoji.shared.user.api.UserApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -17,15 +22,16 @@ import javax.inject.Inject
 data class AddTransactionUiState(
     val accounts: List<Account> = emptyList(),
     val selectedAccount: Account? = null,
-    val categories: List<Category> = emptyList(),
-    val filteredCategories: List<Category> = emptyList(),
-    val selectedCategoryId: String? = null,
+    val categoryGroups: List<CategoryGroup> = emptyList(),
+    val frequentCategories: List<Category> = emptyList(),
+    val selectedCategoryInfo: SelectedCategoryInfo? = null,
     val isIncome: Boolean = false,
     val amountText: String = "",
     val note: String = "",
     val isLoading: Boolean = false,
     val amountError: String? = null,
-    val canSave: Boolean = false
+    val canSave: Boolean = false,
+    val showCategoryPicker: Boolean = false
 )
 
 @HiltViewModel
@@ -34,6 +40,9 @@ class AddTransactionViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
+    private val getCategoryTree: GetCategoryTreeUseCase,
+    private val getFrequentCategories: GetFrequentCategoriesUseCase,
+    private val manageCategory: ManageCategoryUseCase,
     private val userApi: UserApi
 ) : ViewModel() {
     
@@ -44,6 +53,7 @@ class AddTransactionViewModel @Inject constructor(
     private val preselectedAccountId: String? = savedStateHandle["accountId"]
     
     init {
+        checkAndInitializeCategories()
         loadData()
     }
     
@@ -67,13 +77,8 @@ class AddTransactionViewModel @Inject constructor(
         }
         
         viewModelScope.launch {
-            // 加载分类
-            categoryRepository.getCategories().collect { categories ->
-                _uiState.update {
-                    it.copy(categories = categories)
-                }
-                updateFilteredCategories()
-            }
+            // 加载分类树和常用分类
+            loadCategories()
         }
     }
     
@@ -88,17 +93,42 @@ class AddTransactionViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 isIncome = isIncome,
-                selectedCategoryId = null // 重置分类选择
+                selectedCategoryInfo = null // 重置分类选择
             )
         }
-        updateFilteredCategories()
+        viewModelScope.launch {
+            loadCategories()
+        }
     }
     
-    fun selectCategory(categoryId: String) {
-        _uiState.update {
-            it.copy(selectedCategoryId = categoryId)
+    fun selectCategory(category: Category) {
+        viewModelScope.launch {
+            // 记录使用频率
+            getFrequentCategories.recordCategoryUsage(category.id)
+            
+            // 获取完整的分类信息（包含父分类路径）
+            val categoryInfo = categoryRepository.getCategoryFullInfo(category.id)
+            
+            _uiState.update {
+                it.copy(
+                    selectedCategoryInfo = categoryInfo,
+                    showCategoryPicker = false
+                )
+            }
+            updateCanSave()
         }
-        updateCanSave()
+    }
+    
+    fun showCategoryPicker() {
+        _uiState.update {
+            it.copy(showCategoryPicker = true)
+        }
+    }
+    
+    fun hideCategoryPicker() {
+        _uiState.update {
+            it.copy(showCategoryPicker = false)
+        }
     }
     
     fun updateAmount(amount: String) {
@@ -125,23 +155,37 @@ class AddTransactionViewModel @Inject constructor(
         }
     }
     
-    private fun updateFilteredCategories() {
-        val state = _uiState.value
-        val filteredCategories = state.categories.filter { category ->
-            category.type == if (state.isIncome) Category.Type.INCOME else Category.Type.EXPENSE
-        }
+    private suspend fun loadCategories() {
+        val userId = currentUserId
+        val type = if (_uiState.value.isIncome) "INCOME" else "EXPENSE"
         
-        // 如果当前选中的分类不在过滤后的列表中，选择第一个
-        val newSelectedId = if (filteredCategories.any { it.id == state.selectedCategoryId }) {
-            state.selectedCategoryId
+        // 加载分类树
+        val categoryGroups = getCategoryTree(userId, type)
+        
+        // 加载常用分类
+        val frequentCategories = getFrequentCategories(userId, type, 5)
+        
+        // 如果没有选中的分类，选择第一个常用分类或第一个可用分类
+        val selectedInfo = _uiState.value.selectedCategoryInfo
+        val newSelectedInfo = if (selectedInfo == null || selectedInfo.categoryId.isEmpty()) {
+            // 优先选择常用分类
+            frequentCategories.firstOrNull()?.let { category ->
+                // 找到对应的完整信息
+                categoryRepository.getCategoryFullInfo(category.id)
+            } ?: 
+            // 如果没有常用分类，选择第一个可用分类
+            categoryGroups.firstOrNull()?.children?.firstOrNull()?.let { category ->
+                categoryRepository.getCategoryFullInfo(category.id)
+            }
         } else {
-            filteredCategories.firstOrNull()?.id
+            selectedInfo
         }
         
         _uiState.update {
             it.copy(
-                filteredCategories = filteredCategories,
-                selectedCategoryId = newSelectedId
+                categoryGroups = categoryGroups,
+                frequentCategories = frequentCategories,
+                selectedCategoryInfo = newSelectedInfo
             )
         }
         updateCanSave()
@@ -154,7 +198,7 @@ class AddTransactionViewModel @Inject constructor(
                          it.amountError == null && 
                          it.amountText.toDoubleOrNull() != null &&
                          it.amountText.toDouble() > 0 &&
-                         it.selectedCategoryId != null &&
+                         it.selectedCategoryInfo != null &&
                          it.selectedAccount != null
             )
         }
@@ -172,7 +216,7 @@ class AddTransactionViewModel @Inject constructor(
                 
                 transactionRepository.addTransaction(
                     amountCents = amountCents,
-                    categoryId = state.selectedCategoryId!!,
+                    categoryId = state.selectedCategoryInfo!!.categoryId,
                     accountId = state.selectedAccount!!.id,
                     note = state.note.ifBlank { null }
                 )
@@ -182,6 +226,18 @@ class AddTransactionViewModel @Inject constructor(
                 // 处理错误
             } finally {
                 _uiState.update { it.copy(isLoading = false) }
+            }
+        }
+    }
+    
+    private fun checkAndInitializeCategories() {
+        viewModelScope.launch {
+            try {
+                // 检查并初始化默认分类
+                manageCategory.checkAndInitializeDefaultCategories(currentUserId)
+            } catch (e: Exception) {
+                // 初始化失败不影响主流程，只记录日志
+                android.util.Log.e("AddTransactionViewModel", "初始化默认分类失败", e)
             }
         }
     }

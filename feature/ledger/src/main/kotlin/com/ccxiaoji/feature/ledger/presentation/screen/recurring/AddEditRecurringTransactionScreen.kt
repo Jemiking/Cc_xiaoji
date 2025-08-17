@@ -1,5 +1,7 @@
 package com.ccxiaoji.feature.ledger.presentation.screen.recurring
 
+import android.util.Log
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -15,6 +17,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ccxiaoji.common.model.RecurringFrequency
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.AddEditRecurringTransactionViewModel
+import com.ccxiaoji.feature.ledger.presentation.component.AccountSelector
+import com.ccxiaoji.feature.ledger.presentation.component.CategoryPicker
+import com.ccxiaoji.feature.ledger.presentation.component.CategoryPathDisplay
 import com.ccxiaoji.ui.theme.DesignTokens
 import androidx.compose.foundation.text.KeyboardOptions
 
@@ -25,11 +30,29 @@ fun AddEditRecurringTransactionScreen(
     recurringId: String? = null,
     viewModel: AddEditRecurringTransactionViewModel = hiltViewModel()
 ) {
+    val TAG = "AddEditRecurringTransactionScreen"
     val uiState by viewModel.uiState.collectAsState()
     var expandedFrequency by remember { mutableStateOf(false) }
     
+    // 调试初始化信息
+    LaunchedEffect(Unit) {
+        Log.d(TAG, "AddEditRecurringTransactionScreen初始化，recurringId: $recurringId")
+    }
+    
+    // 调试状态变化
+    LaunchedEffect(uiState) {
+        Log.d(TAG, "UIState更新 - isLoading: ${uiState.isLoading}, saveSuccess: ${uiState.saveSuccess}")
+        if (uiState.errorMessage != null) {
+            Log.e(TAG, "错误信息: ${uiState.errorMessage}")
+        }
+        if (uiState.nameError != null || uiState.amountError != null) {
+            Log.w(TAG, "输入错误 - 名称: ${uiState.nameError}, 金额: ${uiState.amountError}")
+        }
+    }
+    
     LaunchedEffect(uiState.saveSuccess) {
         if (uiState.saveSuccess) {
+            Log.d(TAG, "保存成功，导航返回")
             navController.previousBackStackEntry
                 ?.savedStateHandle
                 ?.set("recurring_saved", true)
@@ -103,55 +126,77 @@ fun AddEditRecurringTransactionScreen(
                         singleLine = true
                     )
                     
-                    // 账户选择 - 简化实现
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    // 账户选择
+                    Column {
+                        AccountSelector(
+                            accounts = uiState.availableAccounts,
+                            selectedAccount = uiState.selectedAccount,
+                            onAccountSelected = viewModel::selectAccount,
+                            modifier = Modifier.fillMaxWidth(),
+                            label = "选择账户"
                         )
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(DesignTokens.Spacing.medium)
-                        ) {
+                        
+                        // 账户错误提示
+                        uiState.accountError?.let { error ->
                             Text(
-                                text = "账户选择",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "账户选择功能待实现",
+                                text = error,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
                             )
                         }
                     }
                     
-                    // 分类选择 - 简化实现
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Column(
+                    // 分类选择
+                    Column {
+                        OutlinedTextField(
+                            value = uiState.selectedCategory?.let { category ->
+                                val parentName = uiState.categoryGroups
+                                    .find { group -> group.children.any { it.id == category.id } }
+                                    ?.parent?.name ?: ""
+                                if (parentName.isNotEmpty()) {
+                                    "$parentName / ${category.name}"
+                                } else {
+                                    category.name
+                                }
+                            } ?: "",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("选择分类") },
+                            trailingIcon = {
+                                IconButton(onClick = viewModel::showCategoryPicker) {
+                                    Icon(
+                                        Icons.Default.ArrowDropDown,
+                                        contentDescription = "选择分类"
+                                    )
+                                }
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(DesignTokens.Spacing.medium)
-                        ) {
+                                .clickable { viewModel.showCategoryPicker() },
+                            isError = uiState.categoryError != null
+                        )
+                        
+                        // 分类错误提示
+                        uiState.categoryError?.let { error ->
                             Text(
-                                text = "分类选择",
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "分类选择功能待实现",
+                                text = error,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                color = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
                             )
                         }
                     }
+                    
+                    // 分类选择器弹窗
+                    CategoryPicker(
+                        isVisible = uiState.showCategoryPicker,
+                        categoryGroups = uiState.categoryGroups,
+                        selectedCategoryId = uiState.selectedCategory?.id,
+                        onCategorySelected = viewModel::selectCategory,
+                        onDismiss = viewModel::hideCategoryPicker,
+                        title = "选择分类"
+                    )
                     
                     // 备注输入
                     OutlinedTextField(
@@ -328,7 +373,11 @@ fun AddEditRecurringTransactionScreen(
                     
                     // 保存按钮
                     Button(
-                        onClick = viewModel::saveRecurringTransaction,
+                        onClick = {
+                            Log.d(TAG, "点击保存按钮")
+                            Log.d(TAG, "当前状态 - 名称: '${uiState.name}', 金额: '${uiState.amount}', 账户ID: '${uiState.accountId}', 分类ID: '${uiState.categoryId}'")
+                            viewModel.saveRecurringTransaction()
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !uiState.isLoading,
                         colors = ButtonDefaults.buttonColors(

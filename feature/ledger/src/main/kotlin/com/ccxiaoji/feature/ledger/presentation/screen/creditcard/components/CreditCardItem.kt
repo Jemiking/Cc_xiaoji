@@ -1,12 +1,15 @@
 package com.ccxiaoji.feature.ledger.presentation.screen.creditcard.components
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -23,8 +26,15 @@ import com.ccxiaoji.feature.ledger.presentation.utils.CurrencyFormatter
 @Composable
 fun CreditCardItem(
     card: Account,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onEdit: (() -> Unit)? = null
 ) {
+    val TAG = "CreditCardItem"
+    
+    // 调试信息
+    LaunchedEffect(card) {
+        Log.d(TAG, "渲染信用卡项目: ${card.name}, ID: ${card.id}")
+    }
     ModernCard(
         modifier = Modifier
             .fillMaxWidth()
@@ -85,9 +95,54 @@ fun CreditCardItem(
                     }
                 }
                 
-                // 使用率指示器
-                card.utilizationRate?.let { rate ->
-                    CreditUtilizationIndicator(rate = rate)
+                // 右侧区域：使用率指示器和操作按钮
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.xs)
+                ) {
+                    // 使用率指示器
+                    card.utilizationRate?.let { rate ->
+                        CreditUtilizationIndicator(rate = rate)
+                    }
+                    
+                    // 操作按钮
+                    if (onEdit != null) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.xs)
+                        ) {
+                            // 编辑按钮
+                            IconButton(
+                                onClick = {
+                                    Log.d(TAG, "点击编辑按钮，信用卡: ${card.name}")
+                                    onEdit()
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Edit,
+                                    contentDescription = "编辑信用卡",
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            
+                            // 更多操作按钮
+                            IconButton(
+                                onClick = { 
+                                    Log.d(TAG, "点击更多按钮，信用卡: ${card.name}")
+                                    // 可以添加更多操作菜单
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.MoreVert,
+                                    contentDescription = "更多操作",
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
                 }
             }
             

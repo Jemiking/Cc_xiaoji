@@ -199,8 +199,14 @@ interface TransactionDao {
     @Query("SELECT EXISTS(SELECT 1 FROM transactions WHERE note LIKE :pattern AND userId = :userId AND isDeleted = 0)")
     suspend fun existsByNote(pattern: String, userId: String): Boolean
     
+    @Query("SELECT * FROM transactions WHERE userId = :userId AND createdAt = :createdAt AND amountCents = :amountCents AND isDeleted = 0")
+    suspend fun findByUserAndTimeAndAmount(userId: String, createdAt: Long, amountCents: Int): List<TransactionEntity>
+    
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(transactions: List<TransactionEntity>)
+    
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(transaction: TransactionEntity)
     
     // 调试方法：查询所有交易记录（不限制用户ID）
     @Query("SELECT COUNT(*) FROM transactions WHERE isDeleted = 0")

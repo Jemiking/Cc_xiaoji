@@ -19,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.R
 import com.ccxiaoji.feature.ledger.presentation.component.AccountSelector
+import com.ccxiaoji.feature.ledger.presentation.component.CategoryPicker
 import com.ccxiaoji.feature.ledger.presentation.screen.ledger.components.CategoryChip
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.AddTransactionViewModel
 import com.ccxiaoji.ui.theme.DesignTokens
@@ -122,25 +123,41 @@ fun AddTransactionScreen(
             )
             
             // 分类选择
-            Text(
-                text = stringResource(R.string.select_category),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            
-            // 分类网格
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
-                horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small),
-                verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small),
-                modifier = Modifier.heightIn(max = 300.dp)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { viewModel.showCategoryPicker() },
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
             ) {
-                items(uiState.filteredCategories) { category ->
-                    CategoryChip(
-                        category = category,
-                        isSelected = uiState.selectedCategoryId == category.id,
-                        onClick = { viewModel.selectCategory(category.id) }
-                    )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(DesignTokens.Spacing.medium),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text(
+                            text = stringResource(R.string.select_category),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        val categoryInfo = uiState.selectedCategoryInfo
+                        if (categoryInfo != null) {
+                            Text(
+                                text = categoryInfo.fullPath ?: categoryInfo.categoryName,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        } else {
+                            Text(
+                                text = "请选择分类",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    // 可以添加一个箭头图标
                 }
             }
             
@@ -182,5 +199,15 @@ fun AddTransactionScreen(
                 CircularProgressIndicator()
             }
         }
+        
+        // 分类选择器
+        CategoryPicker(
+            isVisible = uiState.showCategoryPicker,
+            categoryGroups = uiState.categoryGroups,
+            selectedCategoryId = uiState.selectedCategoryInfo?.categoryId,
+            onCategorySelected = viewModel::selectCategory,
+            onDismiss = viewModel::hideCategoryPicker,
+            title = if (uiState.isIncome) "选择收入分类" else "选择支出分类"
+        )
     }
 }

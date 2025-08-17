@@ -33,6 +33,7 @@ object LedgerNavigation {
     const val DataExportRoute = "data_export"
     const val DataImportRoute = "data_import"
     const val QianjiImportRoute = "qianji_import"
+    const val DesignDemoRoute = "design_demo"
     
     fun transactionDetailRoute(transactionId: String) = "transaction_detail/$transactionId"
     fun deleteTransaction(transactionId: String) = "delete_transaction/$transactionId"

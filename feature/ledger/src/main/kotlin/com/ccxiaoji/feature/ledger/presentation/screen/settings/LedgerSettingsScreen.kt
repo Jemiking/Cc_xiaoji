@@ -36,6 +36,7 @@ fun LedgerSettingsScreen(
     onNavigateToAccountSelection: () -> Unit = {},
     onNavigateToReminderSettings: () -> Unit = {},
     onNavigateToHomeDisplaySettings: () -> Unit = {},
+    onNavigateToDesignDemo: () -> Unit = {},
     viewModel: LedgerSettingsViewModel = hiltViewModel(),
     navController: androidx.navigation.NavController? = null
 ) {
@@ -43,6 +44,9 @@ fun LedgerSettingsScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    
+    // Demo页面状态
+    var showDesignDemo by remember { mutableStateOf(false) }
     
     // 处理币种选择结果
     navController?.currentBackStackEntry?.savedStateHandle?.let { savedStateHandle ->
@@ -173,7 +177,8 @@ fun LedgerSettingsScreen(
                     onNavigateToAccountManagement = onNavigateToAccountManagement,
                     onNavigateToBudgetManagement = onNavigateToBudgetManagement,
                     onNavigateToDataImport = onNavigateToDataImport,
-                    onNavigateToQianjiImport = onNavigateToQianjiImport
+                    onNavigateToQianjiImport = onNavigateToQianjiImport,
+                    onNavigateToDesignDemo = { showDesignDemo = true }
                 )
             }
             
@@ -189,6 +194,17 @@ fun LedgerSettingsScreen(
                     onNavigateToRecurringTransactions = onNavigateToRecurringTransactions
                 )
             }
+        }
+    }
+    
+    // 显示设计Demo页面
+    if (showDesignDemo) {
+        androidx.compose.foundation.layout.Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            com.ccxiaoji.feature.ledger.presentation.screen.demo.DesignDemoScreen(
+                onNavigateBack = { showDesignDemo = false }
+            )
         }
     }
 }

@@ -14,7 +14,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.domain.model.Category
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.CategoryTab
-import com.ccxiaoji.feature.ledger.presentation.viewmodel.CategoryViewModel
+import com.ccxiaoji.feature.ledger.presentation.viewmodel.CategoryManagementViewModel
+import com.ccxiaoji.feature.ledger.presentation.viewmodel.DialogMode
 import com.ccxiaoji.feature.ledger.presentation.screen.category.components.*
 import com.ccxiaoji.ui.components.FlatFAB
 import com.ccxiaoji.ui.components.FlatAlertDialog
@@ -25,7 +26,7 @@ import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation
 @Composable
 fun CategoryManagementScreen(
     navController: NavController,
-    viewModel: CategoryViewModel = hiltViewModel()
+    viewModel: CategoryManagementViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
@@ -79,11 +80,11 @@ fun CategoryManagementScreen(
             FlatFAB(
                 onClick = { 
                     val categoryType = if (uiState.selectedTab == CategoryTab.EXPENSE) {
-                        "EXPENSE"
+                        Category.Type.EXPENSE
                     } else {
-                        "INCOME"
+                        Category.Type.INCOME
                     }
-                    navController.navigate(LedgerNavigation.addCategoryRoute(categoryType))
+                    viewModel.showAddParentDialog(categoryType)
                 },
                 containerColor = DesignTokens.BrandColors.Ledger
             ) {
@@ -99,17 +100,17 @@ fun CategoryManagementScreen(
             // Tab选择器
             CategoryTabRow(
                 selectedTab = uiState.selectedTab,
-                onTabSelected = viewModel::setSelectedTab
+                onTabSelected = viewModel::selectTab
             )
             
-            // 分类列表
-            val categories = if (uiState.selectedTab == CategoryTab.EXPENSE) {
-                uiState.expenseCategories
+            // 分类列表（使用分类树结构）
+            val categoryGroups = if (uiState.selectedTab == CategoryTab.EXPENSE) {
+                uiState.expenseGroups
             } else {
-                uiState.incomeCategories
+                uiState.incomeGroups
             }
             
-            if (categories.isEmpty()) {
+            if (categoryGroups.isEmpty()) {
                 EmptyCategoryState(
                     message = if (uiState.selectedTab == CategoryTab.EXPENSE) {
                         "暂无支出分类"
@@ -122,17 +123,31 @@ fun CategoryManagementScreen(
                     contentPadding = PaddingValues(DesignTokens.Spacing.medium),
                     verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)
                 ) {
-                    items(categories.size) { index ->
-                        val categoryWithStats = categories[index]
-                        CategoryItem(
-                            categoryWithStats = categoryWithStats,
-                            onEdit = { 
-                                navController.navigate(
-                                    LedgerNavigation.editCategoryRoute(categoryWithStats.category.id)
-                                )
-                            },
-                            onDelete = { viewModel.deleteCategory(categoryWithStats.category.id) }
-                        )
+                    // 遍历分类组（父分类及其子分类）
+                    categoryGroups.forEach { group ->
+                        // 显示父分类
+                        item(key = group.parent.id) {
+                            CategoryGroupItem(
+                                categoryGroup = group,
+                                isExpanded = uiState.expandedGroups[group.parent.id] ?: true,
+                                onToggleExpand = { viewModel.toggleGroupExpansion(group.parent.id) },
+                                onEditParent = { 
+                                    viewModel.showEditDialog(group.parent)
+                                },
+                                onDeleteParent = { 
+                                    viewModel.deleteCategory(group.parent.id) 
+                                },
+                                onAddChild = {
+                                    viewModel.showAddChildDialog(group)
+                                },
+                                onEditChild = { child ->
+                                    viewModel.showEditDialog(child, group.parent.name)
+                                },
+                                onDeleteChild = { childId ->
+                                    viewModel.deleteCategory(childId)
+                                }
+                            )
+                        }
                     }
                     
                     // 底部间距
@@ -144,14 +159,34 @@ fun CategoryManagementScreen(
         }
     }
     
-    // 添加分类对话框已改为全屏页面
-    // 原对话框功能已通过导航到AddCategoryScreen实现
-    
-    // 编辑分类对话框已改为全屏页面
-    // 原对话框功能已通过导航到EditCategoryScreen实现
+    // 分类编辑对话框
+    CategoryEditDialog(
+        isVisible = uiState.showAddDialog,
+        title = when (uiState.dialogMode) {
+            DialogMode.ADD_PARENT -> "添加父分类"
+            DialogMode.ADD_CHILD -> "添加子分类" 
+            DialogMode.EDIT_PARENT -> "编辑父分类"
+            DialogMode.EDIT_CHILD -> "编辑子分类"
+        },
+        categoryName = uiState.dialogName,
+        categoryIcon = uiState.dialogIcon.ifEmpty { "📝" },
+        categoryColor = if (uiState.dialogMode == DialogMode.ADD_PARENT || 
+                           uiState.dialogMode == DialogMode.EDIT_PARENT) {
+            uiState.dialogColor.ifEmpty { "#6200EE" }
+        } else {
+            uiState.dialogColor.ifEmpty { null }
+        },
+        parentName = uiState.dialogParentName,
+        onNameChange = { viewModel.updateDialogInput(name = it) },
+        onIconChange = { viewModel.updateDialogInput(icon = it) },
+        onColorChange = { viewModel.updateDialogInput(color = it) },
+        onConfirm = { viewModel.saveCategory() },
+        onDismiss = { viewModel.closeDialog() },
+        error = uiState.dialogError
+    )
     
     // 错误提示对话框
-    uiState.errorMessage?.let { message ->
+    uiState.error?.let { message ->
         FlatAlertDialog(
             onDismissRequest = { viewModel.clearError() },
             onConfirmation = { viewModel.clearError() },

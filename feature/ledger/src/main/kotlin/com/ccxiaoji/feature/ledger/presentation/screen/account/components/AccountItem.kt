@@ -1,5 +1,6 @@
 package com.ccxiaoji.feature.ledger.presentation.screen.account.components
 
+import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -31,7 +32,18 @@ fun AccountItem(
     onSetDefault: () -> Unit,
     onClick: () -> Unit
 ) {
+    val TAG = "AccountItem"
     var showMenu by remember { mutableStateOf(false) }
+    
+    // 调试账户信息
+    LaunchedEffect(account) {
+        Log.d(TAG, "渲染账户项目: ${account.name}, ID: ${account.id}, 类型: ${account.type}")
+    }
+    
+    // 调试菜单状态
+    LaunchedEffect(showMenu) {
+        Log.d(TAG, "账户${account.name}菜单状态变化: $showMenu")
+    }
     
     // 根据账户类型选择颜色
     val accountColor = when (account.type) {
@@ -48,8 +60,14 @@ fun AccountItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .combinedClickable(
-                    onClick = onClick,
-                    onLongClick = { showMenu = true }
+                    onClick = {
+                        Log.d(TAG, "点击账户: ${account.name}")
+                        onClick()
+                    },
+                    onLongClick = { 
+                        Log.d(TAG, "长按账户: ${account.name}，显示菜单")
+                        showMenu = true 
+                    }
                 ),
             backgroundColor = MaterialTheme.colorScheme.surface,
             borderColor = accountColor.copy(alpha = 0.2f),
@@ -122,20 +140,62 @@ fun AccountItem(
                     }
                 }
                 
-                Text(
-                    text = stringResource(
-                        R.string.amount_format, 
-                        stringResource(R.string.currency_symbol), 
-                        account.balanceYuan
-                    ),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = if (account.balanceYuan >= 0) {
-                        MaterialTheme.colorScheme.onSurface
-                    } else {
-                        DesignTokens.BrandColors.Error
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.xs)
+                ) {
+                    Text(
+                        text = stringResource(
+                            R.string.amount_format, 
+                            stringResource(R.string.currency_symbol), 
+                            account.balanceYuan
+                        ),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = if (account.balanceYuan >= 0) {
+                            MaterialTheme.colorScheme.onSurface
+                        } else {
+                            DesignTokens.BrandColors.Error
+                        }
+                    )
+                    
+                    // 添加明显的编辑按钮
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.xs)
+                    ) {
+                        // 编辑按钮
+                        IconButton(
+                            onClick = {
+                                Log.d(TAG, "点击编辑按钮，账户: ${account.name}")
+                                onEdit()
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = "编辑账户",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        
+                        // 更多操作按钮（保留原有的长按菜单功能）
+                        IconButton(
+                            onClick = { 
+                                Log.d(TAG, "点击更多按钮，账户: ${account.name}")
+                                showMenu = true 
+                            },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "更多操作",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
-                )
+                }
             }
         }
         
@@ -163,7 +223,13 @@ fun AccountItem(
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.edit)) },
                 onClick = {
-                    onEdit()
+                    Log.d(TAG, "点击编辑菜单项，账户: ${account.name}, ID: ${account.id}")
+                    try {
+                        onEdit()
+                        Log.d(TAG, "成功调用onEdit回调")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "调用onEdit回调时异常", e)
+                    }
                     showMenu = false
                 },
                 leadingIcon = {

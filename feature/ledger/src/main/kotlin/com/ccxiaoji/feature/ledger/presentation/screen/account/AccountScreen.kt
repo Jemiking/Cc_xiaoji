@@ -1,5 +1,6 @@
 package com.ccxiaoji.feature.ledger.presentation.screen.account
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -27,9 +28,23 @@ fun AccountScreen(
     navController: NavController? = null,
     viewModel: AccountViewModel = hiltViewModel()
 ) {
+    val TAG = "AccountScreen"
     val uiState by viewModel.uiState.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
     var selectedAccount by remember { mutableStateOf<Account?>(null) }
+    
+    // 调试初始化信息
+    LaunchedEffect(Unit) {
+        Log.d(TAG, "AccountScreen初始化，navController: ${navController != null}")
+    }
+    
+    // 调试账户状态变化
+    LaunchedEffect(uiState.accounts) {
+        Log.d(TAG, "账户列表更新，共${uiState.accounts.size}个账户")
+        uiState.accounts.forEach { account ->
+            Log.d(TAG, "  - ${account.name} (${account.id})")
+        }
+    }
     
     
     // 按账户类型分组
@@ -133,16 +148,32 @@ fun AccountScreen(
                         AccountItem(
                             account = account,
                             onEdit = {
-                                navController?.navigate(LedgerNavigation.editAccountRoute(account.id))
+                                Log.d(TAG, "AccountScreen收到编辑请求，账户: ${account.name}, ID: ${account.id}")
+                                val editRoute = LedgerNavigation.editAccountRoute(account.id)
+                                Log.d(TAG, "生成编辑路由: $editRoute")
+                                try {
+                                    if (navController != null) {
+                                        Log.d(TAG, "导航到编辑页面")
+                                        navController.navigate(editRoute)
+                                        Log.d(TAG, "导航调用成功")
+                                    } else {
+                                        Log.e(TAG, "NavController为null，无法导航")
+                                    }
+                                } catch (e: Exception) {
+                                    Log.e(TAG, "导航到编辑页面时异常", e)
+                                }
                             },
                             onDelete = {
+                                Log.d(TAG, "AccountScreen收到删除请求，账户: ${account.name}")
                                 selectedAccount = account
                                 showDeleteDialog = true
                             },
                             onSetDefault = {
+                                Log.d(TAG, "AccountScreen收到设为默认请求，账户: ${account.name}")
                                 viewModel.setDefaultAccount(account.id)
                             },
                             onClick = {
+                                Log.d(TAG, "AccountScreen收到点击请求，账户: ${account.name}")
                                 // Navigate to account detail or transaction list
                                 navController?.navigate("ledger?accountId=${account.id}")
                             }

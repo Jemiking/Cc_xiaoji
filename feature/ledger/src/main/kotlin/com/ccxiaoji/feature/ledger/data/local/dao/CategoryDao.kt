@@ -24,6 +24,26 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE userId = :userId AND parentId = :parentId AND isDeleted = 0 ORDER BY displayOrder, name")
     suspend fun getSubcategories(userId: String, parentId: String): List<CategoryEntity>
     
+    @Query("SELECT * FROM categories WHERE userId = :userId AND level = 1 AND type = :type AND isDeleted = 0 AND isActive = 1 ORDER BY displayOrder, name")
+    suspend fun getParentCategories(userId: String, type: String): List<CategoryEntity>
+    
+    @Query("SELECT * FROM categories WHERE userId = :userId AND level = 2 AND type = :type AND isDeleted = 0 AND isActive = 1 ORDER BY displayOrder, name")
+    suspend fun getLeafCategories(userId: String, type: String): List<CategoryEntity>
+    
+    @Query("SELECT * FROM categories WHERE parentId = :parentId AND isDeleted = 0 AND isActive = 1 ORDER BY displayOrder, name")
+    suspend fun getChildCategories(parentId: String): List<CategoryEntity>
+    
+    @Query("""SELECT * FROM categories 
+        WHERE userId = :userId AND type = :type AND isDeleted = 0 AND isActive = 1 
+        ORDER BY level, parentId, displayOrder, name""")
+    suspend fun getCategoriesByTypeWithLevels(userId: String, type: String): List<CategoryEntity>
+    
+    @Query("SELECT path FROM categories WHERE id = :categoryId AND isDeleted = 0")
+    suspend fun getCategoryPath(categoryId: String): String?
+    
+    @Query("UPDATE categories SET isActive = :isActive, updatedAt = :timestamp WHERE id = :categoryId")
+    suspend fun updateCategoryStatus(categoryId: String, isActive: Boolean, timestamp: Long)
+    
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertCategory(category: CategoryEntity)
     
@@ -59,11 +79,26 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE id = :categoryId AND isDeleted = 0")
     fun getCategoryByIdSync(categoryId: String): CategoryEntity?
     
+    @Query("""SELECT c.*, p.name as parentName, p.icon as parentIcon, p.color as parentColor 
+        FROM categories c 
+        LEFT JOIN categories p ON c.parentId = p.id 
+        WHERE c.id = :categoryId AND c.isDeleted = 0""")
+    suspend fun getCategoryWithParent(categoryId: String): CategoryWithParent?
+    
     @Query("SELECT * FROM categories WHERE name = :name AND type = :type AND userId = :userId AND isDeleted = 0 LIMIT 1")
     suspend fun findByNameAndType(name: String, type: String, userId: String): CategoryEntity?
     
+    @Query("SELECT * FROM categories WHERE name = :name AND parentId = :parentId AND userId = :userId AND isDeleted = 0 LIMIT 1")
+    suspend fun findByNameAndParent(name: String, parentId: String, userId: String): CategoryEntity?
+    
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(category: CategoryEntity)
+    
+    @Query("SELECT COUNT(*) > 0 FROM transactions WHERE userId = :userId AND isDeleted = 0")
+    suspend fun hasAnyTransactions(userId: String): Boolean
+    
+    @Query("DELETE FROM categories WHERE userId = :userId")
+    suspend fun deleteAllCategoriesForUser(userId: String)
 }
 
 data class CategoryWithCount(
@@ -74,10 +109,37 @@ data class CategoryWithCount(
     val icon: String,
     val color: String,
     val parentId: String?,
+    val level: Int,
+    val path: String,
     val displayOrder: Int,
+    val isDefault: Boolean,
+    val isActive: Boolean,
     val isSystem: Boolean,
     val usageCount: Long,
     val createdAt: Long,
     val updatedAt: Long,
     val transactionCount: Int
+)
+
+data class CategoryWithParent(
+    val id: String,
+    val userId: String,
+    val name: String,
+    val type: String,
+    val icon: String,
+    val color: String,
+    val parentId: String?,
+    val level: Int,
+    val path: String,
+    val displayOrder: Int,
+    val isDefault: Boolean,
+    val isActive: Boolean,
+    val isSystem: Boolean,
+    val usageCount: Long,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val isDeleted: Boolean,
+    val parentName: String?,
+    val parentIcon: String?,
+    val parentColor: String?
 )

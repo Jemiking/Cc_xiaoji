@@ -1,5 +1,6 @@
 package com.ccxiaoji.feature.ledger.presentation.screen.savings
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -36,11 +37,28 @@ fun AddEditSavingsGoalScreen(
     goalId: String? = null,
     viewModel: AddEditSavingsGoalViewModel = hiltViewModel()
 ) {
+    val TAG = "AddEditSavingsGoalScreen"
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     
     var showDatePicker by remember { mutableStateOf(false) }
+    
+    // 调试初始化信息
+    LaunchedEffect(Unit) {
+        Log.d(TAG, "AddEditSavingsGoalScreen初始化，goalId: $goalId")
+    }
+    
+    // 调试状态变化
+    LaunchedEffect(uiState) {
+        Log.d(TAG, "UIState更新 - isLoading: ${uiState.isLoading}, saveSuccess: ${uiState.saveSuccess}")
+        if (uiState.errorMessage != null) {
+            Log.e(TAG, "错误信息: ${uiState.errorMessage}")
+        }
+        if (uiState.nameError != null || uiState.amountError != null) {
+            Log.w(TAG, "输入错误 - 名称: ${uiState.nameError}, 金额: ${uiState.amountError}")
+        }
+    }
     
     // 处理保存成功
     LaunchedEffect(uiState.saveSuccess) {
@@ -231,7 +249,11 @@ fun AddEditSavingsGoalScreen(
                 
                 // 保存按钮
                 Button(
-                    onClick = viewModel::saveSavingsGoal,
+                    onClick = {
+                        Log.d(TAG, "点击保存按钮")
+                        Log.d(TAG, "当前状态 - 名称: '${uiState.name}', 金额: '${uiState.targetAmount}', 目标日期: ${uiState.targetDate}")
+                        viewModel.saveSavingsGoal()
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = DesignTokens.Spacing.medium),

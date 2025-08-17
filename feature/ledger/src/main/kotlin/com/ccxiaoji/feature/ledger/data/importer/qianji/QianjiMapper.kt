@@ -24,31 +24,6 @@ class QianjiMapper @Inject constructor(
     private val transactionDao: TransactionDao
 ) {
     
-    // 钱迹分类到CC小记分类的映射表
-    private val categoryMapping = mapOf(
-        "下馆子" to "餐饮",
-        "早餐" to "餐饮",
-        "买菜" to "餐饮",
-        "水果" to "水果零食",
-        "饮料" to "饮料酒水",
-        "零食" to "水果零食",
-        "日用品" to "日用品",
-        "交通" to "交通",
-        "话费网费" to "通讯",
-        "医疗" to "医疗",
-        "美妆" to "美妆",
-        "衣服" to "服饰",
-        "鞋包" to "服饰",
-        "学习" to "教育",
-        "娱乐" to "娱乐",
-        "股票基金" to "投资理财",
-        "外快" to "兼职收入",
-        "请客送礼" to "人情",
-        "工资" to "工资",
-        "奖金" to "奖金",
-        "红包" to "红包",
-        "其它" to "其他"
-    )
     
     // 账户类型检测
     private fun detectAccountType(accountName: String): String {
@@ -64,30 +39,6 @@ class QianjiMapper @Inject constructor(
         }
     }
     
-    // 建议分类图标
-    private fun suggestCategoryIcon(category: String): String {
-        return when (category) {
-            "餐饮" -> "🍔"
-            "交通" -> "🚗"
-            "购物" -> "🛒"
-            "娱乐" -> "🎮"
-            "医疗" -> "🏥"
-            "教育" -> "📚"
-            "日用品" -> "🧻"
-            "美妆" -> "💄"
-            "服饰" -> "👔"
-            "通讯" -> "📱"
-            "水果零食" -> "🍎"
-            "饮料酒水" -> "☕"
-            "人情" -> "🎁"
-            "工资" -> "💰"
-            "奖金" -> "🏆"
-            "红包" -> "🧧"
-            "投资理财" -> "📈"
-            "兼职收入" -> "💼"
-            else -> "📝"
-        }
-    }
     
     // 建议账户图标
     private fun suggestAccountIcon(accountName: String): String {
@@ -192,8 +143,9 @@ class QianjiMapper @Inject constructor(
     }
     
     /**
-     * 映射分类
+     * 映射分类 - 支持二级分类结构
      */
+    @Suppress("UNUSED_PARAMETER")
     private suspend fun mapCategory(
         category: String,
         subCategory: String?,
@@ -202,15 +154,12 @@ class QianjiMapper @Inject constructor(
         createIfNotExists: Boolean,
         mergeSubCategories: Boolean
     ): String? {
-        // 映射到CC小记分类名称
-        val mappedName = categoryMapping[category] ?: category
-        
-        // 合并二级分类
-        val fullName = if (mergeSubCategories && !subCategory.isNullOrEmpty()) {
-            "$mappedName-$subCategory"
-        } else {
-            mappedName
-        }
+        // 获取映射的父子分类
+        val (parentName, childName) = QianjiCategoryMapping.getMappedCategory(
+            category, 
+            subCategory, 
+            type
+        )
         
         // 确定分类类型
         val categoryType = when (type) {
@@ -219,58 +168,177 @@ class QianjiMapper @Inject constructor(
             else -> "EXPENSE"
         }
         
-        // 查找现有分类
-        val existingCategory = categoryDao.findByNameAndType(fullName, categoryType, userId)
-        if (existingCategory != null) {
-            return existingCategory.id
+        // 如果有子分类名，查找或创建二级分类
+        if (childName != null) {
+            // 先查找父分类
+            var parentCategory = categoryDao.findByNameAndType(parentName, categoryType, userId)
+            
+            // 如果父分类不存在，需要先创建
+            if (parentCategory == null) {
+                if (!createIfNotExists) {
+                    return null
+                }
+                
+                // 创建父分类
+                val parentId = UUID.randomUUID().toString()
+                parentCategory = CategoryEntity(
+                    id = parentId,
+                    userId = userId,
+                    name = parentName,
+                    type = categoryType,
+                    icon = QianjiCategoryMapping.suggestCategoryIcon(parentName),
+                    color = QianjiCategoryMapping.suggestCategoryColor(parentName),
+                    parentId = null,  // 父分类没有parent
+                    displayOrder = 0,
+                    isSystem = false,
+                    usageCount = 0,
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis(),
+                    isDeleted = false,
+                    syncStatus = SyncStatus.SYNCED
+                )
+                categoryDao.insert(parentCategory)
+                android.util.Log.e("QIANJI_DEBUG", "创建父分类: $parentName (ID: $parentId)")
+            }
+            
+            // 查找子分类
+            val childCategory = categoryDao.findByNameAndParent(childName, parentCategory.id, userId)
+            if (childCategory != null) {
+                return childCategory.id
+            }
+            
+            // 如果不创建新分类，返回null
+            if (!createIfNotExists) {
+                return null
+            }
+            
+            // 创建子分类
+            val childId = UUID.randomUUID().toString()
+            val newChildCategory = CategoryEntity(
+                id = childId,
+                userId = userId,
+                name = childName,
+                type = categoryType,
+                icon = QianjiCategoryMapping.suggestCategoryIcon(parentName, childName),
+                color = parentCategory.color,  // 继承父分类颜色
+                parentId = parentCategory.id,  // 设置父分类ID
+                displayOrder = 0,
+                isSystem = false,
+                usageCount = 0,
+                createdAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis(),
+                isDeleted = false,
+                syncStatus = SyncStatus.SYNCED
+            )
+            categoryDao.insert(newChildCategory)
+            android.util.Log.e("QIANJI_DEBUG", "创建子分类: $childName (ID: $childId, 父分类: ${parentCategory.name})")
+            return childId
+            
+        } else {
+            // 没有子分类，作为一级分类处理（实际上应该很少出现）
+            val existingCategory = categoryDao.findByNameAndType(parentName, categoryType, userId)
+            if (existingCategory != null) {
+                // 如果是父分类，需要找到或创建一个默认子分类
+                val defaultChild = categoryDao.findByNameAndParent("一般", existingCategory.id, userId)
+                if (defaultChild != null) {
+                    return defaultChild.id
+                }
+                
+                if (!createIfNotExists) {
+                    return null
+                }
+                
+                // 创建默认子分类
+                val defaultChildId = UUID.randomUUID().toString()
+                val newDefaultChild = CategoryEntity(
+                    id = defaultChildId,
+                    userId = userId,
+                    name = "一般",
+                    type = categoryType,
+                    icon = existingCategory.icon,
+                    color = existingCategory.color,
+                    parentId = existingCategory.id,
+                    displayOrder = 0,
+                    isSystem = false,
+                    usageCount = 0,
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis(),
+                    isDeleted = false,
+                    syncStatus = SyncStatus.SYNCED
+                )
+                categoryDao.insert(newDefaultChild)
+                android.util.Log.e("QIANJI_DEBUG", "创建默认子分类: 一般 (父分类: ${existingCategory.name})")
+                return defaultChildId
+            }
+            
+            // 如果不创建新分类，返回null
+            if (!createIfNotExists) {
+                return null
+            }
+            
+            // 创建新的父分类和默认子分类
+            val parentId = UUID.randomUUID().toString()
+            val newParent = CategoryEntity(
+                id = parentId,
+                userId = userId,
+                name = parentName,
+                type = categoryType,
+                icon = QianjiCategoryMapping.suggestCategoryIcon(parentName),
+                color = QianjiCategoryMapping.suggestCategoryColor(parentName),
+                parentId = null,
+                displayOrder = 0,
+                isSystem = false,
+                usageCount = 0,
+                createdAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis(),
+                isDeleted = false,
+                syncStatus = SyncStatus.SYNCED
+            )
+            categoryDao.insert(newParent)
+            
+            // 创建默认子分类
+            val defaultChildId = UUID.randomUUID().toString()
+            val defaultChild = CategoryEntity(
+                id = defaultChildId,
+                userId = userId,
+                name = "一般",
+                type = categoryType,
+                icon = newParent.icon,
+                color = newParent.color,
+                parentId = parentId,
+                displayOrder = 0,
+                isSystem = false,
+                usageCount = 0,
+                createdAt = System.currentTimeMillis(),
+                updatedAt = System.currentTimeMillis(),
+                isDeleted = false,
+                syncStatus = SyncStatus.SYNCED
+            )
+            categoryDao.insert(defaultChild)
+            android.util.Log.e("QIANJI_DEBUG", "创建父分类和默认子分类: $parentName/一般")
+            return defaultChildId
         }
-        
-        // 如果不创建新分类，返回null
-        if (!createIfNotExists) {
-            return null
-        }
-        
-        // 创建新分类
-        val newCategory = CategoryEntity(
-            id = UUID.randomUUID().toString(),
-            userId = userId,
-            name = fullName,
-            type = categoryType,
-            icon = suggestCategoryIcon(mappedName),
-            color = "#6200EE",
-            parentId = null,
-            displayOrder = 0,
-            isSystem = false,
-            usageCount = 0,
-            createdAt = System.currentTimeMillis(),
-            updatedAt = System.currentTimeMillis(),
-            isDeleted = false,
-            syncStatus = SyncStatus.SYNCED
-        )
-        
-        categoryDao.insert(newCategory)
-        return newCategory.id
     }
     
     /**
-     * 获取或创建默认账户
+     * 获取或创建现金账户（用于承载空账户名的交易）
      */
-    private suspend fun getOrCreateDefaultAccount(userId: String): String {
-        val DEFAULT_ACCOUNT_ID = "default_account_$userId"
+    private suspend fun getOrCreateCashAccount(userId: String): String {
+        val CASH_ACCOUNT_ID = "default_account_$userId"
         
-        // 查找默认账户
-        var account = accountDao.getAccountById(DEFAULT_ACCOUNT_ID)
+        // 查找现金账户
+        var account = accountDao.getAccountById(CASH_ACCOUNT_ID)
         if (account == null) {
-            // 创建默认账户
+            // 创建现金账户
             account = AccountEntity(
-                id = DEFAULT_ACCOUNT_ID,
+                id = CASH_ACCOUNT_ID,
                 userId = userId,
-                name = "默认账户",
+                name = "现金",  // 使用"现金"而不是"默认账户"
                 type = "CASH",
                 balanceCents = 0,
                 currency = "CNY",
-                icon = "💰",
-                color = "#6200EE",
+                icon = "💵",  // 使用现金图标
+                color = "#4CAF50",  // 绿色
                 isDefault = true,
                 creditLimitCents = null,
                 billingDay = null,
@@ -286,9 +354,14 @@ class QianjiMapper @Inject constructor(
                 syncStatus = SyncStatus.SYNCED
             )
             accountDao.insert(account)
-            android.util.Log.e("QIANJI_DEBUG", "创建默认账户: $DEFAULT_ACCOUNT_ID")
+            android.util.Log.e("QIANJI_DEBUG", "创建现金账户: $CASH_ACCOUNT_ID")
         }
-        return DEFAULT_ACCOUNT_ID
+        return CASH_ACCOUNT_ID
+    }
+    
+    // 保留原方法名以保持兼容性
+    private suspend fun getOrCreateDefaultAccount(userId: String): String {
+        return getOrCreateCashAccount(userId)
     }
     
     /**
@@ -299,19 +372,20 @@ class QianjiMapper @Inject constructor(
         userId: String,
         createIfNotExists: Boolean
     ): String? {
-        // 空账户名统一使用默认账户
+        // 空账户名统一使用现金账户
         if (accountName.isNullOrBlank()) {
-            android.util.Log.e("QIANJI_DEBUG", "账户名为空，使用默认账户")
-            return getOrCreateDefaultAccount(userId)
+            android.util.Log.e("QIANJI_DEBUG", "账户名为空，使用现金账户")
+            return getOrCreateCashAccount(userId)
         }
         
-        // 解析账户名（格式可能是：用户-账户名）
-        val parts = accountName.split("-")
-        val realAccountName = if (parts.size >= 2) {
-            parts.last()  // 取最后一部分作为账户名
-        } else {
-            accountName
+        // 检查是否为转账对象（以">"开头的不应创建为账户）
+        if (accountName.startsWith(">")) {
+            android.util.Log.e("QIANJI_DEBUG", "跳过转账对象账户: $accountName，使用现金账户")
+            return getOrCreateCashAccount(userId)
         }
+        
+        // 直接使用原始账户名，不要分割
+        val realAccountName = accountName
         
         // 查找现有账户
         val existingAccount = accountDao.findByName(realAccountName, userId)
@@ -368,6 +442,19 @@ class QianjiMapper @Inject constructor(
         // 添加二级分类信息（如果没有合并）
         record.subCategory?.let {
             if (it.isNotEmpty()) parts.add("[二级分类: $it]")
+        }
+        
+        // 添加转账对象信息（account2字段）
+        record.account2?.let {
+            if (it.isNotEmpty()) {
+                // 判断是收入还是支出
+                val prefix = when (record.type) {
+                    "收入" -> "付款方"
+                    "支出" -> "收款方"
+                    else -> "转账对象"
+                }
+                parts.add("[$prefix: ${it.removePrefix(">")}]")
+            }
         }
         
         // 添加标签

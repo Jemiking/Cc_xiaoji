@@ -1,5 +1,6 @@
 package com.ccxiaoji.feature.ledger.presentation.screen.budget
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -36,10 +37,24 @@ fun AddEditBudgetScreen(
     navController: NavController,
     viewModel: AddEditBudgetViewModel = hiltViewModel()
 ) {
+    val TAG = "AddEditBudgetScreen"
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
+    // 调试初始化信息
     LaunchedEffect(categoryId) {
+        Log.d(TAG, "AddEditBudgetScreen初始化，categoryId: $categoryId")
         viewModel.init(categoryId)
+    }
+    
+    // 调试状态变化
+    LaunchedEffect(uiState) {
+        Log.d(TAG, "UIState更新 - 编辑模式: ${uiState.isEditMode}, 加载中: ${uiState.isLoading}, 可保存: ${uiState.canSave}")
+        if (uiState.errorMessage != null) {
+            Log.e(TAG, "错误信息: ${uiState.errorMessage}")
+        }
+        if (uiState.saveSuccess) {
+            Log.d(TAG, "保存成功")
+        }
     }
     
     Scaffold(
@@ -121,7 +136,10 @@ fun AddEditBudgetScreen(
             FlatButton(
                 text = "保存",
                 onClick = { 
+                    Log.d(TAG, "点击保存按钮")
+                    Log.d(TAG, "当前状态 - 金额: '${uiState.amountText}', 分类: ${uiState.selectedCategory?.name}, 编辑模式: ${uiState.isEditMode}")
                     viewModel.saveBudget {
+                        Log.d(TAG, "保存成功，导航返回")
                         navController.navigateUp()
                     }
                 },

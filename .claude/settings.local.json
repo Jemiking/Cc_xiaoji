@@ -180,9 +180,17 @@
       "Bash(D:kotlinCc_xiaojigradlew.bat :feature:ledger:compileDebugKotlin --console=plain)",
       "Bash(compile_test.bat)",
       "Bash(compile_ledger.bat)",
-      "Bash(D:\\kotlin\\Cc_xiaoji\\gradlew.bat :feature:ledger:compileDebugKotlin --console=plain)"
+      "Bash(D:\\kotlin\\Cc_xiaoji\\gradlew.bat :feature:ledger:compileDebugKotlin --console=plain)",
+      "Bash(D:kotlinCc_xiaojicompile_quick.bat)",
+      "Bash(mcp:*)",
+      "Bash(quick_compile_ledger.bat)"
     ],
-    "deny": []
+    "deny": [],
+    "defaultMode": "acceptEdits",
+    "additionalDirectories": [
+      "D:\\mnt\\d\\kotlin"
+    ]
   },
-  "enableAllProjectMcpServers": true
+  "enableAllProjectMcpServers": true,
+  "outputStyle": "Explanatory"
 }

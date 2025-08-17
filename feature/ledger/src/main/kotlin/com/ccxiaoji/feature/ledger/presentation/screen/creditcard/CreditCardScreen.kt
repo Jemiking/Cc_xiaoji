@@ -1,5 +1,6 @@
 package com.ccxiaoji.feature.ledger.presentation.screen.creditcard
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -24,8 +25,22 @@ fun CreditCardScreen(
     onNavigateToAccount: (String) -> Unit,
     viewModel: CreditCardViewModel = hiltViewModel()
 ) {
+    val TAG = "CreditCardScreen"
     val creditCards by viewModel.creditCards.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    // 调试初始化信息
+    LaunchedEffect(Unit) {
+        Log.d(TAG, "CreditCardScreen初始化")
+    }
+    
+    // 调试信用卡状态变化
+    LaunchedEffect(creditCards) {
+        Log.d(TAG, "信用卡列表更新，共${creditCards.size}张信用卡")
+        creditCards.forEach { card ->
+            Log.d(TAG, "  - ${card.name} (${card.id})")
+        }
+    }
     
     // 处理导航返回结果
     LaunchedEffect(navController.currentBackStackEntry) {
@@ -71,7 +86,20 @@ fun CreditCardScreen(
                 CreditCardItem(
                     card = card,
                     onClick = { 
+                        Log.d(TAG, "CreditCardScreen收到点击请求，信用卡: ${card.name}")
                         navController.navigate(LedgerNavigation.creditCardDetailRoute(card.id))
+                    },
+                    onEdit = {
+                        Log.d(TAG, "CreditCardScreen收到编辑请求，信用卡: ${card.name}, ID: ${card.id}")
+                        val editRoute = LedgerNavigation.editCreditCardRoute(card.id)
+                        Log.d(TAG, "生成编辑路由: $editRoute")
+                        try {
+                            Log.d(TAG, "导航到信用卡编辑页面")
+                            navController.navigate(editRoute)
+                            Log.d(TAG, "信用卡编辑导航调用成功")
+                        } catch (e: Exception) {
+                            Log.e(TAG, "导航到信用卡编辑页面时异常", e)
+                        }
                     }
                 )
             }
