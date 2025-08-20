@@ -8,7 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -17,10 +17,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ccxiaoji.feature.ledger.domain.model.Ledger
+import com.ccxiaoji.feature.ledger.presentation.component.LedgerSelector
+import com.ccxiaoji.feature.ledger.presentation.component.LedgerSelectorDialog
 
 @Composable
 fun LedgerDrawerContent(
-    currentAccountName: String,
+    currentLedger: Ledger?,
+    allLedgers: List<Ledger>,
+    onLedgerSelected: (Ledger) -> Unit,
     onNavigateToStatistics: () -> Unit,
     onNavigateToAssetOverview: () -> Unit,
     onNavigateToAccountManagement: () -> Unit,
@@ -40,7 +45,12 @@ fun LedgerDrawerContent(
     ) {
         // 头部区域
         DrawerHeader(
-            currentAccountName = currentAccountName
+            currentLedger = currentLedger,
+            allLedgers = allLedgers,
+            onLedgerSelected = { ledger ->
+                onLedgerSelected(ledger)
+                onCloseDrawer() // 选择记账簿后自动关闭抽屉
+            }
         )
         
         HorizontalDivider()
@@ -139,43 +149,99 @@ fun LedgerDrawerContent(
 
 @Composable
 private fun DrawerHeader(
-    currentAccountName: String
+    currentLedger: Ledger?,
+    allLedgers: List<Ledger>,
+    onLedgerSelected: (Ledger) -> Unit
 ) {
-    Row(
+    var showLedgerSelector by remember { mutableStateOf(false) }
+    
+    // 如果没有记账簿，显示提示信息
+    if (allLedgers.isEmpty()) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onErrorContainer
+                )
+                Text(
+                    text = "暂无记账簿",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+        }
+        return
+    }
+    
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // 用户头像占位
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary),
-            contentAlignment = Alignment.Center
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "用户头像",
-                tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-        
-        Column {
             Text(
-                text = "当前账户",
+                text = "当前记账簿",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Text(
-                text = currentAccountName,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
-            )
+            
+            // 默认标识
+            if (currentLedger?.isDefault == true) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    ),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        text = "默认",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
         }
+        
+        // 记账簿选择器
+        LedgerSelector(
+            selectedLedger = currentLedger,
+            onClick = { 
+                if (allLedgers.size > 1) {
+                    showLedgerSelector = true 
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+    
+    // 记账簿选择对话框
+    if (allLedgers.size > 1) {
+        LedgerSelectorDialog(
+            isVisible = showLedgerSelector,
+            ledgers = allLedgers,
+            selectedLedgerId = currentLedger?.id,
+            onLedgerSelected = { ledger ->
+                onLedgerSelected(ledger)
+                showLedgerSelector = false
+            },
+            onDismiss = { showLedgerSelector = false }
+        )
     }
 }
 

@@ -122,12 +122,18 @@ fun LedgerScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val coroutineScope = rememberCoroutineScope()
     val currentAccount = uiState.accounts.find { it.id == uiState.selectedAccountId }
+    val currentLedger = uiState.currentLedger
+    val allLedgers = uiState.ledgers
     
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
             LedgerDrawerContent(
-                currentAccountName = currentAccount?.name ?: stringResource(R.string.default_account),
+                currentLedger = currentLedger,
+                allLedgers = allLedgers,
+                onLedgerSelected = { ledger ->
+                    viewModel.selectLedger(ledger.id)
+                },
                 onNavigateToStatistics = {
                     navController?.navigate(LedgerNavigation.StatisticsRoute)
                 },

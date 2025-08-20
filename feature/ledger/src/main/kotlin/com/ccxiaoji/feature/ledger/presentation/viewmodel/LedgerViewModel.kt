@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import com.ccxiaoji.common.base.BaseResult
 import com.ccxiaoji.feature.ledger.domain.model.*
 import com.ccxiaoji.feature.ledger.domain.usecase.*
+import com.ccxiaoji.feature.ledger.domain.repository.TransactionRepository
+import com.ccxiaoji.feature.ledger.domain.repository.LedgerUIPreferencesRepository
 import com.ccxiaoji.feature.ledger.data.cache.LedgerCacheManager
 import com.ccxiaoji.feature.ledger.data.migration.DataMigrationTool
 import com.ccxiaoji.feature.ledger.data.diagnostic.LedgerDiagnosticTool
@@ -13,6 +15,8 @@ import com.ccxiaoji.feature.ledger.data.diagnostic.DefaultAccountAnalyzer
 import com.ccxiaoji.feature.ledger.data.repair.DataRepairTool
 import com.ccxiaoji.feature.ledger.data.diagnostic.TransactionFlowTracker
 import com.ccxiaoji.feature.ledger.data.local.dao.TransactionDao
+import com.ccxiaoji.feature.ledger.debug.RuntimeDataFlowValidator
+import com.ccxiaoji.feature.ledger.debug.DefaultLedgerMechanismValidator
 import com.ccxiaoji.shared.user.api.UserApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -43,7 +47,9 @@ class LedgerViewModel @Inject constructor(
     private val dataRepairTool: DataRepairTool,
     private val flowTracker: TransactionFlowTracker,
     private val transactionDao: TransactionDao,
-    private val userApi: UserApi
+    private val userApi: UserApi,
+    private val runtimeValidator: RuntimeDataFlowValidator,
+    private val defaultLedgerValidator: DefaultLedgerMechanismValidator
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(LedgerUiState())
     val uiState = _uiState.asStateFlow()
@@ -84,6 +90,14 @@ class LedgerViewModel @Inject constructor(
         loadLedgers()
         loadTransactions()
         loadMonthlySummary()
+        
+        // 初始化完成后进行数据流验证（仅在调试模式下）
+        if (android.util.Log.isLoggable("LEDGER_DATAFLOW_DEBUG", android.util.Log.DEBUG)) {
+            viewModelScope.launch {
+                kotlinx.coroutines.delay(2000) // 等待初始化完成
+                runtimeValidator.executeFullValidation(this@LedgerViewModel)
+            }
+        }
     }
     
     /**
@@ -214,8 +228,7 @@ class LedgerViewModel @Inject constructor(
                 )
             }
             
-            transactionFlow
-            ).collect { result ->
+            transactionFlow.collect { result ->
                 android.util.Log.e("LEDGER_DEBUG", "查询结果类型: ${result::class.simpleName}")
                 handleTransactionResult(result)
             }
@@ -425,44 +438,38 @@ class LedgerViewModel @Inject constructor(
             _uiState.update { it.copy(isLedgerLoading = true) }
             
             val userId = userApi.getCurrentUserId()
-            val result = manageLedgerUseCase.getLedgers(userId)
             
-            when (result) {
-                is BaseResult.Success -> {
-                    val ledgers = result.data
+            // 收集记账簿列表Flow
+            manageLedgerUseCase.getUserLedgers(userId).collect { ledgers ->
+                // 获取用户偏好的记账簿选择
+                ledgerUIPreferencesRepository.getUIPreferences().collect { preferences ->
+                    val preferredLedgerId = preferences.selectedLedgerId
+                    val preferredLedger = ledgers.find { ledger -> ledger.id == preferredLedgerId }
+                    val defaultLedger = ledgers.find { ledger -> ledger.isDefault }
                     
-                    // 获取用户偏好的记账簿选择
-                    ledgerUIPreferencesRepository.getUIPreferences().collect { preferences ->
-                        val preferredLedgerId = preferences.selectedLedgerId
-                        val preferredLedger = ledgers.find { it.id == preferredLedgerId }
-                        val defaultLedger = ledgers.find { it.isDefault }
-                        
-                        // 选择逻辑：偏好记账簿 -> 默认记账簿 -> 第一个记账簿
-                        val selectedLedger = preferredLedger ?: defaultLedger ?: ledgers.firstOrNull()
-                        
-                        _uiState.update { 
-                            it.copy(
-                                ledgers = ledgers,
-                                currentLedger = selectedLedger,
-                                selectedLedgerId = selectedLedger?.id,
-                                isLedgerLoading = false
-                            )
-                        }
-                        
-                        android.util.Log.d("LEDGER_DEBUG", "记账簿加载成功: ${ledgers.size}个记账簿")
-                        android.util.Log.d("LEDGER_DEBUG", "偏好记账簿: $preferredLedgerId, 选中记账簿: ${selectedLedger?.name}")
-                        
-                        // 如果实际选择的记账簿与偏好不同，更新偏好设置
-                        if (selectedLedger?.id != preferredLedgerId) {
-                            selectedLedger?.id?.let { 
-                                ledgerUIPreferencesRepository.updateSelectedLedgerId(it)
+                    // 选择逻辑：偏好记账簿 -> 默认记账簿 -> 第一个记账簿
+                    val selectedLedger = preferredLedger ?: defaultLedger ?: ledgers.firstOrNull()
+                    
+                    _uiState.update { 
+                        it.copy(
+                            ledgers = ledgers,
+                            currentLedger = selectedLedger,
+                            selectedLedgerId = selectedLedger?.id,
+                            isLedgerLoading = false
+                        )
+                    }
+                    
+                    android.util.Log.d("LEDGER_DEBUG", "记账簿加载成功: ${ledgers.size}个记账簿")
+                    android.util.Log.d("LEDGER_DEBUG", "偏好记账簿: $preferredLedgerId, 选中记账簿: ${selectedLedger?.name}")
+                    
+                    // 如果实际选择的记账簿与偏好不同，更新偏好设置
+                    if (selectedLedger?.id != preferredLedgerId) {
+                        selectedLedger?.id?.let { ledgerId -> 
+                            launch {
+                                ledgerUIPreferencesRepository.updateSelectedLedgerId(ledgerId)
                             }
                         }
                     }
-                }
-                is BaseResult.Error -> {
-                    android.util.Log.e("LEDGER_DEBUG", "记账簿加载失败: ${result.exception.message}")
-                    _uiState.update { it.copy(isLedgerLoading = false) }
                 }
             }
         } catch (e: Exception) {
@@ -496,6 +503,14 @@ class LedgerViewModel @Inject constructor(
                 
                 android.util.Log.d("LEDGER_DEBUG", "切换到记账簿: ${selectedLedger.name}")
                 android.util.Log.d("LEDGER_DEBUG", "记账簿选择已保存到偏好设置")
+                
+                // 记账簿切换后进行快速数据流检查（仅在调试模式下）
+                if (android.util.Log.isLoggable("LEDGER_DATAFLOW_DEBUG", android.util.Log.DEBUG)) {
+                    viewModelScope.launch {
+                        kotlinx.coroutines.delay(500) // 等待数据加载完成
+                        runtimeValidator.quickDataFlowCheck(this@LedgerViewModel)
+                    }
+                }
             } else {
                 android.util.Log.e("LEDGER_DEBUG", "未找到记账簿: $ledgerId")
             }
@@ -580,6 +595,31 @@ class LedgerViewModel @Inject constructor(
     }
     
     private fun launch(block: suspend () -> Unit) = viewModelScope.launch { block() }
+    
+    // ==================== 调试和验证方法 ====================
+    
+    /**
+     * 手动触发数据流验证（用于调试）
+     */
+    fun triggerDataFlowValidation() {
+        android.util.Log.i("LEDGER_DEBUG", "手动触发数据流验证")
+        runtimeValidator.executeFullValidation(this)
+    }
+    
+    /**
+     * 手动触发默认记账簿机制验证（用于调试）
+     */
+    fun triggerDefaultLedgerValidation() {
+        android.util.Log.i("LEDGER_DEBUG", "手动触发默认记账簿机制验证")
+        defaultLedgerValidator.executeFullDefaultLedgerValidation()
+    }
+    
+    /**
+     * 执行快速数据流检查（用于调试）
+     */
+    fun quickDataFlowCheck() {
+        runtimeValidator.quickDataFlowCheck(this)
+    }
 }
 
 // UI状态 - 核心数据
