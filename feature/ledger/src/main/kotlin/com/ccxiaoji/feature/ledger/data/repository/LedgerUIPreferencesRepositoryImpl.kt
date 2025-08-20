@@ -24,6 +24,7 @@ class LedgerUIPreferencesRepositoryImpl @Inject constructor(
         private val UI_STYLE_KEY = stringPreferencesKey("ledger_ui_style")
         private val ANIMATION_DURATION_KEY = intPreferencesKey("ledger_animation_duration_ms")
         private val ICON_DISPLAY_MODE_KEY = stringPreferencesKey("ledger_icon_display_mode")
+        private val SELECTED_LEDGER_ID_KEY = stringPreferencesKey("ledger_selected_ledger_id")
     }
     
     override fun getUIPreferences(): Flow<LedgerUIPreferences> {
@@ -35,7 +36,8 @@ class LedgerUIPreferencesRepositoryImpl @Inject constructor(
                 animationDurationMs = preferences[ANIMATION_DURATION_KEY] ?: 300,
                 iconDisplayMode = IconDisplayMode.safeValueOf(
                     preferences[ICON_DISPLAY_MODE_KEY] ?: IconDisplayMode.EMOJI.name
-                )
+                ),
+                selectedLedgerId = preferences[SELECTED_LEDGER_ID_KEY]
             )
         }
     }
@@ -60,11 +62,22 @@ class LedgerUIPreferencesRepositoryImpl @Inject constructor(
         }
     }
     
+    override suspend fun updateSelectedLedgerId(ledgerId: String?) {
+        dataStore.edit { preferences ->
+            if (ledgerId != null) {
+                preferences[SELECTED_LEDGER_ID_KEY] = ledgerId
+            } else {
+                preferences.remove(SELECTED_LEDGER_ID_KEY)
+            }
+        }
+    }
+    
     override suspend fun resetToDefaults() {
         dataStore.edit { preferences ->
             preferences[UI_STYLE_KEY] = LedgerUIStyle.BALANCED.name
             preferences[ANIMATION_DURATION_KEY] = 300
             preferences[ICON_DISPLAY_MODE_KEY] = IconDisplayMode.EMOJI.name
+            preferences.remove(SELECTED_LEDGER_ID_KEY) // 清除记账簿选择，让系统重新选择默认记账簿
         }
     }
 }

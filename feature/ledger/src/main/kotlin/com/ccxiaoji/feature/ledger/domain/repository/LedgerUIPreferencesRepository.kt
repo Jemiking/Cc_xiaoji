@@ -32,6 +32,11 @@ interface LedgerUIPreferencesRepository {
     suspend fun updateIconDisplayMode(mode: IconDisplayMode)
     
     /**
+     * 更新最后选择的记账簿ID
+     */
+    suspend fun updateSelectedLedgerId(ledgerId: String?)
+    
+    /**
      * 重置所有UI偏好设置
      */
     suspend fun resetToDefaults()

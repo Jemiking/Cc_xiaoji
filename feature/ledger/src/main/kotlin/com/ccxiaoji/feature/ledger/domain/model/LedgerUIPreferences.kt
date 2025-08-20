@@ -9,7 +9,9 @@ data class LedgerUIPreferences(
     // 动画持续时间（毫秒）
     val animationDurationMs: Int = 300,
     // 分类图标显示模式
-    val iconDisplayMode: IconDisplayMode = IconDisplayMode.EMOJI
+    val iconDisplayMode: IconDisplayMode = IconDisplayMode.EMOJI,
+    // 最后选择的记账簿ID（用于恢复用户选择）
+    val selectedLedgerId: String? = null
 )
 
 /**

@@ -33,6 +33,8 @@ class LedgerViewModel @Inject constructor(
     private val getMonthlyStatsUseCase: GetMonthlyStatsUseCase,
     private val checkBudgetUseCase: CheckBudgetUseCase,
     private val manageLedgerUseCase: ManageLedgerUseCase,
+    private val transactionRepository: TransactionRepository,
+    private val ledgerUIPreferencesRepository: LedgerUIPreferencesRepository,
     private val cacheManager: LedgerCacheManager,
     private val dataMigrationTool: DataMigrationTool,
     private val diagnosticTool: LedgerDiagnosticTool,
@@ -140,8 +142,14 @@ class LedgerViewModel @Inject constructor(
                     id // 特定账户只查询该账户
                 }
             }
+            
+            // 获取当前选中的记账簿ID用于过滤
+            val ledgerIdForQuery = _uiState.value.selectedLedgerId
+            
             android.util.Log.e("LEDGER_DEBUG", "账户ID: ${_uiState.value.selectedAccountId}")
             android.util.Log.e("LEDGER_DEBUG", "查询账户ID: $accountIdForQuery")
+            android.util.Log.e("LEDGER_DEBUG", "记账簿ID: ${_uiState.value.selectedLedgerId}")
+            android.util.Log.e("LEDGER_DEBUG", "查询记账簿ID: $ledgerIdForQuery")
             android.util.Log.e("LEDGER_DEBUG", "分页: page=$currentPage, size=$pageSize")
             
             // 运行全链路数据流追踪
@@ -174,8 +182,39 @@ class LedgerViewModel @Inject constructor(
                 )
             }
             
-            getPaginatedTransactionsUseCase(
-                currentPage, pageSize, accountIdForQuery, start, end
+            // 根据是否有记账簿过滤决定使用哪个查询方法
+            val transactionFlow = if (ledgerIdForQuery != null) {
+                // 使用记账簿过滤的分页查询
+                android.util.Log.e("LEDGER_DEBUG", "使用记账簿过滤查询: $ledgerIdForQuery")
+                transactionRepository.getTransactionsPaginatedByLedger(
+                    ledgerId = ledgerIdForQuery,
+                    offset = currentPage * pageSize,
+                    limit = pageSize,
+                    accountId = accountIdForQuery,
+                    startDate = start,
+                    endDate = end
+                ).map { result ->
+                    when (result) {
+                        is BaseResult.Success -> {
+                            val (transactions, totalCount) = result.data
+                            BaseResult.Success(GetPaginatedTransactionsUseCase.PaginatedResult(
+                                transactions = transactions,
+                                hasMore = (currentPage + 1) * pageSize < totalCount,
+                                totalCount = totalCount
+                            ))
+                        }
+                        is BaseResult.Error -> BaseResult.Error(result.exception)
+                    }
+                }
+            } else {
+                // 使用原有的查询方法（全局查询）
+                android.util.Log.e("LEDGER_DEBUG", "使用全局查询（无记账簿过滤）")
+                getPaginatedTransactionsUseCase(
+                    currentPage, pageSize, accountIdForQuery, start, end
+                )
+            }
+            
+            transactionFlow
             ).collect { result ->
                 android.util.Log.e("LEDGER_DEBUG", "查询结果类型: ${result::class.simpleName}")
                 handleTransactionResult(result)
@@ -259,8 +298,38 @@ class LedgerViewModel @Inject constructor(
     private fun loadMonthlySummary() = launch {
         runCatching {
             val month = _selectedMonth.value
-            val (income, expense) = getMonthlyStatsUseCase(month.year, month.monthValue)
-            _uiState.update { it.copy(monthlyIncome = income / 100.0, monthlyExpense = expense / 100.0) }
+            val currentLedger = _uiState.value.currentLedger
+            
+            if (currentLedger != null) {
+                // 使用记账簿过滤的月度统计
+                android.util.Log.d("LEDGER_DEBUG", "加载记账簿月度统计: ${currentLedger.name}")
+                val result = transactionRepository.getMonthlyIncomesAndExpensesByLedger(
+                    ledgerId = currentLedger.id,
+                    year = month.year,
+                    month = month.monthValue
+                )
+                when (result) {
+                    is BaseResult.Success -> {
+                        val (income, expense) = result.data
+                        _uiState.update { 
+                            it.copy(
+                                monthlyIncome = income / 100.0, 
+                                monthlyExpense = expense / 100.0
+                            ) 
+                        }
+                        android.util.Log.d("LEDGER_DEBUG", "记账簿月度统计: 收入=$income, 支出=$expense")
+                    }
+                    is BaseResult.Error -> {
+                        android.util.Log.e("LEDGER_DEBUG", "记账簿月度统计失败: ${result.exception.message}")
+                        _uiState.update { it.copy(monthlyIncome = 0.0, monthlyExpense = 0.0) }
+                    }
+                }
+            } else {
+                // 使用全局月度统计（兼容原有逻辑）
+                android.util.Log.d("LEDGER_DEBUG", "加载全局月度统计")
+                val (income, expense) = getMonthlyStatsUseCase(month.year, month.monthValue)
+                _uiState.update { it.copy(monthlyIncome = income / 100.0, monthlyExpense = expense / 100.0) }
+            }
         }
     }
     
@@ -361,18 +430,35 @@ class LedgerViewModel @Inject constructor(
             when (result) {
                 is BaseResult.Success -> {
                     val ledgers = result.data
-                    val defaultLedger = ledgers.find { it.isDefault }
                     
-                    _uiState.update { 
-                        it.copy(
-                            ledgers = ledgers,
-                            currentLedger = defaultLedger,
-                            selectedLedgerId = defaultLedger?.id,
-                            isLedgerLoading = false
-                        )
+                    // 获取用户偏好的记账簿选择
+                    ledgerUIPreferencesRepository.getUIPreferences().collect { preferences ->
+                        val preferredLedgerId = preferences.selectedLedgerId
+                        val preferredLedger = ledgers.find { it.id == preferredLedgerId }
+                        val defaultLedger = ledgers.find { it.isDefault }
+                        
+                        // 选择逻辑：偏好记账簿 -> 默认记账簿 -> 第一个记账簿
+                        val selectedLedger = preferredLedger ?: defaultLedger ?: ledgers.firstOrNull()
+                        
+                        _uiState.update { 
+                            it.copy(
+                                ledgers = ledgers,
+                                currentLedger = selectedLedger,
+                                selectedLedgerId = selectedLedger?.id,
+                                isLedgerLoading = false
+                            )
+                        }
+                        
+                        android.util.Log.d("LEDGER_DEBUG", "记账簿加载成功: ${ledgers.size}个记账簿")
+                        android.util.Log.d("LEDGER_DEBUG", "偏好记账簿: $preferredLedgerId, 选中记账簿: ${selectedLedger?.name}")
+                        
+                        // 如果实际选择的记账簿与偏好不同，更新偏好设置
+                        if (selectedLedger?.id != preferredLedgerId) {
+                            selectedLedger?.id?.let { 
+                                ledgerUIPreferencesRepository.updateSelectedLedgerId(it)
+                            }
+                        }
                     }
-                    
-                    android.util.Log.d("LEDGER_DEBUG", "记账簿加载成功: ${ledgers.size}个记账簿")
                 }
                 is BaseResult.Error -> {
                     android.util.Log.e("LEDGER_DEBUG", "记账簿加载失败: ${result.exception.message}")
@@ -401,11 +487,15 @@ class LedgerViewModel @Inject constructor(
                     )
                 }
                 
+                // 保存用户的记账簿选择到偏好设置
+                ledgerUIPreferencesRepository.updateSelectedLedgerId(ledgerId)
+                
                 // 重新加载基于记账簿的数据
                 loadTransactions()
                 loadMonthlySummary()
                 
                 android.util.Log.d("LEDGER_DEBUG", "切换到记账簿: ${selectedLedger.name}")
+                android.util.Log.d("LEDGER_DEBUG", "记账簿选择已保存到偏好设置")
             } else {
                 android.util.Log.e("LEDGER_DEBUG", "未找到记账簿: $ledgerId")
             }
