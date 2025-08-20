@@ -95,6 +95,7 @@ class CalendarViewModel @Inject constructor(
             android.util.Log.d("CalendarViewModel", "Loading initial statistics")
             loadMonthlyStatistics()
         }
+
     }
     
     /**

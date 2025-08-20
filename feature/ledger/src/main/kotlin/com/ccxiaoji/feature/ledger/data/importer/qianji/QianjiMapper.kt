@@ -123,9 +123,15 @@ class QianjiMapper @Inject constructor(
                 amountCents = amountCents,
                 categoryId = categoryId,
                 note = note,
+                ledgerId = "default", // 默认记账簿
                 createdAt = timestamp,
                 updatedAt = timestamp,
-                isDeleted = false,
+                transactionDate = timestamp,
+                locationLatitude = null,
+                locationLongitude = null,
+                locationAddress = null,
+                locationPrecision = null,
+                locationProvider = null,
                 syncStatus = SyncStatus.SYNCED
             )
             

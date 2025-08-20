@@ -2,6 +2,7 @@ package com.ccxiaoji.feature.schedule.presentation.calendar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -31,6 +32,9 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import androidx.compose.ui.unit.sp
+import com.ccxiaoji.feature.schedule.presentation.debug.DefaultDebugParams
+import com.ccxiaoji.feature.schedule.presentation.debug.CalendarViewParams
 
 /**
  * 排班日历主界面
@@ -43,11 +47,15 @@ fun CalendarScreen(
     onNavigateToSchedulePattern: () -> Unit,
     onNavigateToStatistics: () -> Unit,
     onNavigateToSettings: () -> Unit,
+    onNavigateToDebug: () -> Unit = {},
+    onNavigateToFlatDemo: () -> Unit = {},
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: CalendarViewModel = hiltViewModel(),
     navController: NavController? = null
 ) {
-    android.util.Log.d("CalendarScreen", "CalendarScreen Composable called")
-    
+    // 同步调试参数到正式首页的默认布局
+    val params = remember { DefaultDebugParams.default }
+
     val currentYearMonth by viewModel.currentYearMonth.collectAsState()
     val selectedDate by viewModel.selectedDate.collectAsState()
     val schedules by viewModel.schedules.collectAsState()
@@ -59,7 +67,6 @@ fun CalendarScreen(
     val viewMode by viewModel.viewMode.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     
-    android.util.Log.d("CalendarScreen", "CurrentYearMonth: $currentYearMonth, SchedulesCount: ${schedules.size}")
     
     // 溢出菜单状态
     var showDropdownMenu by remember { mutableStateOf(false) }
@@ -109,20 +116,32 @@ fun CalendarScreen(
                             text = currentYearMonth.format(
                                 DateTimeFormatter.ofPattern(stringResource(R.string.schedule_calendar_date_format_year_month))
                             ),
-                            style = MaterialTheme.typography.headlineSmall
+                            fontSize = params.topAppBar.titleFontSize,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 },
+                navigationIcon = {
+                    onNavigateBack?.let { onBack ->
+                        IconButton(onClick = onBack, modifier = Modifier.size(params.topAppBar.actionButtonSize)) {
+                            Icon(
+                                Icons.Default.ArrowBack,
+                                contentDescription = stringResource(R.string.schedule_back)
+                            )
+                        }
+                    }
+                },
                 actions = {
-                    IconButton(onClick = { viewModel.navigateToToday() }) {
+                    IconButton(onClick = { viewModel.navigateToToday() }, modifier = Modifier.size(params.topAppBar.actionButtonSize)) {
                         Text(
                             text = stringResource(R.string.schedule_calendar_today_short),
-                            style = MaterialTheme.typography.titleLarge,
+                            fontSize = params.topAppBar.todayButtonTextSize,
                             fontWeight = FontWeight.Bold
                         )
                     }
                     Box {
-                        IconButton(onClick = { showDropdownMenu = true }) {
+                        IconButton(onClick = { showDropdownMenu = true }, modifier = Modifier.size(params.topAppBar.actionButtonSize)) {
                             Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.schedule_calendar_more))
                         }
                         DropdownMenu(
@@ -200,9 +219,43 @@ fun CalendarScreen(
                                     showDropdownMenu = false
                                 }
                             )
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(Icons.Default.BugReport, contentDescription = null)
+                                        Text("UI调试器")
+                                    }
+                                },
+                                onClick = {
+                                    onNavigateToDebug()
+                                    showDropdownMenu = false
+                                }
+                            )
+
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(Icons.Default.ViewDay, contentDescription = null)
+                                        Text("扁平Demo")
+                                    }
+                                },
+                                onClick = {
+                                    onNavigateToFlatDemo()
+                                    showDropdownMenu = false
+                                }
+                            )
+                            
                         }
                     }
                 }
+                ,
+                modifier = Modifier.height(params.topAppBar.height)
             )
         },
         floatingActionButton = {
@@ -213,9 +266,10 @@ fun CalendarScreen(
                         onClick = { onNavigateToScheduleEdit(date) },
                         containerColor = com.ccxiaoji.ui.theme.DesignTokens.BrandColors.Schedule,
                         elevation = FloatingActionButtonDefaults.elevation(
-                            defaultElevation = 1.dp,
-                            pressedElevation = 2.dp
-                        )
+                            defaultElevation = params.fab.elevation,
+                            pressedElevation = params.fab.elevation + 2.dp
+                        ),
+                        modifier = Modifier.size(params.fab.size)
                     ) {
                         Icon(
                             Icons.Default.Add, 
@@ -232,13 +286,29 @@ fun CalendarScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .padding(horizontal = params.layout.screenHorizontalPadding)
         ) {
-            // 统计信息卡片 - 两个模式都显示
-            MonthlyStatisticsCard(
-                statistics = statistics,
-                modifier = Modifier.padding(horizontal = com.ccxiaoji.ui.theme.DesignTokens.Spacing.medium, vertical = com.ccxiaoji.ui.theme.DesignTokens.Spacing.small)
-            )
-            
+            Spacer(modifier = Modifier.height(params.layout.screenVerticalPadding))
+
+            // 统计信息卡片（按参数包裹卡片）
+            androidx.compose.material3.Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = params.layout.componentSpacing / 2),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(params.statisticsCard.cornerRadius),
+                elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = params.statisticsCard.elevation),
+                colors = androidx.compose.material3.CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Box(modifier = Modifier.padding(params.statisticsCard.padding)) {
+                    MonthlyStatisticsCard(
+                        statistics = statistics,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
             // 日历视图
             CalendarView(
                 yearMonth = currentYearMonth,
@@ -246,6 +316,7 @@ fun CalendarScreen(
                 schedules = schedules,
                 weekStartDay = weekStartDay,
                 viewMode = viewMode,
+                debugParams = params.calendarView,
                 onDateSelected = { date ->
                     viewModel.selectDate(date)
                 },
@@ -260,7 +331,7 @@ fun CalendarScreen(
                     }
                 },
                 modifier = Modifier.padding(
-                    top = if (viewMode == CalendarViewMode.COMPACT) 16.dp else 0.dp
+                    top = if (viewMode == CalendarViewMode.COMPACT) params.layout.componentSpacing else 0.dp
                 )
             )
             
@@ -268,18 +339,32 @@ fun CalendarScreen(
             if (viewMode == CalendarViewMode.COMPACT) {
                 selectedDate?.let { date ->
                     val selectedSchedule = schedules.find { it.date == date }
-                    SelectedDateDetailCard(
-                        date = date,
-                        schedule = selectedSchedule,
-                        onEdit = { onNavigateToScheduleEdit(date) },
-                        onDelete = { viewModel.deleteSchedule(date) },
-                        modifier = Modifier.padding(horizontal = com.ccxiaoji.ui.theme.DesignTokens.Spacing.medium, vertical = com.ccxiaoji.ui.theme.DesignTokens.Spacing.small)
-                    )
+                    Spacer(modifier = Modifier.height(params.layout.componentSpacing))
+                    androidx.compose.material3.Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(params.detailCard.cornerRadius),
+                        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = params.detailCard.elevation),
+                        colors = androidx.compose.material3.CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        )
+                    ) {
+                        Box(modifier = Modifier.padding(params.detailCard.padding)) {
+                            SelectedDateDetailCard(
+                                date = date,
+                                schedule = selectedSchedule,
+                                onEdit = { onNavigateToScheduleEdit(date) },
+                                onDelete = { viewModel.deleteSchedule(date) },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
                 }
             }
         }
     }
+
     
+
     // 错误提示
     uiState.errorMessage?.let { message ->
         LaunchedEffect(message) {
@@ -290,7 +375,7 @@ fun CalendarScreen(
             viewModel.clearError()
         }
     }
-    
+
     // 加载指示器
     if (uiState.isLoading) {
         Box(
@@ -300,7 +385,7 @@ fun CalendarScreen(
             CircularProgressIndicator()
         }
     }
-    
+
     // 快速选择页面导航
     LaunchedEffect(quickSelectDate) {
         quickSelectDate?.let { date ->
@@ -308,7 +393,7 @@ fun CalendarScreen(
             viewModel.hideQuickSelector()
         }
     }
-    
+
     // 年月选择对话框
     if (showYearMonthPicker) {
         CustomYearMonthPickerDialog(
@@ -322,3 +407,5 @@ fun CalendarScreen(
         )
     }
 }
+
+// （已移除 UI Demo 调试组件）

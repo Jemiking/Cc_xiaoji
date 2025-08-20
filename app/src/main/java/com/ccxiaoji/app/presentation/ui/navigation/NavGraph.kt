@@ -20,11 +20,20 @@ import com.ccxiaoji.feature.habit.presentation.screen.HabitScreen
 import com.ccxiaoji.app.presentation.ui.profile.ProfileScreen
 import com.ccxiaoji.app.presentation.ui.profile.ThemeSettingsScreen
 import com.ccxiaoji.app.presentation.ui.profile.NotificationSettingsScreen
-import com.ccxiaoji.app.presentation.ui.components.ModuleTopBar
 import com.ccxiaoji.feature.ledger.api.LedgerApi
 import com.ccxiaoji.feature.ledger.presentation.screen.import.LedgerImportScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.import.QianjiImportScreen
 import com.ccxiaoji.feature.plan.api.PlanApi
+import com.ccxiaoji.app.presentation.ui.navigation.*
+import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.LayoutDemoRoute
+import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.AddTransactionCompactRoute
+import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.AddTransactionCardsRoute
+import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.AddTransactionSteppedRoute
+import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.AddTransactionGridRoute
+import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.AddTransactionFloatingRoute
+import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.AddTransactionCategoryFirstRoute
+import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.AddTransactionSimplifiedGridRoute
+import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.AddTransactionLayoutAdjusterRoute
 
 @Composable
 fun NavGraph(
@@ -72,97 +81,56 @@ fun NavGraph(
         }
         
         composable(Screen.Todo.route) {
-            Scaffold(
-                topBar = {
-                    ModuleTopBar(
-                        title = "待办",
-                        isRootScreen = true,
-                        onNavigationClick = { /* TODO: 菜单功能 */ },
-                        onCloseClick = {
-                            navController.navigate(Screen.Home.route) {
-                                popUpTo(Screen.Home.route) { inclusive = true }
-                            }
-                        }
-                    )
+            TodoScreen(
+                onNavigateToAddTask = {
+                    navController.navigate(AddEditTaskRoute.createRoute())
+                },
+                onNavigateToEditTask = { taskId ->
+                    navController.navigate(AddEditTaskRoute.createRoute(taskId))
                 }
-            ) { paddingValues ->
-                TodoScreen(
-                    onNavigateToAddTask = {
-                        navController.navigate(AddEditTaskRoute.createRoute())
-                    },
-                    onNavigateToEditTask = { taskId ->
-                        navController.navigate(AddEditTaskRoute.createRoute(taskId))
-                    },
-                    modifier = Modifier.padding(paddingValues),
-                    showTopBar = false
-                )
-            }
+            )
         }
         
         composable(Screen.Habit.route) {
-            Scaffold(
-                topBar = {
-                    ModuleTopBar(
-                        title = "习惯",
-                        isRootScreen = true,
-                        onNavigationClick = { /* TODO: 菜单功能 */ },
-                        onCloseClick = {
-                            navController.navigate(Screen.Home.route) {
-                                popUpTo(Screen.Home.route) { inclusive = true }
-                            }
-                        }
-                        // TODO: 需要添加统计/列表切换功能到actions
-                    )
+            HabitScreen(
+                onNavigateToAddHabit = {
+                    navController.navigate(AddEditHabitRoute.createRoute())
+                },
+                onNavigateToEditHabit = { habitId ->
+                    navController.navigate(AddEditHabitRoute.createRoute(habitId))
                 }
-            ) { paddingValues ->
-                HabitScreen(
-                    onNavigateToAddHabit = {
-                        navController.navigate(AddEditHabitRoute.createRoute())
-                    },
-                    onNavigateToEditHabit = { habitId ->
-                        navController.navigate(AddEditHabitRoute.createRoute(habitId))
-                    },
-                    modifier = Modifier.padding(paddingValues),
-                    showTopBar = false
-                )
-            }
+            )
         }
         
         composable(Screen.Schedule.route) {
-            Scaffold(
-                topBar = {
-                    ModuleTopBar(
-                        title = "排班",
-                        isRootScreen = true,
-                        onNavigationClick = { /* TODO: 菜单功能 */ },
-                        onCloseClick = {
-                            navController.navigate(Screen.Home.route) {
-                                popUpTo(Screen.Home.route) { inclusive = true }
-                            }
-                        }
-                    )
+            com.ccxiaoji.feature.schedule.presentation.calendar.CalendarScreen(
+                onNavigateToShiftManage = {
+                    navController.navigate(ShiftManageRoute.route)
+                },
+                onNavigateToScheduleEdit = { date ->
+                    navController.navigate(ScheduleEditRoute.createRoute(date.toString()))
+                },
+                onNavigateToSchedulePattern = {
+                    navController.navigate(SchedulePatternRoute.route)
+                },
+                onNavigateToStatistics = {
+                    navController.navigate(ScheduleStatisticsRoute.route)
+                },
+                onNavigateToSettings = {
+                    navController.navigate(ScheduleSettingsRoute.route)
+                },
+                onNavigateToDebug = {
+                    navController.navigate("CalendarDebug")
+                },
+                onNavigateToFlatDemo = {
+                    navController.navigate("CalendarFlatDemo")
+                },
+                onNavigateBack = {
+                    navController.navigate(Screen.Home.route) {
+                        popUpTo(Screen.Home.route) { inclusive = true }
+                    }
                 }
-            ) { paddingValues ->
-                Box(modifier = Modifier.padding(paddingValues)) {
-                    com.ccxiaoji.feature.schedule.presentation.calendar.CalendarScreen(
-                        onNavigateToShiftManage = {
-                            navController.navigate(ShiftManageRoute.route)
-                        },
-                        onNavigateToScheduleEdit = { date ->
-                            navController.navigate(ScheduleEditRoute.createRoute(date.toString()))
-                        },
-                        onNavigateToSchedulePattern = {
-                            navController.navigate(SchedulePatternRoute.route)
-                        },
-                        onNavigateToStatistics = {
-                            navController.navigate(ScheduleStatisticsRoute.route)
-                        },
-                        onNavigateToSettings = {
-                            navController.navigate(ScheduleSettingsRoute.route)
-                        }
-                    )
-                }
-            }
+            )
         }
         
         composable(Screen.Profile.route) {
@@ -416,20 +384,21 @@ fun NavGraph(
                 onNavigateToCategory = { navController.navigate(CategoryManagementRoute.route) },
                 onNavigateToAccount = { navController.navigate(AccountManagementRoute.route) },
                 onNavigateToBudget = { navController.navigate(BudgetRoute.route) },
-                onNavigateToDataImport = { navController.navigate(LedgerImportRoute.route) },
-                onNavigateToQianjiImport = { navController.navigate(QianjiImportRoute.route) },
                 onNavigateToRecurring = { navController.navigate(RecurringTransactionRoute.route) },
                 onNavigateToCurrencySelection = { navController.navigate(CurrencySelectionRoute.route) },
                 onNavigateToAccountSelection = { navController.navigate(AccountSelectionRoute.route) },
                 onNavigateToReminderSettings = { navController.navigate(ReminderSettingsRoute.route) },
                 onNavigateToHomeDisplaySettings = { navController.navigate(HomeDisplaySettingsRoute.route) },
+                onNavigateToUIStyleSettings = { navController.navigate(LedgerUIStyleRoute.route) },
+                onNavigateToLedgerBookManagement = { navController.navigate(LedgerBookManagementRoute.route) },
                 navController = navController
             )
         }
         
         composable(LedgerImportRoute.route) {
             LedgerImportScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToQianjiImport = { navController.navigate(QianjiImportRoute.route) }
             )
         }
         
@@ -528,6 +497,19 @@ fun NavGraph(
         composable(ScheduleAboutRoute.route) {
             com.ccxiaoji.feature.schedule.presentation.settings.AboutScreen(
                 onBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable("CalendarDebug") {
+            com.ccxiaoji.feature.schedule.presentation.debug.CalendarDebugScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // 扁平化排班 Demo（无阴影布局）
+        composable("CalendarFlatDemo") {
+            com.ccxiaoji.feature.schedule.presentation.demo.FlatScheduleDemoScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
         
@@ -781,6 +763,12 @@ fun NavGraph(
             )
         }
         
+        composable(LedgerUIStyleRoute.route) {
+            com.ccxiaoji.feature.ledger.presentation.screen.settings.LedgerUIStyleScreen(
+                navController = navController
+            )
+        }
+        
         composable(
             route = BatchUpdateCategoryRoute.route,
             arguments = listOf(
@@ -878,6 +866,75 @@ fun NavGraph(
         composable(ModuleManagementRoute.route) {
             com.ccxiaoji.app.presentation.ui.settings.ModuleManagementScreen(
                 navController = navController
+            )
+        }
+        
+        // Layout Demo pages
+        composable(LayoutDemoRoute) {
+            com.ccxiaoji.feature.ledger.presentation.screen.demo.LayoutDemoScreen(
+                navController = navController
+            )
+        }
+        
+        composable(AddTransactionCompactRoute) {
+            com.ccxiaoji.feature.ledger.presentation.screen.demo.AddTransactionCompactScreen(
+                navController = navController
+            )
+        }
+        
+        composable(AddTransactionCardsRoute) {
+            com.ccxiaoji.feature.ledger.presentation.screen.demo.AddTransactionCardsScreen(
+                navController = navController
+            )
+        }
+        
+        composable(AddTransactionSteppedRoute) {
+            com.ccxiaoji.feature.ledger.presentation.screen.demo.AddTransactionSteppedScreen(
+                navController = navController
+            )
+        }
+        
+        composable(AddTransactionGridRoute) {
+            com.ccxiaoji.feature.ledger.presentation.screen.demo.AddTransactionGridScreen(
+                navController = navController
+            )
+        }
+        
+        composable(AddTransactionFloatingRoute) {
+            com.ccxiaoji.feature.ledger.presentation.screen.demo.AddTransactionFloatingScreen(
+                navController = navController
+            )
+        }
+        
+        composable(AddTransactionCategoryFirstRoute) {
+            com.ccxiaoji.feature.ledger.presentation.screen.demo.AddTransactionCategoryFirstScreen(
+                navController = navController
+            )
+        }
+        
+        composable(AddTransactionSimplifiedGridRoute) {
+            com.ccxiaoji.feature.ledger.presentation.screen.demo.AddTransactionSimplifiedGridScreen(
+                navController = navController
+            )
+        }
+        
+        composable(AddTransactionLayoutAdjusterRoute) {
+            com.ccxiaoji.feature.ledger.presentation.screen.demo.AddTransactionLayoutAdjusterScreen(
+                navController = navController
+            )
+        }
+        
+        // 记账簿管理页面
+        composable(LedgerBookManagementRoute.route) {
+            ledgerApi.getLedgerManagementScreen(
+                navController = navController,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToLedgerDetail = { ledgerId ->
+                    // TODO: 添加记账簿详情页面导航
+                },
+                onNavigateToAddLedger = {
+                    // TODO: 添加新建记账簿页面导航
+                }
             )
         }
     }

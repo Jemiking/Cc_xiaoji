@@ -6,10 +6,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import android.util.Log
 import com.ccxiaoji.feature.ledger.presentation.component.charts.BarChart
 import com.ccxiaoji.feature.ledger.presentation.component.charts.LineChart
 import com.ccxiaoji.feature.ledger.presentation.component.charts.PieChart
@@ -24,6 +27,11 @@ fun StatisticsScreen(
     viewModel: StatisticsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    // 🔍 监控UI状态变化
+    LaunchedEffect(uiState.selectedPeriod, uiState.showDateRangePicker) {
+        Log.d("StatisticsScreen", "📱 Screen状态变化 - selectedPeriod: ${uiState.selectedPeriod}, showDateRangePicker: ${uiState.showDateRangePicker}")
+    }
     
     Scaffold(
         topBar = {
@@ -52,24 +60,46 @@ fun StatisticsScreen(
     ) { paddingValues ->
         when {
             uiState.isLoading -> {
-                StatisticsLoadingState()
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(paddingValues)
+                        .heightIn(min = 400.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    StatisticsLoadingState()
+                }
             }
             uiState.totalIncome == 0 && uiState.totalExpense == 0 -> {
-                StatisticsEmptyState()
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(paddingValues)
+                        .heightIn(min = 400.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    StatisticsEmptyState(
+                        onRefresh = viewModel::refreshStatistics
+                    )
+                }
             }
             else -> {
                 LazyColumn(
                     modifier = Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
                         .padding(paddingValues),
                     contentPadding = PaddingValues(DesignTokens.Spacing.medium),
                     verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.medium)
                 ) {
                     // 时间段选择器
                     item {
+                        Log.d("StatisticsScreen", "🎯 渲染TimePeriodSelector - selectedPeriod: ${uiState.selectedPeriod}")
                         TimePeriodSelector(
                             selectedPeriod = uiState.selectedPeriod,
-                            onPeriodSelected = viewModel::selectTimePeriod
+                            onPeriodSelected = { period ->
+                                Log.d("StatisticsScreen", "🎯 TimePeriodSelector回调触发 - period: $period")
+                                viewModel.selectTimePeriod(period)
+                            }
                         )
                     }
                     
@@ -150,5 +180,24 @@ fun StatisticsScreen(
                 }
             }
         }
+    }
+    
+    // 🆕 日期范围选择器对话框
+    if (uiState.showDateRangePicker) {
+        Log.d("StatisticsScreen", "📅 正在显示日期选择器对话框")
+        DateRangePickerDialog(
+            onDismiss = {
+                Log.d("StatisticsScreen", "📅 用户关闭日期选择器")
+                viewModel.hideDateRangePicker()
+            },
+            onConfirm = { startDate, endDate ->
+                Log.d("StatisticsScreen", "📅 用户确认日期选择: $startDate 到 $endDate")
+                viewModel.setCustomDateRange(startDate, endDate)
+            },
+            initialStartDate = uiState.customStartDate,
+            initialEndDate = uiState.customEndDate
+        )
+    } else {
+        Log.d("StatisticsScreen", "📅 日期选择器未显示 - showDateRangePicker: ${uiState.showDateRangePicker}")
     }
 }

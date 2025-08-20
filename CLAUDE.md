@@ -28,6 +28,32 @@ CC小记 (CC Xiaoji) is a **Life Management Companion App** that integrates mult
 3. Developer can also manually compile in Android Studio
 4. For complex build issues, use Android Studio for debugging
 
+### Debug与Release版本切换 (2025-08-17新增)
+**已配置完整的版本切换系统，支持调试和发布版本快速切换**
+
+#### 可用切换方法
+1. **Android Studio Build Variants** (推荐)
+   - 左下角Build Variants面板 → 选择debug/release → Ctrl+F9
+   
+2. **命令行脚本**
+   - `build_debug.bat` - 构建Debug版本
+   - `build_release.bat` - 构建Release版本
+   - `install_apk.bat` - 智能APK安装工具
+
+3. **版本特性**
+   - Debug版本: `com.ccxiaoji.app.debug` (可与正式版并存)
+   - Release版本: `com.ccxiaoji.app` (正式签名版本)
+   - 输出位置: `app/build/outputs/apk/debug(release)/`
+
+#### 使用场景
+- **问题调试**: 使用Debug版本 (保留调试信息，未混淆)
+- **性能测试**: 使用Release版本 (代码优化，真实性能)
+- **发布准备**: 使用Release版本 (正式签名，生产就绪)
+
+#### 相关文档
+- `Debug与Release版本切换指南.md` - 详细操作指南
+- `版本切换快速参考.md` - 快速参考卡片
+
 ### Problem-Solving Approach
 **Before implementing any solution, Claude Code must:**
 
@@ -95,10 +121,10 @@ CC小记 (CC Xiaoji) is a **Life Management Companion App** that integrates mult
 - **TargetSdk**: 34 (Android 14)
 
 ## Database Management
-- **Room database version**: 9 (Current - Added two-level category support)
-- **Tables**: 23 tables total
+- **Room database version**: 12 (Current - Fixed transactions table foreign keys and indexes)
+- **Tables**: 24 tables total
 - **Distribution**: 
-  - Ledger: 9 tables
+  - Ledger: 10 tables (including Ledger notebooks)
   - Schedule: 4 tables
   - Plan: 3 tables
   - Habit: 2 tables
@@ -110,6 +136,9 @@ CC小记 (CC Xiaoji) is a **Life Management Companion App** that integrates mult
   - v7: Credit card fields
   - v8: SavingsGoal userId field
   - v9: Two-level category support (2025-08-15)
+  - v10: Transaction time and location support (2025-08-19)
+  - v11: Ledger notebook support (2025-08-20)
+  - v12: Fixed transactions table foreign keys and indexes (2025-08-20)
 - **Architecture Note**: Schedule module uses snake_case, others use camelCase
 - **Schema location**: `app/schemas/`
 
@@ -186,17 +215,18 @@ feature-[name]/
 - **Navigation**: Navigation Compose 2.7.6
 - **DateTime**: Kotlinx DateTime 0.5.0
 
-## Current Project Status (2025-08-15)
+## Current Project Status (2025-08-20)
 
 ### ✅ Completed Features
 1. **Architecture Migration**: 100% complete with 13 modules
 2. **Navigation**: 2 active bottom navigation items (Home, Profile)
    - Other modules (Ledger, Todo, Habit, Schedule) are commented but ready
-3. **Database**: Version 9 with two-level category support
+3. **Database**: Version 12 with ledger notebook support and fixed foreign keys
 4. **Core Features**: Todo, Habit, Ledger all functional
 5. **Schedule Module**: Successfully integrated
 6. **Plan Module**: Successfully integrated with tree structure
-7. **Test Framework**: JUnit + MockK + Truth configured
+7. **Ledger Notebook System**: Complete ledger book management functionality
+8. **Test Framework**: JUnit + MockK + Truth configured
 
 ### 📊 Technical Debt Status
 **Current Status**: 部分清除，健康度约79%
@@ -266,6 +296,61 @@ feature-[name]/
 - Export: 主界面 → 个人 → 记账设置 → 数据导出
 - Import: 主界面 → 个人 → 记账设置 → 数据导入
 
+#### APK签名和版本切换配置（2025-08-17）
+**完成了完整的Release签名配置和Debug/Release版本切换系统**
+
+**APK签名配置**:
+1. **正式签名配置**
+   - 密钥库文件: `ccxiaoji_release.keystore`
+   - 配置文件: `keystore.properties` 
+   - Gradle自动签名: 已配置完成
+
+2. **Android Studio一键构建**
+   - Build Variants快速切换
+   - Generate Signed APK记住密码
+   - 自定义Run Configuration
+   - 详细设置指南完成
+
+**版本并存配置**:
+- **Debug版本**: `com.ccxiaoji.app.debug` (调试优化)
+- **Release版本**: `com.ccxiaoji.app` (正式签名)
+- **同时安装**: 两个版本可在同一设备并存
+- **智能切换**: 提供多种切换方法和安装工具
+
+**构建脚本**:
+- `build_debug.bat` / `build_release.bat` - 命令行构建
+- `install_apk.bat` - 智能APK安装管理工具
+- Android Studio Build Variants面板集成
+
+#### 记账簿功能完成（2025-08-20）
+**完成了完整的记账簿管理系统，支持多账本独立记账**
+
+**核心功能实现**:
+1. **记账簿数据模型**
+   - 新增 `LedgerEntity` 支持多账本结构
+   - 数据库版本升级至v11 (添加记账簿支持)
+   - 所有交易记录关联到指定记账簿
+
+2. **记账簿管理界面**
+   - 完整的CRUD操作（创建、编辑、删除、查看）
+   - 记账簿列表显示和统计信息
+   - 默认记账簿设置和排序功能
+   - 美观的Material 3设计
+
+3. **数据库修复和优化**
+   - 修复Migration_11_12外键约束和索引问题
+   - 解决应用启动崩溃问题
+   - 确保数据完整性和性能优化
+
+**关键问题修复**:
+- ✅ 修复数据库迁移验证失败导致的应用崩溃
+- ✅ 修复记账簿管理导航错误，添加缺失的composable定义  
+- ✅ 修复LedgerApiImpl中getLedgerManagementScreen方法的NotImplementedError
+- ✅ 完善外键约束确保数据引用完整性
+
+**访问路径**: 
+- 记账簿管理: 主界面 → 个人 → 记账设置 → 记账簿管理
+
 ## File Organization Standards
 
 ### Document and Script Organization
@@ -301,18 +386,36 @@ feature-[name]/
    - Issue: Schedule module uses snake_case
    - Solution: Handle conversion in mappers
 
+### ✅ Recently Resolved Issues
+4. **Database Migration Validation Failure (2025-08-20)**
+   - Issue: Room migration validation failed due to missing foreign keys and incorrect index names
+   - Solution: Created Migration_11_12 to properly recreate transactions table with foreign key constraints
+   - Status: Fixed in database version 12
+
+5. **NotImplementedError in LedgerApiImpl (2025-08-20)**
+   - Issue: getLedgerManagementScreen method threw NotImplementedError
+   - Solution: Updated method to call existing LedgerBookManagementScreen component
+   - Status: Fixed and functional
+
 ## Important Reminders
-1. **Database Version**: Currently at version 9 (two-level categories)
+1. **Database Version**: Currently at version 12 (ledger notebook support with fixed foreign keys)
 2. **Navigation**: Only 2 items active (Home, Profile)
 3. **Technical Debt**: Ongoing cleanup, ~79% healthy
 4. **Import/Export**: Fully functional with recent fixes
 5. **MCP Server**: Configured and available for compilation
+6. **APK Signing**: Release版本使用自定义签名 (ccxiaoji_release.keystore)
+7. **Version Management**: Debug和Release版本可并存，支持快速切换
+8. **Ledger Notebook System**: Complete multi-ledger support with CRUD operations
 
 ## Related Documentation
 - `doc/架构迁移计划与原则.md` - Architecture migration principles
 - `doc/20250813-记账数据导出功能实施.md` - Export implementation
 - `doc/20250815-数据导入问题修复.md` - Import fixes
 - `doc/20250627-技术债务真实状态评估报告.md` - Technical debt assessment
+- `Debug与Release版本切换指南.md` - Debug/Release版本切换完整指南
+- `版本切换快速参考.md` - 版本切换快速参考卡片
+- `Android Studio一键构建APK设置指南.md` - Android Studio签名配置指南
+- `一键构建APK快速指南.md` - APK构建快速参考
 
 ---
-*Last Updated: 2025-08-15 - Two-level category system fully implemented (Phase 7/7 complete), database at v9, comprehensive testing and optimization completed*
+*Last Updated: 2025-08-20 - 记账簿功能完成，包含完整的多账本管理系统；修复数据库迁移问题和导航错误，确保应用稳定运行*

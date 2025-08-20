@@ -21,8 +21,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.R
 import com.ccxiaoji.feature.ledger.domain.model.Category
+import com.ccxiaoji.feature.ledger.presentation.component.DynamicCategoryIcon
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.TransactionType
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.FilterTransactionViewModel
+import com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerUIStyleViewModel
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,6 +36,10 @@ fun FilterTransactionScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
+    
+    // 获取图标显示模式
+    val uiStyleViewModel: LedgerUIStyleViewModel = hiltViewModel()
+    val uiPreferences by uiStyleViewModel.uiPreferences.collectAsStateWithLifecycle()
     
     // Date picker states
     var showStartDatePicker by remember { mutableStateOf(false) }
@@ -169,7 +175,12 @@ fun FilterTransactionScreen(
                                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(category.icon)
+                                    DynamicCategoryIcon(
+                                        category = category,
+                                        iconDisplayMode = uiPreferences.iconDisplayMode,
+                                        size = 16.dp,
+                                        tint = MaterialTheme.colorScheme.onSurface
+                                    )
                                     Text(
                                         category.name, 
                                         maxLines = 1, 

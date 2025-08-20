@@ -45,6 +45,12 @@ abstract class LedgerModule {
     
     @Binds
     @Singleton
+    abstract fun bindLedgerRepository(
+        impl: LedgerRepositoryImpl
+    ): LedgerRepository
+    
+    @Binds
+    @Singleton
     abstract fun bindBudgetRepository(
         impl: BudgetRepositoryImpl
     ): BudgetRepository
@@ -60,6 +66,12 @@ abstract class LedgerModule {
     abstract fun bindFilterRepository(
         impl: FilterRepositoryImpl
     ): FilterRepository
+    
+    @Binds
+    @Singleton
+    abstract fun bindLedgerUIPreferencesRepository(
+        impl: LedgerUIPreferencesRepositoryImpl
+    ): LedgerUIPreferencesRepository
     
     companion object {
         @Provides

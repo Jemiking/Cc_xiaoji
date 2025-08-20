@@ -83,41 +83,6 @@ fun ProfileScreen(
                 onValueChange = { searchQuery = it }
             )
             
-            // 根据搜索过滤设置项
-            val filteredModuleSettings = listOf(
-                SettingsItem(
-                    icon = Icons.Default.AccountBalance,
-                    title = "记账设置",
-                    subtitle = "默认账户、记账提醒、快速记账",
-                    onClick = { navController.navigate(LedgerSettingsRoute.route) }
-                ),
-                SettingsItem(
-                    icon = Icons.Default.Task,
-                    title = "待办设置",
-                    subtitle = "提醒设置、默认优先级",
-                    onClick = { /* TODO: Navigate to todo settings */ }
-                ),
-                SettingsItem(
-                    icon = Icons.Default.FitnessCenter,
-                    title = "习惯设置",
-                    subtitle = "打卡提醒、目标设置",
-                    onClick = { /* TODO: Navigate to habit settings */ }
-                )
-            ).filter { item ->
-                searchQuery.isEmpty() || 
-                item.title.contains(searchQuery, ignoreCase = true) ||
-                (item.subtitle?.contains(searchQuery, ignoreCase = true) ?: false)
-            }
-            
-            if (filteredModuleSettings.isNotEmpty()) {
-                SettingsSection(
-                    title = "模块设置",
-                    items = filteredModuleSettings
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
-            
             // Data Management
             SettingsSection(
                 title = "数据管理",
@@ -147,13 +112,12 @@ fun ProfileScreen(
                         subtitle = "统一导出所有模块数据",
                         onClick = { navController.navigate(DataExportRoute.route) }
                     ),
-                    // TODO: 数据导入功能正在重新实现
-                    // SettingsItem(
-                    //     icon = Icons.Default.FileUpload,
-                    //     title = "数据导入",
-                    //     subtitle = "从文件导入数据",
-                    //     onClick = { /* TODO: 实现新的导入功能 */ }
-                    // ),
+                    SettingsItem(
+                        icon = Icons.Default.FileUpload,
+                        title = "数据导入",
+                        subtitle = "从文件导入各模块数据",
+                        onClick = { navController.navigate(LedgerImportRoute.route) }
+                    ),
                     SettingsItem(
                         icon = Icons.Default.Build,
                         title = "批量操作",
@@ -270,6 +234,12 @@ fun ProfileScreen(
                         icon = Icons.Default.Info,
                         title = "关于我们",
                         onClick = { navController.navigate(AboutRoute.route) }
+                    ),
+                    SettingsItem(
+                        icon = Icons.Default.Dashboard,
+                        title = "布局Demo",
+                        subtitle = "查看添加记账页面的不同布局方案",
+                        onClick = { navController.navigate("layout_demo") }
                     ),
                     SettingsItem(
                         icon = Icons.Default.SystemUpdate,

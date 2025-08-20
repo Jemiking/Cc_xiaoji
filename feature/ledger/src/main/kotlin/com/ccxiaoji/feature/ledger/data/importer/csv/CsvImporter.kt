@@ -374,9 +374,15 @@ class CsvImporter @Inject constructor(
                 amountCents = (parts[4].toDoubleOrNull() ?: 0.0 * 100).toInt(),
                 categoryId = categoryId,
                 note = parts[5].ifEmpty { null },
+                ledgerId = "default", // 默认记账簿
                 createdAt = parseDate(parts[1]) ?: System.currentTimeMillis(),
                 updatedAt = System.currentTimeMillis(),
-                isDeleted = false,
+                transactionDate = parseDate(parts[1]),
+                locationLatitude = null,
+                locationLongitude = null,
+                locationAddress = null,
+                locationPrecision = null,
+                locationProvider = null,
                 syncStatus = SyncStatus.SYNCED
             )
         } catch (e: Exception) {

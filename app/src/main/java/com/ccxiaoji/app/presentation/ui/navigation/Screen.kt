@@ -280,6 +280,7 @@ object ScheduleAboutRoute {
     const val route = "schedule_about"
 }
 
+
 // Plan module routes
 object PlanRoute {
     const val route = "plan"
@@ -386,6 +387,14 @@ object ReminderSettingsRoute {
 
 object HomeDisplaySettingsRoute {
     const val route = "home_display_settings"
+}
+
+object LedgerUIStyleRoute {
+    const val route = "ledger_ui_style"
+}
+
+object LedgerBookManagementRoute {
+    const val route = "ledger_book_management"
 }
 
 object ModuleManagementRoute {

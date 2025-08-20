@@ -1,9 +1,18 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
     id("dagger.hilt.android.plugin")
     id("org.jetbrains.kotlin.plugin.serialization")
+}
+
+// 读取签名配置
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+keystorePropertiesFile.takeIf { it.exists() }?.inputStream()?.use { input ->
+    keystoreProperties.load(input)
 }
 
 android {
@@ -37,6 +46,17 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true  // 已添加Hilt ProGuard规则
@@ -44,12 +64,30 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (keystorePropertiesFile.exists()) {
+                signingConfigs.getByName("release")
+            } else {
+                println("警告: 未找到keystore.properties，使用debug签名")
+                signingConfigs.getByName("debug")
+            }
         }
         debug {
             isMinifyEnabled = false
             isShrinkResources = false
             isDebuggable = true
+            
+            // Debug版本标识，允许与Release版本同时安装
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+            
+            // 调试功能配置
+            buildConfigField("String", "BUILD_TYPE", "\"DEBUG\"")
+            buildConfigField("boolean", "LOGGING_ENABLED", "true")
+            buildConfigField("boolean", "DEBUG_MODE", "true")
+            
+            // 构建性能优化（加快debug构建速度）
+            isJniDebuggable = false
+            isRenderscriptDebuggable = false
         }
     }
     compileOptions {
@@ -144,6 +182,9 @@ dependencies {
     
     // CSV处理
     implementation("com.github.doyaaaaaken:kotlin-csv-jvm:1.9.3")
+    
+    // Google Play Services (位置服务)
+    implementation("com.google.android.gms:play-services-location:21.1.0")
     
     // Desugaring for Java 8+ APIs
     coreLibraryDesugaring(libs.android.tools.desugar)

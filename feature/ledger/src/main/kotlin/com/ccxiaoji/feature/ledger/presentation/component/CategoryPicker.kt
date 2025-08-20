@@ -20,8 +20,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ccxiaoji.feature.ledger.domain.model.Category
 import com.ccxiaoji.feature.ledger.domain.model.CategoryGroup
+import com.ccxiaoji.feature.ledger.domain.model.IconDisplayMode
+import com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerUIStyleViewModel
 import com.ccxiaoji.ui.theme.DesignTokens
 
 /**
@@ -38,6 +42,10 @@ fun CategoryPicker(
     onDismiss: () -> Unit,
     title: String = "选择分类"
 ) {
+    // 获取图标显示模式
+    val uiStyleViewModel: LedgerUIStyleViewModel = hiltViewModel()
+    val uiPreferences by uiStyleViewModel.uiPreferences.collectAsStateWithLifecycle()
+    
     if (isVisible) {
         Dialog(
             onDismissRequest = onDismiss,
@@ -139,7 +147,8 @@ fun CategoryPicker(
                                 categoryGroup = group,
                                 selectedCategoryId = selectedCategoryId,
                                 onCategorySelected = onCategorySelected,
-                                searchQuery = searchQuery
+                                searchQuery = searchQuery,
+                                iconDisplayMode = uiPreferences.iconDisplayMode
                             )
                         }
                     }
@@ -158,7 +167,8 @@ private fun CategoryGroupPickerItem(
     categoryGroup: CategoryGroup,
     selectedCategoryId: String?,
     onCategorySelected: (Category) -> Unit,
-    searchQuery: String = ""
+    searchQuery: String = "",
+    iconDisplayMode: IconDisplayMode
 ) {
     var isExpanded by remember(categoryGroup.parent.id, searchQuery) { 
         mutableStateOf(searchQuery.isNotEmpty() || categoryGroup.children.any { it.id == selectedCategoryId })
@@ -200,9 +210,11 @@ private fun CategoryGroupPickerItem(
                 }
                 
                 // 分类图标
-                Text(
-                    text = categoryGroup.parent.icon,
-                    style = MaterialTheme.typography.titleMedium
+                DynamicCategoryIcon(
+                    category = categoryGroup.parent,
+                    iconDisplayMode = iconDisplayMode,
+                    size = 20.dp,
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
                 
                 Spacer(modifier = Modifier.width(DesignTokens.Spacing.small))
@@ -264,7 +276,8 @@ private fun CategoryGroupPickerItem(
                             category = child,
                             parentName = categoryGroup.parent.name,
                             isSelected = child.id == selectedCategoryId,
-                            onCategorySelected = onCategorySelected
+                            onCategorySelected = onCategorySelected,
+                            iconDisplayMode = iconDisplayMode
                         )
                     }
                 }
@@ -281,7 +294,8 @@ private fun CategoryChildPickerItem(
     category: Category,
     parentName: String,
     isSelected: Boolean,
-    onCategorySelected: (Category) -> Unit
+    onCategorySelected: (Category) -> Unit,
+    iconDisplayMode: IconDisplayMode
 ) {
     Row(
         modifier = Modifier
@@ -304,9 +318,11 @@ private fun CategoryChildPickerItem(
         Spacer(modifier = Modifier.width(DesignTokens.Spacing.small))
         
         // 分类图标
-        Text(
-            text = category.icon,
-            style = MaterialTheme.typography.bodyMedium
+        DynamicCategoryIcon(
+            category = category,
+            iconDisplayMode = iconDisplayMode,
+            size = 16.dp,
+            tint = MaterialTheme.colorScheme.onSurface
         )
         
         Spacer(modifier = Modifier.width(DesignTokens.Spacing.small))

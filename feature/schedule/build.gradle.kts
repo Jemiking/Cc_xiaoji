@@ -24,10 +24,15 @@ android {
                 "proguard-rules.pro"
             )
         }
+        debug {
+            // 调试开关：启用排班日历详细日志
+            buildConfigField("boolean", "DEBUG_CALENDAR_LOGS", "true")
+        }
     }
     
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     
     composeOptions {

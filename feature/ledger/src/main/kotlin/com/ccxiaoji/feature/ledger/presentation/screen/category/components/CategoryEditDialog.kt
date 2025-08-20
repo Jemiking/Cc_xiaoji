@@ -14,10 +14,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ccxiaoji.feature.ledger.domain.model.Category
+import com.ccxiaoji.feature.ledger.domain.model.IconDisplayMode
+import com.ccxiaoji.feature.ledger.presentation.component.CategoryIconMapper
+import com.ccxiaoji.feature.ledger.presentation.component.DynamicCategoryIcon
+import com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerUIStyleViewModel
 import com.ccxiaoji.ui.components.FlatButton
 import com.ccxiaoji.ui.theme.DesignTokens
+import kotlinx.datetime.Clock
 
 /**
  * 分类编辑对话框
@@ -59,6 +68,9 @@ fun CategoryEditDialog(
                 Column(
                     modifier = Modifier.padding(DesignTokens.Spacing.large)
                 ) {
+                    // 获取图标显示模式 - 移动到顶层以便在整个Column中使用
+                    val uiStyleViewModel: LedgerUIStyleViewModel = hiltViewModel()
+                    val uiPreferences by uiStyleViewModel.uiPreferences.collectAsStateWithLifecycle()
                     // 标题
                     Text(
                         text = title,
@@ -117,9 +129,27 @@ fun CategoryEditDialog(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = categoryIcon,
-                                style = MaterialTheme.typography.headlineMedium
+                            // 预览区域显示选中图标
+                            
+                            // 创建临时Category对象来支持DynamicCategoryIcon
+                            val tempCategory = Category(
+                                id = "temp_dialog",
+                                name = categoryName.ifEmpty { "预览" },
+                                type = if (title.contains("收入")) Category.Type.INCOME else Category.Type.EXPENSE,
+                                icon = categoryIcon,
+                                color = categoryColor ?: "#6200EE",
+                                level = if (parentName != null) 2 else 1,
+                                parentId = null,
+                                isSystem = false,
+                                createdAt = Clock.System.now(),
+                                updatedAt = Clock.System.now()
+                            )
+                            
+                            DynamicCategoryIcon(
+                                category = tempCategory,
+                                iconDisplayMode = uiPreferences.iconDisplayMode,
+                                size = 32.dp,
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -129,6 +159,8 @@ fun CategoryEditDialog(
                     // 预设图标列表
                     IconSelector(
                         selectedIcon = categoryIcon,
+                        iconDisplayMode = uiPreferences.iconDisplayMode,
+                        categoryType = if (title.contains("收入")) Category.Type.INCOME else Category.Type.EXPENSE,
                         onIconSelected = onIconChange
                     )
                     
@@ -177,11 +209,97 @@ fun CategoryEditDialog(
 }
 
 /**
+ * 获取emoji对应的语义分类名称，用于Material图标映射
+ * 每个emoji映射到独特的语义名称，确保Material图标多样性
+ */
+private fun getSemanticNameForEmoji(emoji: String): String {
+    return when (emoji) {
+        // 餐饮类 - 使用具体的餐饮分类
+        "🍔" -> "餐饮"     // Restaurant图标
+        "☕" -> "饮品"     // LocalCafe图标
+        "🍕" -> "夜宵"     // NightlightRound图标  
+        "🥗" -> "午餐"     // LunchDining图标
+        "🍜" -> "早餐"     // FreeBreakfast图标
+        "🍱" -> "晚餐"     // DinnerDining图标
+        "🥡" -> "酒水"     // LocalBar图标
+        "🍰" -> "零食"     // Cookie图标
+        
+        // 交通类 - 使用具体交通工具
+        "🚗" -> "交通"     // DirectionsCar图标
+        "🚌" -> "公交"     // DirectionsBus图标
+        "🚇" -> "地铁"     // Subway图标
+        "✈️" -> "飞机"     // Flight图标
+        "🚲" -> "停车"     // LocalParking图标
+        "⛽" -> "加油"     // LocalGasStation图标
+        "🚕" -> "打车"     // LocalTaxi图标
+        "🏍️" -> "火车"     // Train图标
+        
+        // 生活类 - 使用具体生活分类
+        "🏠" -> "住房"     // Home图标
+        "💡" -> "水电"     // ElectricalServices图标
+        "💧" -> "水费"     // WaterDrop图标
+        "🔥" -> "燃气"     // LocalFireDepartment图标
+        "📱" -> "通讯"     // Phone图标
+        "💻" -> "数码"     // PhoneAndroid图标
+        "🛒" -> "购物"     // ShoppingBag图标
+        "🎮" -> "游戏"     // SportsEsports图标
+        
+        // 服饰类 - 使用具体服饰分类
+        "👕" -> "服装"     // Checkroom图标
+        "👗" -> "家电"     // Tv图标
+        "👠" -> "鞋靴"     // ShoppingBag图标
+        "👜" -> "日用品"   // ShoppingCart图标
+        "💄" -> "化妆品"   // Face图标
+        "💍" -> "维修"     // BuildCircle图标
+        "⌚" -> "家具"     // Chair图标
+        "🕶️" -> "眼科"     // Visibility图标
+        
+        // 学习娱乐类 - 使用具体分类
+        "📚" -> "书籍"     // MenuBook图标
+        "✏️" -> "文具"     // Edit图标
+        "🎨" -> "娱乐"     // Movie图标
+        "🎭" -> "摄影"     // CameraAlt图标
+        "🎬" -> "电影"     // Theaters图标
+        "🎵" -> "音乐"     // MusicNote图标
+        "🏃" -> "运动"     // FitnessCenter图标
+        "⚽" -> "装修"     // Handyman图标
+        
+        // 医疗类 - 使用具体医疗分类
+        "💊" -> "药品"     // Medication图标
+        "🏥" -> "医疗"     // LocalHospital图标
+        "💉" -> "体检"     // HealthAndSafety图标
+        "🩺" -> "保健"     // Spa图标
+        "🦷" -> "牙科"     // Healing图标
+        "🏨" -> "物业"     // Apartment图标
+        "✂️" -> "理发"     // ContentCut图标
+        
+        // 礼品其他类 - 使用具体分类
+        "🎁" -> "礼品"     // CardGiftcard图标
+        "🎂" -> "KTV"      // Mic图标
+        "🎉" -> "旅游"     // TravelExplore图标
+        "❤️" -> "捐赠"     // VolunteerActivism图标
+        "💰" -> "其它支出" // MoreHoriz图标
+        "💳" -> "宠物"     // Pets图标
+        "📈" -> "教育"     // School图标
+        "💼" -> "培训"     // Class图标
+        
+        // 特殊处理的复合emoji
+        "\uD83D\uDC68\u200D\u2695\uFE0F" -> "医疗" // 👨‍⚕️ 男医生
+        
+        // 默认
+        else -> "其它支出"
+    }
+}
+
+/**
  * 图标选择器组件
+ * Material模式下使用语义映射显示不同的Material图标
  */
 @Composable
 private fun IconSelector(
     selectedIcon: String,
+    iconDisplayMode: IconDisplayMode,
+    categoryType: Category.Type,
     onIconSelected: (String) -> Unit
 ) {
     val commonIcons = listOf(
@@ -207,7 +325,9 @@ private fun IconSelector(
             Surface(
                 modifier = Modifier
                     .size(36.dp)
-                    .clickable { onIconSelected(icon) },
+                    .clickable { 
+                        onIconSelected(icon) 
+                    },
                 shape = RoundedCornerShape(8.dp),
                 color = if (icon == selectedIcon) {
                     MaterialTheme.colorScheme.primaryContainer
@@ -218,10 +338,27 @@ private fun IconSelector(
                 Box(
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = icon,
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center
+                    // 使用语义名称创建临时Category，实现Material图标多样性映射
+                    val semanticName = getSemanticNameForEmoji(icon)
+                    
+                    val tempCategory = Category(
+                        id = "temp_selector_$icon",
+                        name = semanticName, // 使用语义名称而不是固定的"选择器"
+                        type = categoryType,
+                        icon = icon,
+                        color = "#6200EE",
+                        level = 1,
+                        parentId = null,
+                        isSystem = false,
+                        createdAt = Clock.System.now(),
+                        updatedAt = Clock.System.now()
+                    )
+                    
+                    DynamicCategoryIcon(
+                        category = tempCategory,
+                        iconDisplayMode = iconDisplayMode,
+                        size = 18.dp,
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }

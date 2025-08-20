@@ -37,6 +37,34 @@ interface TransactionRepository {
     fun searchTransactions(query: String): Flow<List<Transaction>>
     
     /**
+     * 根据记账簿获取交易记录
+     */
+    fun getTransactionsByLedger(ledgerId: String): Flow<List<Transaction>>
+    
+    /**
+     * 根据记账簿和日期范围获取交易记录
+     */
+    fun getTransactionsByLedgerAndDateRange(
+        ledgerId: String,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): Flow<List<Transaction>>
+    
+    /**
+     * 根据多个记账簿获取交易记录（联合查询）
+     */
+    fun getTransactionsByLedgers(ledgerIds: List<String>): Flow<List<Transaction>>
+    
+    /**
+     * 获取记账簿的月度收入和支出
+     */
+    suspend fun getMonthlyIncomesAndExpensesByLedger(
+        ledgerId: String,
+        year: Int,
+        month: Int
+    ): BaseResult<Pair<Int, Int>>
+    
+    /**
      * 添加交易记录
      * @return 创建的交易ID
      */
@@ -44,7 +72,10 @@ interface TransactionRepository {
         amountCents: Int,
         categoryId: String,
         note: String?,
-        accountId: String
+        accountId: String,
+        ledgerId: String,
+        transactionDate: kotlinx.datetime.Instant? = null,
+        location: com.ccxiaoji.feature.ledger.domain.model.LocationData? = null
     ): BaseResult<Long>
     
     /**
@@ -67,6 +98,26 @@ interface TransactionRepository {
      * 获取分类统计
      */
     suspend fun getCategoryStatistics(
+        categoryType: String?,
+        startDate: Long,
+        endDate: Long
+    ): BaseResult<List<CategoryStatistic>>
+    
+    /**
+     * 获取指定记账簿的分类统计
+     */
+    suspend fun getCategoryStatisticsByLedger(
+        ledgerId: String,
+        categoryType: String?,
+        startDate: Long,
+        endDate: Long
+    ): BaseResult<List<CategoryStatistic>>
+    
+    /**
+     * 获取多个记账簿的分类统计
+     */
+    suspend fun getCategoryStatisticsByLedgers(
+        ledgerIds: List<String>,
         categoryType: String?,
         startDate: Long,
         endDate: Long
@@ -105,9 +156,49 @@ interface TransactionRepository {
     ): BaseResult<Map<LocalDate, Pair<Int, Int>>>
     
     /**
+     * 获取指定记账簿的每日收支统计
+     */
+    suspend fun getDailyTotalsByLedger(
+        ledgerId: String,
+        startDate: LocalDate, 
+        endDate: LocalDate
+    ): BaseResult<Map<LocalDate, Pair<Int, Int>>>
+    
+    /**
+     * 获取多个记账簿的每日收支统计
+     */
+    suspend fun getDailyTotalsByLedgers(
+        ledgerIds: List<String>,
+        startDate: LocalDate, 
+        endDate: LocalDate
+    ): BaseResult<Map<LocalDate, Pair<Int, Int>>>
+    
+    /**
      * 获取金额最大的交易记录
      */
     suspend fun getTopTransactions(
+        startDate: LocalDate, 
+        endDate: LocalDate, 
+        type: String, 
+        limit: Int = 10
+    ): BaseResult<List<Transaction>>
+    
+    /**
+     * 获取指定记账簿的金额最大交易记录
+     */
+    suspend fun getTopTransactionsByLedger(
+        ledgerId: String,
+        startDate: LocalDate, 
+        endDate: LocalDate, 
+        type: String, 
+        limit: Int = 10
+    ): BaseResult<List<Transaction>>
+    
+    /**
+     * 获取多个记账簿的金额最大交易记录
+     */
+    suspend fun getTopTransactionsByLedgers(
+        ledgerIds: List<String>,
         startDate: LocalDate, 
         endDate: LocalDate, 
         type: String, 
@@ -123,6 +214,24 @@ interface TransactionRepository {
     ): BaseResult<Float>
     
     /**
+     * 计算指定记账簿的储蓄率
+     */
+    suspend fun calculateSavingsRateByLedger(
+        ledgerId: String,
+        startDate: LocalDate, 
+        endDate: LocalDate
+    ): BaseResult<Float>
+    
+    /**
+     * 计算多个记账簿的储蓄率
+     */
+    suspend fun calculateSavingsRateByLedgers(
+        ledgerIds: List<String>,
+        startDate: LocalDate, 
+        endDate: LocalDate
+    ): BaseResult<Float>
+    
+    /**
      * 获取分页的交易记录
      * @param offset 偏移量
      * @param limit 每页数量
@@ -132,6 +241,30 @@ interface TransactionRepository {
      * @return Pair<交易列表, 总数>
      */
     fun getTransactionsPaginated(
+        offset: Int,
+        limit: Int,
+        accountId: String? = null,
+        startDate: Long? = null,
+        endDate: Long? = null
+    ): Flow<BaseResult<Pair<List<Transaction>, Int>>>
+    
+    /**
+     * 获取指定记账簿的分页交易记录
+     */
+    fun getTransactionsPaginatedByLedger(
+        ledgerId: String,
+        offset: Int,
+        limit: Int,
+        accountId: String? = null,
+        startDate: Long? = null,
+        endDate: Long? = null
+    ): Flow<BaseResult<Pair<List<Transaction>, Int>>>
+    
+    /**
+     * 获取多个记账簿的分页交易记录
+     */
+    fun getTransactionsPaginatedByLedgers(
+        ledgerIds: List<String>,
         offset: Int,
         limit: Int,
         accountId: String? = null,

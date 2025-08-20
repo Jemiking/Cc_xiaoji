@@ -12,6 +12,12 @@ import com.ccxiaoji.feature.ledger.domain.repository.BudgetRepository
 import com.ccxiaoji.feature.ledger.domain.repository.CreditCardBillRepository
 import com.ccxiaoji.feature.ledger.data.repository.RecurringTransactionRepository
 import com.ccxiaoji.feature.ledger.data.repository.SavingsGoalRepository
+import com.ccxiaoji.feature.ledger.domain.usecase.ManageLedgerUseCase
+import com.ccxiaoji.feature.ledger.domain.usecase.GetLedgerStatsUseCase
+import com.ccxiaoji.feature.ledger.domain.usecase.LedgerFilteredStatisticsUseCase
+import com.ccxiaoji.feature.ledger.domain.usecase.LedgerFilter
+import com.ccxiaoji.feature.ledger.domain.usecase.LedgerComprehensiveStats
+import com.ccxiaoji.shared.user.api.UserApi
 import com.ccxiaoji.feature.ledger.presentation.screen.account.AccountScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.budget.BudgetScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.category.CategoryManagementScreen
@@ -53,7 +59,11 @@ class LedgerApiImpl @Inject constructor(
     private val creditCardBillRepository: CreditCardBillRepository,
     private val recurringTransactionRepository: RecurringTransactionRepository,
     private val savingsGoalRepository: SavingsGoalRepository,
-    private val ledgerExporter: com.ccxiaoji.feature.ledger.domain.export.LedgerExporter
+    private val ledgerExporter: com.ccxiaoji.feature.ledger.domain.export.LedgerExporter,
+    private val manageLedgerUseCase: ManageLedgerUseCase,
+    private val getLedgerStatsUseCase: GetLedgerStatsUseCase,
+    private val ledgerFilteredStatisticsUseCase: LedgerFilteredStatisticsUseCase,
+    private val userApi: UserApi
 ) : LedgerApi {
     
     // Transaction methods
@@ -107,10 +117,26 @@ class LedgerApiImpl @Inject constructor(
         amountCents: Int,
         categoryId: String,
         note: String?,
-        accountId: String?,
-        createdAt: Long
+        accountId: String,
+        ledgerId: String?,
+        transactionDate: kotlinx.datetime.Instant?,
+        location: LocationData?
     ): Transaction {
-        val result = transactionRepository.addTransaction(amountCents, categoryId, note, accountId ?: "")
+        // 如果没有提供记账簿ID，获取默认记账簿ID
+        val actualLedgerId = ledgerId ?: run {
+            val defaultLedger = manageLedgerUseCase.getDefaultLedger(userApi.getCurrentUserId()).getOrThrow()
+            defaultLedger.id
+        }
+        
+        val result = transactionRepository.addTransaction(
+            amountCents = amountCents,
+            categoryId = categoryId,
+            note = note,
+            accountId = accountId,
+            ledgerId = actualLedgerId,
+            transactionDate = transactionDate,
+            location = location
+        )
         val transactionId = when (result) {
             is BaseResult.Success -> result.data
             is BaseResult.Error -> throw result.exception
@@ -138,11 +164,17 @@ class LedgerApiImpl @Inject constructor(
         // 使用事务批量插入
         transactions.forEachIndexed { index, item ->
             try {
+                // 获取默认记账簿ID
+                val defaultLedger = manageLedgerUseCase.getDefaultLedger(userApi.getCurrentUserId()).getOrThrow()
+                
                 val result = transactionRepository.addTransaction(
                     amountCents = item.amountCents,
                     categoryId = item.categoryId,
                     note = item.note,
-                    accountId = item.accountId
+                    accountId = item.accountId,
+                    ledgerId = defaultLedger.id,
+                    transactionDate = null,
+                    location = null
                 )
                 when (result) {
                     is BaseResult.Success -> results.add(result.data)
@@ -790,6 +822,193 @@ class LedgerApiImpl @Inject constructor(
         throw NotImplementedError("导航功能应在app模块中实现，不应调用此方法")
     }
     
+    override fun navigateToLedgerManagement() {
+        throw NotImplementedError("导航功能应在app模块中实现，不应调用此方法")
+    }
+    
+    override fun navigateToLedgerDetail(ledgerId: String) {
+        throw NotImplementedError("导航功能应在app模块中实现，不应调用此方法")
+    }
+    
+    // Ledger methods implementation
+    override fun getLedgers(userId: String): Flow<List<Ledger>> {
+        return manageLedgerUseCase.getUserLedgers(userId)
+    }
+    
+    override fun getLedgersWithStats(userId: String): Flow<List<LedgerWithStats>> {
+        return getLedgerStatsUseCase.getLedgerWithStats(userId)
+    }
+    
+    override suspend fun getLedgerById(ledgerId: String): Ledger? {
+        return when (val result = manageLedgerUseCase.getLedgerById(ledgerId)) {
+            is BaseResult.Success -> result.data
+            is BaseResult.Error -> null
+        }
+    }
+    
+    override suspend fun createLedger(
+        userId: String,
+        name: String,
+        description: String?,
+        icon: String,
+        color: String
+    ): Ledger {
+        return when (val result = manageLedgerUseCase.createLedger(userId, name, description, icon, color)) {
+            is BaseResult.Success -> result.data
+            is BaseResult.Error -> throw result.exception
+        }
+    }
+    
+    override suspend fun updateLedger(ledger: Ledger) {
+        when (val result = manageLedgerUseCase.updateLedger(ledger)) {
+            is BaseResult.Success -> Unit
+            is BaseResult.Error -> throw result.exception
+        }
+    }
+    
+    override suspend fun deleteLedger(ledgerId: String) {
+        when (val result = manageLedgerUseCase.deleteLedger(ledgerId, userApi.getCurrentUserId())) {
+            is BaseResult.Success -> Unit
+            is BaseResult.Error -> throw result.exception
+        }
+    }
+    
+    // Ledger statistics methods implementation
+    override suspend fun getLedgerStats(userId: String): List<LedgerWithStats> {
+        return getLedgerStatsUseCase.getLedgerWithStats(userId).first()
+    }
+    
+    override suspend fun getLedgerDetailStats(
+        ledgerId: String,
+        startDate: LocalDate?,
+        endDate: LocalDate?
+    ): com.ccxiaoji.feature.ledger.domain.usecase.LedgerDetailStats {
+        return when (val result = getLedgerStatsUseCase.getLedgerDetailStats(ledgerId, startDate, endDate)) {
+            is BaseResult.Success -> result.data
+            is BaseResult.Error -> throw result.exception
+        }
+    }
+    
+    override suspend fun getLedgerMonthlyStats(
+        ledgerId: String,
+        year: Int,
+        month: Int
+    ): com.ccxiaoji.feature.ledger.domain.usecase.MonthlyLedgerStats {
+        return when (val result = getLedgerStatsUseCase.getLedgerMonthlyStats(ledgerId, year, month)) {
+            is BaseResult.Success -> result.data
+            is BaseResult.Error -> throw result.exception
+        }
+    }
+    
+    override suspend fun compareLedgers(
+        ledgerIds: List<String>,
+        startDate: LocalDate?,
+        endDate: LocalDate?
+    ): List<com.ccxiaoji.feature.ledger.domain.usecase.LedgerComparisonStats> {
+        return when (val result = getLedgerStatsUseCase.compareLedgers(ledgerIds, startDate, endDate)) {
+            is BaseResult.Success -> result.data
+            is BaseResult.Error -> throw result.exception
+        }
+    }
+    
+    // Ledger-filtered transaction methods implementation
+    override fun getTransactionsByLedger(ledgerId: String): Flow<List<Transaction>> {
+        return transactionRepository.getTransactionsByLedger(ledgerId)
+    }
+    
+    override fun getTransactionsByLedgerAndDateRange(
+        ledgerId: String,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): Flow<List<Transaction>> {
+        return transactionRepository.getTransactionsByLedgerAndDateRange(ledgerId, startDate, endDate)
+    }
+    
+    override fun getTransactionsByLedgers(ledgerIds: List<String>): Flow<List<Transaction>> {
+        return transactionRepository.getTransactionsByLedgers(ledgerIds)
+    }
+    
+    override suspend fun getMonthlyIncomesAndExpensesByLedger(
+        ledgerId: String,
+        year: Int,
+        month: Int
+    ): Pair<Int, Int> {
+        return when (val result = transactionRepository.getMonthlyIncomesAndExpensesByLedger(ledgerId, year, month)) {
+            is BaseResult.Success -> result.data
+            is BaseResult.Error -> throw result.exception
+        }
+    }
+    
+    // Ledger-filtered statistics methods implementation
+    override suspend fun getCategoryStatisticsByLedger(
+        ledgerFilter: LedgerFilter,
+        categoryType: String?,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): List<CategoryStatistic> {
+        return when (val result = ledgerFilteredStatisticsUseCase.getCategoryStatistics(ledgerFilter, categoryType, startDate, endDate)) {
+            is BaseResult.Success -> result.data
+            is BaseResult.Error -> throw result.exception
+        }
+    }
+    
+    override suspend fun getDailyTotalsByLedger(
+        ledgerFilter: LedgerFilter,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): Map<LocalDate, Pair<Int, Int>> {
+        return when (val result = ledgerFilteredStatisticsUseCase.getDailyTotals(ledgerFilter, startDate, endDate)) {
+            is BaseResult.Success -> result.data
+            is BaseResult.Error -> throw result.exception
+        }
+    }
+    
+    override suspend fun getTopTransactionsByLedger(
+        ledgerFilter: LedgerFilter,
+        startDate: LocalDate,
+        endDate: LocalDate,
+        type: String,
+        limit: Int
+    ): List<Transaction> {
+        return when (val result = ledgerFilteredStatisticsUseCase.getTopTransactions(ledgerFilter, startDate, endDate, type, limit)) {
+            is BaseResult.Success -> result.data
+            is BaseResult.Error -> throw result.exception
+        }
+    }
+    
+    override suspend fun calculateSavingsRateByLedger(
+        ledgerFilter: LedgerFilter,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): Float {
+        return when (val result = ledgerFilteredStatisticsUseCase.calculateSavingsRate(ledgerFilter, startDate, endDate)) {
+            is BaseResult.Success -> result.data
+            is BaseResult.Error -> throw result.exception
+        }
+    }
+    
+    override suspend fun getLedgerComprehensiveStats(
+        ledgerFilter: LedgerFilter,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): LedgerComprehensiveStats {
+        return when (val result = ledgerFilteredStatisticsUseCase.getComprehensiveStats(ledgerFilter, startDate, endDate)) {
+            is BaseResult.Success -> result.data
+            is BaseResult.Error -> throw result.exception
+        }
+    }
+    
+    override fun getTransactionsPaginatedByLedger(
+        ledgerFilter: LedgerFilter,
+        offset: Int,
+        limit: Int,
+        accountId: String?,
+        startDate: Long?,
+        endDate: Long?
+    ): Flow<com.ccxiaoji.common.base.BaseResult<Pair<List<Transaction>, Int>>> {
+        return ledgerFilteredStatisticsUseCase.getTransactionsPaginated(ledgerFilter, offset, limit, accountId, startDate, endDate)
+    }
+    
     // Screen Providers
     @Composable
     override fun getLedgerScreen(navController: NavHostController, accountId: String?) {
@@ -846,27 +1065,27 @@ class LedgerApiImpl @Inject constructor(
         onNavigateToCategory: () -> Unit,
         onNavigateToAccount: () -> Unit,
         onNavigateToBudget: () -> Unit,
-        onNavigateToDataImport: () -> Unit,
-        onNavigateToQianjiImport: () -> Unit,
         onNavigateToRecurring: () -> Unit,
         onNavigateToCurrencySelection: () -> Unit,
         onNavigateToAccountSelection: () -> Unit,
         onNavigateToReminderSettings: () -> Unit,
         onNavigateToHomeDisplaySettings: () -> Unit,
+        onNavigateToUIStyleSettings: () -> Unit,
+        onNavigateToLedgerBookManagement: () -> Unit,
         navController: NavHostController?
     ) {
         LedgerSettingsScreen(
             onNavigateBack = onNavigateBack,
+            onNavigateToLedgerBookManagement = onNavigateToLedgerBookManagement,
             onNavigateToCategoryManagement = onNavigateToCategory,
             onNavigateToAccountManagement = onNavigateToAccount,
             onNavigateToBudgetManagement = onNavigateToBudget,
-            onNavigateToDataImport = onNavigateToDataImport,
-            onNavigateToQianjiImport = onNavigateToQianjiImport,
             onNavigateToRecurringTransactions = onNavigateToRecurring,
             onNavigateToCurrencySelection = onNavigateToCurrencySelection,
             onNavigateToAccountSelection = onNavigateToAccountSelection,
             onNavigateToReminderSettings = onNavigateToReminderSettings,
             onNavigateToHomeDisplaySettings = onNavigateToHomeDisplaySettings,
+            onNavigateToUIStyleSettings = onNavigateToUIStyleSettings,
             navController = navController
         )
     }
@@ -938,6 +1157,8 @@ class LedgerApiImpl @Inject constructor(
         val recurringCount = recurringTransactionRepository.getAllRecurringTransactions().first().size
         // SavingsGoalRepository的方法名是getAllSavingsGoals
         val savingsCount = savingsGoalRepository.getAllSavingsGoals().first().size
+        // 获取记账簿数量
+        val ledgerCount = manageLedgerUseCase.getUserLedgers(userApi.getCurrentUserId()).first().size
         
         // 获取最后修改时间（这里简单使用当前时间，实际应该查询数据库）
         val lastModified = System.currentTimeMillis()
@@ -949,6 +1170,7 @@ class LedgerApiImpl @Inject constructor(
             budgetCount = budgetCount,
             recurringCount = recurringCount,
             savingsCount = savingsCount,
+            ledgerCount = ledgerCount,
             lastModified = lastModified
         )
     }
@@ -964,5 +1186,39 @@ class LedgerApiImpl @Inject constructor(
             accountId = accountId,
             navController = navController
         )
+    }
+    
+    @Composable
+    override fun getLedgerManagementScreen(
+        navController: NavHostController,
+        onNavigateBack: () -> Unit,
+        onNavigateToLedgerDetail: (String) -> Unit,
+        onNavigateToAddLedger: () -> Unit
+    ) {
+        com.ccxiaoji.feature.ledger.presentation.screen.ledgerbook.LedgerBookManagementScreen(
+            onNavigateBack = onNavigateBack
+        )
+    }
+    
+    @Composable
+    override fun getLedgerDetailScreen(
+        ledgerId: String,
+        navController: NavHostController,
+        onNavigateBack: () -> Unit,
+        onNavigateToEditLedger: (String) -> Unit
+    ) {
+        // TODO: 实现记账簿详情界面
+        throw NotImplementedError("记账簿详情界面待实现")
+    }
+    
+    @Composable
+    override fun getLedgerSelectorDialog(
+        availableLedgers: List<Ledger>,
+        selectedLedgerId: String?,
+        onLedgerSelected: (Ledger) -> Unit,
+        onDismiss: () -> Unit
+    ) {
+        // TODO: 实现记账簿选择器对话框
+        throw NotImplementedError("记账簿选择器待实现")
     }
 }

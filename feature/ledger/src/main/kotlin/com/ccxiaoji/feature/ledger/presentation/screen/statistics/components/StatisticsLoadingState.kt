@@ -12,7 +12,9 @@ fun StatisticsLoadingState(
     message: String = "正在加载统计数据..."
 ) {
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight(),
         contentAlignment = Alignment.Center
     ) {
         Column(

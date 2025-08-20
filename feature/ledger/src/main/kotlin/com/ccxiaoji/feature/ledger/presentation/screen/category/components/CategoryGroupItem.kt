@@ -13,12 +13,18 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ccxiaoji.feature.ledger.domain.model.Category
 import com.ccxiaoji.feature.ledger.domain.model.CategoryGroup
+import com.ccxiaoji.feature.ledger.domain.model.IconDisplayMode
+import com.ccxiaoji.feature.ledger.presentation.component.DynamicCategoryIcon
+import com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerUIStyleViewModel
 import com.ccxiaoji.ui.theme.DesignTokens
 
 /**
@@ -37,6 +43,12 @@ fun CategoryGroupItem(
     onDeleteChild: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // 获取图标显示模式状态
+    val uiStyleViewModel: LedgerUIStyleViewModel = hiltViewModel()
+    val uiPreferences by uiStyleViewModel.uiPreferences.collectAsStateWithLifecycle()
+    
+    // 分类组显示逻辑
+    
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -66,9 +78,11 @@ fun CategoryGroupItem(
                 Spacer(modifier = Modifier.width(DesignTokens.Spacing.small))
                 
                 // 分类图标
-                Text(
-                    text = categoryGroup.parent.icon,
-                    style = MaterialTheme.typography.titleLarge
+                DynamicCategoryIcon(
+                    category = categoryGroup.parent,
+                    iconDisplayMode = uiPreferences.iconDisplayMode,
+                    size = 24.dp,
+                    tint = MaterialTheme.colorScheme.onSurface
                 )
                 
                 Spacer(modifier = Modifier.width(DesignTokens.Spacing.small))
@@ -93,7 +107,9 @@ fun CategoryGroupItem(
                 Row {
                     // 添加子分类
                     IconButton(
-                        onClick = onAddChild,
+                        onClick = { 
+                            onAddChild()
+                        },
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
@@ -106,7 +122,9 @@ fun CategoryGroupItem(
                     
                     // 编辑父分类
                     IconButton(
-                        onClick = onEditParent,
+                        onClick = { 
+                            onEditParent()
+                        },
                         modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
@@ -120,7 +138,9 @@ fun CategoryGroupItem(
                     // 删除父分类（如果没有子分类且不是系统分类）
                     if (categoryGroup.children.isEmpty() && !categoryGroup.parent.isSystem) {
                         IconButton(
-                            onClick = onDeleteParent,
+                            onClick = { 
+                                onDeleteParent()
+                            },
                             modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
@@ -162,6 +182,7 @@ fun CategoryGroupItem(
                         categoryGroup.children.forEach { child ->
                             CategoryChildItem(
                                 category = child,
+                                iconDisplayMode = uiPreferences.iconDisplayMode,
                                 onEdit = { onEditChild(child) },
                                 onDelete = { onDeleteChild(child.id) }
                             )
@@ -179,6 +200,7 @@ fun CategoryGroupItem(
 @Composable
 private fun CategoryChildItem(
     category: Category,
+    iconDisplayMode: IconDisplayMode,
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -194,9 +216,11 @@ private fun CategoryChildItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // 分类图标
-        Text(
-            text = category.icon,
-            style = MaterialTheme.typography.titleMedium
+        DynamicCategoryIcon(
+            category = category,
+            iconDisplayMode = iconDisplayMode,
+            size = 20.dp,
+            tint = MaterialTheme.colorScheme.onSurface
         )
         
         Spacer(modifier = Modifier.width(DesignTokens.Spacing.small))

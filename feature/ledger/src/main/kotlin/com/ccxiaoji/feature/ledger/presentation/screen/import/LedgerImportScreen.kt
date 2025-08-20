@@ -24,6 +24,7 @@ import com.ccxiaoji.feature.ledger.presentation.viewmodel.ImportStep
 @Composable
 fun LedgerImportScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToQianjiImport: () -> Unit = {},
     viewModel: ImportViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -61,7 +62,8 @@ fun LedgerImportScreen(
                         isLoading = uiState.isLoading,
                         onFileSelected = { uri ->
                             viewModel.selectFile(uri)
-                        }
+                        },
+                        onNavigateToQianjiImport = onNavigateToQianjiImport
                     )
                 }
                 
@@ -133,7 +135,8 @@ fun LedgerImportScreen(
 @Composable
 fun FileSelectionStep(
     isLoading: Boolean,
-    onFileSelected: (Uri) -> Unit
+    onFileSelected: (Uri) -> Unit,
+    onNavigateToQianjiImport: () -> Unit = {}
 ) {
     // 使用OpenDocument替代GetContent，提供更好的兼容性
     val launcher = rememberLauncherForActivityResult(
@@ -183,7 +186,53 @@ fun FileSelectionStep(
                 textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // 钱迹导入快速切换
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                onClick = onNavigateToQianjiImport
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.SwapHoriz,
+                            contentDescription = null,
+                            modifier = Modifier.size(32.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "导入钱迹数据",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                text = "从钱迹APP导入数据",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            )
+                        }
+                    }
+                    Icon(
+                        Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
             
             Button(
                 onClick = { 

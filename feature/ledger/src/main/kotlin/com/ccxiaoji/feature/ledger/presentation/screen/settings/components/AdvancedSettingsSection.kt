@@ -19,11 +19,10 @@ import com.ccxiaoji.ui.theme.DesignTokens
 fun AdvancedSettingsSection(
     advancedSettings: AdvancedSettings,
     onUpdateAdvancedSettings: (AdvancedSettings) -> Unit,
+    onNavigateToLedgerBookManagement: () -> Unit,
     onNavigateToCategoryManagement: () -> Unit,
     onNavigateToAccountManagement: () -> Unit,
     onNavigateToBudgetManagement: () -> Unit,
-    onNavigateToDataImport: () -> Unit = {},
-    onNavigateToQianjiImport: () -> Unit = {},
     onNavigateToDesignDemo: () -> Unit = {}
 ) {
     ModernCard(
@@ -35,6 +34,16 @@ fun AdvancedSettingsSection(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(modifier = Modifier.padding(DesignTokens.Spacing.medium)) {
+            // 记账簿管理
+            SettingItem(
+                icon = Icons.Default.MenuBook,
+                title = "记账簿管理",
+                subtitle = "管理多个记账簿",
+                onClick = onNavigateToLedgerBookManagement
+            )
+            
+            Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
+            
             // 分类管理
             SettingItem(
                 icon = Icons.Default.Category,
@@ -61,26 +70,6 @@ fun AdvancedSettingsSection(
                 title = "预算管理",
                 subtitle = "设置和管理预算",
                 onClick = onNavigateToBudgetManagement
-            )
-            
-            Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
-            
-            // 数据导入
-            SettingItem(
-                icon = Icons.Default.FileUpload,
-                title = "数据导入",
-                subtitle = "导入CC小记格式数据",
-                onClick = onNavigateToDataImport
-            )
-            
-            Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
-            
-            // 导入钱迹数据
-            SettingItem(
-                icon = Icons.Default.SwapHoriz,
-                title = "导入钱迹数据",
-                subtitle = "从钱迹APP导入数据",
-                onClick = onNavigateToQianjiImport
             )
             
             Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))

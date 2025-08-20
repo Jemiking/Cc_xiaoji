@@ -27,9 +27,15 @@ import com.ccxiaoji.shared.user.data.local.entity.UserEntity
             parentColumns = ["id"],
             childColumns = ["categoryId"],
             onDelete = ForeignKey.RESTRICT
+        ),
+        ForeignKey(
+            entity = LedgerEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["ledgerId"],
+            onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("userId"), Index("accountId"), Index("categoryId"), Index("createdAt"), Index("updatedAt")]
+    indices = [Index("userId"), Index("accountId"), Index("categoryId"), Index("ledgerId"), Index("createdAt"), Index("updatedAt"), Index("transactionDate")]
 )
 data class TransactionEntity(
     @PrimaryKey
@@ -39,8 +45,15 @@ data class TransactionEntity(
     val amountCents: Int,
     val categoryId: String, // 外键引用 categories 表
     val note: String?,
-    val createdAt: Long,
-    val updatedAt: Long,
+    val ledgerId: String, // 外键引用 ledgers 表
+    val createdAt: Long, // 记录创建时间
+    val updatedAt: Long, // 记录修改时间
+    val transactionDate: Long? = null, // 交易实际发生时间
+    val locationLatitude: Double? = null, // 位置纬度
+    val locationLongitude: Double? = null, // 位置经度
+    val locationAddress: String? = null, // 位置地址
+    val locationPrecision: Float? = null, // 位置精度
+    val locationProvider: String? = null, // 位置提供者
     val isDeleted: Boolean = false,
     val syncStatus: SyncStatus = SyncStatus.SYNCED
 )

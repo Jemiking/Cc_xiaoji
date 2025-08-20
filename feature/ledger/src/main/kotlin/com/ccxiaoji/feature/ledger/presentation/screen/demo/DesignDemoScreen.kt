@@ -264,8 +264,11 @@ private fun createMockTransaction(
         categoryId = "demo_category",
         amountCents = (amount * 100).toInt(),
         note = note,
+        ledgerId = "demo_ledger",
         createdAt = transactionTime,
         updatedAt = transactionTime,
+        transactionDate = transactionTime,
+        location = null,
         categoryDetails = CategoryDetails(
             id = "demo_category",
             name = categoryName,

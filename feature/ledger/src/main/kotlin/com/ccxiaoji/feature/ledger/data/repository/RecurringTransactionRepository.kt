@@ -174,9 +174,15 @@ class RecurringTransactionRepository @Inject constructor(
                 amountCents = recurring.amountCents,
                 categoryId = recurring.categoryId,
                 note = recurring.note ?: recurring.name,
+                ledgerId = "default", // 默认记账簿
                 createdAt = now,
                 updatedAt = now,
-                isDeleted = false,
+                transactionDate = now,
+                locationLatitude = null,
+                locationLongitude = null,
+                locationAddress = null,
+                locationPrecision = null,
+                locationProvider = null,
                 syncStatus = SyncStatus.PENDING
             )
             

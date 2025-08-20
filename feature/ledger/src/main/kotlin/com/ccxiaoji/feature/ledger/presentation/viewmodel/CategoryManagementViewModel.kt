@@ -46,10 +46,21 @@ class CategoryManagementViewModel @Inject constructor(
                 val userId = userApi.getCurrentUserId()
                 println("🔧 [CategoryManagementViewModel] 开始加载分类，用户ID: $userId")
                 
-                // 强制重新初始化默认分类
-                println("🔧 [CategoryManagementViewModel] 开始强制重新初始化默认分类")
-                manageCategory.checkAndInitializeDefaultCategories(userId, forceReinitialize = true)
-                println("🔧 [CategoryManagementViewModel] 强制重新初始化完成")
+                // 尝试强制重新初始化默认分类（非关键操作，失败不影响正常加载）
+                try {
+                    println("🔧 [CategoryManagementViewModel] 开始强制重新初始化默认分类")
+                    manageCategory.checkAndInitializeDefaultCategories(userId, forceReinitialize = true)
+                    println("🔧 [CategoryManagementViewModel] 强制重新初始化完成")
+                } catch (initException: Exception) {
+                    println("⚠️ [CategoryManagementViewModel] 强制重新初始化失败，继续正常加载: ${initException.message}")
+                    // 初始化失败，尝试正常的默认分类检查
+                    try {
+                        manageCategory.checkAndInitializeDefaultCategories(userId, forceReinitialize = false)
+                        println("🔧 [CategoryManagementViewModel] 正常分类检查完成")
+                    } catch (normalInitException: Exception) {
+                        println("⚠️ [CategoryManagementViewModel] 正常分类检查也失败，但继续加载现有分类: ${normalInitException.message}")
+                    }
+                }
                 
                 // 清除缓存以确保获取最新数据
                 println("🔧 [CategoryManagementViewModel] 清除分类缓存")
@@ -201,6 +212,7 @@ class CategoryManagementViewModel @Inject constructor(
             val state = _uiState.value
             val userId = userApi.getCurrentUserId()
             
+            
             try {
                 when (state.dialogMode) {
                     DialogMode.ADD_PARENT -> {
@@ -217,35 +229,51 @@ class CategoryManagementViewModel @Inject constructor(
                             return@launch
                         }
                         
+                        val finalIcon = state.dialogIcon.ifEmpty { "📝" }
+                        val finalColor = state.dialogColor.ifEmpty { "#6200EE" }
+                        
+                        
                         manageCategory.createParentCategory(
                             userId = userId,
                             name = state.dialogName,
                             type = state.dialogCategoryType?.name ?: "EXPENSE",
-                            icon = state.dialogIcon.ifEmpty { "📝" },
-                            color = state.dialogColor.ifEmpty { "#6200EE" }
+                            icon = finalIcon,
+                            color = finalColor
                         )
+                        
                     }
                     
                     DialogMode.ADD_CHILD -> {
                         if (state.dialogParentId == null) return@launch
                         
+                        val finalIcon = state.dialogIcon.ifEmpty { "📝" }
+                        val finalColor = state.dialogColor.ifEmpty { null }
+                        
+                        
                         manageCategory.createSubcategory(
                             parentId = state.dialogParentId,
                             name = state.dialogName,
-                            icon = state.dialogIcon.ifEmpty { "📝" },
-                            color = state.dialogColor.ifEmpty { null }
+                            icon = finalIcon,
+                            color = finalColor
                         )
+                        
                     }
                     
                     DialogMode.EDIT_PARENT, DialogMode.EDIT_CHILD -> {
                         val category = state.editingCategory ?: return@launch
                         
+                        val newName = state.dialogName.ifEmpty { null }
+                        val newIcon = state.dialogIcon.ifEmpty { null }
+                        val newColor = state.dialogColor.ifEmpty { null }
+                        
+                        
                         manageCategory.updateCategory(
                             category = category,
-                            newName = state.dialogName.ifEmpty { null },
-                            newIcon = state.dialogIcon.ifEmpty { null },
-                            newColor = state.dialogColor.ifEmpty { null }
+                            newName = newName,
+                            newIcon = newIcon,
+                            newColor = newColor
                         )
+                        
                     }
                 }
                 

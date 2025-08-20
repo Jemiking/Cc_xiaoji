@@ -29,6 +29,7 @@ fun LedgerDrawerContent(
     onNavigateToBudget: () -> Unit,
     onNavigateToSavingsGoal: () -> Unit,
     onNavigateToCreditCard: () -> Unit,
+    onNavigateToLedgerSettings: () -> Unit,
     onCloseDrawer: () -> Unit
 ) {
     Column(
@@ -117,6 +118,19 @@ fun LedgerDrawerContent(
             text = "储蓄目标",
             onClick = {
                 onNavigateToSavingsGoal()
+                onCloseDrawer()
+            }
+        )
+        
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        
+        // 设置
+        DrawerSectionTitle(title = "设置")
+        DrawerMenuItem(
+            icon = Icons.Default.Settings,
+            text = "记账设置",
+            onClick = {
+                onNavigateToLedgerSettings()
                 onCloseDrawer()
             }
         )

@@ -84,6 +84,7 @@ fun CategoryManagementScreen(
                     } else {
                         Category.Type.INCOME
                     }
+                    // 添加父分类
                     viewModel.showAddParentDialog(categoryType)
                 },
                 containerColor = DesignTokens.BrandColors.Ledger

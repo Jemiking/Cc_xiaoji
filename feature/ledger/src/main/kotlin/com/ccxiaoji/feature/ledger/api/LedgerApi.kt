@@ -3,6 +3,8 @@ package com.ccxiaoji.feature.ledger.api
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import com.ccxiaoji.feature.ledger.domain.model.*
+import com.ccxiaoji.feature.ledger.domain.usecase.LedgerFilter
+import com.ccxiaoji.feature.ledger.domain.usecase.LedgerComprehensiveStats
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
 
@@ -27,8 +29,10 @@ interface LedgerApi {
         amountCents: Int,
         categoryId: String,
         note: String?,
-        accountId: String? = null,
-        createdAt: Long = System.currentTimeMillis()
+        accountId: String,
+        ledgerId: String? = null,
+        transactionDate: kotlinx.datetime.Instant? = null,
+        location: LocationData? = null
     ): Transaction
     
     suspend fun updateTransaction(transaction: Transaction)
@@ -74,6 +78,90 @@ interface LedgerApi {
     ): Category
     suspend fun updateCategory(category: Category)
     suspend fun deleteCategory(categoryId: String)
+    
+    // Ledger methods
+    fun getLedgers(userId: String): Flow<List<Ledger>>
+    fun getLedgersWithStats(userId: String): Flow<List<LedgerWithStats>>
+    suspend fun getLedgerById(ledgerId: String): Ledger?
+    suspend fun createLedger(
+        userId: String,
+        name: String,
+        description: String? = null,
+        icon: String = "📖",
+        color: String = "#3A7AFE"
+    ): Ledger
+    suspend fun updateLedger(ledger: Ledger)
+    suspend fun deleteLedger(ledgerId: String)
+    
+    // Ledger statistics methods
+    suspend fun getLedgerStats(userId: String): List<LedgerWithStats>
+    suspend fun getLedgerDetailStats(
+        ledgerId: String,
+        startDate: LocalDate? = null,
+        endDate: LocalDate? = null
+    ): com.ccxiaoji.feature.ledger.domain.usecase.LedgerDetailStats
+    suspend fun getLedgerMonthlyStats(
+        ledgerId: String,
+        year: Int,
+        month: Int
+    ): com.ccxiaoji.feature.ledger.domain.usecase.MonthlyLedgerStats
+    suspend fun compareLedgers(
+        ledgerIds: List<String>,
+        startDate: LocalDate? = null,
+        endDate: LocalDate? = null
+    ): List<com.ccxiaoji.feature.ledger.domain.usecase.LedgerComparisonStats>
+    
+    // Ledger-filtered transaction methods
+    fun getTransactionsByLedger(ledgerId: String): Flow<List<Transaction>>
+    fun getTransactionsByLedgerAndDateRange(
+        ledgerId: String,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): Flow<List<Transaction>>
+    fun getTransactionsByLedgers(ledgerIds: List<String>): Flow<List<Transaction>>
+    suspend fun getMonthlyIncomesAndExpensesByLedger(
+        ledgerId: String,
+        year: Int,
+        month: Int
+    ): Pair<Int, Int>
+    
+    // Ledger-filtered statistics methods
+    suspend fun getCategoryStatisticsByLedger(
+        ledgerFilter: LedgerFilter,
+        categoryType: String? = null,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): List<CategoryStatistic>
+    suspend fun getDailyTotalsByLedger(
+        ledgerFilter: LedgerFilter,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): Map<LocalDate, Pair<Int, Int>>
+    suspend fun getTopTransactionsByLedger(
+        ledgerFilter: LedgerFilter,
+        startDate: LocalDate,
+        endDate: LocalDate,
+        type: String,
+        limit: Int = 10
+    ): List<Transaction>
+    suspend fun calculateSavingsRateByLedger(
+        ledgerFilter: LedgerFilter,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): Float
+    suspend fun getLedgerComprehensiveStats(
+        ledgerFilter: LedgerFilter,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): LedgerComprehensiveStats
+    fun getTransactionsPaginatedByLedger(
+        ledgerFilter: LedgerFilter,
+        offset: Int,
+        limit: Int,
+        accountId: String? = null,
+        startDate: Long? = null,
+        endDate: Long? = null
+    ): Flow<com.ccxiaoji.common.base.BaseResult<Pair<List<Transaction>, Int>>>
     
     // Statistics methods
     suspend fun getDailyTotals(startDate: LocalDate, endDate: LocalDate): Map<LocalDate, Pair<Int, Int>>
@@ -167,6 +255,8 @@ interface LedgerApi {
     fun navigateToSavingsGoals()
     fun navigateToStatistics()
     fun navigateToCreditCardManagement()
+    fun navigateToLedgerManagement()
+    fun navigateToLedgerDetail(ledgerId: String)
     
     // Screen Providers
     @Composable
@@ -199,13 +289,13 @@ interface LedgerApi {
         onNavigateToCategory: () -> Unit,
         onNavigateToAccount: () -> Unit,
         onNavigateToBudget: () -> Unit,
-        onNavigateToDataImport: () -> Unit,
-        onNavigateToQianjiImport: () -> Unit,
         onNavigateToRecurring: () -> Unit,
         onNavigateToCurrencySelection: () -> Unit,
         onNavigateToAccountSelection: () -> Unit,
         onNavigateToReminderSettings: () -> Unit,
         onNavigateToHomeDisplaySettings: () -> Unit,
+        onNavigateToUIStyleSettings: () -> Unit,
+        onNavigateToLedgerBookManagement: () -> Unit,
         navController: NavHostController?
     )
     
@@ -236,6 +326,30 @@ interface LedgerApi {
     
     @Composable
     fun getCreditCardSettingsScreen(accountId: String, navController: NavHostController)
+    
+    @Composable
+    fun getLedgerManagementScreen(
+        navController: NavHostController,
+        onNavigateBack: () -> Unit,
+        onNavigateToLedgerDetail: (String) -> Unit,
+        onNavigateToAddLedger: () -> Unit
+    )
+    
+    @Composable
+    fun getLedgerDetailScreen(
+        ledgerId: String,
+        navController: NavHostController,
+        onNavigateBack: () -> Unit,
+        onNavigateToEditLedger: (String) -> Unit
+    )
+    
+    @Composable
+    fun getLedgerSelectorDialog(
+        availableLedgers: List<Ledger>,
+        selectedLedgerId: String?,
+        onLedgerSelected: (Ledger) -> Unit,
+        onDismiss: () -> Unit
+    )
 }
 
 /**
@@ -277,5 +391,6 @@ data class LedgerExportStats(
     val budgetCount: Int,
     val recurringCount: Int,
     val savingsCount: Int,
+    val ledgerCount: Int,
     val lastModified: Long
 )

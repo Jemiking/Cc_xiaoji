@@ -15,6 +15,7 @@ import com.ccxiaoji.feature.ledger.data.local.dao.RecurringTransactionDao
 import com.ccxiaoji.feature.ledger.data.local.dao.SavingsGoalDao
 import com.ccxiaoji.feature.ledger.data.local.dao.CreditCardPaymentDao
 import com.ccxiaoji.feature.ledger.data.local.dao.CreditCardBillDao
+import com.ccxiaoji.feature.ledger.data.local.dao.LedgerDao
 import com.ccxiaoji.feature.ledger.data.local.entity.AccountEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.CategoryEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.TransactionEntity
@@ -24,6 +25,7 @@ import com.ccxiaoji.feature.ledger.data.local.entity.SavingsGoalEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.SavingsContributionEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.CreditCardPaymentEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.CreditCardBillEntity
+import com.ccxiaoji.feature.ledger.data.local.entity.LedgerEntity
 import com.ccxiaoji.core.database.Converters
 import com.ccxiaoji.shared.user.data.local.dao.UserDao
 import com.ccxiaoji.shared.user.data.local.entity.UserEntity
@@ -64,6 +66,7 @@ import com.ccxiaoji.feature.plan.data.local.entity.TemplateEntity
         SavingsContributionEntity::class,
         CreditCardPaymentEntity::class,
         CreditCardBillEntity::class,
+        LedgerEntity::class,
         ShiftEntity::class,
         ScheduleEntity::class,
         ExportHistoryEntity::class,
@@ -72,7 +75,7 @@ import com.ccxiaoji.feature.plan.data.local.entity.TemplateEntity
         MilestoneEntity::class,
         TemplateEntity::class
     ],
-    version = 9,
+    version = 12,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -81,6 +84,7 @@ abstract class CcDatabase : RoomDatabase() {
     abstract fun accountDao(): AccountDao
     abstract fun categoryDao(): CategoryDao
     abstract fun transactionDao(): TransactionDao
+    abstract fun ledgerDao(): LedgerDao
     abstract fun taskDao(): TaskDao
     abstract fun habitDao(): HabitDao
     abstract fun countdownDao(): CountdownDao

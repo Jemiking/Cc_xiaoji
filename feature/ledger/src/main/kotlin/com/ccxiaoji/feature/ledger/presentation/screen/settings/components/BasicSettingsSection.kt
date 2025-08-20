@@ -23,7 +23,8 @@ fun BasicSettingsSection(
     onNavigateToCurrencySelection: () -> Unit = {},
     onNavigateToAccountSelection: () -> Unit = {},
     onNavigateToReminderSettings: () -> Unit = {},
-    onNavigateToHomeDisplaySettings: () -> Unit = {}
+    onNavigateToHomeDisplaySettings: () -> Unit = {},
+    onNavigateToUIStyleSettings: () -> Unit = {}
 ) {
     ModernCard(
         modifier = Modifier
@@ -62,6 +63,16 @@ fun BasicSettingsSection(
                 title = "首页显示设置",
                 subtitle = "自定义首页显示内容",
                 onClick = onNavigateToHomeDisplaySettings
+            )
+            
+            Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
+            
+            // 界面风格设置
+            SettingItem(
+                icon = Icons.Default.Palette,
+                title = "界面风格",
+                subtitle = "选择记账页面的显示风格",
+                onClick = onNavigateToUIStyleSettings
             )
             
             Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))

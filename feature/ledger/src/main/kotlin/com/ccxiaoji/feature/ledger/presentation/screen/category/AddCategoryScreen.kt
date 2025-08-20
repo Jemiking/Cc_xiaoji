@@ -22,9 +22,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ccxiaoji.feature.ledger.domain.model.Category
+import com.ccxiaoji.feature.ledger.domain.model.IconDisplayMode
+import com.ccxiaoji.feature.ledger.presentation.component.DynamicCategoryIcon
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.AddCategoryViewModel
+import com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerUIStyleViewModel
 import com.ccxiaoji.ui.theme.DesignTokens
+import kotlinx.datetime.Clock
 
 /**
  * 添加分类页面
@@ -121,7 +126,8 @@ fun AddCategoryScreen(
                         IconItem(
                             icon = icon,
                             isSelected = icon == uiState.selectedIcon,
-                            onClick = { viewModel.updateIcon(icon) }
+                            onClick = { viewModel.updateIcon(icon) },
+                            categoryType = type
                         )
                     }
                 }
@@ -183,8 +189,20 @@ fun AddCategoryScreen(
 private fun IconItem(
     icon: String,
     isSelected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    categoryType: Category.Type
 ) {
+    // 获取图标显示模式
+    val uiStyleViewModel: LedgerUIStyleViewModel = hiltViewModel()
+    val uiPreferences by uiStyleViewModel.uiPreferences.collectAsStateWithLifecycle()
+    
+    // 🔧 DEBUG: AddCategoryScreen IconItem
+    println("📝 [AddCategoryScreen] IconItem调试:")
+    println("   - 图标emoji: $icon")
+    println("   - 分类类型: $categoryType")
+    println("   - UI偏好图标模式: ${uiPreferences.iconDisplayMode}")
+    println("   - 是否被选中: $isSelected")
+    
     Surface(
         shape = CircleShape,
         color = if (isSelected) {
@@ -208,10 +226,25 @@ private fun IconItem(
             contentAlignment = Alignment.Center,
             modifier = Modifier.fillMaxSize()
         ) {
-            Text(
-                text = icon,
-                fontSize = 24.sp,
-                textAlign = TextAlign.Center
+            // 创建临时Category对象来支持DynamicCategoryIcon
+            val tempCategory = Category(
+                id = "temp_preview",
+                name = "预览",
+                type = categoryType,
+                icon = icon,
+                color = "#6200EE",
+                level = 1,
+                parentId = null,
+                isSystem = false,
+                createdAt = Clock.System.now(),
+                updatedAt = Clock.System.now()
+            )
+            
+            DynamicCategoryIcon(
+                category = tempCategory,
+                iconDisplayMode = uiPreferences.iconDisplayMode,
+                size = 24.dp,
+                tint = MaterialTheme.colorScheme.onSurface
             )
         }
     }

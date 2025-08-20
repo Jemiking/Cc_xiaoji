@@ -14,11 +14,13 @@ import com.ccxiaoji.ui.theme.DesignTokens
 @Composable
 fun StatisticsEmptyState(
     message: String = "暂无统计数据",
-    description: String = "添加一些交易记录后，这里将显示您的财务统计"
+    description: String = "添加一些交易记录后，这里将显示您的财务统计",
+    onRefresh: (() -> Unit)? = null
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
+            .wrapContentHeight()
             .padding(DesignTokens.Spacing.xxl),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -46,5 +48,26 @@ fun StatisticsEmptyState(
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
             textAlign = TextAlign.Center
         )
+        
+        // 🔍 添加调试刷新按钮
+        onRefresh?.let {
+            Spacer(modifier = Modifier.height(DesignTokens.Spacing.large))
+            
+            OutlinedButton(
+                onClick = it,
+                modifier = Modifier.padding(horizontal = DesignTokens.Spacing.medium)
+            ) {
+                Text("🔍 调试刷新")
+            }
+            
+            Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
+            
+            Text(
+                text = "点击刷新查看详细调试日志",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }

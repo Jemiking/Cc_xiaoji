@@ -15,6 +15,7 @@ import com.ccxiaoji.feature.ledger.data.local.dao.RecurringTransactionDao
 import com.ccxiaoji.feature.ledger.data.local.dao.SavingsGoalDao
 import com.ccxiaoji.feature.ledger.data.local.dao.CreditCardPaymentDao
 import com.ccxiaoji.feature.ledger.data.local.dao.CreditCardBillDao
+import com.ccxiaoji.feature.ledger.data.local.dao.LedgerDao
 import com.ccxiaoji.shared.user.data.local.dao.UserDao
 import com.ccxiaoji.common.constants.DatabaseConstants
 import com.ccxiaoji.core.database.migrations.DatabaseMigrations
@@ -145,6 +146,9 @@ object DatabaseModule {
     
     @Provides
     fun provideCreditCardBillDao(database: CcDatabase): CreditCardBillDao = database.creditCardBillDao()
+    
+    @Provides
+    fun provideLedgerDao(database: CcDatabase): LedgerDao = database.ledgerDao()
     
     @Provides
     fun provideShiftDao(database: CcDatabase): com.ccxiaoji.feature.schedule.data.local.dao.ShiftDao = database.shiftDao()

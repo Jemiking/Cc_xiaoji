@@ -5,11 +5,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ccxiaoji.feature.ledger.domain.model.Category
+import com.ccxiaoji.feature.ledger.presentation.component.DynamicCategoryIcon
+import com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerUIStyleViewModel
 import com.ccxiaoji.ui.theme.DesignTokens
 
 @Composable
@@ -19,6 +24,9 @@ fun CategoryChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // 获取图标显示模式
+    val uiStyleViewModel: LedgerUIStyleViewModel = hiltViewModel()
+    val uiPreferences by uiStyleViewModel.uiPreferences.collectAsStateWithLifecycle()
     // 使用预定义的语义化颜色，而不是解析category.color
     val categoryColor = when {
         category.type == Category.Type.INCOME -> DesignTokens.BrandColors.Success
@@ -52,9 +60,11 @@ fun CategoryChip(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = category.icon,
-                style = MaterialTheme.typography.headlineSmall
+            DynamicCategoryIcon(
+                category = category,
+                iconDisplayMode = uiPreferences.iconDisplayMode,
+                size = 24.dp,
+                tint = if (isSelected) categoryColor else MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(DesignTokens.Spacing.xs))
             Text(

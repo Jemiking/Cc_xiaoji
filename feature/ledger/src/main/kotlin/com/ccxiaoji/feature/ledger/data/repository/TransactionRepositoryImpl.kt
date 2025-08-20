@@ -101,7 +101,10 @@ class TransactionRepositoryImpl @Inject constructor(
         amountCents: Int,
         categoryId: String,
         note: String?,
-        accountId: String
+        accountId: String,
+        ledgerId: String,
+        transactionDate: kotlinx.datetime.Instant?,
+        location: com.ccxiaoji.feature.ledger.domain.model.LocationData?
     ): BaseResult<Long> = safeSuspendCall {
         val transactionId = UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
@@ -119,8 +122,15 @@ class TransactionRepositoryImpl @Inject constructor(
             amountCents = amountCents,
             categoryId = categoryId,
             note = note,
+            ledgerId = ledgerId,
             createdAt = now,
             updatedAt = now,
+            transactionDate = transactionDate?.toEpochMilliseconds() ?: now,
+            locationLatitude = location?.latitude,
+            locationLongitude = location?.longitude,
+            locationAddress = location?.address,
+            locationPrecision = location?.precision,
+            locationProvider = location?.provider,
             syncStatus = SyncStatus.PENDING_SYNC
         )
         
@@ -380,9 +390,319 @@ class TransactionRepositoryImpl @Inject constructor(
         emit(BaseResult.Error(if (e is Exception) e else Exception(e)))
     }
     
+    // 记账簿相关的方法实现
+    override fun getTransactionsByLedger(ledgerId: String): Flow<List<Transaction>> {
+        return transactionDao.getTransactionsByLedger(ledgerId).map { entities ->
+            entities.map { it.toDomainModel() }
+        }
+    }
+    
+    override fun getTransactionsByLedgerAndDateRange(
+        ledgerId: String,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): Flow<List<Transaction>> {
+        val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        
+        return transactionDao.getTransactionsByLedgerAndDateRange(ledgerId, startMillis, endMillis).map { entities ->
+            entities.map { it.toDomainModel() }
+        }
+    }
+    
+    override fun getTransactionsByLedgers(ledgerIds: List<String>): Flow<List<Transaction>> {
+        return transactionDao.getTransactionsByLedgers(ledgerIds).map { entities ->
+            entities.map { it.toDomainModel() }
+        }
+    }
+    
+    override suspend fun getMonthlyIncomesAndExpensesByLedger(
+        ledgerId: String,
+        year: Int,
+        month: Int
+    ): BaseResult<Pair<Int, Int>> {
+        return safeSuspendCall {
+            val startOfMonth = LocalDate(year, month, 1)
+            val endOfMonth = startOfMonth.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
+            val startMillis = startOfMonth.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+            val endMillis = endOfMonth.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+            
+            val result = transactionDao.getMonthlyIncomesAndExpensesByLedger(ledgerId, startMillis, endMillis)
+            Pair(result?.income ?: 0, result?.expense ?: 0)
+        }
+    }
+    
+    // 记账簿筛选的统计方法实现
+    override suspend fun getCategoryStatisticsByLedger(
+        ledgerId: String,
+        categoryType: String?,
+        startDate: Long,
+        endDate: Long
+    ): BaseResult<List<CategoryStatistic>> = safeSuspendCall {
+        val stats = if (categoryType != null) {
+            transactionDao.getCategoryStatisticsByLedgerAndType(ledgerId, startDate, endDate, categoryType)
+        } else {
+            transactionDao.getCategoryStatisticsByLedgerAndType(ledgerId, startDate, endDate, "EXPENSE")
+        }
+        
+        stats.map { dao ->
+            CategoryStatistic(
+                categoryId = dao.categoryId,
+                categoryName = dao.categoryName,
+                categoryIcon = dao.categoryIcon,
+                categoryColor = dao.categoryColor,
+                totalAmount = dao.totalAmount,
+                transactionCount = dao.transactionCount
+            )
+        }
+    }
+    
+    override suspend fun getCategoryStatisticsByLedgers(
+        ledgerIds: List<String>,
+        categoryType: String?,
+        startDate: Long,
+        endDate: Long
+    ): BaseResult<List<CategoryStatistic>> = safeSuspendCall {
+        val stats = if (categoryType != null) {
+            transactionDao.getCategoryStatisticsByLedgersAndType(ledgerIds, startDate, endDate, categoryType)
+        } else {
+            transactionDao.getCategoryStatisticsByLedgersAndType(ledgerIds, startDate, endDate, "EXPENSE")
+        }
+        
+        stats.map { dao ->
+            CategoryStatistic(
+                categoryId = dao.categoryId,
+                categoryName = dao.categoryName,
+                categoryIcon = dao.categoryIcon,
+                categoryColor = dao.categoryColor,
+                totalAmount = dao.totalAmount,
+                transactionCount = dao.transactionCount
+            )
+        }
+    }
+    
+    override suspend fun getDailyTotalsByLedger(
+        ledgerId: String,
+        startDate: LocalDate, 
+        endDate: LocalDate
+    ): BaseResult<Map<LocalDate, Pair<Int, Int>>> = safeSuspendCall {
+        val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        
+        val transactions = transactionDao.getTransactionsByLedgerAndDateRangeSync(ledgerId, startMillis, endMillis)
+        
+        transactions.groupBy { transaction ->
+            Instant.fromEpochMilliseconds(transaction.createdAt)
+                .toLocalDateTime(TimeZone.currentSystemDefault())
+                .date
+        }.mapValues { (_, dayTransactions) ->
+            val income = dayTransactions.filter { 
+                categoryDao.getCategoryById(it.categoryId)?.type == "INCOME" 
+            }.sumOf { it.amountCents }
+            
+            val expense = dayTransactions.filter { 
+                categoryDao.getCategoryById(it.categoryId)?.type == "EXPENSE" 
+            }.sumOf { it.amountCents }
+            
+            income to expense
+        }
+    }
+    
+    override suspend fun getDailyTotalsByLedgers(
+        ledgerIds: List<String>,
+        startDate: LocalDate, 
+        endDate: LocalDate
+    ): BaseResult<Map<LocalDate, Pair<Int, Int>>> = safeSuspendCall {
+        val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        
+        val transactions = transactionDao.getTransactionsByLedgersAndDateRangeSync(ledgerIds, startMillis, endMillis)
+        
+        transactions.groupBy { transaction ->
+            Instant.fromEpochMilliseconds(transaction.createdAt)
+                .toLocalDateTime(TimeZone.currentSystemDefault())
+                .date
+        }.mapValues { (_, dayTransactions) ->
+            val income = dayTransactions.filter { 
+                categoryDao.getCategoryById(it.categoryId)?.type == "INCOME" 
+            }.sumOf { it.amountCents }
+            
+            val expense = dayTransactions.filter { 
+                categoryDao.getCategoryById(it.categoryId)?.type == "EXPENSE" 
+            }.sumOf { it.amountCents }
+            
+            income to expense
+        }
+    }
+    
+    override suspend fun getTopTransactionsByLedger(
+        ledgerId: String,
+        startDate: LocalDate, 
+        endDate: LocalDate, 
+        type: String, 
+        limit: Int
+    ): BaseResult<List<Transaction>> = safeSuspendCall {
+        val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        
+        transactionDao.getTopTransactionsByLedgerAndType(ledgerId, startMillis, endMillis, type, limit)
+            .map { entity ->
+                val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
+                    CategoryDetails(
+                        id = category.id,
+                        name = category.name,
+                        icon = category.icon,
+                        color = category.color,
+                        type = category.type
+                    )
+                }
+                entity.toDomainModel(categoryDetails)
+            }
+    }
+    
+    override suspend fun getTopTransactionsByLedgers(
+        ledgerIds: List<String>,
+        startDate: LocalDate, 
+        endDate: LocalDate, 
+        type: String, 
+        limit: Int
+    ): BaseResult<List<Transaction>> = safeSuspendCall {
+        val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        
+        transactionDao.getTopTransactionsByLedgersAndType(ledgerIds, startMillis, endMillis, type, limit)
+            .map { entity ->
+                val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
+                    CategoryDetails(
+                        id = category.id,
+                        name = category.name,
+                        icon = category.icon,
+                        color = category.color,
+                        type = category.type
+                    )
+                }
+                entity.toDomainModel(categoryDetails)
+            }
+    }
+    
+    override suspend fun calculateSavingsRateByLedger(
+        ledgerId: String,
+        startDate: LocalDate, 
+        endDate: LocalDate
+    ): BaseResult<Float> = safeSuspendCall {
+        val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        
+        val income = transactionDao.getTotalByLedgerAndType(ledgerId, startMillis, endMillis, "INCOME") ?: 0
+        val expense = transactionDao.getTotalByLedgerAndType(ledgerId, startMillis, endMillis, "EXPENSE") ?: 0
+        
+        if (income > 0) {
+            ((income - expense).toFloat() / income) * 100
+        } else {
+            0f
+        }
+    }
+    
+    override suspend fun calculateSavingsRateByLedgers(
+        ledgerIds: List<String>,
+        startDate: LocalDate, 
+        endDate: LocalDate
+    ): BaseResult<Float> = safeSuspendCall {
+        val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        
+        val income = transactionDao.getTotalByLedgersAndType(ledgerIds, startMillis, endMillis, "INCOME") ?: 0
+        val expense = transactionDao.getTotalByLedgersAndType(ledgerIds, startMillis, endMillis, "EXPENSE") ?: 0
+        
+        if (income > 0) {
+            ((income - expense).toFloat() / income) * 100
+        } else {
+            0f
+        }
+    }
+    
+    override fun getTransactionsPaginatedByLedger(
+        ledgerId: String,
+        offset: Int,
+        limit: Int,
+        accountId: String?,
+        startDate: Long?,
+        endDate: Long?
+    ): Flow<BaseResult<Pair<List<Transaction>, Int>>> = flow<BaseResult<Pair<List<Transaction>, Int>>> {
+        val result = transactionDao.getTransactionsPaginatedByLedger(
+            ledgerId = ledgerId,
+            offset = offset,
+            limit = limit,
+            accountId = accountId,
+            startDateMillis = startDate,
+            endDateMillis = endDate
+        )
+        
+        val transactions = result.first.map { entity ->
+            val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
+                CategoryDetails(
+                    id = category.id,
+                    name = category.name,
+                    icon = category.icon,
+                    color = category.color,
+                    type = category.type
+                )
+            }
+            entity.toDomainModel(categoryDetails)
+        }
+        
+        emit(BaseResult.Success(Pair(transactions, result.second)))
+    }.catch { e ->
+        emit(BaseResult.Error(if (e is Exception) e else Exception(e)))
+    }
+    
+    override fun getTransactionsPaginatedByLedgers(
+        ledgerIds: List<String>,
+        offset: Int,
+        limit: Int,
+        accountId: String?,
+        startDate: Long?,
+        endDate: Long?
+    ): Flow<BaseResult<Pair<List<Transaction>, Int>>> = flow<BaseResult<Pair<List<Transaction>, Int>>> {
+        val result = transactionDao.getTransactionsPaginatedByLedgers(
+            ledgerIds = ledgerIds,
+            offset = offset,
+            limit = limit,
+            accountId = accountId,
+            startDateMillis = startDate,
+            endDateMillis = endDate
+        )
+        
+        val transactions = result.first.map { entity ->
+            val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
+                CategoryDetails(
+                    id = category.id,
+                    name = category.name,
+                    icon = category.icon,
+                    color = category.color,
+                    type = category.type
+                )
+            }
+            entity.toDomainModel(categoryDetails)
+        }
+        
+        emit(BaseResult.Success(Pair(transactions, result.second)))
+    }.catch { e ->
+        emit(BaseResult.Error(if (e is Exception) e else Exception(e)))
+    }
 }
 
 private fun TransactionEntity.toDomainModel(categoryDetails: CategoryDetails? = null): Transaction {
+    val location = if (locationLatitude != null && locationLongitude != null) {
+        com.ccxiaoji.feature.ledger.domain.model.LocationData(
+            latitude = locationLatitude,
+            longitude = locationLongitude,
+            address = locationAddress,
+            precision = locationPrecision,
+            provider = locationProvider
+        )
+    } else null
+    
     return Transaction(
         id = id,
         accountId = accountId,
@@ -390,8 +710,11 @@ private fun TransactionEntity.toDomainModel(categoryDetails: CategoryDetails? = 
         categoryId = categoryId,
         categoryDetails = categoryDetails,
         note = note,
+        ledgerId = ledgerId,
         createdAt = Instant.fromEpochMilliseconds(createdAt),
-        updatedAt = Instant.fromEpochMilliseconds(updatedAt)
+        updatedAt = Instant.fromEpochMilliseconds(updatedAt),
+        transactionDate = transactionDate?.let { Instant.fromEpochMilliseconds(it) },
+        location = location
     )
 }
 
@@ -403,8 +726,15 @@ private fun Transaction.toEntity(userId: String, updatedAt: Long): TransactionEn
         amountCents = amountCents,
         categoryId = categoryId,
         note = note,
+        ledgerId = ledgerId,
         createdAt = createdAt.toEpochMilliseconds(),
         updatedAt = updatedAt,
+        transactionDate = transactionDate?.toEpochMilliseconds(),
+        locationLatitude = location?.latitude,
+        locationLongitude = location?.longitude,
+        locationAddress = location?.address,
+        locationPrecision = location?.precision,
+        locationProvider = location?.provider,
         syncStatus = SyncStatus.PENDING_SYNC
     )
 }

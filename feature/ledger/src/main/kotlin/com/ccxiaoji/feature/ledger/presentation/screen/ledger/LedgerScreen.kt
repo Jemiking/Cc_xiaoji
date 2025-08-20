@@ -32,6 +32,10 @@ import com.ccxiaoji.feature.ledger.domain.model.Category
 import com.ccxiaoji.feature.ledger.domain.model.CategoryDetails
 import com.ccxiaoji.feature.ledger.domain.model.Transaction
 import com.ccxiaoji.feature.ledger.presentation.component.AccountSelector
+import com.ccxiaoji.feature.ledger.presentation.component.StyleableMonthlyOverviewBar
+import com.ccxiaoji.feature.ledger.presentation.component.StyleableComponentFactory
+import com.ccxiaoji.feature.ledger.presentation.component.groupByDate
+import com.ccxiaoji.feature.ledger.presentation.component.transactionItems
 import com.ccxiaoji.feature.ledger.presentation.component.ledger.LedgerDrawerContent
 import com.ccxiaoji.feature.ledger.presentation.screen.ledger.components.*
 import com.ccxiaoji.ui.components.FlatButton
@@ -61,12 +65,14 @@ fun LedgerScreen(
     selectionViewModel: SelectionViewModel = hiltViewModel(),
     searchViewModel: SearchViewModel = hiltViewModel(),
     dialogViewModel: DialogViewModel = hiltViewModel(),
-    filterViewModel: FilterViewModel = hiltViewModel()
+    filterViewModel: FilterViewModel = hiltViewModel(),
+    uiStyleViewModel: LedgerUIStyleViewModel = hiltViewModel()
 ) {
     // 收集所有 ViewModels 的状态
     val uiState by viewModel.uiState.collectAsState()
     val selectionState by selectionViewModel.selectionState.collectAsState()
     val searchState by searchViewModel.searchState.collectAsState()
+    val uiStyleState by uiStyleViewModel.uiState.collectAsState()
     val dialogState by dialogViewModel.dialogState.collectAsState()
     val filterState by filterViewModel.filterState.collectAsState()
     
@@ -145,6 +151,9 @@ fun LedgerScreen(
                 },
                 onNavigateToCreditCard = {
                     navController?.navigate(LedgerNavigation.CreditCardRoute)
+                },
+                onNavigateToLedgerSettings = {
+                    navController?.navigate(LedgerNavigation.LedgerSettingsRoute)
                 },
                 onCloseDrawer = {
                     coroutineScope.launch {
@@ -346,12 +355,12 @@ fun LedgerScreen(
                 .padding(paddingValues)
         ) {
             // 本月收支概览条
-            MonthlyOverviewBar(
+            StyleableMonthlyOverviewBar(
                 monthlyIncome = uiState.monthlyIncome,
-                monthlyExpense = uiState.monthlyExpense
+                monthlyExpense = uiState.monthlyExpense,
+                currentStyle = uiStyleState.uiStyle,
+                animationDurationMs = uiStyleState.animationDurationMs
             )
-            
-            HorizontalDivider()
             
             // Budget Alert
             dialogState.budgetAlert?.let { alert ->
@@ -392,32 +401,38 @@ fun LedgerScreen(
                     }
                 }
                 
-                items(displayTransactions) { transaction ->
-                    TransactionItem(
-                        transaction = transaction,
-                        isSelected = selectionState.selectedTransactionIds.contains(transaction.id),
-                        isSelectionMode = selectionState.isSelectionMode,
-                        onEdit = { 
-                            navController?.navigate(
-                                LedgerNavigation.editTransactionRoute(transaction.id)
-                            )
-                        },
-                        onDelete = { viewModel.deleteTransaction(transaction.id) },
-                        onCopy = { viewModel.copyTransaction(transaction) },
-                        onItemClick = {
-                            if (selectionState.isSelectionMode) {
-                                selectionViewModel.toggleTransactionSelection(transaction.id)
-                            } else {
-                                navController?.navigate(
-                                    LedgerNavigation.transactionDetailRoute(transaction.id)
-                                )
-                            }
-                        },
-                        onItemLongClick = {
-                            // Long click handled internally by TransactionItem
+                // 根据UI风格显示交易列表
+                val transactionGroups = displayTransactions.groupByDate()
+                
+                transactionItems(
+                    transactionGroups = transactionGroups,
+                    style = uiStyleState.uiStyle,
+                    isSelectionMode = selectionState.isSelectionMode,
+                    selectedTransactionIds = selectionState.selectedTransactionIds,
+                    onItemClick = { transaction: Transaction ->
+                        if (selectionState.isSelectionMode) {
+                            selectionViewModel.toggleTransactionSelection(transaction.id)
                         }
-                    )
-                }
+                    },
+                    onItemLongClick = { transaction: Transaction ->
+                        if (!selectionState.isSelectionMode) {
+                            selectionViewModel.toggleSelectionMode()
+                            selectionViewModel.toggleTransactionSelection(transaction.id)
+                        }
+                    },
+                    onEdit = { transaction: Transaction ->
+                        navController?.navigate(
+                            LedgerNavigation.editTransactionRoute(transaction.id)
+                        )
+                    },
+                    onDelete = { transaction: Transaction ->
+                        viewModel.deleteTransaction(transaction.id)
+                    },
+                    onCopy = { transaction: Transaction ->
+                        viewModel.copyTransaction(transaction)
+                    },
+                    animationDurationMs = uiStyleState.animationDurationMs
+                )
             }
         }
     }

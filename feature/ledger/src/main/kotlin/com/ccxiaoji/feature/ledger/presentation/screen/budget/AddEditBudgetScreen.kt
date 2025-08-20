@@ -22,12 +22,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.data.local.entity.CategoryEntity
+import com.ccxiaoji.feature.ledger.domain.model.Category
+import com.ccxiaoji.feature.ledger.presentation.component.DynamicCategoryIcon
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.AddEditBudgetViewModel
+import com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerUIStyleViewModel
 import com.ccxiaoji.ui.theme.DesignTokens
+import kotlinx.datetime.Clock
 import com.ccxiaoji.ui.components.FlatButton
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,6 +44,10 @@ fun AddEditBudgetScreen(
 ) {
     val TAG = "AddEditBudgetScreen"
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    // 获取图标显示模式
+    val uiStyleViewModel: LedgerUIStyleViewModel = hiltViewModel()
+    val uiPreferences by uiStyleViewModel.uiPreferences.collectAsStateWithLifecycle()
     
     // 调试初始化信息
     LaunchedEffect(categoryId) {
@@ -338,6 +347,10 @@ private fun CategoryItem(
     category: CategoryEntity,
     onSelect: () -> Unit
 ) {
+    // 获取图标显示模式
+    val uiStyleViewModel: LedgerUIStyleViewModel = hiltViewModel()
+    val uiPreferences by uiStyleViewModel.uiPreferences.collectAsStateWithLifecycle()
+    
     val categoryColor = when (category.type) {
         "INCOME" -> DesignTokens.BrandColors.Success
         "EXPENSE" -> DesignTokens.BrandColors.Error
@@ -364,9 +377,24 @@ private fun CategoryItem(
                     .background(categoryColor.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = category.icon,
-                    style = MaterialTheme.typography.titleMedium
+                // 将CategoryEntity转换为Category对象
+                val categoryModel = Category(
+                    id = category.id,
+                    name = category.name,
+                    type = if (category.type == "INCOME") Category.Type.INCOME else Category.Type.EXPENSE,
+                    icon = category.icon,
+                    color = category.color,
+                    level = category.level,
+                    parentId = category.parentId,
+                    isSystem = category.isSystem,
+                    createdAt = Clock.System.now(),
+                    updatedAt = Clock.System.now()
+                )
+                DynamicCategoryIcon(
+                    category = categoryModel,
+                    iconDisplayMode = uiPreferences.iconDisplayMode,
+                    size = 20.dp,
+                    tint = categoryColor
                 )
             }
             

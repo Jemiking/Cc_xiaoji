@@ -50,12 +50,13 @@ fun CalendarView(
     onMonthNavigate: (Boolean) -> Unit = {}, // true表示下一月，false表示上一月
     weekStartDay: DayOfWeek = DayOfWeek.MONDAY,
     viewMode: CalendarViewMode = CalendarViewMode.COMFORTABLE,
+    debugParams: com.ccxiaoji.feature.schedule.presentation.debug.CalendarViewParams? = null,
     modifier: Modifier = Modifier
 ) {
     android.util.Log.d("CalendarView", "Rendering calendar for: $yearMonth, schedules count: ${schedules.size}")
     
-    // 根据视图模式动态调整尺寸参数
-    val gridSpacing = when (viewMode) {
+    // 根据调试参数或视图模式动态调整尺寸参数
+    val gridSpacing = debugParams?.cellSpacing ?: when (viewMode) {
         CalendarViewMode.COMFORTABLE -> 4.dp   // 舒适模式：较小间距以增大格子
         CalendarViewMode.COMPACT -> 6.dp       // 紧凑模式：标准间距
     }
@@ -86,7 +87,11 @@ fun CalendarView(
         for (day in 1..daysInMonth) {
             days.add(yearMonth.atDay(day))
         }
-        days
+        // 补齐月末空白，使总格子数为7的倍数
+        val total = days.size
+        val pad = (7 - (total % 7)) % 7
+        repeat(pad) { days.add(null) }
+        days.toList()
     }
     
     // 创建日期到排班的映射
@@ -94,6 +99,8 @@ fun CalendarView(
         schedules.associateBy { it.date }
     }
     
+    // 调试代码已清理：保留稳定的网格生成逻辑
+
     // 滑动手势状态
     var totalDragAmount by remember { mutableFloatStateOf(0f) }
     
@@ -143,16 +150,16 @@ fun CalendarView(
                         isToday = date == LocalDate.now(),
                         viewMode = viewMode,
                         onClick = { onDateSelected(date) },
-                        onLongClick = { onDateLongClick(date) }
+                        onLongClick = { onDateLongClick(date) },
+                        debugParams = debugParams
                     )
                 } else {
+                    val height = debugParams?.rowHeight ?: when (viewMode) {
+                        CalendarViewMode.COMFORTABLE -> 56.dp
+                        CalendarViewMode.COMPACT -> 48.dp
+                    }
                     Box(
-                        modifier = Modifier.aspectRatio(
-                            when (viewMode) {
-                                CalendarViewMode.COMFORTABLE -> 0.5f   // 与实际格子保持一致
-                                CalendarViewMode.COMPACT -> 1f
-                            }
-                        )
+                        modifier = Modifier.height(height)
                     )
                 }
             }

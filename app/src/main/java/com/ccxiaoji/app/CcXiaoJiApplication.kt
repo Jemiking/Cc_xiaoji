@@ -13,6 +13,8 @@ import com.ccxiaoji.feature.ledger.data.local.entity.CategoryEntity
 import com.ccxiaoji.common.model.SyncStatus
 import com.ccxiaoji.shared.user.data.local.entity.UserEntity
 import com.ccxiaoji.feature.ledger.data.repository.CategoryRepositoryImpl
+import com.ccxiaoji.feature.ledger.domain.repository.LedgerRepository
+import com.ccxiaoji.common.base.BaseResult
 import com.ccxiaoji.feature.ledger.worker.RecurringTransactionWorker
 import com.ccxiaoji.feature.ledger.worker.creditcard.CreditCardReminderManager
 import com.ccxiaoji.feature.ledger.worker.creditcard.CreditCardBillWorker
@@ -42,6 +44,9 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
     
     @Inject
     lateinit var categoryDao: CategoryDao
+    
+    @Inject
+    lateinit var ledgerRepository: LedgerRepository
     
     @Inject
     lateinit var creditCardReminderManager: CreditCardReminderManager
@@ -106,6 +111,18 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
                         Log.d(TAG, "Default categories created")
                     } else {
                         Log.d(TAG, "Categories already exist: ${existingCategories.size}")
+                    }
+                    
+                    // 初始化默认记账簿
+                    Log.d(TAG, "Ensuring default ledger exists")
+                    val ledgerResult = ledgerRepository.ensureDefaultLedger(defaultUserId)
+                    when (ledgerResult) {
+                        is BaseResult.Success -> {
+                            Log.d(TAG, "Default ledger ensured: ${ledgerResult.data.name}")
+                        }
+                        is BaseResult.Error -> {
+                            Log.e(TAG, "Failed to ensure default ledger: ${ledgerResult.exception.message}")
+                        }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Error during database initialization", e)

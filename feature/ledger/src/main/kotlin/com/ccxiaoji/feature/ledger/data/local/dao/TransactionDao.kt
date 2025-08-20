@@ -99,6 +99,27 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE userId = :userId AND accountId = :accountId AND createdAt >= :startTime AND createdAt < :endTime AND isDeleted = 0 ORDER BY createdAt DESC")
     fun getTransactionsByAccountAndDateRange(userId: String, accountId: String, startTime: Long, endTime: Long): Flow<List<TransactionEntity>>
     
+    // 记账簿相关查询
+    @Query("SELECT * FROM transactions WHERE ledgerId = :ledgerId AND isDeleted = 0 ORDER BY createdAt DESC")
+    fun getTransactionsByLedger(ledgerId: String): Flow<List<TransactionEntity>>
+    
+    @Query("SELECT * FROM transactions WHERE ledgerId = :ledgerId AND createdAt >= :startTime AND createdAt < :endTime AND isDeleted = 0 ORDER BY createdAt DESC")
+    fun getTransactionsByLedgerAndDateRange(ledgerId: String, startTime: Long, endTime: Long): Flow<List<TransactionEntity>>
+    
+    @Query("SELECT * FROM transactions WHERE ledgerId IN (:ledgerIds) AND isDeleted = 0 ORDER BY createdAt DESC")
+    fun getTransactionsByLedgers(ledgerIds: List<String>): Flow<List<TransactionEntity>>
+    
+    @Query("""
+        SELECT SUM(CASE WHEN t.amountCents > 0 THEN t.amountCents ELSE 0 END) as income,
+               ABS(SUM(CASE WHEN t.amountCents < 0 THEN t.amountCents ELSE 0 END)) as expense
+        FROM transactions t
+        WHERE t.ledgerId = :ledgerId 
+        AND t.createdAt >= :startTime 
+        AND t.createdAt < :endTime 
+        AND t.isDeleted = 0
+    """)
+    suspend fun getMonthlyIncomesAndExpensesByLedger(ledgerId: String, startTime: Long, endTime: Long): IncomeExpensePair?
+    
     // 查询账单周期内的交易
     @Query("""
         SELECT * FROM transactions 
@@ -227,6 +248,196 @@ interface TransactionDao {
     // 获取最新的N条交易
     @Query("SELECT * FROM transactions WHERE isDeleted = 0 ORDER BY createdAt DESC LIMIT :limit")
     suspend fun getLatestTransactions(limit: Int): List<TransactionEntity>
+    
+    // 记账簿筛选的统计方法
+    @Query("""
+        SELECT c.id as categoryId, c.name as categoryName, c.icon as categoryIcon, 
+               c.color as categoryColor, SUM(t.amountCents) as totalAmount, COUNT(t.id) as transactionCount
+        FROM transactions t
+        JOIN categories c ON t.categoryId = c.id
+        WHERE t.ledgerId = :ledgerId
+        AND t.createdAt >= :startTime 
+        AND t.createdAt < :endTime 
+        AND t.isDeleted = 0
+        AND c.type = :type
+        GROUP BY c.id
+        ORDER BY totalAmount DESC
+    """)
+    suspend fun getCategoryStatisticsByLedgerAndType(ledgerId: String, startTime: Long, endTime: Long, type: String): List<CategoryStatistic>
+    
+    @Query("""
+        SELECT c.id as categoryId, c.name as categoryName, c.icon as categoryIcon, 
+               c.color as categoryColor, SUM(t.amountCents) as totalAmount, COUNT(t.id) as transactionCount
+        FROM transactions t
+        JOIN categories c ON t.categoryId = c.id
+        WHERE t.ledgerId IN (:ledgerIds)
+        AND t.createdAt >= :startTime 
+        AND t.createdAt < :endTime 
+        AND t.isDeleted = 0
+        AND c.type = :type
+        GROUP BY c.id
+        ORDER BY totalAmount DESC
+    """)
+    suspend fun getCategoryStatisticsByLedgersAndType(ledgerIds: List<String>, startTime: Long, endTime: Long, type: String): List<CategoryStatistic>
+    
+    @Query("SELECT * FROM transactions WHERE ledgerId = :ledgerId AND createdAt >= :startTime AND createdAt < :endTime AND isDeleted = 0 ORDER BY createdAt DESC")
+    suspend fun getTransactionsByLedgerAndDateRangeSync(ledgerId: String, startTime: Long, endTime: Long): List<TransactionEntity>
+    
+    @Query("SELECT * FROM transactions WHERE ledgerId IN (:ledgerIds) AND createdAt >= :startTime AND createdAt < :endTime AND isDeleted = 0 ORDER BY createdAt DESC")
+    suspend fun getTransactionsByLedgersAndDateRangeSync(ledgerIds: List<String>, startTime: Long, endTime: Long): List<TransactionEntity>
+    
+    @Query("""
+        SELECT * FROM transactions t
+        JOIN categories c ON t.categoryId = c.id
+        WHERE t.ledgerId = :ledgerId
+        AND t.createdAt >= :startTime 
+        AND t.createdAt < :endTime 
+        AND t.isDeleted = 0
+        AND c.type = :type
+        ORDER BY t.amountCents DESC
+        LIMIT :limit
+    """)
+    suspend fun getTopTransactionsByLedgerAndType(ledgerId: String, startTime: Long, endTime: Long, type: String, limit: Int): List<TransactionEntity>
+    
+    @Query("""
+        SELECT * FROM transactions t
+        JOIN categories c ON t.categoryId = c.id
+        WHERE t.ledgerId IN (:ledgerIds)
+        AND t.createdAt >= :startTime 
+        AND t.createdAt < :endTime 
+        AND t.isDeleted = 0
+        AND c.type = :type
+        ORDER BY t.amountCents DESC
+        LIMIT :limit
+    """)
+    suspend fun getTopTransactionsByLedgersAndType(ledgerIds: List<String>, startTime: Long, endTime: Long, type: String, limit: Int): List<TransactionEntity>
+    
+    @Query("""
+        SELECT SUM(t.amountCents) FROM transactions t
+        JOIN categories c ON t.categoryId = c.id
+        WHERE t.ledgerId = :ledgerId
+        AND t.createdAt >= :startTime 
+        AND t.createdAt < :endTime 
+        AND t.isDeleted = 0
+        AND c.type = :type
+    """)
+    suspend fun getTotalByLedgerAndType(ledgerId: String, startTime: Long, endTime: Long, type: String): Int?
+    
+    @Query("""
+        SELECT SUM(t.amountCents) FROM transactions t
+        JOIN categories c ON t.categoryId = c.id
+        WHERE t.ledgerId IN (:ledgerIds)
+        AND t.createdAt >= :startTime 
+        AND t.createdAt < :endTime 
+        AND t.isDeleted = 0
+        AND c.type = :type
+    """)
+    suspend fun getTotalByLedgersAndType(ledgerIds: List<String>, startTime: Long, endTime: Long, type: String): Int?
+    
+    // 记账簿筛选的分页查询
+    @Transaction
+    suspend fun getTransactionsPaginatedByLedger(
+        ledgerId: String,
+        offset: Int,
+        limit: Int,
+        accountId: String? = null,
+        startDateMillis: Long? = null,
+        endDateMillis: Long? = null
+    ): Pair<List<TransactionEntity>, Int> {
+        val transactions = getTransactionsPaginatedDataByLedger(
+            ledgerId, offset, limit, accountId, startDateMillis, endDateMillis
+        )
+        
+        val totalCount = getTransactionsPaginatedCountByLedger(
+            ledgerId, accountId, startDateMillis, endDateMillis
+        )
+        
+        return Pair(transactions, totalCount)
+    }
+    
+    @Query("""
+        SELECT * FROM transactions 
+        WHERE ledgerId = :ledgerId AND isDeleted = 0
+        AND (:accountId IS NULL OR accountId = :accountId)
+        AND (:startDateMillis IS NULL OR createdAt >= :startDateMillis)
+        AND (:endDateMillis IS NULL OR createdAt <= :endDateMillis)
+        ORDER BY createdAt DESC 
+        LIMIT :limit OFFSET :offset
+    """)
+    suspend fun getTransactionsPaginatedDataByLedger(
+        ledgerId: String,
+        offset: Int,
+        limit: Int,
+        accountId: String?,
+        startDateMillis: Long?,
+        endDateMillis: Long?
+    ): List<TransactionEntity>
+    
+    @Query("""
+        SELECT COUNT(*) FROM transactions 
+        WHERE ledgerId = :ledgerId AND isDeleted = 0
+        AND (:accountId IS NULL OR accountId = :accountId)
+        AND (:startDateMillis IS NULL OR createdAt >= :startDateMillis)
+        AND (:endDateMillis IS NULL OR createdAt <= :endDateMillis)
+    """)
+    suspend fun getTransactionsPaginatedCountByLedger(
+        ledgerId: String,
+        accountId: String?,
+        startDateMillis: Long?,
+        endDateMillis: Long?
+    ): Int
+    
+    @Transaction
+    suspend fun getTransactionsPaginatedByLedgers(
+        ledgerIds: List<String>,
+        offset: Int,
+        limit: Int,
+        accountId: String? = null,
+        startDateMillis: Long? = null,
+        endDateMillis: Long? = null
+    ): Pair<List<TransactionEntity>, Int> {
+        val transactions = getTransactionsPaginatedDataByLedgers(
+            ledgerIds, offset, limit, accountId, startDateMillis, endDateMillis
+        )
+        
+        val totalCount = getTransactionsPaginatedCountByLedgers(
+            ledgerIds, accountId, startDateMillis, endDateMillis
+        )
+        
+        return Pair(transactions, totalCount)
+    }
+    
+    @Query("""
+        SELECT * FROM transactions 
+        WHERE ledgerId IN (:ledgerIds) AND isDeleted = 0
+        AND (:accountId IS NULL OR accountId = :accountId)
+        AND (:startDateMillis IS NULL OR createdAt >= :startDateMillis)
+        AND (:endDateMillis IS NULL OR createdAt <= :endDateMillis)
+        ORDER BY createdAt DESC 
+        LIMIT :limit OFFSET :offset
+    """)
+    suspend fun getTransactionsPaginatedDataByLedgers(
+        ledgerIds: List<String>,
+        offset: Int,
+        limit: Int,
+        accountId: String?,
+        startDateMillis: Long?,
+        endDateMillis: Long?
+    ): List<TransactionEntity>
+    
+    @Query("""
+        SELECT COUNT(*) FROM transactions 
+        WHERE ledgerId IN (:ledgerIds) AND isDeleted = 0
+        AND (:accountId IS NULL OR accountId = :accountId)
+        AND (:startDateMillis IS NULL OR createdAt >= :startDateMillis)
+        AND (:endDateMillis IS NULL OR createdAt <= :endDateMillis)
+    """)
+    suspend fun getTransactionsPaginatedCountByLedgers(
+        ledgerIds: List<String>,
+        accountId: String?,
+        startDateMillis: Long?,
+        endDateMillis: Long?
+    ): Int
 }
 
 
@@ -237,4 +448,9 @@ data class CategoryStatistic(
     val categoryColor: String,
     val totalAmount: Int,
     val transactionCount: Int
+)
+
+data class IncomeExpensePair(
+    val income: Int,
+    val expense: Int
 )

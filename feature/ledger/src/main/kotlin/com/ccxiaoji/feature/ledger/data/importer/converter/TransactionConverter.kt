@@ -57,8 +57,15 @@ class TransactionConverter @Inject constructor() : DataConverter<TransactionEnti
                 categoryId = categoryName, // 临时使用名称，后续映射
                 amountCents = amountToCents(amount).toInt(),
                 note = note.ifEmpty { null },
+                ledgerId = "default", // 默认记账簿，后续会被正确映射
                 createdAt = transactionDate,
                 updatedAt = System.currentTimeMillis(),
+                transactionDate = transactionDate,
+                locationLatitude = null,
+                locationLongitude = null,
+                locationAddress = null,
+                locationPrecision = null,
+                locationProvider = null,
                 syncStatus = com.ccxiaoji.common.model.SyncStatus.PENDING
             )
             

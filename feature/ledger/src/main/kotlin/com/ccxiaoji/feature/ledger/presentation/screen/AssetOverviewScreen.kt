@@ -10,6 +10,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -133,7 +134,7 @@ fun AssetOverviewScreen(
                     CircularProgressIndicator()
                 }
             } else {
-                Log.d(TAG, "显示主要内容")
+                Log.d(TAG, "显示主要内容（加载完成但可能数据为空）")
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -144,7 +145,7 @@ fun AssetOverviewScreen(
                     // 净资产卡片
                     item {
                         netWorthData?.let { data ->
-                            Log.d(TAG, "渲染NetWorthCard")
+                            Log.d(TAG, "渲染NetWorthCard - 净资产: ${data.netWorth}")
                             NetWorthCard(data)
                         } ?: run {
                             Log.d(TAG, "NetWorthData为null，显示占位符")
@@ -160,7 +161,7 @@ fun AssetOverviewScreen(
                     // 资产分布
                     item {
                         assetDistribution?.let { distribution ->
-                            Log.d(TAG, "渲染AssetDistributionCard")
+                            Log.d(TAG, "渲染AssetDistributionCard - 资产项目: ${distribution.assetItems.size}, 负债项目: ${distribution.liabilityItems.size}")
                             AssetDistributionCard(distribution)
                         } ?: run {
                             Log.d(TAG, "AssetDistribution为null，显示占位符")
@@ -176,7 +177,7 @@ fun AssetOverviewScreen(
                     // 资产趋势
                     item {
                         assetTrend?.let { trend ->
-                            Log.d(TAG, "渲染AssetTrendCard")
+                            Log.d(TAG, "渲染AssetTrendCard - 趋势点: ${trend.netWorthTrend.size}")
                             AssetTrendCard(trend)
                         } ?: run {
                             Log.d(TAG, "AssetTrend为null，显示占位符")
@@ -185,6 +186,31 @@ fun AssetOverviewScreen(
                                     text = "资产趋势数据加载中...",
                                     modifier = Modifier.padding(16.dp)
                                 )
+                            }
+                        }
+                    }
+                    
+                    // 🎯 添加数据状态调试信息
+                    item {
+                        if (!isLoading) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        text = "调试信息",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text("净资产数据: ${if (netWorthData != null) "已加载" else "未加载"}")
+                                    Text("资产分布: ${if (assetDistribution != null) "已加载" else "未加载"}")
+                                    Text("资产趋势: ${if (assetTrend != null) "已加载" else "未加载"}")
+                                    Text("加载状态: ${if (isLoading) "加载中" else "已完成"}")
+                                    netWorthData?.let { 
+                                        Text("净资产值: ${it.netWorth}")
+                                    }
+                                }
                             }
                         }
                     }

@@ -11,9 +11,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.ccxiaoji.feature.ledger.domain.model.Category as DomainCategory
+import com.ccxiaoji.feature.ledger.presentation.component.DynamicCategoryIcon
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.BatchUpdateCategoryViewModel
+import com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerUIStyleViewModel
 import com.ccxiaoji.ui.theme.DesignTokens
+import kotlinx.datetime.Clock
 
 /**
  * 批量修改分类页面
@@ -25,6 +30,10 @@ fun BatchUpdateCategoryScreen(
     viewModel: BatchUpdateCategoryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    
+    // 获取图标显示模式
+    val uiStyleViewModel: LedgerUIStyleViewModel = hiltViewModel()
+    val uiPreferences by uiStyleViewModel.uiPreferences.collectAsStateWithLifecycle()
     
     Scaffold(
         topBar = {
@@ -124,9 +133,12 @@ fun BatchUpdateCategoryScreen(
                                 leadingContent = {
                                     // 分类图标
                                     if (category.icon != null) {
-                                        Text(
-                                            text = category.icon,
-                                            style = MaterialTheme.typography.headlineMedium
+                                        // 直接使用Domain Category对象
+                                        DynamicCategoryIcon(
+                                            category = category,
+                                            iconDisplayMode = uiPreferences.iconDisplayMode,
+                                            size = 24.dp,
+                                            tint = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
                                 },
@@ -177,9 +189,12 @@ fun BatchUpdateCategoryScreen(
                                 leadingContent = {
                                     // 分类图标
                                     if (category.icon != null) {
-                                        Text(
-                                            text = category.icon,
-                                            style = MaterialTheme.typography.headlineMedium
+                                        // 直接使用Domain Category对象
+                                        DynamicCategoryIcon(
+                                            category = category,
+                                            iconDisplayMode = uiPreferences.iconDisplayMode,
+                                            size = 24.dp,
+                                            tint = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
                                 },

@@ -87,6 +87,8 @@ dependencies {
     // Gson
     implementation(libs.gson)
     
+    // 移除Google Play Services依赖，使用Android原生LocationManager
+    
     // DataStore
     implementation(libs.androidx.datastore)
     

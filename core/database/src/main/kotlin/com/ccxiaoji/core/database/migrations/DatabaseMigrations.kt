@@ -22,7 +22,10 @@ object DatabaseMigrations {
             MIGRATION_5_6, // Add plan management tables
             MIGRATION_6_7, // Add additional credit card fields
             MIGRATION_7_8,  // Add userId to savings_goals table
-            MIGRATION_8_9  // Add two-level category support
+            MIGRATION_8_9,  // Add two-level category support
+            MIGRATION_9_10, // Add transaction time and location support
+            MIGRATION_10_11, // Add ledger notebook support
+            MIGRATION_11_12 // Fix transactions table foreign keys and indexes
         )
     }
 }

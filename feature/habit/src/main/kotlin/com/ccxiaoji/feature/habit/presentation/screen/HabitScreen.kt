@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Delete
@@ -13,6 +14,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.CheckCircleOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,7 +29,9 @@ import com.ccxiaoji.feature.habit.R
 import com.ccxiaoji.feature.habit.presentation.viewmodel.HabitViewModel
 import com.ccxiaoji.feature.habit.presentation.components.HabitCard
 import com.ccxiaoji.feature.habit.presentation.components.SimpleHabitStatistics
+import com.ccxiaoji.feature.habit.presentation.screen.demo.HabitRedesignDemo
 import com.ccxiaoji.ui.theme.DesignTokens
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +46,7 @@ fun HabitScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
     val errorState by viewModel.errorState.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    var showDemo by remember { mutableStateOf(false) }
     
     var showStatistics by remember { mutableStateOf(false) }
     
@@ -58,56 +63,105 @@ fun HabitScreen(
         }
     }
     
-    Scaffold(
-        modifier = modifier,
-        topBar = if (showTopBar) {
-            {
-                TopAppBar(
-                    title = { 
-                        Text(
-                            text = stringResource(R.string.nav_habit),
-                            style = MaterialTheme.typography.headlineSmall
-                        )
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            // 与记账模块保持一致的固定宽度
+            ModalDrawerSheet(modifier = Modifier.width(300.dp)) {
+                Text(
+                    text = stringResource(R.string.nav_habit),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                )
+                NavigationDrawerItem(
+                    label = { Text(stringResource(R.string.habit_show_list)) },
+                    selected = !showStatistics && !showDemo,
+                    onClick = {
+                        showDemo = false
+                        showStatistics = false
+                        scope.launch { drawerState.close() }
                     },
-                    actions = {
-                        IconButton(onClick = { showStatistics = !showStatistics }) {
-                            Icon(
-                                imageVector = if (showStatistics) Icons.Default.List else Icons.Default.BarChart,
-                                contentDescription = if (showStatistics) "显示列表" else "显示统计"
-                            )
-                        }
-                    }
+                    icon = { Icon(Icons.Default.List, contentDescription = null) },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+                NavigationDrawerItem(
+                    label = { Text(stringResource(R.string.habit_show_stats)) },
+                    selected = showStatistics && !showDemo,
+                    onClick = {
+                        showDemo = false
+                        showStatistics = true
+                        scope.launch { drawerState.close() }
+                    },
+                    icon = { Icon(Icons.Default.BarChart, contentDescription = null) },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                )
+                NavigationDrawerItem(
+                    label = { Text(stringResource(R.string.habit_demo_preview)) },
+                    selected = showDemo,
+                    onClick = {
+                        showStatistics = false
+                        showDemo = true
+                        scope.launch { drawerState.close() }
+                    },
+                    icon = { Icon(Icons.Default.Visibility, contentDescription = null) },
+                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                 )
             }
-        } else {
-            {} // 空的Composable
-        },
-        floatingActionButton = {
-            if (!showStatistics) {
-                FloatingActionButton(
-                    onClick = onNavigateToAddHabit,
-                    containerColor = DesignTokens.BrandColors.Habit,
-                    elevation = FloatingActionButtonDefaults.elevation(
-                        defaultElevation = 1.dp,
-                        pressedElevation = 2.dp
-                    )
-                ) {
-                    Icon(
-                        Icons.Default.Add, 
-                        contentDescription = stringResource(R.string.add_habit),
-                        tint = androidx.compose.ui.graphics.Color.White
+        }
+    ) {
+        Scaffold(
+            modifier = modifier,
+            topBar = if (showTopBar) {
+                {
+                    TopAppBar(
+                        title = { 
+                            Text(
+                                text = stringResource(R.string.nav_habit),
+                                style = MaterialTheme.typography.headlineSmall
+                            )
+                        },
+                        navigationIcon = {
+                            IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                                Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.habit_open_drawer))
+                            }
+                        },
+                        actions = { /* 右上角功能已迁移至侧边栏 */ }
                     )
                 }
-            }
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
+            } else {
+                {} // 空的Composable
+            },
+            floatingActionButton = {
+                if (!showStatistics && !showDemo) {
+                    FloatingActionButton(
+                        onClick = onNavigateToAddHabit,
+                        containerColor = DesignTokens.BrandColors.Habit,
+                        elevation = FloatingActionButtonDefaults.elevation(
+                            defaultElevation = 1.dp,
+                            pressedElevation = 2.dp
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.Add, 
+                            contentDescription = stringResource(R.string.add_habit),
+                            tint = androidx.compose.ui.graphics.Color.White
+                        )
+                    }
+                }
+            },
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (showStatistics) {
+            if (showDemo) {
+                HabitRedesignDemo(modifier = Modifier.fillMaxSize())
+            } else if (showStatistics) {
                 // 统计视图 - 简化版
                 Box(
                     modifier = Modifier
@@ -125,12 +179,12 @@ fun HabitScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { viewModel.updateSearchQuery(it) },
-                placeholder = { Text("搜索习惯...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "搜索") },
+                placeholder = { Text(stringResource(R.string.habit_search_hint)) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.habit_search)) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { viewModel.updateSearchQuery("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "清除")
+                            Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.habit_clear))
                         }
                     }
                 },
@@ -149,9 +203,9 @@ fun HabitScreen(
                 ) {
                     Text(
                         text = if (searchQuery.isNotEmpty()) {
-                            "没有找到匹配的习惯"
+                            stringResource(R.string.habit_no_match)
                         } else {
-                            "暂无习惯"
+                            stringResource(R.string.habit_no_habits)
                         },
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -175,6 +229,7 @@ fun HabitScreen(
                 }
             }
             }
+        }
         }
     }
 }

@@ -18,7 +18,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ccxiaoji.feature.ledger.domain.model.CategoryWithStats
+import com.ccxiaoji.feature.ledger.presentation.component.DynamicCategoryIcon
+import com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerUIStyleViewModel
 import com.ccxiaoji.ui.components.ModernCard
 import com.ccxiaoji.ui.theme.DesignTokens
 
@@ -30,6 +34,10 @@ fun CategoryItem(
     modifier: Modifier = Modifier
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    
+    // 获取图标显示模式
+    val uiStyleViewModel: LedgerUIStyleViewModel = hiltViewModel()
+    val uiPreferences by uiStyleViewModel.uiPreferences.collectAsStateWithLifecycle()
     
     ModernCard(
         onClick = onEdit,
@@ -62,9 +70,11 @@ fun CategoryItem(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = categoryWithStats.category.icon,
-                        fontSize = 24.sp
+                    DynamicCategoryIcon(
+                        category = categoryWithStats.category,
+                        iconDisplayMode = uiPreferences.iconDisplayMode,
+                        size = 24.dp,
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
                 

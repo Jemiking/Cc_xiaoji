@@ -29,6 +29,7 @@ class RecordCreditCardPaymentUseCase @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val accountRepository: AccountRepository,
     private val categoryRepository: CategoryRepository,
+    private val manageLedgerUseCase: ManageLedgerUseCase,
     private val userApi: UserApi
 ) {
     
@@ -84,11 +85,16 @@ class RecordCreditCardPaymentUseCase @Inject constructor(
                 val creditCardAccount = accountRepository.getAccountById(bill.accountId)
                 
                 // 创建支出交易
+                val defaultLedger = manageLedgerUseCase.getDefaultLedger(userApi.getCurrentUserId()).getOrThrow()
+                
                 val transactionResult = transactionRepository.addTransaction(
                     amountCents = amount,
                     categoryId = paymentCategory.id,
+                    note = note ?: "信用卡还款 - ${creditCardAccount?.name ?: ""}",
                     accountId = fromAccountId,
-                    note = note ?: "信用卡还款 - ${creditCardAccount?.name ?: ""}"
+                    ledgerId = defaultLedger.id,
+                    transactionDate = null,
+                    location = null
                 )
             }
             

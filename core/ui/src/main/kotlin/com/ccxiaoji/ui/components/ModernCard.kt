@@ -20,6 +20,8 @@ fun ModernCard(
     onClick: (() -> Unit)? = null,
     backgroundColor: Color? = null,
     borderColor: Color? = null,
+    // 可选：自定义圆角，未提供则使用设计令牌默认圆角
+    cornerRadius: androidx.compose.ui.unit.Dp? = null,
     colors: CardColors = CardDefaults.cardColors(
         containerColor = backgroundColor ?: MaterialTheme.colorScheme.surface
     ),
@@ -37,7 +39,7 @@ fun ModernCard(
         modifier = modifier,
         onClick = onClick ?: {},
         enabled = onClick != null,
-        shape = RoundedCornerShape(DesignTokens.BorderRadius.medium),
+        shape = RoundedCornerShape(cornerRadius ?: DesignTokens.BorderRadius.medium),
         elevation = elevation,
         colors = colors,
         border = border

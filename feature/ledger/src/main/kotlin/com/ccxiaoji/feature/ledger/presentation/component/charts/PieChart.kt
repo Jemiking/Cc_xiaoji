@@ -2,8 +2,8 @@ package com.ccxiaoji.feature.ledger.presentation.component.charts
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -77,13 +77,13 @@ fun PieChart(
         }
         
         // Legend
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .weight(1f)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(data) { category ->
+            data.forEach { category ->
                 val percentage = (category.totalAmount.toFloat() / total * 100).let { "%.1f".format(it) }
                 
                 Row(

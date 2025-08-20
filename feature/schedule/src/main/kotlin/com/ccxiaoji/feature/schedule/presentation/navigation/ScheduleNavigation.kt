@@ -19,6 +19,7 @@ import com.ccxiaoji.feature.schedule.presentation.screen.WeekStartDayScreen
 import com.ccxiaoji.feature.schedule.presentation.screen.TimePickerScreen
 import com.ccxiaoji.feature.schedule.presentation.screen.CustomTimePickerScreen
 import com.ccxiaoji.feature.schedule.presentation.screen.DatePickerScreen
+import com.ccxiaoji.feature.schedule.presentation.debug.CalendarDebugScreen
 
 /**
  * 导航路由定义
@@ -53,6 +54,12 @@ sealed class Screen(val route: String) {
     object DatePicker : Screen("date_picker/{initialDate}") {
         fun createRoute(initialDate: String?) = "date_picker/${initialDate ?: "null"}"
     }
+    // UI Demo（仅调试使用）
+    object UiDemo : Screen("ui_demo")
+    // 排班调试器
+    object CalendarDebug : Screen("calendar_debug")
+    // 扁平化排班 Demo（无阴影布局）
+    object CalendarFlatDemo : Screen("calendar_flat_demo")
 }
 
 /**
@@ -91,6 +98,14 @@ fun ScheduleNavHost(
                 onNavigateToSettings = {
                     android.util.Log.d("ScheduleNavHost", "Navigate to Settings")
                     navController.navigate(Screen.Settings.route)
+                },
+                onNavigateToDebug = {
+                    android.util.Log.d("ScheduleNavHost", "Navigate to CalendarDebug")
+                    navController.navigate(Screen.CalendarDebug.route)
+                },
+                onNavigateToFlatDemo = {
+                    android.util.Log.d("ScheduleNavHost", "Navigate to CalendarFlatDemo")
+                    navController.navigate(Screen.CalendarFlatDemo.route)
                 },
                 navController = navController
             )
@@ -241,5 +256,30 @@ fun ScheduleNavHost(
                 navController = navController
             )
         }
+
+        // UI Demo 页面
+        composable(Screen.UiDemo.route) {
+            android.util.Log.d("UiDemoNav", "Entering UI Demo route")
+            com.ccxiaoji.feature.schedule.presentation.demo.CalendarUiDemoScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // 排班调试器页面
+        composable(Screen.CalendarDebug.route) {
+            android.util.Log.d("CalendarDebugNav", "Entering Calendar Debug route")
+            CalendarDebugScreen(
+                onNavigateBack = { navController.popBackStack() },
+                navController = navController
+            )
+        }
+
+        // 扁平化排班 Demo 页面
+        composable(Screen.CalendarFlatDemo.route) {
+            com.ccxiaoji.feature.schedule.presentation.demo.FlatScheduleDemoScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
     }
 }

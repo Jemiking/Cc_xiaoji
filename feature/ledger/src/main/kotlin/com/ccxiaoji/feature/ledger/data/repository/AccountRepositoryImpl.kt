@@ -507,8 +507,11 @@ class AccountRepositoryImpl @Inject constructor(
                 categoryId = transactionEntity.categoryId,
                 categoryDetails = null,
                 note = transactionEntity.note,
+                ledgerId = transactionEntity.ledgerId,
                 createdAt = Instant.fromEpochMilliseconds(transactionEntity.createdAt),
-                updatedAt = Instant.fromEpochMilliseconds(transactionEntity.updatedAt)
+                updatedAt = Instant.fromEpochMilliseconds(transactionEntity.updatedAt),
+                transactionDate = transactionEntity.transactionDate?.let { Instant.fromEpochMilliseconds(it) },
+                location = null
             )
         }
     }

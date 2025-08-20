@@ -7,17 +7,23 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.Observer
+import com.ccxiaoji.feature.ledger.domain.model.IconDisplayMode
+import com.ccxiaoji.feature.ledger.domain.repository.LedgerUIPreferencesRepository
+import com.ccxiaoji.feature.ledger.presentation.component.DynamicCategoryIcon
 import com.ccxiaoji.feature.ledger.presentation.screen.settings.components.*
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerSettingsViewModel
 import com.ccxiaoji.ui.components.FlatButton
 import com.ccxiaoji.ui.theme.DesignTokens
 import kotlinx.coroutines.launch
+import com.ccxiaoji.feature.ledger.domain.model.Category
+import kotlinx.datetime.Clock
 
 /**
  * 记账设置页面
@@ -26,16 +32,16 @@ import kotlinx.coroutines.launch
 @Composable
 fun LedgerSettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToLedgerBookManagement: () -> Unit,
     onNavigateToCategoryManagement: () -> Unit,
     onNavigateToAccountManagement: () -> Unit,
     onNavigateToBudgetManagement: () -> Unit,
-    onNavigateToDataImport: () -> Unit = {},
-    onNavigateToQianjiImport: () -> Unit = {},
     onNavigateToRecurringTransactions: () -> Unit,
     onNavigateToCurrencySelection: () -> Unit = {},
     onNavigateToAccountSelection: () -> Unit = {},
     onNavigateToReminderSettings: () -> Unit = {},
     onNavigateToHomeDisplaySettings: () -> Unit = {},
+    onNavigateToUIStyleSettings: () -> Unit = {},
     onNavigateToDesignDemo: () -> Unit = {},
     viewModel: LedgerSettingsViewModel = hiltViewModel(),
     navController: androidx.navigation.NavController? = null
@@ -160,8 +166,14 @@ fun LedgerSettingsScreen(
                     onNavigateToCurrencySelection = onNavigateToCurrencySelection,
                     onNavigateToAccountSelection = onNavigateToAccountSelection,
                     onNavigateToReminderSettings = onNavigateToReminderSettings,
-                    onNavigateToHomeDisplaySettings = onNavigateToHomeDisplaySettings
+                    onNavigateToHomeDisplaySettings = onNavigateToHomeDisplaySettings,
+                    onNavigateToUIStyleSettings = onNavigateToUIStyleSettings
                 )
+            }
+            
+            // 界面设置部分
+            item {
+                IconDisplayModeSection()
             }
             
             // 高级设置部分
@@ -173,11 +185,10 @@ fun LedgerSettingsScreen(
                 AdvancedSettingsSection(
                     advancedSettings = settings.advancedSettings,
                     onUpdateAdvancedSettings = viewModel::updateAdvancedSettings,
+                    onNavigateToLedgerBookManagement = onNavigateToLedgerBookManagement,
                     onNavigateToCategoryManagement = onNavigateToCategoryManagement,
                     onNavigateToAccountManagement = onNavigateToAccountManagement,
                     onNavigateToBudgetManagement = onNavigateToBudgetManagement,
-                    onNavigateToDataImport = onNavigateToDataImport,
-                    onNavigateToQianjiImport = onNavigateToQianjiImport,
                     onNavigateToDesignDemo = { showDesignDemo = true }
                 )
             }
