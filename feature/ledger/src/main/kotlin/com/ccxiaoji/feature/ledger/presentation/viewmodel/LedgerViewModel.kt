@@ -32,6 +32,7 @@ class LedgerViewModel @Inject constructor(
     private val getCategoriesUseCase: GetCategoriesUseCase,
     private val getMonthlyStatsUseCase: GetMonthlyStatsUseCase,
     private val checkBudgetUseCase: CheckBudgetUseCase,
+    private val manageLedgerUseCase: ManageLedgerUseCase,
     private val cacheManager: LedgerCacheManager,
     private val dataMigrationTool: DataMigrationTool,
     private val diagnosticTool: LedgerDiagnosticTool,
@@ -78,6 +79,7 @@ class LedgerViewModel @Inject constructor(
         fixOrphanAccountData()
         loadAccounts()
         loadCategories()
+        loadLedgers()
         loadTransactions()
         loadMonthlySummary()
     }
@@ -344,6 +346,90 @@ class LedgerViewModel @Inject constructor(
         }
     }
     
+    // ==================== 记账簿管理方法 ====================
+    
+    /**
+     * 加载记账簿列表
+     */
+    private fun loadLedgers() = launch {
+        try {
+            _uiState.update { it.copy(isLedgerLoading = true) }
+            
+            val userId = userApi.getCurrentUserId()
+            val result = manageLedgerUseCase.getLedgers(userId)
+            
+            when (result) {
+                is BaseResult.Success -> {
+                    val ledgers = result.data
+                    val defaultLedger = ledgers.find { it.isDefault }
+                    
+                    _uiState.update { 
+                        it.copy(
+                            ledgers = ledgers,
+                            currentLedger = defaultLedger,
+                            selectedLedgerId = defaultLedger?.id,
+                            isLedgerLoading = false
+                        )
+                    }
+                    
+                    android.util.Log.d("LEDGER_DEBUG", "记账簿加载成功: ${ledgers.size}个记账簿")
+                }
+                is BaseResult.Error -> {
+                    android.util.Log.e("LEDGER_DEBUG", "记账簿加载失败: ${result.exception.message}")
+                    _uiState.update { it.copy(isLedgerLoading = false) }
+                }
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("LEDGER_DEBUG", "记账簿加载异常", e)
+            _uiState.update { it.copy(isLedgerLoading = false) }
+        }
+    }
+    
+    /**
+     * 选择记账簿
+     */
+    fun selectLedger(ledgerId: String) = launch {
+        try {
+            val currentLedgers = _uiState.value.ledgers
+            val selectedLedger = currentLedgers.find { it.id == ledgerId }
+            
+            if (selectedLedger != null) {
+                _uiState.update { 
+                    it.copy(
+                        currentLedger = selectedLedger,
+                        selectedLedgerId = ledgerId
+                    )
+                }
+                
+                // 重新加载基于记账簿的数据
+                loadTransactions()
+                loadMonthlySummary()
+                
+                android.util.Log.d("LEDGER_DEBUG", "切换到记账簿: ${selectedLedger.name}")
+            } else {
+                android.util.Log.e("LEDGER_DEBUG", "未找到记账簿: $ledgerId")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("LEDGER_DEBUG", "记账簿选择失败", e)
+        }
+    }
+    
+    /**
+     * 获取当前记账簿
+     */
+    fun getCurrentLedger(): Ledger? {
+        return _uiState.value.currentLedger
+    }
+    
+    /**
+     * 刷新记账簿列表
+     */
+    fun refreshLedgers() {
+        loadLedgers()
+    }
+    
+    // ==================== 账户管理方法 ====================
+    
     fun selectAccount(accountId: String?) {
         _uiState.update { it.copy(selectedAccountId = accountId) }
         loadTransactions()  // 重新加载所有交易
@@ -408,12 +494,25 @@ class LedgerViewModel @Inject constructor(
 
 // UI状态 - 核心数据
 data class LedgerUiState(
+    // 交易相关数据
     val transactions: List<Transaction> = emptyList(),
     val monthlyIncome: Double = 0.0,
     val monthlyExpense: Double = 0.0,
+    
+    // 账户相关数据
     val accounts: List<Account> = emptyList(),
     val selectedAccountId: String? = null,
+    
+    // 分类相关数据
     val categories: List<Category> = emptyList(),
+    
+    // 记账簿相关数据
+    val ledgers: List<Ledger> = emptyList(),
+    val currentLedger: Ledger? = null,
+    val selectedLedgerId: String? = null,
+    val isLedgerLoading: Boolean = false,
+    
+    // 加载状态
     val isLoading: Boolean = false,
     val isLoadingMore: Boolean = false,
     val hasMoreData: Boolean = true

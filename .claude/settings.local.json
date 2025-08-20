@@ -195,7 +195,8 @@
       "Bash(git rm:*)",
       "Bash(git check-ignore:*)",
       "Bash(git reset:*)",
-      "Bash(D:/kotlin/Cc_xiaoji/gradlew.bat :feature:ledger:testDebugUnitTest --tests=\"*LedgerRepositoryImplTest*\" --console=plain)"
+      "Bash(D:/kotlin/Cc_xiaoji/gradlew.bat :feature:ledger:testDebugUnitTest --tests=\"*LedgerRepositoryImplTest*\" --console=plain)",
+      "Bash(D:/kotlin/Cc_xiaoji/gradlew.bat :feature:ledger:compileDebugUnitTestKotlin --console=plain)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",

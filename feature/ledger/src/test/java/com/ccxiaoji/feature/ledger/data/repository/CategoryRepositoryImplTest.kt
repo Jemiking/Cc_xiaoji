@@ -296,8 +296,7 @@ class CategoryRepositoryImplTest {
             )
         )
         
-        every { categoryDao.getCategoriesByTypeWithLevels(testUserId, "EXPENSE"))
-             } returns categories)
+        every { categoryDao.getCategoriesByTypeWithLevels(testUserId, "EXPENSE") } returns categories
         
         // When
         val result = repository.getFrequentCategories(testUserId, "EXPENSE", 2)
@@ -319,10 +318,10 @@ class CategoryRepositoryImplTest {
         
         // Then
         verify { categoryDao.updateCategoryStatus(
-            categoryId),
-            isActive),
+            categoryId,
+            isActive,
             any()
-        )
+        ) }
     }
     
     @Test
@@ -334,6 +333,6 @@ class CategoryRepositoryImplTest {
         repository.incrementCategoryUsage(categoryId)
         
         // Then
-        verify { categoryDao.incrementUsageCount(categoryId)
+        verify { categoryDao.incrementUsageCount(categoryId) }
     }
 }
