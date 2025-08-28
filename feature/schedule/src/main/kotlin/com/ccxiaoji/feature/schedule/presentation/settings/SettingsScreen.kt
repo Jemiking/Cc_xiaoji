@@ -208,6 +208,19 @@ fun SettingsScreen(
                             navController?.navigate(Screen.WeekStartDay.createRoute(uiState.weekStartDayValue.name))
                         }
                     )
+
+                    SettingsItem(
+                        icon = Icons.Default.ViewCompact,
+                        title = stringResource(R.string.schedule_settings_default_compact),
+                        subtitle = stringResource(R.string.schedule_settings_default_compact_subtitle),
+                        onClick = { },
+                        trailing = {
+                            Switch(
+                                checked = uiState.defaultCompactMode,
+                                onCheckedChange = viewModel::updateDefaultCompactMode
+                            )
+                        }
+                    )
                 }
             }
             

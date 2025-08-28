@@ -132,6 +132,7 @@ class FilterViewModel @Inject constructor() : ViewModel() {
                 TransactionType.ALL -> true
                 TransactionType.INCOME -> transaction.categoryDetails?.type == "INCOME"
                 TransactionType.EXPENSE -> transaction.categoryDetails?.type == "EXPENSE"
+                TransactionType.TRANSFER -> transaction.categoryDetails?.type == "TRANSFER"
             }
             
             // 按分类过滤
@@ -349,7 +350,7 @@ data class TransactionFilter(
  * 交易类型
  */
 enum class TransactionType {
-    ALL, INCOME, EXPENSE
+    ALL, INCOME, EXPENSE, TRANSFER
 }
 
 /**

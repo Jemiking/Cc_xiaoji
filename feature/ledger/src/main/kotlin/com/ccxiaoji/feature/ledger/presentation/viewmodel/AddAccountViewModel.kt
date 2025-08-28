@@ -18,7 +18,15 @@ data class AddAccountUiState(
     val error: String? = null,
     val nameError: String? = null,
     val balanceError: String? = null,
-    val canCreate: Boolean = false
+    val canCreate: Boolean = false,
+    
+    // 信用卡专用字段
+    val creditLimit: String = "",
+    val billingDay: String = "",
+    val paymentDueDay: String = "",
+    val creditLimitError: String? = null,
+    val billingDayError: String? = null,
+    val paymentDueDayError: String? = null
 )
 
 @HiltViewModel
@@ -48,8 +56,18 @@ class AddAccountViewModel @Inject constructor(
     
     fun selectType(type: AccountType) {
         _uiState.update {
-            it.copy(selectedType = type)
+            it.copy(
+                selectedType = type,
+                // 切换到非信用卡类型时清空信用卡字段
+                creditLimit = if (type != AccountType.CREDIT_CARD) "" else it.creditLimit,
+                billingDay = if (type != AccountType.CREDIT_CARD) "" else it.billingDay,
+                paymentDueDay = if (type != AccountType.CREDIT_CARD) "" else it.paymentDueDay,
+                creditLimitError = if (type != AccountType.CREDIT_CARD) null else it.creditLimitError,
+                billingDayError = if (type != AccountType.CREDIT_CARD) null else it.billingDayError,
+                paymentDueDayError = if (type != AccountType.CREDIT_CARD) null else it.paymentDueDayError
+            )
         }
+        updateCanCreate()
     }
     
     fun updateBalance(balance: String) {
@@ -72,13 +90,87 @@ class AddAccountViewModel @Inject constructor(
         updateCanCreate()
     }
     
-    private fun updateCanCreate() {
+    // 信用卡字段处理方法
+    fun updateCreditLimit(limit: String) {
+        val filteredLimit = limit.filter { char -> 
+            char.isDigit() || char == '.'
+        }
+        
+        val error = when {
+            filteredLimit.isEmpty() && _uiState.value.selectedType == AccountType.CREDIT_CARD -> "请输入信用额度"
+            filteredLimit.isNotEmpty() && filteredLimit.toDoubleOrNull() == null -> "请输入有效金额"
+            filteredLimit.toDoubleOrNull()?.let { it <= 0 } == true -> "信用额度必须大于0"
+            else -> null
+        }
+        
         _uiState.update {
             it.copy(
-                canCreate = it.name.isNotBlank() && 
-                           it.nameError == null && 
-                           it.balanceError == null &&
-                           it.balance.toDoubleOrNull() != null
+                creditLimit = filteredLimit,
+                creditLimitError = error
+            )
+        }
+        updateCanCreate()
+    }
+    
+    fun updateBillingDay(day: String) {
+        val filteredDay = day.filter { it.isDigit() }
+        
+        val error = when {
+            filteredDay.isEmpty() && _uiState.value.selectedType == AccountType.CREDIT_CARD -> "请输入账单日"
+            filteredDay.toIntOrNull()?.let { it < 1 || it > 28 } == true -> "账单日必须在1-28之间"
+            else -> null
+        }
+        
+        _uiState.update {
+            it.copy(
+                billingDay = filteredDay,
+                billingDayError = error
+            )
+        }
+        updateCanCreate()
+    }
+    
+    fun updatePaymentDueDay(day: String) {
+        val filteredDay = day.filter { it.isDigit() }
+        
+        val error = when {
+            filteredDay.isEmpty() && _uiState.value.selectedType == AccountType.CREDIT_CARD -> "请输入还款日"
+            filteredDay.toIntOrNull()?.let { it < 1 || it > 28 } == true -> "还款日必须在1-28之间"
+            else -> null
+        }
+        
+        _uiState.update {
+            it.copy(
+                paymentDueDay = filteredDay,
+                paymentDueDayError = error
+            )
+        }
+        updateCanCreate()
+    }
+    
+    private fun updateCanCreate() {
+        _uiState.update { state ->
+            val baseValid = state.name.isNotBlank() && 
+                           state.nameError == null && 
+                           state.balanceError == null &&
+                           state.balance.toDoubleOrNull() != null
+            
+            val creditCardValid = if (state.selectedType == AccountType.CREDIT_CARD) {
+                state.creditLimit.isNotEmpty() &&
+                state.billingDay.isNotEmpty() &&
+                state.paymentDueDay.isNotEmpty() &&
+                state.creditLimitError == null &&
+                state.billingDayError == null &&
+                state.paymentDueDayError == null &&
+                state.creditLimit.toDoubleOrNull() != null &&
+                state.billingDay.toIntOrNull() != null &&
+                state.paymentDueDay.toIntOrNull() != null
+            } else {
+                true
+            }
+            
+            state.copy(
+                canCreate = baseValid && creditCardValid
             )
         }
     }
@@ -93,11 +185,28 @@ class AddAccountViewModel @Inject constructor(
                 val state = _uiState.value
                 val balanceCents = ((state.balance.toDoubleOrNull() ?: 0.0) * 100).toLong()
                 
-                val accountId = accountRepository.createAccount(
-                    name = state.name.trim(),
-                    type = state.selectedType,
-                    initialBalanceCents = balanceCents
-                )
+                val accountId = if (state.selectedType == AccountType.CREDIT_CARD) {
+                    // 创建信用卡账户
+                    val creditLimitCents = ((state.creditLimit.toDoubleOrNull() ?: 0.0) * 100).toLong()
+                    val billingDay = state.billingDay.toIntOrNull()
+                    val paymentDueDay = state.paymentDueDay.toIntOrNull()
+                    
+                    accountRepository.createAccount(
+                        name = state.name.trim(),
+                        type = state.selectedType,
+                        initialBalanceCents = balanceCents,
+                        creditLimitCents = creditLimitCents,
+                        billingDay = billingDay,
+                        paymentDueDay = paymentDueDay
+                    )
+                } else {
+                    // 创建普通账户
+                    accountRepository.createAccount(
+                        name = state.name.trim(),
+                        type = state.selectedType,
+                        initialBalanceCents = balanceCents
+                    )
+                }
                 
                 // 如果成功创建账户，accountId 大于 0
                 if (accountId > 0) {

@@ -71,6 +71,7 @@ class FilterTransactionViewModel @Inject constructor(
         return when (type) {
             TransactionType.INCOME -> categories.filter { it.type == Category.Type.INCOME }
             TransactionType.EXPENSE -> categories.filter { it.type == Category.Type.EXPENSE }
+            TransactionType.TRANSFER -> emptyList() // 转账不需要分类
             TransactionType.ALL -> categories
         }
     }
@@ -87,6 +88,7 @@ class FilterTransactionViewModel @Inject constructor(
                         TransactionType.ALL -> true
                         TransactionType.INCOME -> category?.type == Category.Type.INCOME
                         TransactionType.EXPENSE -> category?.type == Category.Type.EXPENSE
+                        TransactionType.TRANSFER -> false // 转账不使用分类
                     }
                 }.toSet()
             )

@@ -53,7 +53,10 @@ dependencies {
     
     // DateTime
     implementation(libs.kotlinx.datetime)
-    
+
+    // DataStore (for configurable listener behavior)
+    implementation(libs.androidx.datastore)
+
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

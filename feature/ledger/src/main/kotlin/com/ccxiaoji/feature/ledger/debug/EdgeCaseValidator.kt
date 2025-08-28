@@ -10,6 +10,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.async
 import android.util.Log
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -92,7 +93,7 @@ class EdgeCaseValidator @Inject constructor(
                 // 触发默认记账簿创建
                 Log.d(DEBUG_TAG, "🔄 尝试触发默认记账簿创建")
                 try {
-                    manageLedgerUseCase.ensureDefaultLedgerExists(userId)
+                    manageLedgerUseCase.ensureDefaultLedger(userId)
                     
                     // 验证创建结果
                     delay(500) // 等待创建完成
@@ -434,12 +435,12 @@ class EdgeCaseValidator @Inject constructor(
             Log.d(DEBUG_TAG, "模拟同时切换到不同记账簿")
             
             // 使用协程模拟并发操作
-            val job1 = kotlinx.coroutines.async {
+            val job1 = validatorScope.async {
                 ledgerUIPreferencesRepository.updateSelectedLedgerId(ledger1.id)
                 "操作1完成"
             }
             
-            val job2 = kotlinx.coroutines.async {
+            val job2 = validatorScope.async {
                 delay(5) // 轻微延迟
                 ledgerUIPreferencesRepository.updateSelectedLedgerId(ledger2.id)
                 "操作2完成"

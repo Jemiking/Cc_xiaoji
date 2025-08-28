@@ -135,12 +135,20 @@ object SelectCategoryRoute {
 }
 
 object AddTransactionRoute {
-    const val route = "add_transaction?accountId={accountId}"
-    fun createRoute(accountId: String? = null) = if (accountId != null) {
-        "add_transaction?accountId=$accountId"
-    } else {
-        "add_transaction"
+    const val route = "add_transaction?accountId={accountId}&transactionId={transactionId}"
+    fun createRoute(accountId: String? = null, transactionId: String? = null): String {
+        val params = mutableListOf<String>()
+        accountId?.let { params.add("accountId=$it") }
+        transactionId?.let { params.add("transactionId=$it") }
+        
+        return if (params.isNotEmpty()) {
+            "add_transaction?${params.joinToString("&")}"
+        } else {
+            "add_transaction"
+        }
     }
+    
+    fun createEditRoute(transactionId: String) = createRoute(transactionId = transactionId)
 }
 
 object EditTransactionRoute {
@@ -194,6 +202,10 @@ object StatisticsRoute {
 
 object AssetOverviewRoute {
     const val route = "asset_overview"
+}
+
+object UnifiedAccountAssetRoute {
+    const val route = "unified_account_asset"
 }
 
 object RecurringTransactionRoute {
@@ -389,6 +401,14 @@ object HomeDisplaySettingsRoute {
     const val route = "home_display_settings"
 }
 
+object PermissionGuideRoute {
+    const val route = "permission_guide"
+}
+
+object AutoLedgerDebugRoute {
+    const val route = "auto_ledger_debug"
+}
+
 object LedgerUIStyleRoute {
     const val route = "ledger_ui_style"
 }
@@ -446,6 +466,15 @@ object QianjiImportRoute {
 // 统一数据导出路由
 object DataExportRoute {
     const val route = "data_export"
+}
+
+// 自动记账设置路由
+object AutoLedgerSettingsRoute {
+    const val route = "auto_ledger_settings"
+}
+
+object AutoLedgerDeveloperSettingsRoute {
+    const val route = "auto_ledger_dev_settings"
 }
 
 // 所有模块定义 - 只包含真正的功能模块

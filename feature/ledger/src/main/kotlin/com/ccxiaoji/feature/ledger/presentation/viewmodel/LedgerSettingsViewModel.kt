@@ -114,6 +114,7 @@ class LedgerSettingsViewModel @Inject constructor(
         return BasicSettings(
             defaultAccountId = preferences[PreferencesKeys.DEFAULT_ACCOUNT_ID],
             defaultCurrency = preferences[PreferencesKeys.DEFAULT_CURRENCY] ?: "CNY",
+            enableTimeRecording = preferences[PreferencesKeys.ENABLE_TIME_RECORDING] ?: false,
             homeDisplaySettings = HomeDisplaySettings(
                 showTodayExpense = preferences[PreferencesKeys.SHOW_TODAY_EXPENSE] ?: true,
                 showTodayIncome = preferences[PreferencesKeys.SHOW_TODAY_INCOME] ?: true,
@@ -156,6 +157,7 @@ class LedgerSettingsViewModel @Inject constructor(
             smartCategorizationThreshold = preferences[PreferencesKeys.SMART_CATEGORIZATION_THRESHOLD] ?: 0.8f,
             enableSmartSuggestions = preferences[PreferencesKeys.ENABLE_SMART_SUGGESTIONS] ?: true,
             enableAutoRecurring = preferences[PreferencesKeys.ENABLE_AUTO_RECURRING] ?: true,
+            enableQuickAddOnPaymentSuccess = preferences[PreferencesKeys.ENABLE_QUICK_ADD_ON_PAYMENT_SUCCESS] ?: true,
             autoCategorizationRules = emptyList() // TODO: 从数据库加载规则
         )
     }
@@ -169,6 +171,7 @@ class LedgerSettingsViewModel @Inject constructor(
                 preferences[PreferencesKeys.DEFAULT_ACCOUNT_ID] = it
             }
             preferences[PreferencesKeys.DEFAULT_CURRENCY] = basicSettings.defaultCurrency
+            preferences[PreferencesKeys.ENABLE_TIME_RECORDING] = basicSettings.enableTimeRecording
             
             // 保存首页显示设置
             preferences[PreferencesKeys.SHOW_TODAY_EXPENSE] = basicSettings.homeDisplaySettings.showTodayExpense
@@ -211,6 +214,7 @@ class LedgerSettingsViewModel @Inject constructor(
             preferences[PreferencesKeys.SMART_CATEGORIZATION_THRESHOLD] = automationSettings.smartCategorizationThreshold
             preferences[PreferencesKeys.ENABLE_SMART_SUGGESTIONS] = automationSettings.enableSmartSuggestions
             preferences[PreferencesKeys.ENABLE_AUTO_RECURRING] = automationSettings.enableAutoRecurring
+            preferences[PreferencesKeys.ENABLE_QUICK_ADD_ON_PAYMENT_SUCCESS] = automationSettings.enableQuickAddOnPaymentSuccess
         }
     }
 
@@ -233,6 +237,7 @@ class LedgerSettingsViewModel @Inject constructor(
         // 基础设置键
         val DEFAULT_ACCOUNT_ID = longPreferencesKey("ledger_default_account_id")
         val DEFAULT_CURRENCY = stringPreferencesKey("ledger_default_currency")
+        val ENABLE_TIME_RECORDING = booleanPreferencesKey("ledger_enable_time_recording")
         
         // 首页显示设置键
         val SHOW_TODAY_EXPENSE = booleanPreferencesKey("ledger_show_today_expense")
@@ -263,6 +268,7 @@ class LedgerSettingsViewModel @Inject constructor(
         val SMART_CATEGORIZATION_THRESHOLD = floatPreferencesKey("ledger_smart_categorization_threshold")
         val ENABLE_SMART_SUGGESTIONS = booleanPreferencesKey("ledger_enable_smart_suggestions")
         val ENABLE_AUTO_RECURRING = booleanPreferencesKey("ledger_enable_auto_recurring")
+        val ENABLE_QUICK_ADD_ON_PAYMENT_SUCCESS = booleanPreferencesKey("ledger_enable_quick_add_on_payment_success")
     }
 }
 

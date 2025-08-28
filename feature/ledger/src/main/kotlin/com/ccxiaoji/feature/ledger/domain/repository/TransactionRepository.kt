@@ -66,7 +66,8 @@ interface TransactionRepository {
     
     /**
      * 添加交易记录
-     * @return 创建的交易ID
+     * @param transactionId 可选的交易ID，如果不提供则自动生成
+     * @return 实际使用的交易ID
      */
     suspend fun addTransaction(
         amountCents: Int,
@@ -75,8 +76,9 @@ interface TransactionRepository {
         accountId: String,
         ledgerId: String,
         transactionDate: kotlinx.datetime.Instant? = null,
-        location: com.ccxiaoji.feature.ledger.domain.model.LocationData? = null
-    ): BaseResult<Long>
+        location: com.ccxiaoji.feature.ledger.domain.model.LocationData? = null,
+        transactionId: String? = null
+    ): BaseResult<String>
     
     /**
      * 更新交易记录

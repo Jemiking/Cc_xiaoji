@@ -16,6 +16,8 @@ import com.ccxiaoji.feature.ledger.data.local.dao.SavingsGoalDao
 import com.ccxiaoji.feature.ledger.data.local.dao.CreditCardPaymentDao
 import com.ccxiaoji.feature.ledger.data.local.dao.CreditCardBillDao
 import com.ccxiaoji.feature.ledger.data.local.dao.LedgerDao
+import com.ccxiaoji.feature.ledger.data.local.dao.LedgerLinkDao
+import com.ccxiaoji.feature.ledger.data.local.dao.TransactionLedgerRelationDao
 import com.ccxiaoji.feature.ledger.data.local.entity.AccountEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.CategoryEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.TransactionEntity
@@ -26,7 +28,13 @@ import com.ccxiaoji.feature.ledger.data.local.entity.SavingsContributionEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.CreditCardPaymentEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.CreditCardBillEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.LedgerEntity
+import com.ccxiaoji.feature.ledger.data.local.entity.LedgerLinkEntity
+import com.ccxiaoji.feature.ledger.data.local.entity.TransactionLedgerRelationEntity
 import com.ccxiaoji.core.database.Converters
+import com.ccxiaoji.core.database.dao.AutoLedgerDedupDao
+import com.ccxiaoji.core.database.dao.AppAutoLedgerConfigDao
+import com.ccxiaoji.core.database.entity.AutoLedgerDedupEntity
+import com.ccxiaoji.core.database.entity.AppAutoLedgerConfigEntity
 import com.ccxiaoji.shared.user.data.local.dao.UserDao
 import com.ccxiaoji.shared.user.data.local.entity.UserEntity
 import com.ccxiaoji.feature.todo.data.local.dao.TaskDao
@@ -67,15 +75,19 @@ import com.ccxiaoji.feature.plan.data.local.entity.TemplateEntity
         CreditCardPaymentEntity::class,
         CreditCardBillEntity::class,
         LedgerEntity::class,
+        LedgerLinkEntity::class,
+        TransactionLedgerRelationEntity::class,
         ShiftEntity::class,
         ScheduleEntity::class,
         ExportHistoryEntity::class,
         PatternEntity::class,
         PlanEntity::class,
         MilestoneEntity::class,
-        TemplateEntity::class
+        TemplateEntity::class,
+        AutoLedgerDedupEntity::class,
+        AppAutoLedgerConfigEntity::class
     ],
-    version = 12,
+    version = 16,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -85,6 +97,8 @@ abstract class CcDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun transactionDao(): TransactionDao
     abstract fun ledgerDao(): LedgerDao
+    abstract fun ledgerLinkDao(): LedgerLinkDao
+    abstract fun transactionLedgerRelationDao(): TransactionLedgerRelationDao
     abstract fun taskDao(): TaskDao
     abstract fun habitDao(): HabitDao
     abstract fun countdownDao(): CountdownDao
@@ -100,4 +114,6 @@ abstract class CcDatabase : RoomDatabase() {
     abstract fun planDao(): PlanDao
     abstract fun milestoneDao(): MilestoneDao
     abstract fun templateDao(): TemplateDao
+    abstract fun autoLedgerDedupDao(): AutoLedgerDedupDao
+    abstract fun appAutoLedgerConfigDao(): AppAutoLedgerConfigDao
 }

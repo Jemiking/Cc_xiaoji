@@ -50,6 +50,16 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
     
     @Inject
     lateinit var creditCardReminderManager: CreditCardReminderManager
+
+    // 自动记账相关：管理器与设置仓库
+    @Inject
+    lateinit var autoLedgerManager: com.ccxiaoji.feature.ledger.domain.usecase.AutoLedgerManager
+
+    @Inject
+    lateinit var autoLedgerSettingsRepository: com.ccxiaoji.feature.ledger.domain.repository.AutoLedgerSettingsRepository
+
+    @Inject
+    lateinit var notificationEventRepository: com.ccxiaoji.shared.notification.api.NotificationEventRepository
     
     override fun onCreate() {
         super.onCreate()
@@ -151,6 +161,25 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
                 CreditCardBillWorker.createPeriodicWorkRequest()
             )
             Log.d(TAG, "CreditCardBillWorker registered")
+
+            // 按总开关决定是否启动自动记账
+            Log.d(TAG, "Observing auto ledger global switch")
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    autoLedgerSettingsRepository.globalEnabled().collect { enabled ->
+                        val connected = try { notificationEventRepository.isListenerConnected() } catch (e: Exception) { false }
+                        if (enabled) {
+                            Log.i("AutoLedger_Settings", "总开关=ON（通知监听连接=$connected），启动/保持自动记账服务运行")
+                            autoLedgerManager.start()
+                        } else {
+                            Log.i("AutoLedger_Settings", "总开关=OFF，停止自动记账服务")
+                            autoLedgerManager.stop()
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("AutoLedger_Settings", "监听自动记账总开关失败: ${e.message}", e)
+                }
+            }
             
             Log.d(TAG, "Application onCreate completed successfully")
         } catch (e: Exception) {

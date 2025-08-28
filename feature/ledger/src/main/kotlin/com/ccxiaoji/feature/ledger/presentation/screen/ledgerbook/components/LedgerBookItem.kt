@@ -31,6 +31,7 @@ fun LedgerBookItem(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onSetDefault: () -> Unit,
+    onManageLinks: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -178,6 +179,17 @@ fun LedgerBookItem(
                                 }
                             )
                         }
+                        
+                        DropdownMenuItem(
+                            text = { Text("联动设置") },
+                            onClick = {
+                                showMenu = false
+                                onManageLinks()
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Default.Link, contentDescription = null)
+                            }
+                        )
                         
                         Divider()
                         

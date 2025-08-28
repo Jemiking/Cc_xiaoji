@@ -61,6 +61,13 @@ class SettingsViewModel @Inject constructor(
                 _uiState.update { it.copy(weekStartDay = weekStartDayText, weekStartDayValue = weekStartDay) }
             }
             .launchIn(viewModelScope)
+
+        // 监听首页默认紧凑模式
+        themeManager.defaultCompactMode
+            .onEach { compact ->
+                _uiState.update { it.copy(defaultCompactMode = compact) }
+            }
+            .launchIn(viewModelScope)
     }
     
     /**
@@ -261,6 +268,14 @@ class SettingsViewModel @Inject constructor(
      * 保存设置
      */
     
+    /**
+     * 更新首页默认紧凑模式
+     */
+    fun updateDefaultCompactMode(compact: Boolean) {
+        viewModelScope.launch {
+            themeManager.setDefaultCompactMode(compact)
+        }
+    }
 }
 
 /**
@@ -282,6 +297,9 @@ data class SettingsUiState(
     // 外观
     val darkMode: DarkModeOption = DarkModeOption.SYSTEM,
     val isDarkMode: Boolean = false,
+
+    // 首页默认视图模式
+    val defaultCompactMode: Boolean = true,
     
     // 应用信息
     val appVersion: String = "1.0",

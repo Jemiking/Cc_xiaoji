@@ -41,6 +41,9 @@ fun DebugCalendarScreen(
     onNavigateToSchedulePattern: () -> Unit = {},
     onNavigateToStatistics: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToDebug: () -> Unit = {},
+    onNavigateToFlatDemo: () -> Unit = {},
+    onNavigateToStyleDemo: () -> Unit = {},
     viewModel: CalendarViewModel = hiltViewModel(),
     navController: NavController? = null
 ) {
@@ -208,6 +211,37 @@ fun DebugCalendarScreen(
                                 },
                                 onClick = {
                                     onNavigateToSettings()
+                                    showDropdownMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(Icons.Default.ViewDay, contentDescription = null)
+                                        Text("扁平Demo")
+                                    }
+                                },
+                                onClick = {
+                                    onNavigateToFlatDemo()
+                                    showDropdownMenu = false
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(Icons.Default.Palette, contentDescription = null)
+                                        Text("设计风格Demo")
+                                    }
+                                },
+                                onClick = {
+                                    android.util.Log.d("ScheduleNavHost", "DebugCalendarScreen StyleDemo button clicked!")
+                                    onNavigateToStyleDemo()
                                     showDropdownMenu = false
                                 }
                             )

@@ -284,6 +284,9 @@ interface LedgerApi {
     fun getAssetOverviewScreen(onNavigateBack: () -> Unit)
     
     @Composable
+    fun getUnifiedAccountAssetScreen(onNavigateBack: () -> Unit, navController: NavHostController?)
+    
+    @Composable
     fun getLedgerSettingsScreen(
         onNavigateBack: () -> Unit,
         onNavigateToCategory: () -> Unit,
@@ -296,6 +299,9 @@ interface LedgerApi {
         onNavigateToHomeDisplaySettings: () -> Unit,
         onNavigateToUIStyleSettings: () -> Unit,
         onNavigateToLedgerBookManagement: () -> Unit,
+        onNavigateToPermissionGuide: () -> Unit,
+        onNavigateToAutoLedgerDebug: () -> Unit,
+        onNavigateToAutoLedgerSettings: () -> Unit,
         navController: NavHostController?
     )
     
@@ -350,6 +356,11 @@ interface LedgerApi {
         onLedgerSelected: (Ledger) -> Unit,
         onDismiss: () -> Unit
     )
+    
+    @Composable
+    fun getAutoLedgerDebugScreen(
+        navController: NavHostController
+    )
 }
 
 /**
@@ -369,7 +380,7 @@ data class TransactionBatchItem(
 data class BatchInsertResult(
     val successCount: Int,
     val failedCount: Int,
-    val insertedIds: List<Long>,
+    val insertedIds: List<String>, // 改为String类型以支持新的transaction ID格式
     val errors: List<BatchInsertError>
 )
 

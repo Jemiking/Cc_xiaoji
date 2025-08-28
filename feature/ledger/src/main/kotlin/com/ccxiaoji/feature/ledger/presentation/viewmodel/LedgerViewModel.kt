@@ -8,15 +8,7 @@ import com.ccxiaoji.feature.ledger.domain.usecase.*
 import com.ccxiaoji.feature.ledger.domain.repository.TransactionRepository
 import com.ccxiaoji.feature.ledger.domain.repository.LedgerUIPreferencesRepository
 import com.ccxiaoji.feature.ledger.data.cache.LedgerCacheManager
-import com.ccxiaoji.feature.ledger.data.migration.DataMigrationTool
-import com.ccxiaoji.feature.ledger.data.diagnostic.LedgerDiagnosticTool
-import com.ccxiaoji.feature.ledger.data.diagnostic.ImportMappingAnalyzer
-import com.ccxiaoji.feature.ledger.data.diagnostic.DefaultAccountAnalyzer
-import com.ccxiaoji.feature.ledger.data.repair.DataRepairTool
-import com.ccxiaoji.feature.ledger.data.diagnostic.TransactionFlowTracker
-import com.ccxiaoji.feature.ledger.data.local.dao.TransactionDao
-import com.ccxiaoji.feature.ledger.debug.RuntimeDataFlowValidator
-import com.ccxiaoji.feature.ledger.debug.DefaultLedgerMechanismValidator
+import com.ccxiaoji.feature.ledger.domain.service.DefaultLedgerInitializationService
 import com.ccxiaoji.shared.user.api.UserApi
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -40,16 +32,8 @@ class LedgerViewModel @Inject constructor(
     private val transactionRepository: TransactionRepository,
     private val ledgerUIPreferencesRepository: LedgerUIPreferencesRepository,
     private val cacheManager: LedgerCacheManager,
-    private val dataMigrationTool: DataMigrationTool,
-    private val diagnosticTool: LedgerDiagnosticTool,
-    private val mappingAnalyzer: ImportMappingAnalyzer,
-    private val defaultAccountAnalyzer: DefaultAccountAnalyzer,
-    private val dataRepairTool: DataRepairTool,
-    private val flowTracker: TransactionFlowTracker,
-    private val transactionDao: TransactionDao,
     private val userApi: UserApi,
-    private val runtimeValidator: RuntimeDataFlowValidator,
-    private val defaultLedgerValidator: DefaultLedgerMechanismValidator
+    private val defaultLedgerInitService: DefaultLedgerInitializationService
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(LedgerUiState())
     val uiState = _uiState.asStateFlow()
@@ -61,63 +45,14 @@ class LedgerViewModel @Inject constructor(
     private var isLoadingMore = false
     
     init {
-        // 首次启动时运行诊断和修复
-        viewModelScope.launch {
-            val userId = userApi.getCurrentUserId()
-            // 运行完整诊断
-            android.util.Log.e("LEDGER_DEBUG", "运行启动诊断...")
-            diagnosticTool.runFullDiagnostic(userId)
-            
-            // 运行映射错误分析
-            android.util.Log.e("LEDGER_DEBUG", "运行映射错误分析...")
-            val report = mappingAnalyzer.analyzeMappingErrors(userId)
-            
-            // 分析默认账户数据
-            android.util.Log.e("LEDGER_DEBUG", "分析默认账户数据...")
-            defaultAccountAnalyzer.analyzeDefaultAccount(userId)
-            
-            // 如果发现问题，自动执行修复
-            if (report.transferPartyAccounts.isNotEmpty()) {
-                android.util.Log.e("LEDGER_DEBUG", "发现${report.transferPartyAccounts.size}个问题账户，自动执行修复...")
-                dataRepairTool.executeRepair(userId)
-            }
-        }
-        
-        // 自动修复数据
-        fixOrphanAccountData()
         loadAccounts()
         loadCategories()
         loadLedgers()
         loadTransactions()
         loadMonthlySummary()
-        
-        // 初始化完成后进行数据流验证（仅在调试模式下）
-        if (android.util.Log.isLoggable("LEDGER_DATAFLOW_DEBUG", android.util.Log.DEBUG)) {
-            viewModelScope.launch {
-                kotlinx.coroutines.delay(2000) // 等待初始化完成
-                runtimeValidator.executeFullValidation(this@LedgerViewModel)
-            }
-        }
     }
     
-    /**
-     * 修复孤儿账户数据
-     * 将导入时创建的临时账户交易迁移到默认账户
-     */
-    fun fixOrphanAccountData() = viewModelScope.launch {
-        try {
-            android.util.Log.e("LEDGER_DEBUG", "开始修复孤儿账户数据...")
-            val userId = userApi.getCurrentUserId()
-            dataMigrationTool.fixOrphanAccountTransactions(userId)
-            android.util.Log.e("LEDGER_DEBUG", "数据修复完成，重新加载账户和交易")
-            // 修复后重新加载数据
-            loadAccounts()
-            loadTransactions()
-            loadMonthlySummary()
-        } catch (e: Exception) {
-            android.util.Log.e("LEDGER_DEBUG", "数据修复失败: ${e.message}", e)
-        }
-    }
+    
     
     fun selectMonth(yearMonth: YearMonth) {
         _selectedMonth.value = yearMonth
@@ -137,69 +72,14 @@ class LedgerViewModel @Inject constructor(
     
     private fun loadTransactions() {
         viewModelScope.launch {
-            android.util.Log.e("LEDGER_DEBUG", "========== 加载交易记录 ==========")
-            android.util.Log.e("LEDGER_DEBUG", "一次加载所有数据，pageSize: $pageSize")
-            
-            currentPage = 0  // 总是从第0页开始
+            currentPage = 0
             _uiState.update { it.copy(isLoading = true) }
-            
             val (start, end) = getMonthDateRange(_selectedMonth.value)
-            android.util.Log.e("LEDGER_DEBUG", "查询月份: ${_selectedMonth.value}")
-            android.util.Log.e("LEDGER_DEBUG", "日期范围: $start - $end")
-            android.util.Log.e("LEDGER_DEBUG", "时间转换: 开始=${java.util.Date(start)}, 结束=${java.util.Date(end)}")
-            // 如果选择了特定账户ID，并且不是默认账户（default_account_开头），则使用该ID
-            // 否则不指定账户ID，查询所有账户
             val accountIdForQuery = _uiState.value.selectedAccountId?.let { id ->
-                if (id.startsWith("default_account_")) {
-                    null // 默认账户查询所有交易
-                } else {
-                    id // 特定账户只查询该账户
-                }
+                if (id.startsWith("default_account_")) null else id
             }
-            
-            // 获取当前选中的记账簿ID用于过滤
             val ledgerIdForQuery = _uiState.value.selectedLedgerId
-            
-            android.util.Log.e("LEDGER_DEBUG", "账户ID: ${_uiState.value.selectedAccountId}")
-            android.util.Log.e("LEDGER_DEBUG", "查询账户ID: $accountIdForQuery")
-            android.util.Log.e("LEDGER_DEBUG", "记账簿ID: ${_uiState.value.selectedLedgerId}")
-            android.util.Log.e("LEDGER_DEBUG", "查询记账簿ID: $ledgerIdForQuery")
-            android.util.Log.e("LEDGER_DEBUG", "分页: page=$currentPage, size=$pageSize")
-            
-            // 运行全链路数据流追踪
-            val userId = userApi.getCurrentUserId()
-            viewModelScope.launch {
-                flowTracker.trackTransactionFlow(
-                    userId = userId,
-                    selectedAccountId = accountIdForQuery,
-                    startDate = start,
-                    endDate = end,
-                    currentPage = currentPage,
-                    pageSize = pageSize
-                )
-                
-                // 验证当前月份数据
-                flowTracker.verifyMonthData(
-                    userId = userId,
-                    year = _selectedMonth.value.year,
-                    month = _selectedMonth.value.monthValue
-                )
-            }
-            
-            // 运行查询逻辑诊断（每次加载时都运行）
-            viewModelScope.launch {
-                diagnosticTool.analyzeQueryLogic(
-                    userId = userId,
-                    selectedAccountId = accountIdForQuery,
-                    startDate = start,
-                    endDate = end
-                )
-            }
-            
-            // 根据是否有记账簿过滤决定使用哪个查询方法
             val transactionFlow = if (ledgerIdForQuery != null) {
-                // 使用记账簿过滤的分页查询
-                android.util.Log.e("LEDGER_DEBUG", "使用记账簿过滤查询: $ledgerIdForQuery")
                 transactionRepository.getTransactionsPaginatedByLedger(
                     ledgerId = ledgerIdForQuery,
                     offset = currentPage * pageSize,
@@ -211,27 +91,21 @@ class LedgerViewModel @Inject constructor(
                     when (result) {
                         is BaseResult.Success -> {
                             val (transactions, totalCount) = result.data
-                            BaseResult.Success(GetPaginatedTransactionsUseCase.PaginatedResult(
-                                transactions = transactions,
-                                hasMore = (currentPage + 1) * pageSize < totalCount,
-                                totalCount = totalCount
-                            ))
+                            BaseResult.Success(
+                                GetPaginatedTransactionsUseCase.PaginatedResult(
+                                    transactions = transactions,
+                                    hasMore = (currentPage + 1) * pageSize < totalCount,
+                                    totalCount = totalCount
+                                )
+                            )
                         }
                         is BaseResult.Error -> BaseResult.Error(result.exception)
                     }
                 }
             } else {
-                // 使用原有的查询方法（全局查询）
-                android.util.Log.e("LEDGER_DEBUG", "使用全局查询（无记账簿过滤）")
-                getPaginatedTransactionsUseCase(
-                    currentPage, pageSize, accountIdForQuery, start, end
-                )
+                getPaginatedTransactionsUseCase(currentPage, pageSize, accountIdForQuery, start, end)
             }
-            
-            transactionFlow.collect { result ->
-                android.util.Log.e("LEDGER_DEBUG", "查询结果类型: ${result::class.simpleName}")
-                handleTransactionResult(result)
-            }
+            transactionFlow.collect { result -> handleTransactionResult(result) }
         }
     }
     
@@ -239,16 +113,6 @@ class LedgerViewModel @Inject constructor(
         when (result) {
             is BaseResult.Success -> {
                 val data = result.data
-                android.util.Log.e("LEDGER_DEBUG", "查询成功: 返回 ${data.transactions.size} 条记录, 总数: ${data.totalCount}")
-                android.util.Log.e("LEDGER_DEBUG", "一次加载完成，显示所有 ${data.transactions.size} 条交易")
-                if (data.transactions.isNotEmpty()) {
-                    val first = data.transactions.first()
-                    val last = data.transactions.last()
-                    android.util.Log.e("LEDGER_DEBUG", "第一条记录: ID=${first.id}, Date=${first.createdAt}")
-                    android.util.Log.e("LEDGER_DEBUG", "最后一条记录: ID=${last.id}, Date=${last.createdAt}")
-                } else {
-                    android.util.Log.e("LEDGER_DEBUG", "警告：查询返回空列表！")
-                }
                 _uiState.update {
                     it.copy(
                         transactions = data.transactions,  // 直接设置所有交易
@@ -260,7 +124,6 @@ class LedgerViewModel @Inject constructor(
                 cacheManager.updateRecentTransactionsCache(data.transactions)
             }
             is BaseResult.Error -> {
-                android.util.Log.e("LEDGER_DEBUG", "查询失败: ${result.exception.message}", result.exception)
                 _uiState.update { it.copy(isLoading = false, isLoadingMore = false) }
             }
         }
@@ -272,8 +135,18 @@ class LedgerViewModel @Inject constructor(
     ) = launch {
         val finalAccountId = accountId ?: _uiState.value.selectedAccountId 
             ?: _uiState.value.accounts.firstOrNull()?.id ?: return@launch
+        
+        // 获取当前选中的记账簿ID
+        val currentLedgerId = _uiState.value.currentLedger?.id
+        
         runCatching {
-            addTransactionUseCase(amountCents, categoryId, note, finalAccountId)
+            addTransactionUseCase(
+                amountCents = amountCents, 
+                categoryId = categoryId, 
+                note = note, 
+                accountId = finalAccountId,
+                ledgerId = currentLedgerId  // 传递当前记账簿ID
+            )
             checkBudget(categoryId, onBudgetAlert)
             loadMonthlySummary()
             loadTransactions()  // 刷新交易列表
@@ -298,13 +171,20 @@ class LedgerViewModel @Inject constructor(
     }
     
     fun copyTransaction(transaction: Transaction) = launch {
+        // 获取当前选中的记账簿ID
+        val currentLedgerId = _uiState.value.currentLedger?.id
+        
         runCatching {
             addTransactionUseCase(
-                transaction.amountCents, transaction.categoryId,
-                "[复制] ${transaction.note ?: ""}", transaction.accountId
+                amountCents = transaction.amountCents, 
+                categoryId = transaction.categoryId,
+                note = "[复制] ${transaction.note ?: ""}", 
+                accountId = transaction.accountId,
+                ledgerId = currentLedgerId  // 传递当前记账簿ID
             )
             loadTransactions()
             loadMonthlySummary()
+            
         }
     }
     
@@ -315,7 +195,6 @@ class LedgerViewModel @Inject constructor(
             
             if (currentLedger != null) {
                 // 使用记账簿过滤的月度统计
-                android.util.Log.d("LEDGER_DEBUG", "加载记账簿月度统计: ${currentLedger.name}")
                 val result = transactionRepository.getMonthlyIncomesAndExpensesByLedger(
                     ledgerId = currentLedger.id,
                     year = month.year,
@@ -330,16 +209,13 @@ class LedgerViewModel @Inject constructor(
                                 monthlyExpense = expense / 100.0
                             ) 
                         }
-                        android.util.Log.d("LEDGER_DEBUG", "记账簿月度统计: 收入=$income, 支出=$expense")
                     }
                     is BaseResult.Error -> {
-                        android.util.Log.e("LEDGER_DEBUG", "记账簿月度统计失败: ${result.exception.message}")
                         _uiState.update { it.copy(monthlyIncome = 0.0, monthlyExpense = 0.0) }
                     }
                 }
             } else {
                 // 使用全局月度统计（兼容原有逻辑）
-                android.util.Log.d("LEDGER_DEBUG", "加载全局月度统计")
                 val (income, expense) = getMonthlyStatsUseCase(month.year, month.monthValue)
                 _uiState.update { it.copy(monthlyIncome = income / 100.0, monthlyExpense = expense / 100.0) }
             }
@@ -348,74 +224,16 @@ class LedgerViewModel @Inject constructor(
     
     private fun loadAccounts() = launch {
         getAccountsUseCase().collect { accounts ->
-            android.util.Log.e("LEDGER_DEBUG", "")
-            android.util.Log.e("LEDGER_DEBUG", "========== 账户加载与选择逻辑 ==========")
-            android.util.Log.e("LEDGER_DEBUG", "加载账户列表: ${accounts.size} 个账户")
-            
-            // 打印所有账户详情
-            accounts.forEach { account ->
-                android.util.Log.e("LEDGER_DEBUG", "账户: ${account.name}")
-                android.util.Log.e("LEDGER_DEBUG", "  ID: ${account.id}")
-                android.util.Log.e("LEDGER_DEBUG", "  类型: ${account.type}")
-                android.util.Log.e("LEDGER_DEBUG", "  是否默认: ${account.isDefault}")
-                
-                // 统计该账户的交易数
-                viewModelScope.launch {
-                    val userId = userApi.getCurrentUserId()
-                    val accountTransactions = transactionDao.getTransactionsByUserSync(userId)
-                        .filter { it.accountId == account.id && !it.isDeleted }
-                    android.util.Log.e("LEDGER_DEBUG", "  交易数: ${accountTransactions.size}")
-                    
-                    // 如果是现金账户，显示更多信息
-                    if (account.id.startsWith("default_account_") || account.name == "现金") {
-                        android.util.Log.e("LEDGER_DEBUG", "  ⚠️ 这是现金账户（原默认账户）")
-                        android.util.Log.e("LEDGER_DEBUG", "  包含钱迹空账户名的交易")
-                    }
-                }
-            }
-            
-            // 智能选择默认账户
             val previousSelectedId = _uiState.value.selectedAccountId
-            android.util.Log.e("LEDGER_DEBUG", "")
-            android.util.Log.e("LEDGER_DEBUG", "当前选中账户: ${previousSelectedId ?: "无"}")
-            
             val selectedAccountId = when {
-                accounts.isEmpty() -> {
-                    android.util.Log.e("LEDGER_DEBUG", "无账户，selectedAccountId = null")
-                    null
-                }
-                // 优先保持当前选择
-                previousSelectedId != null && accounts.any { it.id == previousSelectedId } -> {
-                    android.util.Log.e("LEDGER_DEBUG", "保持当前选择: $previousSelectedId")
-                    previousSelectedId
-                }
-                // 选择默认账户
-                accounts.any { it.isDefault } -> {
-                    val defaultAccount = accounts.first { it.isDefault }
-                    android.util.Log.e("LEDGER_DEBUG", "选择默认账户: ${defaultAccount.name} (${defaultAccount.id})")
-                    defaultAccount.id
-                }
-                // 选择交易最多的账户
-                else -> {
-                    // 这里先选择第一个，后续可以优化为选择交易最多的
-                    val firstAccount = accounts.first()
-                    android.util.Log.e("LEDGER_DEBUG", "选择第一个账户: ${firstAccount.name} (${firstAccount.id})")
-                    firstAccount.id
-                }
+                accounts.isEmpty() -> null
+                previousSelectedId != null && accounts.any { it.id == previousSelectedId } -> previousSelectedId
+                accounts.any { it.isDefault } -> accounts.first { it.isDefault }.id
+                else -> accounts.first().id
             }
-            
-            android.util.Log.e("LEDGER_DEBUG", "最终选择账户: $selectedAccountId")
-            android.util.Log.e("LEDGER_DEBUG", "========================================")
-            android.util.Log.e("LEDGER_DEBUG", "")
-            
-            _uiState.update {
-                it.copy(accounts = accounts, selectedAccountId = selectedAccountId)
-            }
+            _uiState.update { it.copy(accounts = accounts, selectedAccountId = selectedAccountId) }
             cacheManager.updateAccountsCache(accounts)
-            
-            // 如果账户选择变化，重新加载交易
             if (previousSelectedId != selectedAccountId) {
-                android.util.Log.e("LEDGER_DEBUG", "账户选择变化，重新加载交易")
                 loadTransactions()
             }
         }
@@ -439,6 +257,13 @@ class LedgerViewModel @Inject constructor(
             
             val userId = userApi.getCurrentUserId()
             
+            // 使用专门的默认记账簿初始化服务
+            val initResult = defaultLedgerInitService.initializeDefaultLedger(userId)
+            when (initResult) {
+                is com.ccxiaoji.feature.ledger.domain.service.DefaultLedgerInitResult.Success -> { /* no-op */ }
+                is com.ccxiaoji.feature.ledger.domain.service.DefaultLedgerInitResult.Failure -> { /* no-op */ }
+            }
+            
             // 收集记账簿列表Flow
             manageLedgerUseCase.getUserLedgers(userId).collect { ledgers ->
                 // 获取用户偏好的记账簿选择
@@ -458,10 +283,6 @@ class LedgerViewModel @Inject constructor(
                             isLedgerLoading = false
                         )
                     }
-                    
-                    android.util.Log.d("LEDGER_DEBUG", "记账簿加载成功: ${ledgers.size}个记账簿")
-                    android.util.Log.d("LEDGER_DEBUG", "偏好记账簿: $preferredLedgerId, 选中记账簿: ${selectedLedger?.name}")
-                    
                     // 如果实际选择的记账簿与偏好不同，更新偏好设置
                     if (selectedLedger?.id != preferredLedgerId) {
                         selectedLedger?.id?.let { ledgerId -> 
@@ -473,7 +294,6 @@ class LedgerViewModel @Inject constructor(
                 }
             }
         } catch (e: Exception) {
-            android.util.Log.e("LEDGER_DEBUG", "记账簿加载异常", e)
             _uiState.update { it.copy(isLedgerLoading = false) }
         }
     }
@@ -500,22 +320,11 @@ class LedgerViewModel @Inject constructor(
                 // 重新加载基于记账簿的数据
                 loadTransactions()
                 loadMonthlySummary()
-                
-                android.util.Log.d("LEDGER_DEBUG", "切换到记账簿: ${selectedLedger.name}")
-                android.util.Log.d("LEDGER_DEBUG", "记账簿选择已保存到偏好设置")
-                
-                // 记账簿切换后进行快速数据流检查（仅在调试模式下）
-                if (android.util.Log.isLoggable("LEDGER_DATAFLOW_DEBUG", android.util.Log.DEBUG)) {
-                    viewModelScope.launch {
-                        kotlinx.coroutines.delay(500) // 等待数据加载完成
-                        runtimeValidator.quickDataFlowCheck(this@LedgerViewModel)
-                    }
-                }
             } else {
-                android.util.Log.e("LEDGER_DEBUG", "未找到记账簿: $ledgerId")
+                
             }
         } catch (e: Exception) {
-            android.util.Log.e("LEDGER_DEBUG", "记账簿选择失败", e)
+            
         }
     }
     
@@ -545,81 +354,7 @@ class LedgerViewModel @Inject constructor(
         loadMonthlySummary()
     }
     
-    /**
-     * 运行导入映射错误分析
-     * 精确定位导入时的字段映射问题
-     */
-    fun analyzeMappingErrors() = viewModelScope.launch {
-        android.util.Log.e("LEDGER_DEBUG", "手动触发映射错误分析...")
-        val userId = userApi.getCurrentUserId()
-        val report = mappingAnalyzer.analyzeMappingErrors(userId)
-        
-        // 输出分析结果摘要
-        android.util.Log.e("LEDGER_DEBUG", "")
-        android.util.Log.e("LEDGER_DEBUG", "【映射分析结果】")
-        android.util.Log.e("LEDGER_DEBUG", "转账对象误判: ${report.transferPartyAccounts.size}个")
-        android.util.Log.e("LEDGER_DEBUG", "正常支付账户: ${report.paymentMethodAccounts.size}个")
-        android.util.Log.e("LEDGER_DEBUG", "可疑账户: ${report.suspiciousAccounts.size}个")
-        android.util.Log.e("LEDGER_DEBUG", "")
-        
-        // 如果发现问题，提示用户
-        if (report.transferPartyAccounts.isNotEmpty()) {
-            android.util.Log.e("LEDGER_DEBUG", "⚠️ 发现导入映射错误，需要修复")
-            android.util.Log.e("LEDGER_DEBUG", "建议查看 MAPPING_ANALYZER 标签的详细日志")
-        }
-    }
-    
-    /**
-     * 执行数据修复
-     * 修复导入时产生的问题数据
-     */
-    fun executeDataRepair() = viewModelScope.launch {
-        android.util.Log.e("LEDGER_DEBUG", "开始执行数据修复...")
-        val userId = userApi.getCurrentUserId()
-        
-        try {
-            // 执行修复
-            dataRepairTool.executeRepair(userId)
-            
-            android.util.Log.e("LEDGER_DEBUG", "数据修复完成")
-            
-            // 重新加载数据
-            loadAccounts()
-            loadTransactions()
-            loadMonthlySummary()
-            
-            android.util.Log.e("LEDGER_DEBUG", "已重新加载数据")
-        } catch (e: Exception) {
-            android.util.Log.e("LEDGER_DEBUG", "数据修复失败: ${e.message}", e)
-        }
-    }
-    
     private fun launch(block: suspend () -> Unit) = viewModelScope.launch { block() }
-    
-    // ==================== 调试和验证方法 ====================
-    
-    /**
-     * 手动触发数据流验证（用于调试）
-     */
-    fun triggerDataFlowValidation() {
-        android.util.Log.i("LEDGER_DEBUG", "手动触发数据流验证")
-        runtimeValidator.executeFullValidation(this)
-    }
-    
-    /**
-     * 手动触发默认记账簿机制验证（用于调试）
-     */
-    fun triggerDefaultLedgerValidation() {
-        android.util.Log.i("LEDGER_DEBUG", "手动触发默认记账簿机制验证")
-        defaultLedgerValidator.executeFullDefaultLedgerValidation()
-    }
-    
-    /**
-     * 执行快速数据流检查（用于调试）
-     */
-    fun quickDataFlowCheck() {
-        runtimeValidator.quickDataFlowCheck(this)
-    }
 }
 
 // UI状态 - 核心数据

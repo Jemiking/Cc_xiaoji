@@ -23,7 +23,6 @@ fun AdvancedSettingsSection(
     onNavigateToCategoryManagement: () -> Unit,
     onNavigateToAccountManagement: () -> Unit,
     onNavigateToBudgetManagement: () -> Unit,
-    onNavigateToDesignDemo: () -> Unit = {}
 ) {
     ModernCard(
         modifier = Modifier
@@ -74,13 +73,8 @@ fun AdvancedSettingsSection(
             
             Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
             
-            // 设计方案Demo
-            SettingItem(
-                icon = Icons.Default.Palette,
-                title = "界面设计Demo",
-                subtitle = "预览不同的界面设计方案",
-                onClick = onNavigateToDesignDemo
-            )
+
+
             
             Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
             

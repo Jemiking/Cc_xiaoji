@@ -60,6 +60,10 @@ sealed class Screen(val route: String) {
     object CalendarDebug : Screen("calendar_debug")
     // 扁平化排班 Demo（无阴影布局）
     object CalendarFlatDemo : Screen("calendar_flat_demo")
+    // UI设计风格Demo（包含5种设计风格对比）
+    object StyleDemo : Screen("style_demo")
+    // 排班主页重构 UI 设计（A3 单页演示）
+    object HomeRedesignA3Demo : Screen("home_redesign_a3_demo")
 }
 
 /**
@@ -106,6 +110,19 @@ fun ScheduleNavHost(
                 onNavigateToFlatDemo = {
                     android.util.Log.d("ScheduleNavHost", "Navigate to CalendarFlatDemo")
                     navController.navigate(Screen.CalendarFlatDemo.route)
+                },
+                onNavigateToStyleDemo = {
+                    android.util.Log.d("ScheduleNavHost", "Navigate to StyleDemo - function called")
+                    try {
+                        navController.navigate(Screen.StyleDemo.route)
+                        android.util.Log.d("ScheduleNavHost", "Navigate to StyleDemo - navigate call completed")
+                    } catch (e: Exception) {
+                        android.util.Log.e("ScheduleNavHost", "Navigate to StyleDemo - error: ${e.message}")
+                    }
+                },
+                onNavigateToHomeRedesignA3Demo = {
+                    android.util.Log.d("ScheduleNavHost", "Navigate to HomeRedesignA3Demo")
+                    navController.navigate(Screen.HomeRedesignA3Demo.route)
                 },
                 navController = navController
             )
@@ -277,6 +294,21 @@ fun ScheduleNavHost(
         // 扁平化排班 Demo 页面
         composable(Screen.CalendarFlatDemo.route) {
             com.ccxiaoji.feature.schedule.presentation.demo.FlatScheduleDemoScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // UI设计风格Demo页面
+        composable(Screen.StyleDemo.route) {
+            android.util.Log.d("ScheduleNavHost", "StyleDemo composable reached!")
+            com.ccxiaoji.feature.schedule.presentation.demo.StyleDemoScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // 排班主页 UI 设计 Demo（A3 单页演示）
+        composable(Screen.HomeRedesignA3Demo.route) {
+            com.ccxiaoji.feature.schedule.presentation.demo.HomeRedesignDemoScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

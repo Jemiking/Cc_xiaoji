@@ -12,7 +12,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import android.util.Log
 import com.ccxiaoji.feature.ledger.presentation.component.charts.BarChart
 import com.ccxiaoji.feature.ledger.presentation.component.charts.LineChart
 import com.ccxiaoji.feature.ledger.presentation.component.charts.PieChart
@@ -28,10 +27,6 @@ fun StatisticsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     
-    // 🔍 监控UI状态变化
-    LaunchedEffect(uiState.selectedPeriod, uiState.showDateRangePicker) {
-        Log.d("StatisticsScreen", "📱 Screen状态变化 - selectedPeriod: ${uiState.selectedPeriod}, showDateRangePicker: ${uiState.showDateRangePicker}")
-    }
     
     Scaffold(
         topBar = {
@@ -93,13 +88,9 @@ fun StatisticsScreen(
                 ) {
                     // 时间段选择器
                     item {
-                        Log.d("StatisticsScreen", "🎯 渲染TimePeriodSelector - selectedPeriod: ${uiState.selectedPeriod}")
                         TimePeriodSelector(
                             selectedPeriod = uiState.selectedPeriod,
-                            onPeriodSelected = { period ->
-                                Log.d("StatisticsScreen", "🎯 TimePeriodSelector回调触发 - period: $period")
-                                viewModel.selectTimePeriod(period)
-                            }
+                            onPeriodSelected = viewModel::selectTimePeriod
                         )
                     }
                     
@@ -184,20 +175,11 @@ fun StatisticsScreen(
     
     // 🆕 日期范围选择器对话框
     if (uiState.showDateRangePicker) {
-        Log.d("StatisticsScreen", "📅 正在显示日期选择器对话框")
         DateRangePickerDialog(
-            onDismiss = {
-                Log.d("StatisticsScreen", "📅 用户关闭日期选择器")
-                viewModel.hideDateRangePicker()
-            },
-            onConfirm = { startDate, endDate ->
-                Log.d("StatisticsScreen", "📅 用户确认日期选择: $startDate 到 $endDate")
-                viewModel.setCustomDateRange(startDate, endDate)
-            },
+            onDismiss = viewModel::hideDateRangePicker,
+            onConfirm = viewModel::setCustomDateRange,
             initialStartDate = uiState.customStartDate,
             initialEndDate = uiState.customEndDate
         )
-    } else {
-        Log.d("StatisticsScreen", "📅 日期选择器未显示 - showDateRangePicker: ${uiState.showDateRangePicker}")
     }
 }

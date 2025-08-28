@@ -132,11 +132,45 @@ fun AccountItem(
                                 }
                             }
                         }
-                        Text(
-                            text = account.type.displayName,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                        )
+                        // 显示账户类型和信用卡专门信息
+                        if (account.type == AccountType.CREDIT_CARD) {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(2.dp)
+                            ) {
+                                Text(
+                                    text = account.type.displayName,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                                
+                                // 显示还款日和账单日
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.xs)
+                                ) {
+                                    account.billingDay?.let { billingDay ->
+                                        Text(
+                                            text = "账单日: ${billingDay}日",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                    
+                                    account.paymentDueDay?.let { dueDay ->
+                                        Text(
+                                            text = "还款日: ${dueDay}日",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = DesignTokens.BrandColors.Warning.copy(alpha = 0.8f)
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = account.type.displayName,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            )
+                        }
                     }
                 }
                 
@@ -144,20 +178,62 @@ fun AccountItem(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.xs)
                 ) {
-                    Text(
-                        text = stringResource(
-                            R.string.amount_format, 
-                            stringResource(R.string.currency_symbol), 
-                            account.balanceYuan
-                        ),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = if (account.balanceYuan >= 0) {
-                            MaterialTheme.colorScheme.onSurface
-                        } else {
-                            DesignTokens.BrandColors.Error
+                    // 信用卡显示专门信息，其他账户显示余额
+                    if (account.type == AccountType.CREDIT_CARD) {
+                        // 信用卡负债显示
+                        Text(
+                            text = stringResource(
+                                R.string.amount_format, 
+                                stringResource(R.string.currency_symbol), 
+                                -account.balanceYuan // 信用卡负债显示为正数
+                            ),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = if (account.balanceYuan <= 0) {
+                                DesignTokens.BrandColors.Error
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            }
+                        )
+                        
+                        // 可用额度显示
+                        account.availableCreditYuan?.let { availableCredit ->
+                            Text(
+                                text = "可用: ¥${String.format("%.2f", availableCredit)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                    )
+                        
+                        // 使用率显示
+                        account.utilizationRate?.let { utilization ->
+                            Text(
+                                text = "使用率: ${String.format("%.1f", utilization)}%",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = when {
+                                    utilization <= 30 -> DesignTokens.BrandColors.Success
+                                    utilization <= 80 -> DesignTokens.BrandColors.Warning
+                                    else -> DesignTokens.BrandColors.Error
+                                }
+                            )
+                        }
+                    } else {
+                        // 普通账户显示余额
+                        Text(
+                            text = stringResource(
+                                R.string.amount_format, 
+                                stringResource(R.string.currency_symbol), 
+                                account.balanceYuan
+                            ),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = if (account.balanceYuan >= 0) {
+                                MaterialTheme.colorScheme.onSurface
+                            } else {
+                                DesignTokens.BrandColors.Error
+                            }
+                        )
+                    }
                     
                     // 添加明显的编辑按钮
                     Row(
@@ -204,6 +280,50 @@ fun AccountItem(
             expanded = showMenu,
             onDismissRequest = { showMenu = false }
         ) {
+            // 信用卡专有菜单项
+            if (account.type == AccountType.CREDIT_CARD) {
+                DropdownMenuItem(
+                    text = { Text("查看账单") },
+                    onClick = {
+                        Log.d(TAG, "点击查看账单菜单项，信用卡: ${account.name}")
+                        // TODO: 在阶段二功能迁移时实现
+                        onClick() // 暂时跳转到交易列表
+                        showMenu = false
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Receipt, 
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                )
+                
+                DropdownMenuItem(
+                    text = { Text("记录还款") },
+                    onClick = {
+                        Log.d(TAG, "点击记录还款菜单项，信用卡: ${account.name}")
+                        // TODO: 在阶段二功能迁移时实现
+                        showMenu = false
+                    },
+                    leadingIcon = {
+                        Icon(
+                            Icons.Default.Payment, 
+                            contentDescription = null,
+                            tint = DesignTokens.BrandColors.Success
+                        )
+                    }
+                )
+                
+                if (showMenu) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = DesignTokens.Spacing.xs),
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                    )
+                }
+            }
+            
+            // 通用菜单项
             if (!account.isDefault) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.account_set_as_default)) },

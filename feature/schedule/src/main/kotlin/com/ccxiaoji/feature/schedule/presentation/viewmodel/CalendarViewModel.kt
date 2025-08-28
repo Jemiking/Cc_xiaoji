@@ -83,6 +83,9 @@ class CalendarViewModel @Inject constructor(
     // 视图模式状态
     private val _viewMode = MutableStateFlow(CalendarViewMode.COMPACT)
     val viewMode: StateFlow<CalendarViewMode> = _viewMode.asStateFlow()
+    // 默认模式应用标记与用户覆盖标记
+    private var hasAppliedDefault = false
+    private var userOverridden = false
     
     // UI状态
     private val _uiState = MutableStateFlow(CalendarUiState())
@@ -90,11 +93,18 @@ class CalendarViewModel @Inject constructor(
     
     init {
         android.util.Log.d("CalendarViewModel", "ViewModel initialized")
-        // 延迟加载初始统计信息，确保所有属性都已初始化
-        viewModelScope.launch {
-            android.util.Log.d("CalendarViewModel", "Loading initial statistics")
-            loadMonthlyStatistics()
-        }
+        // 订阅默认紧凑模式，仅首次应用，避免后续设置变化打断当前用户选择
+        themeManager.defaultCompactMode
+            .onEach { compact ->
+                if (!hasAppliedDefault && !userOverridden) {
+                    _viewMode.value = if (compact) CalendarViewMode.COMPACT else CalendarViewMode.COMFORTABLE
+                    hasAppliedDefault = true
+                }
+            }
+            .launchIn(viewModelScope)
+
+        // 加载初始统计
+        viewModelScope.launch { loadMonthlyStatistics() }
 
     }
     
@@ -225,6 +235,7 @@ class CalendarViewModel @Inject constructor(
      * 切换视图模式
      */
     fun toggleViewMode() {
+        userOverridden = true
         _viewMode.value = when (_viewMode.value) {
             CalendarViewMode.COMFORTABLE -> CalendarViewMode.COMPACT
             CalendarViewMode.COMPACT -> CalendarViewMode.COMFORTABLE

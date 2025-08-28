@@ -16,6 +16,8 @@ import com.ccxiaoji.feature.ledger.data.local.dao.SavingsGoalDao
 import com.ccxiaoji.feature.ledger.data.local.dao.CreditCardPaymentDao
 import com.ccxiaoji.feature.ledger.data.local.dao.CreditCardBillDao
 import com.ccxiaoji.feature.ledger.data.local.dao.LedgerDao
+import com.ccxiaoji.core.database.dao.AutoLedgerDedupDao
+import com.ccxiaoji.core.database.dao.AppAutoLedgerConfigDao
 import com.ccxiaoji.shared.user.data.local.dao.UserDao
 import com.ccxiaoji.common.constants.DatabaseConstants
 import com.ccxiaoji.core.database.migrations.DatabaseMigrations
@@ -101,6 +103,43 @@ object DatabaseModule {
                                 arrayOf(UUID.randomUUID().toString(), "current_user_id", name, "INCOME", icon, color, null, index, 1, 0, currentTime, currentTime, 0, "SYNCED")
                             )
                         }
+                        
+                        // 插入默认记账簿
+                        android.util.Log.d("DATABASE_DEBUG", "🚀 开始创建默认记账簿...")
+                        val defaultLedgerId = UUID.randomUUID().toString()
+                        android.util.Log.d("DATABASE_DEBUG", "📝 默认记账簿ID: $defaultLedgerId")
+                        android.util.Log.d("DATABASE_DEBUG", "👤 用户ID: current_user_id")
+                        
+                        try {
+                            db.execSQL(
+                                "INSERT INTO ledgers (id, userId, name, description, color, icon, isDefault, displayOrder, isActive, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                                arrayOf(
+                                    defaultLedgerId,
+                                    "current_user_id",
+                                    "总记账簿",
+                                    "默认记账簿，包含所有基本记账数据",
+                                    "#3A7AFE",
+                                    "book",
+                                    1, // isDefault = true
+                                    0, // displayOrder = 0
+                                    1, // isActive = true
+                                    currentTime,
+                                    currentTime
+                                )
+                            )
+                            android.util.Log.d("DATABASE_DEBUG", "✅ 默认记账簿创建成功！")
+                            
+                            // 验证插入结果
+                            val cursor = db.query("SELECT COUNT(*) FROM ledgers WHERE userId = 'current_user_id' AND isDefault = 1")
+                            if (cursor.moveToFirst()) {
+                                val count = cursor.getInt(0)
+                                android.util.Log.d("DATABASE_DEBUG", "📊 验证结果: 找到 $count 个默认记账簿")
+                            }
+                            cursor.close()
+                            
+                        } catch (e: Exception) {
+                            android.util.Log.e("DATABASE_DEBUG", "❌ 创建默认记账簿失败: ${e.message}", e)
+                        }
                     }
                 }
             })
@@ -151,6 +190,12 @@ object DatabaseModule {
     fun provideLedgerDao(database: CcDatabase): LedgerDao = database.ledgerDao()
     
     @Provides
+    fun provideLedgerLinkDao(database: CcDatabase): com.ccxiaoji.feature.ledger.data.local.dao.LedgerLinkDao = database.ledgerLinkDao()
+    
+    @Provides
+    fun provideTransactionLedgerRelationDao(database: CcDatabase): com.ccxiaoji.feature.ledger.data.local.dao.TransactionLedgerRelationDao = database.transactionLedgerRelationDao()
+    
+    @Provides
     fun provideShiftDao(database: CcDatabase): com.ccxiaoji.feature.schedule.data.local.dao.ShiftDao = database.shiftDao()
     
     @Provides
@@ -167,4 +212,10 @@ object DatabaseModule {
     
     @Provides
     fun provideTemplateDao(database: CcDatabase): com.ccxiaoji.feature.plan.data.local.dao.TemplateDao = database.templateDao()
+    
+    @Provides
+    fun provideAutoLedgerDedupDao(database: CcDatabase): AutoLedgerDedupDao = database.autoLedgerDedupDao()
+    
+    @Provides
+    fun provideAppAutoLedgerConfigDao(database: CcDatabase): AppAutoLedgerConfigDao = database.appAutoLedgerConfigDao()
 }

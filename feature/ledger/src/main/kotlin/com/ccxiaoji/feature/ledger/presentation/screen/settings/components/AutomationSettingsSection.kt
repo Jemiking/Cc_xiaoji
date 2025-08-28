@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ccxiaoji.feature.ledger.domain.model.AutomationSettings
 import com.ccxiaoji.ui.components.ModernCard
+import com.ccxiaoji.feature.ledger.BuildConfig
 import com.ccxiaoji.ui.theme.DesignTokens
 
 /**
@@ -18,7 +19,10 @@ import com.ccxiaoji.ui.theme.DesignTokens
 fun AutomationSettingsSection(
     automationSettings: AutomationSettings,
     onUpdateAutomationSettings: (AutomationSettings) -> Unit,
-    onNavigateToRecurringTransactions: () -> Unit
+    onNavigateToRecurringTransactions: () -> Unit,
+    onNavigateToPermissionGuide: () -> Unit = {},
+    onNavigateToAutoLedgerDebug: () -> Unit = {},
+    onNavigateToAutoLedgerSettings: () -> Unit = {}
 ) {
     ModernCard(
         modifier = Modifier
@@ -37,6 +41,24 @@ fun AutomationSettingsSection(
                 onClick = onNavigateToRecurringTransactions
             )
             
+            // 自动记账设置
+            SettingItem(
+                icon = Icons.Default.Settings,
+                title = "自动记账设置",
+                subtitle = "启用/关闭自动记账与状态",
+                onClick = onNavigateToAutoLedgerSettings
+            )
+
+            // 自动记账调试面板
+            if (BuildConfig.DEBUG) {
+                SettingItem(
+                    icon = Icons.Default.BugReport,
+                    title = "自动记账调试面板",
+                    subtitle = "查看解析记录和性能统计",
+                    onClick = onNavigateToAutoLedgerDebug
+                )
+            }
+
             Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
             
             // 智能分类开关

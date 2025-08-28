@@ -206,6 +206,17 @@ private fun DebugPreviewArea(
                 onNavigateToSchedulePattern = { /* 调试模式下不实际导航 */ },
                 onNavigateToStatistics = { /* 调试模式下不实际导航 */ },
                 onNavigateToSettings = { /* 调试模式下不实际导航 */ },
+                onNavigateToDebug = { 
+                    android.util.Log.d("CalendarDebugScreen", "Navigate to Debug - already in debug mode")
+                },
+                onNavigateToFlatDemo = { 
+                    android.util.Log.d("CalendarDebugScreen", "Navigate to FlatDemo from debug")
+                    navController?.navigate("calendar_flat_demo")
+                },
+                onNavigateToStyleDemo = { 
+                    android.util.Log.d("CalendarDebugScreen", "Navigate to StyleDemo from debug")
+                    navController?.navigate("style_demo")
+                },
                 viewModel = viewModel,
                 navController = navController
             )

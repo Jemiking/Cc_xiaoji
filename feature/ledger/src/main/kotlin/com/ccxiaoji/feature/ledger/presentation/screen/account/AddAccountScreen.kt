@@ -130,7 +130,12 @@ fun AddAccountScreen(
                 OutlinedTextField(
                     value = uiState.balance,
                     onValueChange = viewModel::updateBalance,
-                    label = { Text(stringResource(R.string.initial_balance)) },
+                    label = { 
+                        Text(
+                            if (uiState.selectedType == AccountType.CREDIT_CARD) "初始欠款" 
+                            else stringResource(R.string.initial_balance)
+                        ) 
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     colors = OutlinedTextFieldDefaults.colors(),
@@ -138,6 +143,65 @@ fun AddAccountScreen(
                     isError = uiState.balanceError != null,
                     supportingText = uiState.balanceError?.let { { Text(it) } }
                 )
+                
+                // 信用卡专用字段 - 条件渲染
+                if (uiState.selectedType == AccountType.CREDIT_CARD) {
+                    // 信用额度输入
+                    OutlinedTextField(
+                        value = uiState.creditLimit,
+                        onValueChange = viewModel::updateCreditLimit,
+                        label = { Text("信用额度") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(DesignTokens.BorderRadius.small),
+                        isError = uiState.creditLimitError != null,
+                        supportingText = uiState.creditLimitError?.let { { Text(it) } },
+                        prefix = { Text("¥") }
+                    )
+                    
+                    // 账单日和还款日并排显示
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.medium)
+                    ) {
+                        // 账单日输入
+                        OutlinedTextField(
+                            value = uiState.billingDay,
+                            onValueChange = viewModel::updateBillingDay,
+                            label = { Text("账单日") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(DesignTokens.BorderRadius.small),
+                            isError = uiState.billingDayError != null,
+                            supportingText = uiState.billingDayError?.let { { Text(it) } },
+                            suffix = { Text("日") }
+                        )
+                        
+                        // 还款日输入
+                        OutlinedTextField(
+                            value = uiState.paymentDueDay,
+                            onValueChange = viewModel::updatePaymentDueDay,
+                            label = { Text("还款日") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(DesignTokens.BorderRadius.small),
+                            isError = uiState.paymentDueDayError != null,
+                            supportingText = uiState.paymentDueDayError?.let { { Text(it) } },
+                            suffix = { Text("日") }
+                        )
+                    }
+                    
+                    // 信用卡说明文本
+                    Text(
+                        text = "• 初始欠款：信用卡当前已使用金额（负数表示欠款）\n• 账单日/还款日：每月几号（1-28日）",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(horizontal = DesignTokens.Spacing.small)
+                    )
+                }
                 
                 // Error message
                 if (uiState.error != null) {

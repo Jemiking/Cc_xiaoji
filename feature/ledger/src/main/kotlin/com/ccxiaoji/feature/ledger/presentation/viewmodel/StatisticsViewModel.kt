@@ -38,7 +38,7 @@ class StatisticsViewModel @Inject constructor(
     
     companion object {
         private const val TAG = "StatisticsViewModel"
-        private const val ENABLE_DEBUG_LOGS = true // 可配置的调试日志开关
+        private const val ENABLE_DEBUG_LOGS = false // 生产环境禁用调试日志
     }
     
     // 错误类型枚举
@@ -422,10 +422,60 @@ class StatisticsViewModel @Inject constructor(
         debugLog("📅 当前日期: $today")
         
         val result = when (period) {
+            TimePeriod.TODAY -> {
+                debugLog("📅 今日范围: $today 到 $today")
+                today to today
+            }
+            TimePeriod.THIS_WEEK -> {
+                val startOfWeek = today.minus(today.dayOfWeek.ordinal.toLong(), DateTimeUnit.DAY)
+                debugLog("📅 本周范围: $startOfWeek 到 $today")
+                startOfWeek to today
+            }
             TimePeriod.THIS_MONTH -> {
                 val startOfMonth = LocalDate(today.year, today.month, 1)
                 debugLog("📅 本月范围: $startOfMonth 到 $today")
                 startOfMonth to today
+            }
+            TimePeriod.LAST_MONTH -> {
+                val lastMonth = today.minus(1, DateTimeUnit.MONTH)
+                val startOfLastMonth = LocalDate(lastMonth.year, lastMonth.month, 1)
+                val endOfLastMonth = startOfLastMonth.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
+                debugLog("📅 上月范围: $startOfLastMonth 到 $endOfLastMonth")
+                startOfLastMonth to endOfLastMonth
+            }
+            TimePeriod.LAST_QUARTER -> {
+                val currentQuarter = (today.monthNumber - 1) / 3
+                val lastQuarterMonth = currentQuarter * 3 + 1 - 3
+                val lastQuarterStart = LocalDate(
+                    if (lastQuarterMonth <= 0) today.year - 1 else today.year,
+                    if (lastQuarterMonth <= 0) lastQuarterMonth + 12 else lastQuarterMonth, 1
+                )
+                val lastQuarterEnd = lastQuarterStart.plus(3, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
+                debugLog("📅 上季度范围: $lastQuarterStart 到 $lastQuarterEnd")
+                lastQuarterStart to lastQuarterEnd
+            }
+            TimePeriod.LAST_YEAR -> {
+                val startOfLastYear = LocalDate(today.year - 1, 1, 1)
+                val endOfLastYear = LocalDate(today.year - 1, 12, 31)
+                debugLog("📅 去年范围: $startOfLastYear 到 $endOfLastYear")
+                startOfLastYear to endOfLastYear
+            }
+            TimePeriod.RECENT_3_MONTHS -> {
+                val start = today.minus(3, DateTimeUnit.MONTH)
+                debugLog("📅 近3月范围: $start 到 $today")
+                start to today
+            }
+            TimePeriod.RECENT_6_MONTHS -> {
+                val start = today.minus(6, DateTimeUnit.MONTH)
+                debugLog("📅 近半年范围: $start 到 $today")
+                start to today
+            }
+            TimePeriod.THIS_QUARTER -> {
+                val currentQuarter = (today.monthNumber - 1) / 3
+                val quarterStartMonth = currentQuarter * 3 + 1
+                val startOfQuarter = LocalDate(today.year, quarterStartMonth, 1)
+                debugLog("📅 本季度范围: $startOfQuarter 到 $today")
+                startOfQuarter to today
             }
             TimePeriod.THIS_YEAR -> {
                 val startOfYear = LocalDate(today.year, 1, 1)
@@ -468,7 +518,22 @@ data class StatisticsUiState(
 )
 
 enum class TimePeriod {
-    THIS_MONTH,
-    THIS_YEAR,
-    CUSTOM
+    // 常用时间段
+    TODAY,           // 今日
+    THIS_WEEK,       // 本周
+    THIS_MONTH,      // 本月
+    
+    // 对比分析
+    LAST_MONTH,      // 上月
+    LAST_QUARTER,    // 上季度
+    LAST_YEAR,       // 去年
+    
+    // 长期分析
+    RECENT_3_MONTHS, // 近3月
+    RECENT_6_MONTHS, // 近半年
+    THIS_QUARTER,    // 本季度
+    THIS_YEAR,       // 本年
+    
+    // 自定义
+    CUSTOM           // 自定义
 }

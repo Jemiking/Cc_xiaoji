@@ -6,6 +6,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,15 +30,13 @@ fun DynamicCategoryIcon(
     size: Dp = 24.dp,
     tint: Color = MaterialTheme.colorScheme.onSurface
 ) {
-    // 🔍 DEBUG: DynamicCategoryIcon调用追踪
-    println("🔍 [DynamicCategoryIcon] 图标组件调用:")
-    println("   - 调用来源: ${if (category.id.startsWith("temp_")) "TransactionItem" else "其他组件"}")
-    println("   - 分类ID: ${category.id}")
-    println("   - 分类名称: ${category.name}")
-    println("   - 分类类型: ${category.type}")
-    println("   - emoji图标: ${category.icon}")
-    println("   - 图标显示模式: $iconDisplayMode")
-    println("   ─────────────────────────")
+    // 使用remember来缓存计算结果，避免不必要的重组
+    val iconContent = remember(category.id, category.icon, iconDisplayMode) {
+        when (iconDisplayMode) {
+            IconDisplayMode.EMOJI -> "emoji"
+            IconDisplayMode.MATERIAL -> "material"
+        }
+    }
     
     Box(
         modifier = modifier.size(size),
@@ -91,32 +90,24 @@ private fun MaterialCategoryIcon(
     tint: Color,
     modifier: Modifier = Modifier
 ) {
-    // 使用emoji图标进行Material图标映射
-    val materialIcon = CategoryIconMapper.getMaterialIconByEmoji(
-        emojiIcon = category.icon,
-        isIncome = category.type == Category.Type.INCOME
-    )
-    
-    if (materialIcon != null) {
-        // 使用映射的Material图标
-        // 显示Material图标
-        Icon(
-            imageVector = materialIcon,
-            contentDescription = category.name,
-            modifier = modifier.size(size),
-            tint = tint
-        )
-    } else {
-        val defaultIcon = CategoryIconMapper.getDefaultIcon(category.type == Category.Type.INCOME)
-        // 使用默认Material图标
-        // 如果没有对应的Material图标，使用默认Material图标
-        Icon(
-            imageVector = defaultIcon,
-            contentDescription = category.name,
-            modifier = modifier.size(size),
-            tint = tint
+    // 缓存图标计算结果，避免重复计算
+    val materialIcon = remember(category.icon, category.type) {
+        CategoryIconMapper.getMaterialIconByEmoji(
+            emojiIcon = category.icon,
+            isIncome = category.type == Category.Type.INCOME
         )
     }
+    
+    val iconToDisplay = remember(materialIcon, category.type) {
+        materialIcon ?: CategoryIconMapper.getDefaultIcon(category.type == Category.Type.INCOME)
+    }
+    
+    Icon(
+        imageVector = iconToDisplay,
+        contentDescription = category.name,
+        modifier = modifier.size(size),
+        tint = tint
+    )
 }
 
 /**

@@ -17,8 +17,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Observer
 import androidx.navigation.NavController
-import com.ccxiaoji.feature.schedule.presentation.calendar.components.MonthlyStatisticsCard
-import com.ccxiaoji.feature.schedule.presentation.calendar.components.SelectedDateDetailCard
 import com.ccxiaoji.feature.schedule.domain.model.Schedule
 import com.ccxiaoji.feature.schedule.domain.model.ScheduleStatistics
 import com.ccxiaoji.feature.schedule.presentation.components.CustomYearMonthPickerDialog
@@ -35,6 +33,15 @@ import java.util.Locale
 import androidx.compose.ui.unit.sp
 import com.ccxiaoji.feature.schedule.presentation.debug.DefaultDebugParams
 import com.ccxiaoji.feature.schedule.presentation.debug.CalendarViewParams
+import com.ccxiaoji.feature.schedule.presentation.adapter.CalendarDemoAdapter
+import com.ccxiaoji.feature.schedule.presentation.adapter.CalendarConfigBridge
+import com.ccxiaoji.feature.schedule.presentation.adapter.CalendarInteractionBridge
+import com.ccxiaoji.feature.schedule.presentation.demo.parts.MonthCalendarPanel
+import com.ccxiaoji.feature.schedule.presentation.demo.IndicatorStyle
+import kotlinx.coroutines.launch
+import android.util.Log
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.ccxiaoji.feature.schedule.presentation.demo.parts.DisplayMode
 
 /**
  * 排班日历主界面
@@ -49,6 +56,8 @@ fun CalendarScreen(
     onNavigateToSettings: () -> Unit,
     onNavigateToDebug: () -> Unit = {},
     onNavigateToFlatDemo: () -> Unit = {},
+    onNavigateToStyleDemo: () -> Unit = {},
+    onNavigateToHomeRedesignA3Demo: () -> Unit = {},
     onNavigateBack: (() -> Unit)? = null,
     viewModel: CalendarViewModel = hiltViewModel(),
     navController: NavController? = null
@@ -67,11 +76,37 @@ fun CalendarScreen(
     val viewMode by viewModel.viewMode.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     
+    // ★ Demo A3组件适配层
+    val configBridge = CalendarConfigBridge.create(viewModel)
+    val interactionBridge = CalendarInteractionBridge.create(
+        viewModel = viewModel,
+        configBridge = configBridge,
+        onNavigateToScheduleEdit = onNavigateToScheduleEdit
+    )
     
-    // 溢出菜单状态
-    var showDropdownMenu by remember { mutableStateOf(false) }
-    // 年月选择对话框状态
+    // 同步ViewMode状态到配置桥接器
+    LaunchedEffect(viewMode) {
+        configBridge.syncFromViewModel(viewMode)
+    }
+    
+    // 转换数据格式为Demo组件需要的DemoData
+    val demoData = remember(currentYearMonth, schedules) {
+        CalendarDemoAdapter.convertToDemoData(currentYearMonth, schedules)
+    }
+    
+    // 获取A3基线配置
+    val (labelConfig, overviewConfig, indicatorStyle) = remember {
+        CalendarDemoAdapter.getA3BaselineConfig()
+    }
+    
+    
+    // 年月选择对话框状态（由侧边栏触发）
     var showYearMonthPicker by remember { mutableStateOf(false) }
+    // 侧边栏状态
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val scope = rememberCoroutineScope()
+
+    
     
     // 处理快速班次选择结果
     navController?.currentBackStackEntry?.savedStateHandle?.let { savedStateHandle ->
@@ -105,263 +140,144 @@ fun CalendarScreen(
         }
     }
     
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet {
+                Text(
+                    text = currentYearMonth.format(
+                        DateTimeFormatter.ofPattern(stringResource(R.string.schedule_calendar_date_format_year_month))
+                    ),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(16.dp)
+                )
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.DateRange, contentDescription = null) },
+                    label = { Text("选择年月") },
+                    selected = false,
+                    onClick = {
+                        showYearMonthPicker = true
+                        scope.launch { drawerState.close() }
+                    }
+                )
+                NavigationDrawerItem(
+                    icon = { Icon(if (viewMode == CalendarViewMode.COMPACT) Icons.Default.ViewComfy else Icons.Default.ViewCompact, null) },
+                    label = { Text(if (viewMode == CalendarViewMode.COMPACT) stringResource(R.string.schedule_calendar_view_mode_comfortable) else stringResource(R.string.schedule_calendar_view_mode_compact)) },
+                    selected = false,
+                    onClick = {
+                        viewModel.toggleViewMode()
+                        scope.launch { drawerState.close() }
+                    }
+                )
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Analytics, null) },
+                    label = { Text(stringResource(R.string.schedule_calendar_statistics_analysis)) },
+                    selected = false,
+                    onClick = {
+                        onNavigateToStatistics()
+                        scope.launch { drawerState.close() }
+                    }
+                )
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.DateRange, null) },
+                    label = { Text(stringResource(R.string.schedule_calendar_batch_schedule)) },
+                    selected = false,
+                    onClick = {
+                        onNavigateToSchedulePattern()
+                        scope.launch { drawerState.close() }
+                    }
+                )
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Settings, null) },
+                    label = { Text(stringResource(R.string.schedule_calendar_settings)) },
+                    selected = false,
+                    onClick = {
+                        onNavigateToSettings()
+                        scope.launch { drawerState.close() }
+                    }
+                )
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Home, null) },
+                    label = { Text("主页设计Demo (A3)") },
+                    selected = false,
+                    onClick = {
+                        onNavigateToHomeRedesignA3Demo()
+                        scope.launch { drawerState.close() }
+                    }
+                )
+                
+            }
+        }
+    ) {
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { 
-                    TextButton(
-                        onClick = { showYearMonthPicker = true }
-                    ) {
-                        Text(
-                            text = currentYearMonth.format(
-                                DateTimeFormatter.ofPattern(stringResource(R.string.schedule_calendar_date_format_year_month))
-                            ),
-                            fontSize = params.topAppBar.titleFontSize,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
+                    // 显示年月文本（不可点击）
+                    Text(
+                        text = currentYearMonth.format(
+                            DateTimeFormatter.ofPattern(stringResource(R.string.schedule_calendar_date_format_year_month))
+                        ),
+                        fontSize = params.topAppBar.titleFontSize,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 },
                 navigationIcon = {
-                    onNavigateBack?.let { onBack ->
-                        IconButton(onClick = onBack, modifier = Modifier.size(params.topAppBar.actionButtonSize)) {
-                            Icon(
-                                Icons.Default.ArrowBack,
-                                contentDescription = stringResource(R.string.schedule_back)
-                            )
-                        }
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { viewModel.navigateToToday() }, modifier = Modifier.size(params.topAppBar.actionButtonSize)) {
-                        Text(
-                            text = stringResource(R.string.schedule_calendar_today_short),
-                            fontSize = params.topAppBar.todayButtonTextSize,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Box {
-                        IconButton(onClick = { showDropdownMenu = true }, modifier = Modifier.size(params.topAppBar.actionButtonSize)) {
-                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.schedule_calendar_more))
-                        }
-                        DropdownMenu(
-                            expanded = showDropdownMenu,
-                            onDismissRequest = { showDropdownMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = if (viewMode == CalendarViewMode.COMPACT) 
-                                                Icons.Default.ViewComfy
-                                            else 
-                                                Icons.Default.ViewCompact,
-                                            contentDescription = null
-                                        )
-                                        Text(
-                                            if (viewMode == CalendarViewMode.COMPACT) 
-                                                stringResource(R.string.schedule_calendar_view_mode_comfortable) 
-                                            else 
-                                                stringResource(R.string.schedule_calendar_view_mode_compact)
-                                        )
-                                    }
-                                },
-                                onClick = {
-                                    viewModel.toggleViewMode()
-                                    showDropdownMenu = false
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Icon(Icons.Default.Analytics, contentDescription = null)
-                                        Text(stringResource(R.string.schedule_calendar_statistics_analysis))
-                                    }
-                                },
-                                onClick = {
-                                    onNavigateToStatistics()
-                                    showDropdownMenu = false
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Icon(Icons.Default.DateRange, contentDescription = null)
-                                        Text(stringResource(R.string.schedule_calendar_batch_schedule))
-                                    }
-                                },
-                                onClick = {
-                                    onNavigateToSchedulePattern()
-                                    showDropdownMenu = false
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Icon(Icons.Default.Settings, contentDescription = null)
-                                        Text(stringResource(R.string.schedule_calendar_settings))
-                                    }
-                                },
-                                onClick = {
-                                    onNavigateToSettings()
-                                    showDropdownMenu = false
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Icon(Icons.Default.BugReport, contentDescription = null)
-                                        Text("UI调试器")
-                                    }
-                                },
-                                onClick = {
-                                    onNavigateToDebug()
-                                    showDropdownMenu = false
-                                }
-                            )
-
-                            DropdownMenuItem(
-                                text = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Icon(Icons.Default.ViewDay, contentDescription = null)
-                                        Text("扁平Demo")
-                                    }
-                                },
-                                onClick = {
-                                    onNavigateToFlatDemo()
-                                    showDropdownMenu = false
-                                }
-                            )
-                            
-                        }
+                    IconButton(onClick = { scope.launch { drawerState.open() } }, modifier = Modifier.size(params.topAppBar.actionButtonSize)) {
+                        Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.schedule_calendar_more))
                     }
                 }
                 ,
                 modifier = Modifier.height(params.topAppBar.height)
             )
         },
-        floatingActionButton = {
-            // 只在舒适模式下显示FAB，避免与紧凑模式的详情卡片功能重复
-            if (viewMode == CalendarViewMode.COMFORTABLE) {
-                selectedDate?.let { date ->
-                    FloatingActionButton(
-                        onClick = { onNavigateToScheduleEdit(date) },
-                        containerColor = com.ccxiaoji.ui.theme.DesignTokens.BrandColors.Schedule,
-                        elevation = FloatingActionButtonDefaults.elevation(
-                            defaultElevation = params.fab.elevation,
-                            pressedElevation = params.fab.elevation + 2.dp
-                        ),
-                        modifier = Modifier.size(params.fab.size)
-                    ) {
-                        Icon(
-                            Icons.Default.Add, 
-                            contentDescription = stringResource(R.string.schedule_calendar_add_schedule),
-                            tint = Color.White
-                        )
-                    }
-                }
-            }
-        },
+        // 去除 FAB，按 A3 设计仅保留三点菜单入口
+        floatingActionButton = {},
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = params.layout.screenHorizontalPadding)
         ) {
-            Spacer(modifier = Modifier.height(params.layout.screenVerticalPadding))
-
-            // 统计信息卡片（按参数包裹卡片）
-            androidx.compose.material3.Card(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = params.layout.componentSpacing / 2),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(params.statisticsCard.cornerRadius),
-                elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = params.statisticsCard.elevation),
-                colors = androidx.compose.material3.CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+                    .fillMaxSize()
+                    .padding(horizontal = params.layout.screenHorizontalPadding)
             ) {
-                Box(modifier = Modifier.padding(params.statisticsCard.padding)) {
-                    MonthlyStatisticsCard(
-                        statistics = statistics,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-            }
+                Spacer(modifier = Modifier.height(params.layout.screenVerticalPadding))
 
-            // 日历视图
-            CalendarView(
-                yearMonth = currentYearMonth,
-                selectedDate = selectedDate,
-                schedules = schedules,
-                weekStartDay = weekStartDay,
-                viewMode = viewMode,
-                debugParams = params.calendarView,
-                onDateSelected = { date ->
-                    viewModel.selectDate(date)
-                },
-                onDateLongClick = { date ->
-                    viewModel.showQuickSelector(date)
-                },
-                onMonthNavigate = { isNext ->
-                    if (isNext) {
-                        viewModel.navigateToNextMonth()
-                    } else {
-                        viewModel.navigateToPreviousMonth()
-                    }
-                },
-                modifier = Modifier.padding(
-                    top = if (viewMode == CalendarViewMode.COMPACT) params.layout.componentSpacing else 0.dp
+                // ★ Demo A3完整组件：替换原有CalendarView为MonthCalendarPanel（含统计与底部详情卡）
+                MonthCalendarPanel(
+                    data = demoData,
+                    style = indicatorStyle,
+                    emphasizeNight = false,
+                    dotConfig = null,
+                    labelConfig = labelConfig,
+                    overviewConfig = overviewConfig,
+                    displayMode = configBridge.displayMode,
+                    rowHeightDp = null,
+                    onRequestExpand = interactionBridge::onRequestExpand,
+                    onRequestCompact = interactionBridge::onRequestCompact,
+                    // 日期选择和交互状态同步
+                    selectedDate = selectedDate,
+                    onDateSelected = interactionBridge::onDateSelected,
+                    onDateLongClick = interactionBridge::onDateLongClick,
+                    // 星期开始日配置
+                    weekStartDay = weekStartDay,
+                    // A3 底卡动作
+                    onEditSelectedDate = { date -> onNavigateToScheduleEdit(date) },
+                    onDeleteSelectedDate = { date -> viewModel.deleteSchedule(date) },
+                    // 左右滑动切换月份
+                    onSwipePrevMonth = { viewModel.navigateToPreviousMonth() },
+                    onSwipeNextMonth = { viewModel.navigateToNextMonth() }
                 )
-            )
-            
-            // 紧凑模式下显示选中日期详情卡片
-            if (viewMode == CalendarViewMode.COMPACT) {
-                selectedDate?.let { date ->
-                    val selectedSchedule = schedules.find { it.date == date }
-                    Spacer(modifier = Modifier.height(params.layout.componentSpacing))
-                    androidx.compose.material3.Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(params.detailCard.cornerRadius),
-                        elevation = androidx.compose.material3.CardDefaults.cardElevation(defaultElevation = params.detailCard.elevation),
-                        colors = androidx.compose.material3.CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        )
-                    ) {
-                        Box(modifier = Modifier.padding(params.detailCard.padding)) {
-                            SelectedDateDetailCard(
-                                date = date,
-                                schedule = selectedSchedule,
-                                onEdit = { onNavigateToScheduleEdit(date) },
-                                onDelete = { viewModel.deleteSchedule(date) },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                }
             }
+            
         }
     }
+}
 
     
 

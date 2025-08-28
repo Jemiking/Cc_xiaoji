@@ -137,11 +137,8 @@ fun LedgerScreen(
                 onNavigateToStatistics = {
                     navController?.navigate(LedgerNavigation.StatisticsRoute)
                 },
-                onNavigateToAssetOverview = {
-                    navController?.navigate(LedgerNavigation.AssetOverviewRoute)
-                },
-                onNavigateToAccountManagement = {
-                    navController?.navigate(LedgerNavigation.AccountManagementRoute)
+                onNavigateToUnifiedAccountAsset = {
+                    navController?.navigate(LedgerNavigation.UnifiedAccountAssetRoute)
                 },
                 onNavigateToCategoryManagement = {
                     navController?.navigate(LedgerNavigation.CategoryManagementRoute)
@@ -154,9 +151,6 @@ fun LedgerScreen(
                 },
                 onNavigateToSavingsGoal = {
                     navController?.navigate(LedgerNavigation.SavingsGoalRoute)
-                },
-                onNavigateToCreditCard = {
-                    navController?.navigate(LedgerNavigation.CreditCardRoute)
                 },
                 onNavigateToLedgerSettings = {
                     navController?.navigate(LedgerNavigation.LedgerSettingsRoute)
@@ -416,20 +410,51 @@ fun LedgerScreen(
                     isSelectionMode = selectionState.isSelectionMode,
                     selectedTransactionIds = selectionState.selectedTransactionIds,
                     onItemClick = { transaction: Transaction ->
+                        println("🔍 [LedgerScreen] 交易项被普通点击！")
+                        println("   - 交易ID: ${transaction.id}")
+                        println("   - 交易金额: ${transaction.amountYuan}")
+                        println("   - 当前是否选择模式: ${selectionState.isSelectionMode}")
+                        
                         if (selectionState.isSelectionMode) {
+                            println("   - 处于选择模式，切换选择状态")
                             selectionViewModel.toggleTransactionSelection(transaction.id)
+                        } else {
+                            println("   - 普通模式，直接进入编辑界面")
+                            println("   - navController是否为null: ${navController == null}")
+                            
+                            val editRoute = LedgerNavigation.editTransactionRoute(transaction.id)
+                            println("   - 编辑路由: $editRoute")
+                            
+                            navController?.navigate(editRoute)
+                            println("   - 普通点击导航调用完成")
                         }
                     },
                     onItemLongClick = { transaction: Transaction ->
+                        println("🔍 [LedgerScreen] 交易项被长按！")
+                        println("   - 交易ID: ${transaction.id}")
+                        println("   - 交易金额: ${transaction.amountYuan}")
+                        println("   - 当前是否选择模式: ${selectionState.isSelectionMode}")
+                        
                         if (!selectionState.isSelectionMode) {
+                            println("   - 非选择模式，进入选择模式")
                             selectionViewModel.toggleSelectionMode()
                             selectionViewModel.toggleTransactionSelection(transaction.id)
+                        } else {
+                            println("   - 已在选择模式中，忽略长按")
                         }
                     },
                     onEdit = { transaction: Transaction ->
-                        navController?.navigate(
-                            LedgerNavigation.editTransactionRoute(transaction.id)
-                        )
+                        println("🔍 [LedgerScreen] 编辑按钮被点击！")
+                        println("   - 交易ID: ${transaction.id}")
+                        println("   - 交易金额: ${transaction.amountYuan}")
+                        println("   - 交易分类: ${transaction.categoryDetails?.name}")
+                        println("   - navController是否为null: ${navController == null}")
+                        
+                        val editRoute = LedgerNavigation.editTransactionRoute(transaction.id)
+                        println("   - 编辑路由: $editRoute")
+                        
+                        navController?.navigate(editRoute)
+                        println("   - 导航调用完成")
                     },
                     onDelete = { transaction: Transaction ->
                         viewModel.deleteTransaction(transaction.id)

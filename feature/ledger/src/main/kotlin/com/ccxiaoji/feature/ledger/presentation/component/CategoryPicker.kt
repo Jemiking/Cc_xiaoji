@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -118,18 +119,20 @@ fun CategoryPicker(
                     
                     HorizontalDivider()
                     
-                    // 分类列表
-                    val filteredGroups = if (searchQuery.isEmpty()) {
-                        categoryGroups
-                    } else {
-                        categoryGroups.mapNotNull { group ->
-                            val matchingChildren = group.children.filter {
-                                it.name.contains(searchQuery, ignoreCase = true)
-                            }
-                            when {
-                                group.parent.name.contains(searchQuery, ignoreCase = true) -> group
-                                matchingChildren.isNotEmpty() -> group.copy(children = matchingChildren)
-                                else -> null
+                    // 分类列表 - 使用remember缓存搜索结果
+                    val filteredGroups = remember(searchQuery, categoryGroups) {
+                        if (searchQuery.isEmpty()) {
+                            categoryGroups
+                        } else {
+                            categoryGroups.mapNotNull { group ->
+                                val matchingChildren = group.children.filter {
+                                    it.name.contains(searchQuery, ignoreCase = true)
+                                }
+                                when {
+                                    group.parent.name.contains(searchQuery, ignoreCase = true) -> group
+                                    matchingChildren.isNotEmpty() -> group.copy(children = matchingChildren)
+                                    else -> null
+                                }
                             }
                         }
                     }
@@ -142,7 +145,10 @@ fun CategoryPicker(
                         ),
                         verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)
                     ) {
-                        items(filteredGroups) { group ->
+                        items(
+                            items = filteredGroups,
+                            key = { group -> group.parent.id } // 添加key优化重组性能
+                        ) { group ->
                             CategoryGroupPickerItem(
                                 categoryGroup = group,
                                 selectedCategoryId = selectedCategoryId,
@@ -259,26 +265,33 @@ private fun CategoryGroupPickerItem(
                 }
             }
             
-            // 子分类列表
+            // 子分类列表 - 优化渲染性能
             AnimatedVisibility(
                 visible = isExpanded && categoryGroup.children.isNotEmpty(),
                 enter = expandVertically(),
                 exit = shrinkVertically()
             ) {
+                // 使用remember缓存子项列表，避免重复创建
+                val childrenItems = remember(categoryGroup.children) {
+                    categoryGroup.children
+                }
+                
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(MaterialTheme.colorScheme.surface)
                         .padding(start = DesignTokens.Spacing.large)
                 ) {
-                    categoryGroup.children.forEach { child ->
-                        CategoryChildPickerItem(
-                            category = child,
-                            parentName = categoryGroup.parent.name,
-                            isSelected = child.id == selectedCategoryId,
-                            onCategorySelected = onCategorySelected,
-                            iconDisplayMode = iconDisplayMode
-                        )
+                    childrenItems.forEach { child ->
+                        key(child.id) { // 为每个子项添加key优化性能
+                            CategoryChildPickerItem(
+                                category = child,
+                                parentName = categoryGroup.parent.name,
+                                isSelected = child.id == selectedCategoryId,
+                                onCategorySelected = onCategorySelected,
+                                iconDisplayMode = iconDisplayMode
+                            )
+                        }
                     }
                 }
             }

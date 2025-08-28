@@ -18,8 +18,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ccxiaoji.feature.ledger.domain.model.Ledger
-import com.ccxiaoji.feature.ledger.presentation.component.LedgerSelector
-import com.ccxiaoji.feature.ledger.presentation.component.LedgerSelectorDialog
+import com.ccxiaoji.feature.ledger.presentation.component.LedgerSwitcher
 
 @Composable
 fun LedgerDrawerContent(
@@ -27,16 +26,15 @@ fun LedgerDrawerContent(
     allLedgers: List<Ledger>,
     onLedgerSelected: (Ledger) -> Unit,
     onNavigateToStatistics: () -> Unit,
-    onNavigateToAssetOverview: () -> Unit,
-    onNavigateToAccountManagement: () -> Unit,
+    onNavigateToUnifiedAccountAsset: () -> Unit,
     onNavigateToCategoryManagement: () -> Unit,
     onNavigateToRecurringTransaction: () -> Unit,
     onNavigateToBudget: () -> Unit,
     onNavigateToSavingsGoal: () -> Unit,
-    onNavigateToCreditCard: () -> Unit,
     onNavigateToLedgerSettings: () -> Unit,
     onCloseDrawer: () -> Unit
 ) {
+    // 账户管理现在是直接菜单项，不需要展开状态
     Column(
         modifier = Modifier
             .fillMaxHeight()
@@ -47,8 +45,10 @@ fun LedgerDrawerContent(
         DrawerHeader(
             currentLedger = currentLedger,
             allLedgers = allLedgers,
-            onLedgerSelected = { ledger ->
-                onLedgerSelected(ledger)
+            onLedgerSelected = { ledgerId ->
+                // 找到对应的记账簿对象
+                val selectedLedger = allLedgers.find { it.id == ledgerId }
+                selectedLedger?.let { onLedgerSelected(it) }
                 onCloseDrawer() // 选择记账簿后自动关闭抽屉
             }
         )
@@ -65,35 +65,24 @@ fun LedgerDrawerContent(
                 onCloseDrawer()
             }
         )
+        
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        
+        // 账户资产 (统一页面)
+        DrawerSectionTitle(title = "账户资产")
         DrawerMenuItem(
             icon = Icons.Default.AccountBalance,
-            text = "资产总览",
+            text = "账户与资产",
             onClick = {
-                onNavigateToAssetOverview()
+                onNavigateToUnifiedAccountAsset()
                 onCloseDrawer()
             }
         )
         
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         
-        // 账务管理
-        DrawerSectionTitle(title = "账务管理")
-        DrawerMenuItem(
-            icon = Icons.Default.AccountBalanceWallet,
-            text = "账户管理",
-            onClick = {
-                onNavigateToAccountManagement()
-                onCloseDrawer()
-            }
-        )
-        DrawerMenuItem(
-            icon = Icons.Default.CreditCard,
-            text = "信用卡管理",
-            onClick = {
-                onNavigateToCreditCard()
-                onCloseDrawer()
-            }
-        )
+        // 记账设置
+        DrawerSectionTitle(title = "记账设置")
         DrawerMenuItem(
             icon = Icons.Default.Folder,
             text = "分类管理",
@@ -134,8 +123,8 @@ fun LedgerDrawerContent(
         
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         
-        // 设置
-        DrawerSectionTitle(title = "设置")
+        // 系统设置 (重命名)
+        DrawerSectionTitle(title = "系统设置")
         DrawerMenuItem(
             icon = Icons.Default.Settings,
             text = "记账设置",
@@ -151,9 +140,8 @@ fun LedgerDrawerContent(
 private fun DrawerHeader(
     currentLedger: Ledger?,
     allLedgers: List<Ledger>,
-    onLedgerSelected: (Ledger) -> Unit
+    onLedgerSelected: (String) -> Unit
 ) {
-    var showLedgerSelector by remember { mutableStateOf(false) }
     
     // 如果没有记账簿，显示提示信息
     if (allLedgers.isEmpty()) {
@@ -218,29 +206,13 @@ private fun DrawerHeader(
             }
         }
         
-        // 记账簿选择器
-        LedgerSelector(
-            selectedLedger = currentLedger,
-            onClick = { 
-                if (allLedgers.size > 1) {
-                    showLedgerSelector = true 
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
-    
-    // 记账簿选择对话框
-    if (allLedgers.size > 1) {
-        LedgerSelectorDialog(
-            isVisible = showLedgerSelector,
+        // 记账簿切换器（新组件）
+        LedgerSwitcher(
+            currentLedger = currentLedger,
             ledgers = allLedgers,
-            selectedLedgerId = currentLedger?.id,
-            onLedgerSelected = { ledger ->
-                onLedgerSelected(ledger)
-                showLedgerSelector = false
-            },
-            onDismiss = { showLedgerSelector = false }
+            isLoading = false,
+            onLedgerSelected = onLedgerSelected,
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
@@ -280,6 +252,81 @@ private fun DrawerMenuItem(
         Text(
             text = text,
             style = MaterialTheme.typography.bodyLarge
+        )
+    }
+}
+
+@Composable
+private fun DrawerExpandableMenuItem(
+    icon: ImageVector,
+    text: String,
+    isExpanded: Boolean,
+    onToggleExpanded: () -> Unit,
+    onParentClick: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onParentClick() }
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = text,
+                tint = Color(0xFF4CAF50), // 记账模块主题色
+                modifier = Modifier.size(24.dp)
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f)
+            )
+            // 展开/折叠指示器
+            Icon(
+                imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = if (isExpanded) "收起" else "展开",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier
+                    .size(20.dp)
+                    .clickable { onToggleExpanded() }
+            )
+        }
+        
+        // 子菜单内容
+        if (isExpanded) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun DrawerSubMenuItem(
+    icon: ImageVector,
+    text: String,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(start = 52.dp, end = 16.dp, top = 8.dp, bottom = 8.dp), // 增加左边距以显示层次
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = text,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant, // 子项使用稍浅的颜色
+            modifier = Modifier.size(20.dp) // 子项图标稍小
+        )
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium, // 子项文本稍小
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

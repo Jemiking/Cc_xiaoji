@@ -20,6 +20,8 @@ data class BasicSettings(
     val defaultAccountId: Long? = null,
     // 默认币种
     val defaultCurrency: String = "CNY",
+    // 时间记录开关
+    val enableTimeRecording: Boolean = false,
     // 首页显示设置
     val homeDisplaySettings: HomeDisplaySettings = HomeDisplaySettings(),
     // 记账提醒设置
@@ -92,6 +94,8 @@ data class AutomationSettings(
     val enableSmartSuggestions: Boolean = true,
     // 是否自动创建定期交易
     val enableAutoRecurring: Boolean = true,
+    // 支付成功后快速记账（无障碍命中时弹半屏面板）
+    val enableQuickAddOnPaymentSuccess: Boolean = true,
     // 自动分类规则
     val autoCategorizationRules: List<AutoCategorizationRule> = emptyList()
 )

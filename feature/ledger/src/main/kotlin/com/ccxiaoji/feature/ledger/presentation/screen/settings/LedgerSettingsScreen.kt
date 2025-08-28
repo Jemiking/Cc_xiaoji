@@ -42,7 +42,9 @@ fun LedgerSettingsScreen(
     onNavigateToReminderSettings: () -> Unit = {},
     onNavigateToHomeDisplaySettings: () -> Unit = {},
     onNavigateToUIStyleSettings: () -> Unit = {},
-    onNavigateToDesignDemo: () -> Unit = {},
+    onNavigateToPermissionGuide: () -> Unit = {},
+    onNavigateToAutoLedgerDebug: () -> Unit = {},
+    onNavigateToAutoLedgerSettings: () -> Unit = {},
     viewModel: LedgerSettingsViewModel = hiltViewModel(),
     navController: androidx.navigation.NavController? = null
 ) {
@@ -51,8 +53,6 @@ fun LedgerSettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     
-    // Demo页面状态
-    var showDesignDemo by remember { mutableStateOf(false) }
     
     // 处理币种选择结果
     navController?.currentBackStackEntry?.savedStateHandle?.let { savedStateHandle ->
@@ -189,7 +189,6 @@ fun LedgerSettingsScreen(
                     onNavigateToCategoryManagement = onNavigateToCategoryManagement,
                     onNavigateToAccountManagement = onNavigateToAccountManagement,
                     onNavigateToBudgetManagement = onNavigateToBudgetManagement,
-                    onNavigateToDesignDemo = { showDesignDemo = true }
                 )
             }
             
@@ -202,20 +201,13 @@ fun LedgerSettingsScreen(
                 AutomationSettingsSection(
                     automationSettings = settings.automationSettings,
                     onUpdateAutomationSettings = viewModel::updateAutomationSettings,
-                    onNavigateToRecurringTransactions = onNavigateToRecurringTransactions
+                    onNavigateToRecurringTransactions = onNavigateToRecurringTransactions,
+                    onNavigateToPermissionGuide = onNavigateToPermissionGuide,
+                    onNavigateToAutoLedgerDebug = onNavigateToAutoLedgerDebug,
+                    onNavigateToAutoLedgerSettings = onNavigateToAutoLedgerSettings
                 )
             }
         }
     }
     
-    // 显示设计Demo页面
-    if (showDesignDemo) {
-        androidx.compose.foundation.layout.Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            com.ccxiaoji.feature.ledger.presentation.screen.demo.DesignDemoScreen(
-                onNavigateBack = { showDesignDemo = false }
-            )
-        }
-    }
 }

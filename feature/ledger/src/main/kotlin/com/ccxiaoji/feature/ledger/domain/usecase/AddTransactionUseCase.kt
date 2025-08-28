@@ -29,7 +29,7 @@ class AddTransactionUseCase @Inject constructor(
         note: String? = null,
         accountId: String,
         ledgerId: String? = null
-    ): Long {
+    ): String {
         // 验证输入
         if (amountCents == 0) {
             throw DomainException.ValidationException("金额不能为0")

@@ -77,6 +77,19 @@ fun BasicSettingsSection(
             
             Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
             
+            // 时间记录开关
+            SwitchSettingItem(
+                icon = Icons.Default.AccessTime,
+                title = "记录交易时间",
+                subtitle = "开启后可以记录交易的具体时分",
+                checked = basicSettings.enableTimeRecording,
+                onCheckedChange = { enabled ->
+                    onUpdateBasicSettings(basicSettings.copy(enableTimeRecording = enabled))
+                }
+            )
+            
+            Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
+            
             // 记账提醒
             SettingItem(
                 icon = Icons.Default.Notifications,

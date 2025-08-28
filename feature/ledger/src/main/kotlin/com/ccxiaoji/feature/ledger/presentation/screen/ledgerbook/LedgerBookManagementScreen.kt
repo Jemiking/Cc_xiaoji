@@ -21,6 +21,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ccxiaoji.feature.ledger.presentation.screen.ledgerbook.components.LedgerBookItem
 import com.ccxiaoji.feature.ledger.presentation.screen.ledgerbook.dialogs.AddEditLedgerBookDialog
+import com.ccxiaoji.feature.ledger.presentation.screen.ledgerbook.dialogs.LedgerLinkManagementDialog
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerBookManagementViewModel
 import com.ccxiaoji.ui.components.FlatButton
 import com.ccxiaoji.ui.theme.DesignTokens
@@ -42,6 +43,7 @@ fun LedgerBookManagementScreen(
     
     var showAddDialog by remember { mutableStateOf(false) }
     var editingLedger by remember { mutableStateOf<com.ccxiaoji.feature.ledger.domain.model.Ledger?>(null) }
+    var managingLinksLedger by remember { mutableStateOf<com.ccxiaoji.feature.ledger.domain.model.Ledger?>(null) }
     
     LaunchedEffect(Unit) {
         viewModel.loadLedgers()
@@ -169,6 +171,9 @@ fun LedgerBookManagementScreen(
                                     }
                                 }
                             },
+                            onManageLinks = {
+                                managingLinksLedger = ledger
+                            },
                             modifier = Modifier.animateItemPlacement()
                         )
                     }
@@ -217,6 +222,67 @@ fun LedgerBookManagementScreen(
                     } else {
                         snackbarHostState.showSnackbar(
                             result.exceptionOrNull()?.message ?: "更新失败"
+                        )
+                    }
+                }
+            }
+        )
+    }
+    
+    // 联动关系管理对话框
+    managingLinksLedger?.let { ledger ->
+        val existingLinks by viewModel.getLedgerLinks(ledger.id).collectAsStateWithLifecycle(initialValue = emptyList())
+        
+        LedgerLinkManagementDialog(
+            currentLedger = ledger,
+            availableLedgers = uiState.ledgers,
+            existingLinks = existingLinks,
+            onDismiss = { managingLinksLedger = null },
+            onCreateLink = { targetLedgerId, syncMode ->
+                scope.launch {
+                    val result = viewModel.createLedgerLink(ledger.id, targetLedgerId, syncMode)
+                    if (result.isSuccess) {
+                        snackbarHostState.showSnackbar("联动关系创建成功")
+                    } else {
+                        snackbarHostState.showSnackbar(
+                            result.exceptionOrNull()?.message ?: "创建联动关系失败"
+                        )
+                    }
+                }
+            },
+            onDeleteLink = { linkId ->
+                scope.launch {
+                    val result = viewModel.deleteLedgerLink(linkId)
+                    if (result.isSuccess) {
+                        snackbarHostState.showSnackbar("联动关系已删除")
+                    } else {
+                        snackbarHostState.showSnackbar(
+                            result.exceptionOrNull()?.message ?: "删除联动关系失败"
+                        )
+                    }
+                }
+            },
+            onUpdateSyncMode = { linkId, syncMode ->
+                scope.launch {
+                    val result = viewModel.updateSyncMode(linkId, syncMode)
+                    if (result.isSuccess) {
+                        snackbarHostState.showSnackbar("同步模式已更新")
+                    } else {
+                        snackbarHostState.showSnackbar(
+                            result.exceptionOrNull()?.message ?: "更新同步模式失败"
+                        )
+                    }
+                }
+            },
+            onToggleAutoSync = { linkId, enabled ->
+                scope.launch {
+                    val result = viewModel.toggleAutoSync(linkId, enabled)
+                    if (result.isSuccess) {
+                        val message = if (enabled) "已启用自动同步" else "已禁用自动同步"
+                        snackbarHostState.showSnackbar(message)
+                    } else {
+                        snackbarHostState.showSnackbar(
+                            result.exceptionOrNull()?.message ?: "操作失败"
                         )
                     }
                 }

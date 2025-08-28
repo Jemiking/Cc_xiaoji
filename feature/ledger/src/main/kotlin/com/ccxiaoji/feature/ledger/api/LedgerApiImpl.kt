@@ -22,7 +22,7 @@ import com.ccxiaoji.feature.ledger.presentation.screen.account.AccountScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.budget.BudgetScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.category.CategoryManagementScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.creditcard.CreditCardBillsScreen
-import com.ccxiaoji.feature.ledger.presentation.screen.creditcard.CreditCardScreen
+// import com.ccxiaoji.feature.ledger.presentation.screen.creditcard.CreditCardScreen // 已删除
 import com.ccxiaoji.feature.ledger.presentation.screen.creditcard.CreditCardSettingsScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.ledger.LedgerScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.transaction.TransactionDetailScreen
@@ -32,6 +32,7 @@ import com.ccxiaoji.feature.ledger.presentation.screen.savings.SavingsGoalScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.statistics.StatisticsScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.AssetOverviewScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.settings.LedgerSettingsScreen
+import com.ccxiaoji.feature.ledger.presentation.screen.debug.AutoLedgerDebugScreen
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
@@ -158,7 +159,7 @@ class LedgerApiImpl @Inject constructor(
     override suspend fun insertTransactionsBatch(
         transactions: List<TransactionBatchItem>
     ): BatchInsertResult {
-        val results = mutableListOf<Long>()
+        val results = mutableListOf<String>()
         val errors = mutableListOf<BatchInsertError>()
         
         // 使用事务批量插入
@@ -1060,6 +1061,14 @@ class LedgerApiImpl @Inject constructor(
     }
     
     @Composable
+    override fun getUnifiedAccountAssetScreen(onNavigateBack: () -> Unit, navController: NavHostController?) {
+        com.ccxiaoji.feature.ledger.presentation.screen.account.UnifiedAccountAssetScreen(
+            onNavigateBack = onNavigateBack,
+            navController = navController
+        )
+    }
+    
+    @Composable
     override fun getLedgerSettingsScreen(
         onNavigateBack: () -> Unit,
         onNavigateToCategory: () -> Unit,
@@ -1072,6 +1081,9 @@ class LedgerApiImpl @Inject constructor(
         onNavigateToHomeDisplaySettings: () -> Unit,
         onNavigateToUIStyleSettings: () -> Unit,
         onNavigateToLedgerBookManagement: () -> Unit,
+        onNavigateToPermissionGuide: () -> Unit,
+        onNavigateToAutoLedgerDebug: () -> Unit,
+        onNavigateToAutoLedgerSettings: () -> Unit,
         navController: NavHostController?
     ) {
         LedgerSettingsScreen(
@@ -1086,6 +1098,9 @@ class LedgerApiImpl @Inject constructor(
             onNavigateToReminderSettings = onNavigateToReminderSettings,
             onNavigateToHomeDisplaySettings = onNavigateToHomeDisplaySettings,
             onNavigateToUIStyleSettings = onNavigateToUIStyleSettings,
+            onNavigateToPermissionGuide = onNavigateToPermissionGuide,
+            onNavigateToAutoLedgerDebug = onNavigateToAutoLedgerDebug,
+            onNavigateToAutoLedgerSettings = onNavigateToAutoLedgerSettings,
             navController = navController
         )
     }
@@ -1130,11 +1145,10 @@ class LedgerApiImpl @Inject constructor(
         onNavigateBack: () -> Unit,
         onNavigateToAccount: (String) -> Unit
     ) {
-        CreditCardScreen(
-            navController = navController,
-            onNavigateBack = onNavigateBack,
-            onNavigateToAccount = onNavigateToAccount
-        )
+        // TODO: 恢复CreditCardScreen实现或提供替代方案
+        androidx.compose.foundation.layout.Column {
+            androidx.compose.material3.Text("信用卡功能暂时不可用")
+        }
     }
     
     @Composable
@@ -1220,5 +1234,12 @@ class LedgerApiImpl @Inject constructor(
     ) {
         // TODO: 实现记账簿选择器对话框
         throw NotImplementedError("记账簿选择器待实现")
+    }
+    
+    @Composable
+    override fun getAutoLedgerDebugScreen(
+        navController: NavHostController
+    ) {
+        AutoLedgerDebugScreen(navController = navController)
     }
 }

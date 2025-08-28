@@ -347,24 +347,94 @@ private fun TransactionContextMenu(
     onCopy: () -> Unit,
     onDismiss: () -> Unit
 ) {
+    
     DropdownMenu(
         expanded = true,
-        onDismissRequest = onDismiss
+        onDismissRequest = onDismiss,
+        modifier = Modifier
+            .background(
+                color = MaterialTheme.colorScheme.surface,
+                shape = RoundedCornerShape(DesignTokens.Spacing.medium)
+            )
     ) {
+        // 复制交易
         DropdownMenuItem(
-            text = { Text("编辑") },
-            onClick = onEdit,
-            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
-        )
-        DropdownMenuItem(
-            text = { Text("复制") },
+            text = { 
+                Text(
+                    text = "复制",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                ) 
+            },
             onClick = onCopy,
-            leadingIcon = { Icon(Icons.Default.ContentCopy, contentDescription = null) }
+            leadingIcon = { 
+                Icon(
+                    Icons.Default.ContentCopy, 
+                    contentDescription = null,
+                    tint = DesignTokens.BrandColors.Ledger
+                ) 
+            },
+            modifier = Modifier.padding(horizontal = DesignTokens.Spacing.small)
         )
+        
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
+            thickness = 1.dp
+        )
+        
+        // 退款功能 (替换原编辑功能)
         DropdownMenuItem(
-            text = { Text("删除") },
+            text = { 
+                Column {
+                    Text(
+                        text = "退款",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "待开发中",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
+            },
+            onClick = {
+                // 暂时不执行任何操作，等待功能开发
+                onDismiss()
+            },
+            leadingIcon = { 
+                Icon(
+                    Icons.Default.AccountBalance, 
+                    contentDescription = null,
+                    tint = DesignTokens.BrandColors.Warning
+                ) 
+            },
+            modifier = Modifier.padding(horizontal = DesignTokens.Spacing.small)
+        )
+        
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
+            thickness = 1.dp
+        )
+        
+        // 删除交易
+        DropdownMenuItem(
+            text = { 
+                Text(
+                    text = "删除",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.error
+                ) 
+            },
             onClick = onDelete,
-            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) }
+            leadingIcon = { 
+                Icon(
+                    Icons.Default.Delete, 
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error
+                ) 
+            },
+            modifier = Modifier.padding(horizontal = DesignTokens.Spacing.small)
         )
     }
 }

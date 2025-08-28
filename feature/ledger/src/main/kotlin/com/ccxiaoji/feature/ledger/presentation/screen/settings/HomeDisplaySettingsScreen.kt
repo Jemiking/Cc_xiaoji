@@ -71,112 +71,19 @@ fun HomeDisplaySettingsScreen(
             ) {
                 Column {
                     // 今日数据显示
-                    SectionHeader(title = "今日数据")
+                    SectionHeader(title = "首页显示设置")
                     SwitchListItem(
                         title = "显示今日支出",
+                        subtitle = "在首页概览中显示当日的总支出金额",
                         checked = uiState.showTodayExpense,
                         onCheckedChange = { viewModel.updateShowTodayExpense(it) }
                     )
-                    SwitchListItem(
-                        title = "显示今日收入",
-                        checked = uiState.showTodayIncome,
-                        onCheckedChange = { viewModel.updateShowTodayIncome(it) }
-                    )
-                    
-                    HorizontalDivider(
-                        modifier = Modifier.padding(DesignTokens.Spacing.medium),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
-                    )
-                    
-                    // 本月数据显示
-                    SectionHeader(title = "本月数据")
-                    SwitchListItem(
-                        title = "显示本月支出",
-                        checked = uiState.showMonthExpense,
-                        onCheckedChange = { viewModel.updateShowMonthExpense(it) }
-                    )
-                    SwitchListItem(
-                        title = "显示本月收入",
-                        checked = uiState.showMonthIncome,
-                        onCheckedChange = { viewModel.updateShowMonthIncome(it) }
-                    )
-                    
-                    HorizontalDivider(
-                        modifier = Modifier.padding(DesignTokens.Spacing.medium),
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
-                    )
-                    
-                    // 其他显示设置
-                    SectionHeader(title = "其他显示")
-                    SwitchListItem(
-                        title = "显示账户余额",
-                        checked = uiState.showAccountBalance,
-                        onCheckedChange = { viewModel.updateShowAccountBalance(it) }
-                    )
-                    SwitchListItem(
-                        title = "显示预算进度",
-                        checked = uiState.showBudgetProgress,
-                        onCheckedChange = { viewModel.updateShowBudgetProgress(it) }
-                    )
-                    SwitchListItem(
-                        title = "显示最近交易",
-                        checked = uiState.showRecentTransactions,
-                        onCheckedChange = { viewModel.updateShowRecentTransactions(it) }
-                    )
-                    
-                    if (uiState.showRecentTransactions) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(DesignTokens.Spacing.medium),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "最近交易数量",
-                                style = MaterialTheme.typography.bodyLarge
-                            )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                IconButton(
-                                    onClick = { viewModel.decreaseRecentTransactionCount() },
-                                    enabled = uiState.recentTransactionCount > 1
-                                ) {
-                                    Icon(
-                                        Icons.Default.Remove,
-                                        contentDescription = "减少",
-                                        tint = if (uiState.recentTransactionCount > 1) 
-                                            MaterialTheme.colorScheme.onSurfaceVariant 
-                                        else 
-                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                                    )
-                                }
-                                Text(
-                                    text = uiState.recentTransactionCount.toString(),
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.padding(horizontal = DesignTokens.Spacing.small)
-                                )
-                                IconButton(
-                                    onClick = { viewModel.increaseRecentTransactionCount() },
-                                    enabled = uiState.recentTransactionCount < 10
-                                ) {
-                                    Icon(
-                                        Icons.Default.Add,
-                                        contentDescription = "增加",
-                                        tint = if (uiState.recentTransactionCount < 10) 
-                                            MaterialTheme.colorScheme.onSurfaceVariant 
-                                        else 
-                                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                                    )
-                                }
-                            }
-                        }
-                    }
                 }
             }
             
             // 说明文字
             Text(
-                text = "自定义首页显示的内容，让记账更符合您的使用习惯",
+                text = "控制首页概览中显示的内容。当前只有今日支出统计功能已实现。",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(DesignTokens.Spacing.medium)

@@ -4,6 +4,7 @@ package com.ccxiaoji.feature.ledger.presentation.navigation
 object LedgerNavigation {
     const val StatisticsRoute = "statistics"
     const val AccountManagementRoute = "account_management"
+    const val UnifiedAccountAssetRoute = "unified_account_asset"
     const val CategoryManagementRoute = "category_management"
     const val RecurringTransactionRoute = "recurring_transaction"
     const val BudgetRoute = "budget"
@@ -69,4 +70,5 @@ object LedgerNavigation {
     fun addSavingsGoalRoute() = "add_savings_goal"
     fun editSavingsGoalRoute(goalId: String) = "edit_savings_goal/$goalId"
     fun paymentHistoryRoute(accountId: String) = "payment_history/$accountId"
+    fun unifiedAccountAssetRoute() = "unified_account_asset"
 }

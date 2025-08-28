@@ -81,18 +81,12 @@ class TransactionRepositoryImpl @Inject constructor(
         val endMillis = endDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
         val currentUserId = userApi.getCurrentUserId()
-        android.util.Log.e("LEDGER_DEBUG", "========== 获取月度统计 ==========")
-        android.util.Log.e("LEDGER_DEBUG", "年月: $year-$month")
-        android.util.Log.e("LEDGER_DEBUG", "用户ID: $currentUserId")
-        android.util.Log.e("LEDGER_DEBUG", "日期范围: $startMillis - $endMillis")
-        android.util.Log.e("LEDGER_DEBUG", "时间转换: 开始=${java.util.Date(startMillis)}, 结束=${java.util.Date(endMillis)}")
         
         // Use new category-based queries
         val income = transactionDao.getTotalByType(currentUserId, startMillis, endMillis, "INCOME") ?: 0
         val expense = transactionDao.getTotalByType(currentUserId, startMillis, endMillis, "EXPENSE") ?: 0
         
-        android.util.Log.e("LEDGER_DEBUG", "收入: $income 分")
-        android.util.Log.e("LEDGER_DEBUG", "支出: $expense 分")
+        
         
         income to expense
     }
@@ -104,10 +98,14 @@ class TransactionRepositoryImpl @Inject constructor(
         accountId: String,
         ledgerId: String,
         transactionDate: kotlinx.datetime.Instant?,
-        location: com.ccxiaoji.feature.ledger.domain.model.LocationData?
-    ): BaseResult<Long> = safeSuspendCall {
-        val transactionId = UUID.randomUUID().toString()
+        location: com.ccxiaoji.feature.ledger.domain.model.LocationData?,
+        transactionId: String?
+    ): BaseResult<String> = safeSuspendCall {
+        val actualTransactionId = transactionId ?: UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
+        
+        println("🔍 [TransactionRepo] 使用交易ID: '$actualTransactionId'")
+        println("🔍 [TransactionRepo] ID来源: ${if (transactionId != null) "外部传入" else "内部生成"}")
         
         // Use provided accountId
         val actualAccountId = accountId
@@ -116,7 +114,7 @@ class TransactionRepositoryImpl @Inject constructor(
         val categoryEntity = categoryDao.getCategoryById(categoryId)
         
         val entity = TransactionEntity(
-            id = transactionId,
+            id = actualTransactionId,
             userId = userApi.getCurrentUserId(),
             accountId = actualAccountId,
             amountCents = amountCents,
@@ -145,9 +143,10 @@ class TransactionRepositoryImpl @Inject constructor(
         categoryDao.incrementUsageCount(categoryId)
         
         // Log the change for sync
-        logChange("transactions", transactionId, "INSERT", entity)
+        logChange("transactions", actualTransactionId, "INSERT", entity)
         
-        transactionId.hashCode().toLong()
+        println("✅ [TransactionRepo] 交易创建成功: '$actualTransactionId'")
+        actualTransactionId
     }
     
     override suspend fun updateTransaction(transaction: Transaction): BaseResult<Unit> = safeSuspendCall {
@@ -342,14 +341,6 @@ class TransactionRepositoryImpl @Inject constructor(
         endDate: Long?
     ): Flow<BaseResult<Pair<List<Transaction>, Int>>> = flow<BaseResult<Pair<List<Transaction>, Int>>> {
         val currentUserId = userApi.getCurrentUserId()
-        android.util.Log.e("LEDGER_DEBUG", "========== Repository 查询交易数据 ==========")
-        android.util.Log.e("LEDGER_DEBUG", "当前用户ID: $currentUserId")
-        android.util.Log.e("LEDGER_DEBUG", "查询参数: offset=$offset, limit=$limit")
-        android.util.Log.e("LEDGER_DEBUG", "账户ID: $accountId")
-        android.util.Log.e("LEDGER_DEBUG", "日期范围: $startDate - $endDate")
-        if (startDate != null && endDate != null) {
-            android.util.Log.e("LEDGER_DEBUG", "日期转换: 开始=${java.util.Date(startDate)}, 结束=${java.util.Date(endDate)}")
-        }
         
         val result = transactionDao.getTransactionsPaginated(
             userId = currentUserId,
@@ -360,14 +351,7 @@ class TransactionRepositoryImpl @Inject constructor(
             endDateMillis = endDate
         )
         
-        android.util.Log.e("LEDGER_DEBUG", "DAO查询结果: ${result.first.size} 条记录, 总计 ${result.second} 条")
-        if (result.first.isNotEmpty()) {
-            val first = result.first.first()
-            android.util.Log.e("LEDGER_DEBUG", "第一条记录: ID=${first.id}, UserID=${first.userId}, Amount=${first.amountCents}, Date=${first.createdAt}")
-            android.util.Log.e("LEDGER_DEBUG", "第一条时间: ${java.util.Date(first.createdAt)}")
-        } else {
-            android.util.Log.e("LEDGER_DEBUG", "警告: DAO返回空列表！")
-        }
+        
         
         val transactions = result.first.map { entity ->
             val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
@@ -382,11 +366,9 @@ class TransactionRepositoryImpl @Inject constructor(
             entity.toDomainModel(categoryDetails)
         }
         
-        android.util.Log.d("TransactionRepository", "映射完成: ${transactions.size} 条交易")
         
         emit(BaseResult.Success(Pair(transactions, result.second)))
     }.catch { e ->
-        android.util.Log.e("TransactionRepository", "查询失败: ${e.message}", e)
         emit(BaseResult.Error(if (e is Exception) e else Exception(e)))
     }
     

@@ -11,6 +11,7 @@ import com.ccxiaoji.feature.ledger.domain.repository.CategoryRepository
 import com.ccxiaoji.feature.ledger.data.defaults.DefaultCategories
 import com.ccxiaoji.shared.user.api.UserApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
 import java.util.UUID
@@ -501,6 +502,73 @@ class CategoryRepositoryImpl @Inject constructor(
     
     override suspend fun incrementCategoryUsage(categoryId: String) {
         categoryDao.incrementUsageCount(categoryId)
+    }
+    
+    // ========== 默认分类支持实现 ==========
+    
+    override suspend fun findCategoryByName(name: String): Category? {
+        println("🔧 [CategoryRepositoryImpl.findCategoryByName] 查找分类: $name")
+        
+        return try {
+            val categories = categoryDao.getCategoriesByUser(userApi.getCurrentUserId()).first()
+            val entity = categories.find { it.name == name && it.isActive }
+            
+            if (entity != null) {
+                println("🔧 [CategoryRepositoryImpl.findCategoryByName] 找到分类: ${entity.name} (ID: ${entity.id})")
+                entity.toDomainModel()
+            } else {
+                println("🔧 [CategoryRepositoryImpl.findCategoryByName] 未找到分类: $name")
+                null
+            }
+        } catch (e: Exception) {
+            println("❌ [CategoryRepositoryImpl.findCategoryByName] 查找分类异常: ${e.message}")
+            null
+        }
+    }
+    
+    override suspend fun getOrCreateDefaultOtherCategory(userId: String): String {
+        println("🔧 [CategoryRepositoryImpl.getOrCreateDefaultOtherCategory] 获取或创建默认'其他'分类")
+        
+        // 1. 先尝试查找现有的"其他"分类
+        val categories = categoryDao.getCategoriesByUser(userId).first()
+        val existingOther = categories.find { it.name == "其他" && it.isActive }
+            
+        if (existingOther != null) {
+            println("🔧 [CategoryRepositoryImpl.getOrCreateDefaultOtherCategory] 使用现有'其他'分类: ${existingOther.id}")
+            return existingOther.id
+        }
+        
+        // 2. 创建新的"其他"分类
+        println("🔧 [CategoryRepositoryImpl.getOrCreateDefaultOtherCategory] 创建新的'其他'分类")
+        
+        val categoryId = UUID.randomUUID().toString()
+        val timestamp = System.currentTimeMillis()
+        
+        val otherCategory = CategoryEntity(
+            id = categoryId,
+            userId = userId,
+            name = "其他",
+            type = Category.Type.EXPENSE.name, // 默认为支出分类
+            icon = "help_outline",
+            color = "#9E9E9E", // 灰色
+            parentId = null,
+            level = 1,
+            path = "其他",
+            displayOrder = 999, // 排在最后
+            isDefault = true,
+            isActive = true,
+            isSystem = true, // 标记为系统分类
+            usageCount = 0,
+            createdAt = timestamp,
+            updatedAt = timestamp,
+            isDeleted = false,
+            syncStatus = SyncStatus.SYNCED
+        )
+        
+        categoryDao.insertCategory(otherCategory)
+        println("🔧 [CategoryRepositoryImpl.getOrCreateDefaultOtherCategory] 创建'其他'分类成功: $categoryId")
+        
+        return categoryId
     }
 }
 

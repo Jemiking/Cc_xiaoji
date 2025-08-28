@@ -17,7 +17,11 @@ import javax.inject.Singleton
 @Singleton
 class RuntimeDataFlowValidator @Inject constructor(
     private val defaultLedgerValidator: DefaultLedgerMechanismValidator,
-    private val statePersistenceValidator: StatePersistenceValidator
+    private val statePersistenceValidator: StatePersistenceValidator,
+    private val edgeCaseValidator: EdgeCaseValidator,
+    private val performanceValidator: PerformanceValidator,
+    private val userExperienceValidator: UserExperienceValidator,
+    private val integrationValidator: IntegrationValidator
 ) {
     
     companion object {
@@ -50,6 +54,18 @@ class RuntimeDataFlowValidator @Inject constructor(
                 
                 // 5. 验证数据一致性
                 validateDataConsistency(viewModel)
+                
+                // 6. 验证边界情况处理
+                validateEdgeCases(viewModel)
+                
+                // 7. 验证性能表现
+                validatePerformance(viewModel)
+                
+                // 8. 验证用户体验
+                validateUserExperience(viewModel)
+                
+                // 9. 验证模块集成
+                validateIntegration(viewModel)
                 
                 Log.i(TAG, "✅ 记账簿数据流验证完成")
                 
@@ -279,6 +295,128 @@ class RuntimeDataFlowValidator @Inject constructor(
         }
     }
     
+    /**
+     * 验证边界情况处理
+     */
+     private suspend fun validateEdgeCases(viewModel: LedgerViewModel) {
+         Log.d(DEBUG_TAG, "⚠️ 开始验证边界情况处理")
+         
+         try {
+             // 使用专门的边界情况验证器验证ViewModel的边界情况处理
+             val validationSummary = edgeCaseValidator.validateViewModelEdgeCases(viewModel)
+             
+             if (validationSummary.success) {
+                 Log.d(DEBUG_TAG, "✅ ViewModel边界情况处理验证通过")
+                 Log.d(DEBUG_TAG, "    初始化时间: ${validationSummary.initializationTimeMs}ms")
+                 Log.d(DEBUG_TAG, "    已处理边界情况: ${validationSummary.handledEdgeCases.joinToString(", ")}")
+             } else {
+                 Log.e(DEBUG_TAG, "❌ ViewModel边界情况处理验证失败")
+                 validationSummary.issues.forEach { issue ->
+                     Log.e(DEBUG_TAG, "    问题: $issue")
+                 }
+             }
+             
+             // 执行完整的边界情况验证（这会测试所有异常场景）
+             edgeCaseValidator.executeFullEdgeCaseValidation()
+             
+         } catch (e: Exception) {
+             Log.e(DEBUG_TAG, "❌ 边界情况处理验证异常", e)
+         }
+     }
+
+    /**
+     * 验证性能表现
+     */
+    private suspend fun validatePerformance(viewModel: LedgerViewModel) {
+        Log.d(DEBUG_TAG, "⚡ 开始验证性能表现")
+        
+        try {
+            // 使用专门的性能验证器验证ViewModel的性能表现
+            val validationSummary = performanceValidator.validateViewModelPerformance(viewModel)
+            
+            if (validationSummary.success) {
+                Log.d(DEBUG_TAG, "✅ ViewModel性能表现验证通过")
+                Log.d(DEBUG_TAG, "    初始化时间: ${validationSummary.initializationTimeMs}ms")
+                Log.d(DEBUG_TAG, "    切换时间: ${validationSummary.switchingTimeMs}ms")
+                Log.d(DEBUG_TAG, "    内存使用: ${validationSummary.memoryUsageMB}MB")
+                Log.d(DEBUG_TAG, "    性能等级: ${validationSummary.performanceGrade}")
+            } else {
+                Log.e(DEBUG_TAG, "❌ ViewModel性能表现验证失败")
+                validationSummary.issues.forEach { issue ->
+                    Log.e(DEBUG_TAG, "    问题: $issue")
+                }
+            }
+            
+            // 执行完整的性能验证（这会测试所有性能相关功能）
+            performanceValidator.executeFullPerformanceValidation()
+            
+        } catch (e: Exception) {
+            Log.e(DEBUG_TAG, "❌ 性能表现验证异常", e)
+        }
+    }
+
+    /**
+     * 验证用户体验
+     */
+    private suspend fun validateUserExperience(viewModel: LedgerViewModel) {
+        Log.d(DEBUG_TAG, "🎨 开始验证用户体验")
+        
+        try {
+            // 使用专门的用户体验验证器验证ViewModel的用户体验
+            val validationSummary = userExperienceValidator.validateViewModelUserExperience(viewModel)
+            
+            if (validationSummary.success) {
+                Log.d(DEBUG_TAG, "✅ ViewModel用户体验验证通过")
+                Log.d(DEBUG_TAG, "    加载状态管理: ${validationSummary.loadingStateManagement}")
+                Log.d(DEBUG_TAG, "    错误处理: ${validationSummary.errorHandling}")
+                Log.d(DEBUG_TAG, "    交互响应性: ${validationSummary.interactionResponsiveness}")
+                Log.d(DEBUG_TAG, "    整体UX评级: ${validationSummary.overallRating}")
+            } else {
+                Log.e(DEBUG_TAG, "❌ ViewModel用户体验验证失败")
+                validationSummary.issues.forEach { issue ->
+                    Log.e(DEBUG_TAG, "    问题: $issue")
+                }
+            }
+            
+            // 执行完整的用户体验验证（这会测试所有UX相关功能）
+            userExperienceValidator.executeFullUserExperienceValidation()
+            
+        } catch (e: Exception) {
+            Log.e(DEBUG_TAG, "❌ 用户体验验证异常", e)
+        }
+    }
+
+    /**
+     * 验证模块集成
+     */
+    private suspend fun validateIntegration(viewModel: LedgerViewModel) {
+        Log.d(DEBUG_TAG, "🔗 开始验证模块集成")
+        
+        try {
+            // 使用专门的集成验证器验证ViewModel与其他模块的集成
+            val validationSummary = integrationValidator.validateViewModelIntegration(viewModel)
+            
+            if (validationSummary.success) {
+                Log.d(DEBUG_TAG, "✅ ViewModel模块集成验证通过")
+                Log.d(DEBUG_TAG, "    模块集成评分: ${validationSummary.moduleIntegrationScore}")
+                Log.d(DEBUG_TAG, "    数据一致性评分: ${validationSummary.dataConsistencyScore}")
+                Log.d(DEBUG_TAG, "    错误处理评分: ${validationSummary.errorHandlingScore}")
+                Log.d(DEBUG_TAG, "    整体集成评级: ${validationSummary.overallIntegrationRating}")
+            } else {
+                Log.e(DEBUG_TAG, "❌ ViewModel模块集成验证失败")
+                validationSummary.issues.forEach { issue ->
+                    Log.e(DEBUG_TAG, "    问题: $issue")
+                }
+            }
+            
+            // 执行完整的集成验证（这会测试所有跨模块功能）
+            integrationValidator.executeFullIntegrationValidation()
+            
+        } catch (e: Exception) {
+            Log.e(DEBUG_TAG, "❌ 模块集成验证异常", e)
+        }
+    }
+
     /**
      * 快速数据流检查
      * 适用于频繁调用的场景

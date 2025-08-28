@@ -50,10 +50,10 @@ class MainActivity : ComponentActivity() {
     lateinit var planApi: PlanApi
     
     override fun onCreate(savedInstanceState: Bundle?) {
-        // 使用System.out作为备用输出
-        System.out.println("========== CC小记启动 ==========")
-        System.out.println("版本: ${BuildConfig.VERSION_NAME}")
-        System.out.println("Debug: ${BuildConfig.DEBUG}")
+        // 统一使用 Log 输出，便于在 Logcat 中过滤
+        Log.i(TAG, "========== CC小记启动 ==========")
+        Log.i(TAG, "版本: ${BuildConfig.VERSION_NAME}")
+        Log.i(TAG, "Debug: ${BuildConfig.DEBUG}")
         
         // 同时使用多种日志级别确保输出
         android.util.Log.e("CC_DEBUG", "========== MainActivity启动 ==========")

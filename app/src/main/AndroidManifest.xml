@@ -11,6 +11,8 @@
     <!-- 位置权限 -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
         android:name=".CcXiaoJiApplication"
@@ -22,6 +24,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CcXiaoJi"
+        android:enableOnBackInvokedCallback="true"
         tools:targetApi="31">
         <activity
             android:name=".presentation.MainActivity"
@@ -30,6 +33,16 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- 支持应用内 DeepLink 跳转到添加交易页：ccxiaoji://app/add_transaction -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="ccxiaoji"
+                    android:host="app"
+                    android:pathPrefix="/add_transaction" />
             </intent-filter>
         </activity>
         
@@ -43,6 +56,19 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/countdown_widget_info" />
+        </receiver>
+        
+        <!-- 自动记账通知Action广播接收器 -->
+        <receiver 
+            android:name="com.ccxiaoji.feature.ledger.domain.service.AutoLedgerBroadcastReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.ccxiaoji.feature.ledger.ACTION_UNDO" />
+                <action android:name="com.ccxiaoji.feature.ledger.ACTION_EDIT" />
+                <action android:name="com.ccxiaoji.feature.ledger.ACTION_MANUAL_CONFIRM" />
+                <action android:name="com.ccxiaoji.feature.ledger.ACTION_QUICK_SAVE" />
+            </intent-filter>
         </receiver>
         
         <!-- Sync Worker -->
@@ -73,6 +99,15 @@
                 android:value="androidx.startup"
                 tools:node="remove" />
         </provider>
+        
+        
+        <!-- 快速记账Activity -->
+        <activity
+            android:name="com.ccxiaoji.feature.ledger.presentation.quickadd.QuickLedgerActivity"
+            android:theme="@style/Theme.CcXiaoJi.Dialog"
+            android:launchMode="singleTask"
+            android:excludeFromRecents="true"
+            android:exported="false" />
     </application>
 
 </manifest>

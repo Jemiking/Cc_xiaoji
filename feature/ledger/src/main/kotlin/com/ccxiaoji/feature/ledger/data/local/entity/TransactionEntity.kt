@@ -35,7 +35,11 @@ import com.ccxiaoji.shared.user.data.local.entity.UserEntity
             onDelete = ForeignKey.CASCADE
         )
     ],
-    indices = [Index("userId"), Index("accountId"), Index("categoryId"), Index("ledgerId"), Index("createdAt"), Index("updatedAt"), Index("transactionDate")]
+    indices = [
+        Index("userId"), Index("accountId"), Index("categoryId"), Index("ledgerId"), 
+        Index("createdAt"), Index("updatedAt"), Index("transactionDate"),
+        Index("sourceType"), Index("confidence"), Index(value = ["sourceApp", "postedTime"])
+    ]
 )
 data class TransactionEntity(
     @PrimaryKey
@@ -55,5 +59,16 @@ data class TransactionEntity(
     val locationPrecision: Float? = null, // 位置精度
     val locationProvider: String? = null, // 位置提供者
     val isDeleted: Boolean = false,
-    val syncStatus: SyncStatus = SyncStatus.SYNCED
+    val syncStatus: SyncStatus = SyncStatus.SYNCED,
+    // 自动记账相关字段 (Migration_14_15)
+    val sourceApp: String? = null, // 来源应用包名
+    val sourceType: String? = null, // 来源类型（alipay/wechat等）
+    val postedTime: Long? = null, // 通知发布时间
+    val parserVersion: Int? = 1, // 解析器版本
+    val confidence: Double? = null, // 解析置信度
+    val accountGuess: String? = null, // 账户推荐
+    // 转账相关字段 (Migration_15_16)
+    val transferId: String? = null, // 转账批次ID
+    val transferType: String? = null, // 转账类型
+    val relatedTransactionId: String? = null // 关联的另一笔转账记录ID
 )

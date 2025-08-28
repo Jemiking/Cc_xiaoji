@@ -25,15 +25,6 @@ import com.ccxiaoji.feature.ledger.presentation.screen.import.LedgerImportScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.import.QianjiImportScreen
 import com.ccxiaoji.feature.plan.api.PlanApi
 import com.ccxiaoji.app.presentation.ui.navigation.*
-import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.LayoutDemoRoute
-import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.AddTransactionCompactRoute
-import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.AddTransactionCardsRoute
-import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.AddTransactionSteppedRoute
-import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.AddTransactionGridRoute
-import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.AddTransactionFloatingRoute
-import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.AddTransactionCategoryFirstRoute
-import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.AddTransactionSimplifiedGridRoute
-import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation.AddTransactionLayoutAdjusterRoute
 
 @Composable
 fun NavGraph(
@@ -125,6 +116,14 @@ fun NavGraph(
                 onNavigateToFlatDemo = {
                     navController.navigate("CalendarFlatDemo")
                 },
+                onNavigateToStyleDemo = {
+                    android.util.Log.d("NavGraph", "Navigate to StyleDemo from App")
+                    navController.navigate("style_demo")
+                },
+                onNavigateToHomeRedesignA3Demo = {
+                    android.util.Log.d("NavGraph", "Navigate to HomeRedesignA3Demo from App")
+                    navController.navigate("home_redesign_a3_demo")
+                },
                 onNavigateBack = {
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Home.route) { inclusive = true }
@@ -165,6 +164,8 @@ fun NavGraph(
             ledgerApi.getAccountScreen(navController = navController)
         }
         
+        // TODO: 信用卡功能暂时禁用 - 相关屏幕组件已删除
+        /*
         composable(CreditCardRoute.route) {
             ledgerApi.getCreditCardScreen(
                 navController = navController,
@@ -175,6 +176,7 @@ fun NavGraph(
                 }
             )
         }
+        */
         
         composable(CreditCardBillsRoute.route) { backStackEntry ->
             val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
@@ -233,11 +235,49 @@ fun NavGraph(
                     type = androidx.navigation.NavType.StringType
                     nullable = true
                     defaultValue = null
+                },
+                androidx.navigation.navArgument("transactionId") {
+                    type = androidx.navigation.NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                // 预填参数（来自自动记账 DeepLink）
+                // 注意：IntType 不支持可空，使用哨兵默认值表示“未提供”
+                androidx.navigation.navArgument("amountCents") {
+                    type = androidx.navigation.NavType.IntType
+                    defaultValue = Int.MIN_VALUE
+                },
+                androidx.navigation.navArgument("direction") {
+                    type = androidx.navigation.NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                androidx.navigation.navArgument("merchant") {
+                    type = androidx.navigation.NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                androidx.navigation.navArgument("categoryId") {
+                    type = androidx.navigation.NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                },
+                androidx.navigation.navArgument("note") {
+                    type = androidx.navigation.NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            ),
+            deepLinks = listOf(
+                androidx.navigation.navDeepLink {
+                    uriPattern = "ccxiaoji://app/add_transaction?amountCents={amountCents}&direction={direction}&merchant={merchant}&accountId={accountId}&categoryId={categoryId}&note={note}"
                 }
             )
         ) { backStackEntry ->
+            val transactionId = backStackEntry.arguments?.getString("transactionId")
             com.ccxiaoji.feature.ledger.presentation.screen.transaction.AddTransactionScreen(
-                navController = navController
+                navController = navController,
+                transactionId = transactionId
             )
         }
         
@@ -250,7 +290,12 @@ fun NavGraph(
             )
         ) { backStackEntry ->
             val transactionId = backStackEntry.arguments?.getString("transactionId") ?: ""
-            com.ccxiaoji.feature.ledger.presentation.screen.transaction.EditTransactionScreen(
+            println("🔍 [NavGraph] EditTransactionRoute 被导航！")
+            println("   - 接收到的transactionId: '$transactionId'")
+            println("   - backStackEntry: $backStackEntry")
+            println("   - 准备启动AddTransactionScreen编辑模式")
+            
+            com.ccxiaoji.feature.ledger.presentation.screen.transaction.AddTransactionScreen(
                 transactionId = transactionId,
                 navController = navController
             )
@@ -341,6 +386,13 @@ fun NavGraph(
             ledgerApi.getAssetOverviewScreen(onNavigateBack = { navController.popBackStack() })
         }
         
+        composable(UnifiedAccountAssetRoute.route) {
+            ledgerApi.getUnifiedAccountAssetScreen(
+                onNavigateBack = { navController.popBackStack() },
+                navController = navController
+            )
+        }
+        
         composable(RecurringTransactionRoute.route) {
             ledgerApi.getRecurringTransactionScreen(
                 onNavigateBack = { navController.popBackStack() },
@@ -391,6 +443,9 @@ fun NavGraph(
                 onNavigateToHomeDisplaySettings = { navController.navigate(HomeDisplaySettingsRoute.route) },
                 onNavigateToUIStyleSettings = { navController.navigate(LedgerUIStyleRoute.route) },
                 onNavigateToLedgerBookManagement = { navController.navigate(LedgerBookManagementRoute.route) },
+                onNavigateToPermissionGuide = { navController.navigate(PermissionGuideRoute.route) },
+                onNavigateToAutoLedgerDebug = { navController.navigate(AutoLedgerDebugRoute.route) },
+                onNavigateToAutoLedgerSettings = { navController.navigate(AutoLedgerSettingsRoute.route) },
                 navController = navController
             )
         }
@@ -512,6 +567,20 @@ fun NavGraph(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
+
+        // UI设计风格Demo（包含5种设计风格对比）
+        composable("style_demo") {
+            com.ccxiaoji.feature.schedule.presentation.demo.StyleDemoScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        // 排班主页 UI 设计 Demo（A3 单页演示）
+        composable("home_redesign_a3_demo") {
+            com.ccxiaoji.feature.schedule.presentation.demo.HomeRedesignDemoScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
         
         // Plan module route
         composable(PlanRoute.route) {
@@ -608,11 +677,14 @@ fun NavGraph(
             )
         }
         
+        // TODO: 信用卡功能暂时禁用 - 相关屏幕组件已删除
+        /*
         composable(AddCreditCardRoute.route) {
             com.ccxiaoji.feature.ledger.presentation.screen.creditcard.AddCreditCardScreen(
                 navController = navController
             )
         }
+        */
         
         composable(
             route = CreditCardDetailRoute.route,
@@ -656,6 +728,8 @@ fun NavGraph(
             )
         }
         
+        // TODO: 信用卡功能暂时禁用 - 相关屏幕组件已删除
+        /*
         composable(
             route = EditCreditCardRoute.route,
             arguments = listOf(
@@ -670,6 +744,7 @@ fun NavGraph(
                 navController = navController
             )
         }
+        */
         
         composable(
             route = PaymentHistoryRoute.route,
@@ -756,9 +831,34 @@ fun NavGraph(
                 navController = navController
             )
         }
+
+        composable(AutoLedgerSettingsRoute.route) {
+            com.ccxiaoji.feature.ledger.presentation.screen.settings.AutoLedgerSettingsScreen(
+                navController = navController,
+                onNavigateToPermissionGuide = { navController.navigate(PermissionGuideRoute.route) }
+            )
+        }
+
+        composable(AutoLedgerDeveloperSettingsRoute.route) {
+            com.ccxiaoji.feature.ledger.presentation.screen.settings.AutoLedgerDeveloperSettingsScreen(
+                navController = navController
+            )
+        }
         
         composable(HomeDisplaySettingsRoute.route) {
             com.ccxiaoji.feature.ledger.presentation.screen.settings.HomeDisplaySettingsScreen(
+                navController = navController
+            )
+        }
+        
+        composable(PermissionGuideRoute.route) {
+            com.ccxiaoji.feature.ledger.presentation.screen.settings.PermissionGuideScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        
+        composable(AutoLedgerDebugRoute.route) {
+            ledgerApi.getAutoLedgerDebugScreen(
                 navController = navController
             )
         }
@@ -869,60 +969,14 @@ fun NavGraph(
             )
         }
         
-        // Layout Demo pages
-        composable(LayoutDemoRoute) {
-            com.ccxiaoji.feature.ledger.presentation.screen.demo.LayoutDemoScreen(
-                navController = navController
-            )
-        }
         
-        composable(AddTransactionCompactRoute) {
-            com.ccxiaoji.feature.ledger.presentation.screen.demo.AddTransactionCompactScreen(
-                navController = navController
-            )
-        }
         
-        composable(AddTransactionCardsRoute) {
-            com.ccxiaoji.feature.ledger.presentation.screen.demo.AddTransactionCardsScreen(
-                navController = navController
-            )
-        }
         
-        composable(AddTransactionSteppedRoute) {
-            com.ccxiaoji.feature.ledger.presentation.screen.demo.AddTransactionSteppedScreen(
-                navController = navController
-            )
-        }
         
-        composable(AddTransactionGridRoute) {
-            com.ccxiaoji.feature.ledger.presentation.screen.demo.AddTransactionGridScreen(
-                navController = navController
-            )
-        }
         
-        composable(AddTransactionFloatingRoute) {
-            com.ccxiaoji.feature.ledger.presentation.screen.demo.AddTransactionFloatingScreen(
-                navController = navController
-            )
-        }
         
-        composable(AddTransactionCategoryFirstRoute) {
-            com.ccxiaoji.feature.ledger.presentation.screen.demo.AddTransactionCategoryFirstScreen(
-                navController = navController
-            )
-        }
         
-        composable(AddTransactionSimplifiedGridRoute) {
-            com.ccxiaoji.feature.ledger.presentation.screen.demo.AddTransactionSimplifiedGridScreen(
-                navController = navController
-            )
-        }
         
-        composable(AddTransactionLayoutAdjusterRoute) {
-            com.ccxiaoji.feature.ledger.presentation.screen.demo.AddTransactionLayoutAdjusterScreen(
-                navController = navController
-            )
-        }
         
         // 记账簿管理页面
         composable(LedgerBookManagementRoute.route) {

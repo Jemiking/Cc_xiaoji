@@ -142,4 +142,21 @@ interface CategoryRepository {
      */
     suspend fun incrementCategoryUsage(categoryId: String)
     
+    // ========== 默认分类支持 ==========
+    
+    /**
+     * 根据名称查找分类
+     * @param name 分类名称
+     * @return 分类对象，如果不存在则返回null
+     */
+    suspend fun findCategoryByName(name: String): Category?
+    
+    /**
+     * 创建或获取默认"其他"分类
+     * 如果"其他"分类不存在，则创建一个
+     * @param userId 用户ID
+     * @return 其他分类的ID
+     */
+    suspend fun getOrCreateDefaultOtherCategory(userId: String): String
+    
 }

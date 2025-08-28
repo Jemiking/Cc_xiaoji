@@ -1,6 +1,7 @@
 package com.ccxiaoji.common.base
 
 import android.content.Context
+import android.util.Log
 import androidx.work.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -37,6 +38,9 @@ abstract class BaseWorker(
     context: Context,
     workerParams: WorkerParameters
 ) : CoroutineWorker(context, workerParams) {
+    private companion object {
+        private const val TAG = "CCXJ/WORKER"
+    }
     
     /**
      * 获取Worker的名称，用于日志记录
@@ -110,25 +114,25 @@ abstract class BaseWorker(
      * 记录信息日志
      */
     protected fun logInfo(message: String) {
-        // TODO: 接入实际的日志系统
-        println("[INFO] $message")
+        Log.i(TAG, message)
     }
     
     /**
      * 记录警告日志
      */
     protected fun logWarning(message: String) {
-        // TODO: 接入实际的日志系统
-        println("[WARN] $message")
+        Log.w(TAG, message)
     }
     
     /**
      * 记录错误日志
      */
     protected fun logError(message: String, throwable: Throwable? = null) {
-        // TODO: 接入实际的日志系统
-        println("[ERROR] $message")
-        throwable?.printStackTrace()
+        if (throwable != null) {
+            Log.e(TAG, message, throwable)
+        } else {
+            Log.e(TAG, message)
+        }
     }
 }
 

@@ -38,6 +38,8 @@ android {
         )
     }
     buildFeatures {
+        // 需要在库模块生成 BuildConfig 以便判断 DEBUG 变体
+        buildConfig = true
         compose = true
     }
     composeOptions {

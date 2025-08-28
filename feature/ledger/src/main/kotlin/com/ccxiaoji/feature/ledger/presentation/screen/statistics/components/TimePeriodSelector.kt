@@ -7,7 +7,6 @@ import androidx.compose.ui.Modifier
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.TimePeriod
 import com.ccxiaoji.ui.theme.DesignTokens
 import com.ccxiaoji.ui.components.FlatSelectChip
-import android.util.Log
 
 @Composable
 fun TimePeriodSelector(
@@ -15,45 +14,140 @@ fun TimePeriodSelector(
     onPeriodSelected: (TimePeriod) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // 🔍 添加调试日志来监控UI状态
-    Log.d("TimePeriodSelector", "🎯 组件重组 - 当前选中: $selectedPeriod")
     
-    Row(
+    Column(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)
+        verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.medium)
     ) {
-        TimePeriod.values().forEach { period ->
-            val isSelected = selectedPeriod == period
-            val label = when (period) {
-                TimePeriod.THIS_MONTH -> "本月"
-                TimePeriod.THIS_YEAR -> "本年"
-                TimePeriod.CUSTOM -> "自定义"
-            }
-            
-            Log.d("TimePeriodSelector", "🎯 渲染按钮: $label, 选中状态: $isSelected")
-            
-            FlatSelectChip(
-                label = label,
-                selected = isSelected,
-                onSelectedChange = { shouldSelect ->
-                    Log.d("TimePeriodSelector", "🎯 按钮点击事件: $label, shouldSelect: $shouldSelect, period: $period")
-                    
-                    // 🔧 修复：对于自定义分析，无论按钮是否已选中都应该触发回调
-                    // 这样用户可以重新选择日期范围
-                    if (shouldSelect || period == TimePeriod.CUSTOM) {
-                        Log.d("TimePeriodSelector", "🎯 触发onPeriodSelected回调: $period")
-                        onPeriodSelected(period)
-                    } else {
-                        Log.d("TimePeriodSelector", "🎯 忽略取消选择事件: $period")
-                    }
-                },
-                modifier = Modifier.weight(1f),
-                contentColor = if (isSelected) {
-                    DesignTokens.BrandColors.Ledger
-                } else {
-                    MaterialTheme.colorScheme.onSurface
+        // 常用时间段
+        PeriodGroup(
+            title = "常用时间段",
+            periods = listOf(TimePeriod.TODAY, TimePeriod.THIS_WEEK, TimePeriod.THIS_MONTH),
+            selectedPeriod = selectedPeriod,
+            onPeriodSelected = onPeriodSelected
+        )
+        
+        // 对比分析
+        PeriodGroup(
+            title = "对比分析", 
+            periods = listOf(TimePeriod.LAST_MONTH, TimePeriod.LAST_QUARTER, TimePeriod.LAST_YEAR),
+            selectedPeriod = selectedPeriod,
+            onPeriodSelected = onPeriodSelected
+        )
+        
+        // 长期分析
+        PeriodGroup(
+            title = "长期分析",
+            periods = listOf(TimePeriod.RECENT_3_MONTHS, TimePeriod.RECENT_6_MONTHS, TimePeriod.THIS_QUARTER, TimePeriod.THIS_YEAR),
+            selectedPeriod = selectedPeriod,
+            onPeriodSelected = onPeriodSelected
+        )
+        
+        // 自定义
+        PeriodGroup(
+            title = "自定义",
+            periods = listOf(TimePeriod.CUSTOM),
+            selectedPeriod = selectedPeriod,
+            onPeriodSelected = onPeriodSelected
+        )
+    }
+}
+
+@Composable
+private fun PeriodGroup(
+    title: String,
+    periods: List<TimePeriod>,
+    selectedPeriod: TimePeriod,
+    onPeriodSelected: (TimePeriod) -> Unit
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        
+        // 对于4个或以下的选项使用行布局，否则使用网格布局
+        if (periods.size <= 3) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)
+            ) {
+                periods.forEach { period ->
+                    PeriodChip(
+                        period = period,
+                        isSelected = selectedPeriod == period,
+                        onPeriodSelected = onPeriodSelected,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
-            )
+            }
+        } else {
+            // 使用网格布局处理更多选项
+            Column(
+                verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)
+            ) {
+                periods.chunked(2).forEach { rowPeriods ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)
+                    ) {
+                        rowPeriods.forEach { period ->
+                            PeriodChip(
+                                period = period,
+                                isSelected = selectedPeriod == period,
+                                onPeriodSelected = onPeriodSelected,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        // 如果这行只有一个元素，添加空的占位符
+                        if (rowPeriods.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun PeriodChip(
+    period: TimePeriod,
+    isSelected: Boolean,
+    onPeriodSelected: (TimePeriod) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val label = when (period) {
+        TimePeriod.TODAY -> "今日"
+        TimePeriod.THIS_WEEK -> "本周"
+        TimePeriod.THIS_MONTH -> "本月"
+        TimePeriod.LAST_MONTH -> "上月"
+        TimePeriod.LAST_QUARTER -> "上季度"
+        TimePeriod.LAST_YEAR -> "去年"
+        TimePeriod.RECENT_3_MONTHS -> "近3月"
+        TimePeriod.RECENT_6_MONTHS -> "近半年"
+        TimePeriod.THIS_QUARTER -> "本季度"
+        TimePeriod.THIS_YEAR -> "本年"
+        TimePeriod.CUSTOM -> "自定义日期..."
+    }
+    
+    
+    FlatSelectChip(
+        label = label,
+        selected = isSelected,
+        onSelectedChange = { shouldSelect ->
+            if (shouldSelect || period == TimePeriod.CUSTOM) {
+                onPeriodSelected(period)
+            }
+        },
+        modifier = modifier,
+        contentColor = if (isSelected) {
+            DesignTokens.BrandColors.Ledger
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        }
+    )
 }

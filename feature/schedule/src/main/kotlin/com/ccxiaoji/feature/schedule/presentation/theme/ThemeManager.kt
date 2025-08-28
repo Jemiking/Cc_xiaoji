@@ -27,6 +27,7 @@ class ThemeManager @Inject constructor(
     companion object {
         private val IS_DARK_MODE_KEY = booleanPreferencesKey("is_dark_mode")
         private val WEEK_START_DAY_KEY = intPreferencesKey("week_start_day")
+        private val DEFAULT_COMPACT_MODE_KEY = booleanPreferencesKey("schedule_default_compact")
     }
     
     /**
@@ -82,6 +83,23 @@ class ThemeManager @Inject constructor(
                 else -> 1 // 默认周一
             }
             preferences[WEEK_START_DAY_KEY] = value
+        }
+    }
+
+    /**
+     * 首页默认紧凑模式开关（true=紧凑，false=展开），默认 true
+     */
+    val defaultCompactMode: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[DEFAULT_COMPACT_MODE_KEY] ?: true
+        }
+
+    /**
+     * 设置首页默认紧凑模式
+     */
+    suspend fun setDefaultCompactMode(compact: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[DEFAULT_COMPACT_MODE_KEY] = compact
         }
     }
 }

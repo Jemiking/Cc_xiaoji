@@ -25,7 +25,11 @@ object DatabaseMigrations {
             MIGRATION_8_9,  // Add two-level category support
             MIGRATION_9_10, // Add transaction time and location support
             MIGRATION_10_11, // Add ledger notebook support
-            MIGRATION_11_12 // Fix transactions table foreign keys and indexes
+            MIGRATION_11_12, // Fix transactions table foreign keys and indexes
+            MIGRATION_12_13, // Ensure default ledger exists for all users
+            MIGRATION_13_14, // Add ledger linking functionality tables
+            MIGRATION_14_15,  // Add auto ledger functionality tables and fields
+            MIGRATION_15_16   // Add transfer functionality fields
         )
     }
 }
