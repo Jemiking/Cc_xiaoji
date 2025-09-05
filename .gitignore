@@ -91,7 +91,7 @@ fix_*.md
 编译错误修复总结.md
 
 # Tools
-tools/
+# tools/  # 允许跟踪 tools 目录（包含 MCP 工具）
 
 # Schema files (generated)
 app/schemas/
@@ -99,3 +99,34 @@ app/schemas/
 # Test files
 app/src/test/
 app/src/androidTest/
+
+# ===== Repo hygiene additions =====
+# Logs and temp outputs
+logs/
+out/
+*.log
+*_output.txt
+*.tmp
+*.tmp.*
+*.swp
+*.swo
+
+# Windows/PowerShell script outputs
+*.bat.log
+*.ps1.log
+
+# Local & sensitive configs
+keystore.properties
+*.jks
+*.keystore
+*.pem
+*.p12
+
+# Node caches (for tools/scripts)
+node_modules/
+**/node_modules/
+
+# Root-level transient files
+/*.log
+/*.txt
+/*.md.tmp

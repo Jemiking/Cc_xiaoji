@@ -1,5 +1,0 @@
-id,title,description,period,target,color,icon,created_at,updated_at
-malformed-habit-1,测试习惯1,描述,daily,not_a_number,#FF5722,🏃‍♂️,2025-07-28T09:00:00Z,2025-07-28T09:00:00Z
-incomplete-habit,只有部分字段
-malformed-habit-2,正常习惯,描述,daily,5,#2196F3,📚,invalid_date,2025-07-28T10:00:00Z
-missing-fields,测试习惯3

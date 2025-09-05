@@ -91,9 +91,32 @@ app/
 └── di/             # 依赖注入
 ```
 
+## 目录结构一览（标准化后）
+
+- `app/`：Android 应用模块（Compose UI、DI、构建配置）
+- `core/`：通用能力（common/ui/database/network）
+- `feature/`：业务功能模块（todo/habit/ledger/schedule/plan）
+- `shared/`：跨功能服务（user/sync/notification）
+- `doc/`：文档中心（指南、报告、版本记录）；根目录仅保留本 README
+  - `doc/guides/`、`doc/guides/build/`、`doc/guides/mcp/`
+  - `doc/reports/`、`doc/release-notes/`
+- `scripts/`：脚本入口；Windows 批处理在 `scripts/windows/`
+- `tools/`：外部工具与集成（如 MCP 工具在 `tools/mcp/`）
+- `testdata/`：样例与测试数据（导入/导出样例、边界用例）
+- `logs/`、`out/`：构建与运行输出（已加入 .gitignore）
+
 ## 贡献指南
 
 欢迎提交Issue和Pull Request！
+
+### 提交前检查（必读）
+
+- 本地执行 `./gradlew check` 并通过（已包含“重复枚举名校验”）：防止在 `feature/ledger` 的 `data/local/entity` 与 `domain` 下出现同名枚举造成歧义。
+- 如涉及数据库：请同步更新 Room Schema（`app/schemas`）与 Migration，并补充必要测试。
+- 如涉及构建/脚本/签名：在 PR 中“特别说明”区写明改动与验证方式。
+- 如涉及 UI 变更：请附上截图/GIF。
+
+详细规则见：`doc/代码约束-重复枚举检测.md`；PR 模板见：`.github/PULL_REQUEST_TEMPLATE.md`。
 
 ## 许可证
 

@@ -1,101 +1,77 @@
-#!/usr/bin/env node
+// Simple MCP server test
+const { spawn } = require('child_process');
 
-// 简单测试MCP编译单个文件的功能
-import { spawn } from 'child_process';
-import readline from 'readline';
+console.log('Testing MCP servers...\n');
 
-const MCP_SERVER_PATH = '/mnt/d/kotlin/mcp-kotlin-compiler/dist/server.js';
-const TEST_FILE_PATH = '/mnt/d/kotlin/mcp-kotlin-compiler/test-project/src/main/kotlin/com/example/Main.kt';
+// Test android-compiler
+console.log('[1] Testing android-compiler...');
+const androidCompiler = spawn('node', ['D:/kotlin/Cc_xiaoji/android-compiler-mcp-windows/index.js']);
 
-console.log('=== 测试MCP编译单个文件 ===\n');
+androidCompiler.stdin.write(JSON.stringify({
+  jsonrpc: '2.0',
+  method: 'tools/list',
+  id: 1
+}) + '\n');
 
-// 启动MCP服务器
-const server = spawn('node', [MCP_SERVER_PATH], {
-  stdio: ['pipe', 'pipe', 'pipe'],
-  env: { ...process.env, NODE_ENV: 'production' }
+let androidResponse = '';
+androidCompiler.stdout.on('data', (data) => {
+  androidResponse += data.toString();
 });
 
-// 创建读取接口
-const rl = readline.createInterface({
-  input: server.stdout,
-  crlfDelay: Infinity
+androidCompiler.stderr.on('data', (data) => {
+  console.error('Android compiler error:', data.toString());
 });
 
-// 监听服务器响应
-rl.on('line', (line) => {
-  try {
-    const response = JSON.parse(line);
-    console.log('响应:', JSON.stringify(response.result?.content?.[0]?.text || response.result, null, 2));
-    
-    if (response.id === 1) {
-      // 设置项目路径后，编译文件
-      sendCompileFile();
-    } else if (response.id === 2) {
-      // 编译完成，获取错误信息
-      sendGetErrors();
-    } else if (response.id === 3) {
-      // 显示错误后退出
-      setTimeout(() => {
-        server.kill();
-        process.exit(0);
-      }, 1000);
+// Test o3mcp
+console.log('[2] Testing o3mcp...');
+const o3mcp = spawn('node', ['D:/开发项目/mcp/o3mcp/dist/index.js']);
+
+o3mcp.stdin.write(JSON.stringify({
+  jsonrpc: '2.0',
+  method: 'tools/list',
+  id: 1
+}) + '\n');
+
+let o3Response = '';
+o3mcp.stdout.on('data', (data) => {
+  o3Response += data.toString();
+});
+
+o3mcp.stderr.on('data', (data) => {
+  console.error('O3MCP error:', data.toString());
+});
+
+// Wait and show results
+setTimeout(() => {
+  console.log('\nResults:');
+  console.log('Android compiler response:', androidResponse ? 'OK - Got response' : 'ERROR - No response');
+  if (androidResponse) {
+    try {
+      const parsed = JSON.parse(androidResponse.split('\n').find(line => line.includes('compile_kotlin')));
+      console.log('  - Found compile_kotlin tool');
+    } catch (e) {
+      console.log('  - Response:', androidResponse.substring(0, 100) + '...');
     }
-  } catch (e) {
-    // 忽略非JSON输出
   }
-});
-
-// 发送请求
-function sendRequest(method, params, id) {
-  const request = JSON.stringify({
-    jsonrpc: '2.0',
-    method,
-    params,
-    id
-  }) + '\n';
   
-  console.log(`\n发送: ${params.name || method}`);
-  server.stdin.write(request);
-}
-
-// 1. 设置项目路径
-function sendSetProjectPath() {
-  sendRequest('tools/call', {
-    name: 'set_project_path',
-    arguments: {
-      path: '/mnt/d/kotlin/mcp-kotlin-compiler/test-project'
+  console.log('\nO3MCP response:', o3Response ? 'OK - Got response' : 'ERROR - No response');
+  if (o3Response) {
+    try {
+      const parsed = JSON.parse(o3Response.split('\n').find(line => line.includes('understand_with_o3')));
+      console.log('  - Found understand_with_o3 tool');
+    } catch (e) {
+      console.log('  - Response:', o3Response.substring(0, 100) + '...');
     }
-  }, 1);
-}
-
-// 2. 编译文件
-function sendCompileFile() {
-  sendRequest('tools/call', {
-    name: 'compile_file',
-    arguments: {
-      filePath: TEST_FILE_PATH
-    }
-  }, 2);
-}
-
-// 3. 获取错误
-function sendGetErrors() {
-  sendRequest('tools/call', {
-    name: 'get_errors',
-    arguments: {
-      filePath: TEST_FILE_PATH
-    }
-  }, 3);
-}
-
-// 开始测试
-setTimeout(() => {
-  sendSetProjectPath();
-}, 500);
-
-// 超时退出
-setTimeout(() => {
-  console.log('\n测试超时');
-  server.kill();
-  process.exit(1);
-}, 30000);
+  }
+  
+  // Kill processes
+  androidCompiler.kill();
+  o3mcp.kill();
+  
+  console.log('\nTest completed. If both servers responded with OK, the configuration is correct.');
+  console.log('\nNOTE: You need to restart Claude Code for the changes to take effect:');
+  console.log('1. Type "exit" in Claude Code');
+  console.log('2. Start Claude Code again with "claude"');
+  
+  process.exit(0);
+}, 2000);

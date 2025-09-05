@@ -1,2 +1,0 @@
-id,name,type,balance_cents,credit_limit_cents,billing_day,payment_due_day,grace_period_days,is_default,color,created_at,updated_at
-default_account_id,现金账户,CASH,-10000,,,,,true,,2025-07-21T06:56:57.268Z,2025-07-25T02:43:11.381Z
