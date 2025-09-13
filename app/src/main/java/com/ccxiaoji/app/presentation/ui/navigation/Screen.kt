@@ -226,6 +226,19 @@ object LedgerSettingsRoute {
     const val route = "ledger_settings"
 }
 
+object CardManagementRoute {
+    const val route = "card_management"
+}
+
+object AddEditCardRoute {
+    const val route = "card_add_edit?cardId={cardId}"
+    fun createRoute(cardId: String? = null) = if (cardId != null) {
+        "card_add_edit?cardId=$cardId"
+    } else {
+        "card_add_edit"
+    }
+}
+
 object BatchOperationRoute {
     const val route = "batch_operation"
 }
@@ -234,13 +247,7 @@ object ThemeSettingsRoute {
     const val route = "theme_settings"
 }
 
-object DiscordDemoRoute {
-    const val route = "discord_demo"
-}
-
-object DiscordDemoV2Route {
-    const val route = "discord_demo_v2"
-}
+// 已移除 Discord Demo 路由
 
 object NotificationSettingsRoute {
     const val route = "notification_settings"
@@ -475,6 +482,11 @@ object AutoLedgerSettingsRoute {
 
 object AutoLedgerDeveloperSettingsRoute {
     const val route = "auto_ledger_dev_settings"
+}
+
+// 风格Demo路由
+object StyleCatalogDemoRoute {
+    const val route = "style_catalog_demo"
 }
 
 // 所有模块定义 - 只包含真正的功能模块

@@ -23,6 +23,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.edit
 
 /**
  * 自动记账管理器
@@ -46,7 +47,9 @@ class AutoLedgerManager @Inject constructor(
     private val accountCategoryRecommender: AccountCategoryRecommender,
     private val notificationManager: AutoLedgerNotificationManager,
     private val recordDebugUseCase: RecordAutoLedgerDebugUseCase,
-    private val dataStore: DataStore<Preferences>
+    private val dataStore: DataStore<Preferences>,
+    private val manageLedgerUseCase: ManageLedgerUseCase,
+    private val userApi: com.ccxiaoji.shared.user.api.UserApi
 ) {
     
     companion object {
@@ -67,15 +70,11 @@ class AutoLedgerManager @Inject constructor(
     
     /** 运行时开关与参数 */
     private var isEnabled = false
-    @Volatile private var autoCreateEnabled: Boolean = true
+    @Volatile private var autoCreateEnabled: Boolean = false
     @Volatile private var autoCreateConfidenceThreshold: Float = 0.85f
-    @Volatile private var minAmountCents: Int = 20
+    @Volatile private var minAmountCents: Int = 100
     @Volatile private var dedupDebugParseOnSkip: Boolean = false
-    // 方案A（支付宝自动入账）
-    @Volatile private var alipayAutoOn: Boolean = false
-    @Volatile private var alipayDefaultAccountId: String? = null
-    @Volatile private var defaultExpenseCategoryId: String? = null
-    @Volatile private var defaultIncomeCategoryId: String? = null
+    @Volatile private var currentMode: String = "SEMI" // "SEMI" / "FULL"
     
     /**
      * 启动自动记账服务
@@ -91,40 +90,20 @@ class AutoLedgerManager @Inject constructor(
         isEnabled = true
         Log.d(TAG, "✅ 设置服务状态为启用")
 
-        // 同步 DataStore 设置
+        // 同步两挡模式设置
         scope.launch {
-            try {
-                val KEY_AUTO = booleanPreferencesKey("auto_ledger_autocreate_enabled")
-                val KEY_TH = floatPreferencesKey("auto_ledger_autocreate_confidence_threshold")
-                val KEY_MIN = intPreferencesKey("auto_ledger_min_amount_cents")
-                val KEY_PARSE_DEBUG = booleanPreferencesKey("auto_ledger_dedup_debug_parse_on_skip")
-                val KEY_ALIPAY_ON = booleanPreferencesKey("auto_ledger_alipay_auto_on")
-                val KEY_ALIPAY_ACC = androidx.datastore.preferences.core.stringPreferencesKey("auto_ledger_alipay_default_account_id")
-                val KEY_DEF_EXP = androidx.datastore.preferences.core.stringPreferencesKey("auto_ledger_default_expense_category_id")
-                val KEY_DEF_INC = androidx.datastore.preferences.core.stringPreferencesKey("auto_ledger_default_income_category_id")
-                dataStore.data.collect { prefs ->
-                    autoCreateEnabled = prefs[KEY_AUTO] ?: false
-                    autoCreateConfidenceThreshold = prefs[KEY_TH] ?: 0.85f
-                    minAmountCents = prefs[KEY_MIN] ?: 20
-                    dedupDebugParseOnSkip = prefs[KEY_PARSE_DEBUG] ?: false
-                    alipayAutoOn = prefs[KEY_ALIPAY_ON] ?: false
-                    alipayDefaultAccountId = prefs[KEY_ALIPAY_ACC]
-                    defaultExpenseCategoryId = prefs[KEY_DEF_EXP]
-                    defaultIncomeCategoryId = prefs[KEY_DEF_INC]
-                    Log.d(TAG, "⚙️ 设置同步: autoCreate=$autoCreateEnabled, threshold=$autoCreateConfidenceThreshold, min=${minAmountCents}分, dupDebug=$dedupDebugParseOnSkip")
-                    Log.d(TAG, "⚙️ 方案A: alipayOn=$alipayAutoOn, acc=$alipayDefaultAccountId, defExp=$defaultExpenseCategoryId, defInc=$defaultIncomeCategoryId")
-                }
-            } catch (e: Exception) {
-                Log.w(TAG, "读取自动记账设置失败，使用默认值(半自动为主)", e)
-                // 默认关闭全自动，避免误入账；其余取稳态默认
+            val MODE_KEY = androidx.datastore.preferences.core.stringPreferencesKey("auto_ledger_mode")
+            dataStore.data.collect { prefs ->
+                currentMode = prefs[MODE_KEY] ?: "SEMI"
+                // 软关闭：即使用户选择了FULL，也强制仅半自动生效
                 autoCreateEnabled = false
                 autoCreateConfidenceThreshold = 0.85f
-                minAmountCents = 20
+                minAmountCents = 100
                 dedupDebugParseOnSkip = false
-                alipayAutoOn = false
-                alipayDefaultAccountId = null
-                defaultExpenseCategoryId = null
-                defaultIncomeCategoryId = null
+                Log.d(TAG, "⚙️ 模式同步: mode=$currentMode, autoCreate(forced)=false, th=$autoCreateConfidenceThreshold, min=${minAmountCents}分")
+                if (currentMode.equals("FULL", true)) {
+                    Log.i(TAG, "🛡️ 已启用‘全自动软关闭’：当前版本仅提供半自动体验，后续可恢复")
+                }
             }
         }
         
@@ -250,29 +229,6 @@ class AutoLedgerManager @Inject constructor(
                 Log.d(TAG, "📝 记录去重信息: eventKey=$eventKey")
                 deduplicationManager.recordProcessed(notification, eventKey)
 
-                // 2.1 方案A：支付宝优先（仅当开启且默认项齐全）
-                if (alipayAutoOn && notification.sourceApp == "com.eg.android.AlipayGphone") {
-                    val accId = alipayDefaultAccountId
-                    val catId = when (notification.direction) {
-                        PaymentDirection.INCOME -> defaultIncomeCategoryId
-                        else -> defaultExpenseCategoryId
-                    }
-                    if (!accId.isNullOrBlank() && !catId.isNullOrBlank()) {
-                        Log.i(TAG, "🚀 方案A生效：支付宝自动入账（使用默认账户/分类）")
-                        val rec = AccountCategoryRecommendation(
-                            accountId = accId,
-                            categoryId = catId,
-                            ledgerId = try { getDefaultLedgerIdSafe() } catch (_: Exception) { "" },
-                            confidence = 1.0,
-                            reason = "schemeA_alipay_default"
-                        )
-                        createTransactionFromNotification(notification, rec, startTime, true)
-                        return
-                    } else {
-                        Log.w(TAG, "方案A未配置完整默认项（acc=$accId, cat=$catId），降级后续流程")
-                    }
-                }
-
                 // 3. 推荐账户和分类
                 Log.d(TAG, "🤖 开始推荐账户和分类...")
                 val recommendations = accountCategoryRecommender.recommend(notification)
@@ -281,7 +237,8 @@ class AutoLedgerManager @Inject constructor(
                 // 4. 根据阈值/金额/开关决定处理方式
                 val meetsMinAmount = notification.amountCents >= minAmountCents
                 val threshold = autoCreateConfidenceThreshold
-                val canAutoCreate = autoCreateEnabled && meetsMinAmount && notification.confidence >= threshold
+                val directionBlockAuto = notification.direction == PaymentDirection.REFUND || notification.direction == PaymentDirection.TRANSFER || notification.direction == PaymentDirection.UNKNOWN
+                val canAutoCreate = autoCreateEnabled && meetsMinAmount && notification.confidence >= threshold && !directionBlockAuto
                 Log.d(TAG, "🎯 决策: conf=${notification.confidence}, th=$threshold, min_ok=$meetsMinAmount, auto_on=$autoCreateEnabled")
                 if (canAutoCreate) {
                     Log.i(TAG, "🚀 满足自动创建条件（conf>=${threshold} 且 金额>=${minAmountCents}分），自动创建交易")
@@ -394,13 +351,31 @@ class AutoLedgerManager @Inject constructor(
         isAutomatic: Boolean
     ) {
         try {
-            // 调用现有的添加交易用例，使用正确的参数
+            // 基于“上一次→固定→系统默认”的回退链解析账户/分类/账本
+            val resolvedAccount = resolvePreferredAccountId(notification) ?: recommendations.accountId ?: getDefaultAccountId()
+            val resolvedCategory = resolvePreferredCategoryId(notification) ?: recommendations.categoryId ?: getDefaultCategoryId(notification.direction)
+            val targetLedgerId = resolveLedgerIdSafely()
+
+            // 调用现有的添加交易用例
+            // 标准化来源元数据（存入备注，便于撤销识别与排查）
+            val sourceMeta = mapOf(
+                "sourceApp" to notification.sourceApp,
+                "sourceType" to notification.sourceType.name,
+                "postedTime" to notification.postedTime,
+                "confidence" to notification.confidence,
+                "parserVersion" to notification.parserVersion,
+                "direction" to notification.direction.name,
+                "merchant" to (notification.normalizedMerchant ?: notification.rawMerchant ?: "")
+            )
+            val metaJson = runCatching { com.google.gson.Gson().toJson(sourceMeta) }.getOrDefault("{}")
+            val autoNote = "[AUTO]$metaJson #auto"
+
             val transactionId = addTransactionUseCase(
                 amountCents = notification.amountCents.toInt(),
-                categoryId = recommendations.categoryId ?: getDefaultCategoryId(notification.direction),
-                note = "自动记账: ${notification.normalizedMerchant ?: "未知商户"} #auto",
-                accountId = recommendations.accountId ?: getDefaultAccountId(),
-                ledgerId = recommendations.ledgerId
+                categoryId = resolvedCategory,
+                note = "自动记账: ${notification.normalizedMerchant ?: "未知商户"} $autoNote",
+                accountId = resolvedAccount,
+                ledgerId = targetLedgerId
             )
             
             val processingTime = System.currentTimeMillis() - startTime
@@ -413,11 +388,11 @@ class AutoLedgerManager @Inject constructor(
             // 创建简化的Transaction对象用于通知显示
             val transaction = Transaction(
                 id = transactionId,
-                accountId = recommendations.accountId ?: getDefaultAccountId(),
+                accountId = resolvedAccount,
                 amountCents = notification.amountCents.toInt(),
-                categoryId = recommendations.categoryId ?: getDefaultCategoryId(notification.direction),
-                note = "自动记账: ${notification.normalizedMerchant ?: "未知商户"} #auto",
-                ledgerId = recommendations.ledgerId,
+                categoryId = resolvedCategory,
+                note = "自动记账: ${notification.normalizedMerchant ?: "未知商户"} $autoNote",
+                ledgerId = targetLedgerId,
                 createdAt = Instant.fromEpochMilliseconds(System.currentTimeMillis()),
                 updatedAt = Instant.fromEpochMilliseconds(System.currentTimeMillis())
             )
@@ -428,6 +403,9 @@ class AutoLedgerManager @Inject constructor(
             _autoLedgerResults.emit(
                 AutoLedgerResult.Success(transaction, notification, recommendations)
             )
+
+            // 写入“上一次使用”
+            saveLastUsed(notification, resolvedAccount, resolvedCategory)
             
         } catch (e: Exception) {
             val processingTime = System.currentTimeMillis() - startTime
@@ -544,6 +522,9 @@ class AutoLedgerManager @Inject constructor(
             // 更新Transaction对象的ID
             val confirmedTransaction = recommendedTransaction.copy(id = transactionId)
             
+            // 写入“上一次使用”
+            saveLastUsed(paymentNotification, recommendedTransaction.accountId, recommendedTransaction.categoryId)
+
             // 发送确认成功通知
             notificationManager.showAutoLedgerSuccessNotification(confirmedTransaction, paymentNotification)
             
@@ -577,8 +558,125 @@ class AutoLedgerManager @Inject constructor(
     }
 
     private fun getDefaultLedgerIdSafe(): String {
-        // TODO: 读取用户默认账簿（如有仓库可用），当前以空字符串占位
-        return ""
+        return try {
+            val userId = userApi.getCurrentUserId()
+            val res = kotlinx.coroutines.runBlocking { manageLedgerUseCase.getDefaultLedger(userId) }
+            if (res is com.ccxiaoji.common.base.BaseResult.Success) res.data.id else ""
+        } catch (_: Exception) { "" }
+    }
+
+    private fun resolveLedgerIdSafely(): String = getDefaultLedgerIdSafe()
+
+    private suspend fun resolvePreferredAccountId(notification: PaymentNotification): String? {
+        val source = when (notification.sourceType) {
+            com.ccxiaoji.feature.ledger.domain.model.PaymentSourceType.ALIPAY -> "alipay"
+            com.ccxiaoji.feature.ledger.domain.model.PaymentSourceType.WECHAT -> "wechat"
+            else -> return null
+        }
+        val dir = when (notification.direction) {
+            PaymentDirection.INCOME -> "INCOME"
+            PaymentDirection.EXPENSE -> "EXPENSE"
+            else -> return null
+        }
+        // 细化记忆：按来源+方向+金额段+时段
+        val amtBucket = computeAmountBucket(notification.amountCents)
+        val timeBucket = computeTimeBucket(notification.postedTime)
+        val keyFine = androidx.datastore.preferences.core.stringPreferencesKey(
+            "auto_ledger_last_account_${source}_${dir}_${amtBucket}_${timeBucket}"
+        )
+        val keyCoarse = androidx.datastore.preferences.core.stringPreferencesKey(
+            "auto_ledger_last_account_${source}_${dir}"
+        )
+        val prefs = try { dataStore.data.first() } catch (_: Exception) { null }
+        val lastFine = prefs?.get(keyFine)
+        if (!lastFine.isNullOrBlank()) return lastFine
+        val lastCoarse = prefs?.get(keyCoarse)
+        if (!lastCoarse.isNullOrBlank()) return lastCoarse
+        return null
+    }
+
+    private suspend fun resolvePreferredCategoryId(notification: PaymentNotification): String? {
+        val source = when (notification.sourceType) {
+            com.ccxiaoji.feature.ledger.domain.model.PaymentSourceType.ALIPAY -> "alipay"
+            com.ccxiaoji.feature.ledger.domain.model.PaymentSourceType.WECHAT -> "wechat"
+            else -> return null
+        }
+        val dir = when (notification.direction) {
+            PaymentDirection.INCOME -> "INCOME"
+            PaymentDirection.EXPENSE -> "EXPENSE"
+            else -> return null
+        }
+        // 细化记忆：按来源+方向+金额段+时段
+        val amtBucket = computeAmountBucket(notification.amountCents)
+        val timeBucket = computeTimeBucket(notification.postedTime)
+        val keyFine = androidx.datastore.preferences.core.stringPreferencesKey(
+            "auto_ledger_last_category_${source}_${dir}_${amtBucket}_${timeBucket}"
+        )
+        val keyCoarse = androidx.datastore.preferences.core.stringPreferencesKey(
+            "auto_ledger_last_category_${source}_${dir}"
+        )
+        val prefs = try { dataStore.data.first() } catch (_: Exception) { null }
+        val lastFine = prefs?.get(keyFine)
+        if (!lastFine.isNullOrBlank()) return lastFine
+        val lastCoarse = prefs?.get(keyCoarse)
+        if (!lastCoarse.isNullOrBlank()) return lastCoarse
+        return null
+    }
+
+    private fun saveLastUsed(notification: PaymentNotification, accountId: String, categoryId: String) {
+        try {
+            val source = when (notification.sourceType) {
+                com.ccxiaoji.feature.ledger.domain.model.PaymentSourceType.ALIPAY -> "alipay"
+                com.ccxiaoji.feature.ledger.domain.model.PaymentSourceType.WECHAT -> "wechat"
+                else -> return
+            }
+            val dir = when (notification.direction) {
+                PaymentDirection.INCOME -> "INCOME"
+                PaymentDirection.EXPENSE -> "EXPENSE"
+                else -> return
+            }
+            val amtBucket = computeAmountBucket(notification.amountCents)
+            val timeBucket = computeTimeBucket(notification.postedTime)
+            val keyAccFine = androidx.datastore.preferences.core.stringPreferencesKey(
+                "auto_ledger_last_account_${source}_${dir}_${amtBucket}_${timeBucket}"
+            )
+            val keyCatFine = androidx.datastore.preferences.core.stringPreferencesKey(
+                "auto_ledger_last_category_${source}_${dir}_${amtBucket}_${timeBucket}"
+            )
+            val keyAccCoarse = androidx.datastore.preferences.core.stringPreferencesKey(
+                "auto_ledger_last_account_${source}_${dir}"
+            )
+            val keyCatCoarse = androidx.datastore.preferences.core.stringPreferencesKey(
+                "auto_ledger_last_category_${source}_${dir}"
+            )
+            kotlinx.coroutines.GlobalScope.launch(Dispatchers.IO) {
+                dataStore.edit { prefs ->
+                    // 同时写细粒度与粗粒度，保证兼容回退
+                    prefs[keyAccFine] = accountId
+                    prefs[keyCatFine] = categoryId
+                    prefs[keyAccCoarse] = accountId
+                    prefs[keyCatCoarse] = categoryId
+                }
+            }
+        } catch (_: Exception) { }
+    }
+
+    private fun computeAmountBucket(amountCents: Long): String = when {
+        amountCents < 5_000L -> "S"      // < ¥50
+        amountCents < 50_000L -> "M"     // ¥50–¥500
+        else -> "L"                       // ≥ ¥500
+    }
+
+    private fun computeTimeBucket(epochMs: Long): String {
+        return try {
+            val hour = java.util.Calendar.getInstance().apply { timeInMillis = epochMs }.get(java.util.Calendar.HOUR_OF_DAY)
+            when (hour) {
+                in 6..11 -> "MORNING"
+                in 12..17 -> "AFTERNOON"
+                in 18..22 -> "EVENING"
+                else -> "NIGHT"
+            }
+        } catch (_: Exception) { "ANY" }
     }
 }
 

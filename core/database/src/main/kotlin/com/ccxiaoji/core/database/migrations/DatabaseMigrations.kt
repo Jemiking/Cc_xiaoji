@@ -29,7 +29,10 @@ object DatabaseMigrations {
             MIGRATION_12_13, // Ensure default ledger exists for all users
             MIGRATION_13_14, // Add ledger linking functionality tables
             MIGRATION_14_15,  // Add auto ledger functionality tables and fields
-            MIGRATION_15_16   // Add transfer functionality fields
+            MIGRATION_15_16,  // Add transfer functionality fields
+            MIGRATION_16_17,  // Add cards table (card management)
+            MIGRATION_17_18,  // Add holderName/institution fields for cards
+            MIGRATION_18_19   // Schedule sync_status INTEGER -> TEXT (SyncStatus)
         )
     }
 }

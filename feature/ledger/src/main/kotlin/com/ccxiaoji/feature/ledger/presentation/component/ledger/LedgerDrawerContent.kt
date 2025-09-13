@@ -28,6 +28,7 @@ fun LedgerDrawerContent(
     onNavigateToStatistics: () -> Unit,
     onNavigateToUnifiedAccountAsset: () -> Unit,
     onNavigateToCategoryManagement: () -> Unit,
+    onNavigateToCardManagement: () -> Unit,
     onNavigateToRecurringTransaction: () -> Unit,
     onNavigateToBudget: () -> Unit,
     onNavigateToSavingsGoal: () -> Unit,
@@ -46,10 +47,10 @@ fun LedgerDrawerContent(
             currentLedger = currentLedger,
             allLedgers = allLedgers,
             onLedgerSelected = { ledgerId ->
-                // 找到对应的记账簿对象
+                // 找到对应的账本对象
                 val selectedLedger = allLedgers.find { it.id == ledgerId }
                 selectedLedger?.let { onLedgerSelected(it) }
-                onCloseDrawer() // 选择记账簿后自动关闭抽屉
+                onCloseDrawer() // 选择账本后自动关闭抽屉
             }
         )
         
@@ -92,6 +93,14 @@ fun LedgerDrawerContent(
             }
         )
         DrawerMenuItem(
+            icon = Icons.Default.CreditCard,
+            text = "卡片管理",
+            onClick = {
+                onNavigateToCardManagement()
+                onCloseDrawer()
+            }
+        )
+        DrawerMenuItem(
             icon = Icons.Default.Refresh,
             text = "定期交易",
             onClick = {
@@ -122,7 +131,7 @@ fun LedgerDrawerContent(
         )
         
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-        
+
         // 系统设置 (重命名)
         DrawerSectionTitle(title = "系统设置")
         DrawerMenuItem(
@@ -143,7 +152,7 @@ private fun DrawerHeader(
     onLedgerSelected: (String) -> Unit
 ) {
     
-    // 如果没有记账簿，显示提示信息
+    // 如果没有账本，显示提示信息
     if (allLedgers.isEmpty()) {
         Card(
             modifier = Modifier
@@ -163,7 +172,7 @@ private fun DrawerHeader(
                     tint = MaterialTheme.colorScheme.onErrorContainer
                 )
                 Text(
-                    text = "暂无记账簿",
+                    text = "暂无账本",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
@@ -183,7 +192,7 @@ private fun DrawerHeader(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "当前记账簿",
+                text = "当前账本",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -206,7 +215,7 @@ private fun DrawerHeader(
             }
         }
         
-        // 记账簿切换器（新组件）
+        // 账本切换器（新组件）
         LedgerSwitcher(
             currentLedger = currentLedger,
             ledgers = allLedgers,

@@ -209,7 +209,11 @@
       "Bash(D:/kotlin/Cc_xiaoji/gradlew.bat :feature:ledger:testDebugUnitTest --tests=\"com.ccxiaoji.feature.ledger.domain.parser.AlipayNotificationParserTest\" --console=plain)",
       "Bash(D:/kotlin/Cc_xiaoji/gradlew.bat :feature:ledger:testDebugUnitTest --tests=\"com.ccxiaoji.feature.ledger.data.manager.DeduplicationManagerTest\" --console=plain)",
       "Bash(D:/kotlin/Cc_xiaoji/gradlew.bat :feature:ledger:testDebugUnitTest --tests=\"com.ccxiaoji.feature.ledger.data.manager.AutoLedgerIntegrationTest\" --console=plain)",
-      "Bash(D:/kotlin/Cc_xiaoji/gradlew.bat :feature:ledger:testDebugUnitTest --tests=\"com.ccxiaoji.feature.ledger.data.manager.AutoLedgerIntegrationTest.测试支付宝支付通知解析_完整流程\" --console=plain)"
+      "Bash(D:/kotlin/Cc_xiaoji/gradlew.bat :feature:ledger:testDebugUnitTest --tests=\"com.ccxiaoji.feature.ledger.data.manager.AutoLedgerIntegrationTest.测试支付宝支付通知解析_完整流程\" --console=plain)",
+      "Bash(D:/kotlin/Cc_xiaoji/gradlew.bat :feature:schedule:compileReleaseKotlin --console=plain)",
+      "Bash(do)",
+      "Bash(do if [ -f \"$dir*.kt\" ])",
+      "Bash(fi)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits",

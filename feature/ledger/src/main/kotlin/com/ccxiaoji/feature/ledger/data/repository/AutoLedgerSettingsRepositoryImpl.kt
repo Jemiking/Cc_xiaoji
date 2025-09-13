@@ -20,6 +20,7 @@ class AutoLedgerSettingsRepositoryImpl @Inject constructor(
 
     companion object {
         private val GLOBAL_ENABLED_KEY = booleanPreferencesKey("auto_ledger_global_enabled")
+        private val MODE_KEY = androidx.datastore.preferences.core.stringPreferencesKey("auto_ledger_mode")
     }
 
     override fun globalEnabled(): Flow<Boolean> =
@@ -30,5 +31,13 @@ class AutoLedgerSettingsRepositoryImpl @Inject constructor(
             prefs[GLOBAL_ENABLED_KEY] = enabled
         }
     }
-}
 
+    override fun mode(): Flow<String> =
+        dataStore.data.map { it[MODE_KEY] ?: "SEMI" }
+
+    override suspend fun setMode(mode: String) {
+        dataStore.edit { prefs ->
+            prefs[MODE_KEY] = if (mode == "FULL") "FULL" else "SEMI"
+        }
+    }
+}

@@ -10,8 +10,10 @@ import com.ccxiaoji.feature.ledger.data.local.dao.AccountDao
 import com.ccxiaoji.feature.ledger.data.local.dao.CategoryDao
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import androidx.datastore.preferences.core.edit
 
 data class QuickLedgerUiState(
     val amountCents: Int = 0,
@@ -31,10 +33,13 @@ class QuickLedgerViewModel @Inject constructor(
     private val addTransaction: AddTransactionUseCase,
     private val accountDao: AccountDao,
     private val categoryDao: CategoryDao,
-    private val userApi: UserApi
+    private val userApi: UserApi,
+    private val dataStore: androidx.datastore.core.DataStore<androidx.datastore.preferences.core.Preferences>
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(QuickLedgerUiState())
     val uiState: StateFlow<QuickLedgerUiState> = _uiState
+
+    private var sourceApp: String? = null
 
     fun initFromIntent(extras: Bundle?) {
         val amount = extras?.getInt("pn_amount_cents") ?: 0
@@ -43,6 +48,7 @@ class QuickLedgerViewModel @Inject constructor(
         val recAccount = extras?.getString("rec_account_id")
         val recCategory = extras?.getString("rec_category_id")
         val note = extras?.getString("rec_note") ?: merchant?.let { "自动解析: $it" }
+        sourceApp = extras?.getString("pn_source_app")
 
         _uiState.value = QuickLedgerUiState(
             amountCents = amount,
@@ -114,18 +120,43 @@ class QuickLedgerViewModel @Inject constructor(
                     return@launch
                 }
                 _uiState.value = state.copy(loading = true, error = null)
+                val prefs = try { dataStore.data.first() } catch (_: Exception) { null }
+                val fixedOn = prefs?.get(androidx.datastore.preferences.core.booleanPreferencesKey("auto_ledger_fixed_ledger_enabled")) ?: false
+                val fixedId = prefs?.get(androidx.datastore.preferences.core.stringPreferencesKey("auto_ledger_fixed_ledger_id"))
+                val targetLedgerId = if (fixedOn && !fixedId.isNullOrBlank()) fixedId else null
                 val id = addTransaction(
                     amountCents = state.amountCents,
                     categoryId = categoryId,
                     note = state.note,
                     accountId = accountId,
-                    ledgerId = null
+                    ledgerId = targetLedgerId
                 )
                 _uiState.value = state.copy(loading = false)
+                // 写入“上一次使用”（仅支持支付宝/微信）
+                writeLastUsed(accountId, categoryId, state.direction)
                 onDone()
             } catch (e: Exception) {
                 _uiState.value = state.copy(loading = false, error = e.message ?: "保存失败")
             }
+        }
+    }
+
+    private fun writeLastUsed(accountId: String, categoryId: String, direction: String) {
+        val src = when (sourceApp) {
+            "com.eg.android.AlipayGphone" -> "alipay"
+            "com.tencent.mm" -> "wechat"
+            else -> return
+        }
+        val dir = if (direction == "INCOME") "INCOME" else "EXPENSE"
+        val keyAcc = androidx.datastore.preferences.core.stringPreferencesKey("auto_ledger_last_account_${src}_${dir}")
+        val keyCat = androidx.datastore.preferences.core.stringPreferencesKey("auto_ledger_last_category_${src}_${dir}")
+        viewModelScope.launch {
+            try {
+                dataStore.edit { prefs ->
+                    prefs[keyAcc] = accountId
+                    prefs[keyCat] = categoryId
+                }
+            } catch (_: Exception) {}
         }
     }
 }

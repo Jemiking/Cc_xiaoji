@@ -5,6 +5,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.ccxiaoji.common.model.SyncStatus
 import java.time.LocalDate
 
 /**
@@ -46,8 +47,9 @@ data class ScheduleEntity(
     @ColumnInfo(name = "actual_end_time")
     val actualEndTime: String? = null,
     
+    // 统一使用全局 SyncStatus（由全局 Converters 转换为 TEXT）
     @ColumnInfo(name = "sync_status")
-    val syncStatus: Int = 0,
+    val syncStatus: SyncStatus = SyncStatus.PENDING,
     
     @ColumnInfo(name = "created_at")
     val createdAt: Long = System.currentTimeMillis(),

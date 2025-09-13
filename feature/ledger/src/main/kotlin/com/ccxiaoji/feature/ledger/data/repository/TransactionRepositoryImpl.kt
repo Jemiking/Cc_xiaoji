@@ -17,10 +17,13 @@ import com.ccxiaoji.feature.ledger.domain.model.CategoryDetails
 import com.ccxiaoji.feature.ledger.domain.model.Transaction
 import com.ccxiaoji.shared.user.api.UserApi
 import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.*
 import java.util.UUID
 import javax.inject.Inject
@@ -48,9 +51,10 @@ class TransactionRepositoryImpl @Inject constructor(
                             type = category.type
                         )
                     }
-                    entity.toDomainModel(categoryDetails)
+                    toDomainModelWithEnrichment(entity, categoryDetails)
                 }
             }
+            .flowOn(Dispatchers.IO)
     }
     
     override fun getTransactionsByDateRange(startDate: LocalDate, endDate: LocalDate): Flow<List<Transaction>> {
@@ -58,37 +62,40 @@ class TransactionRepositoryImpl @Inject constructor(
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
         return transactionDao.getTransactionsByDateRange(userApi.getCurrentUserId(), startMillis, endMillis)
-            .map { entities -> entities.map { it.toDomainModel() } }
+            .map { entities -> entities.map { toDomainModelWithEnrichment(it, null) } }
+            .flowOn(Dispatchers.IO)
     }
     
     
     override suspend fun getMonthlyTotal(year: Int, month: Int): BaseResult<Int> = safeSuspendCall {
-        val startDate = LocalDate(year, month, 1)
-        val endDate = startDate.plus(1, DateTimeUnit.MONTH)
-        
-        val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-        val endMillis = endDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-        
-        transactionDao.getTotalAmountByDateRange(userApi.getCurrentUserId(), startMillis, endMillis) ?: 0
+        withContext(Dispatchers.IO) {
+            val startDate = LocalDate(year, month, 1)
+            val endDate = startDate.plus(1, DateTimeUnit.MONTH)
+
+            val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+            val endMillis = endDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+
+            transactionDao.getTotalAmountByDateRange(userApi.getCurrentUserId(), startMillis, endMillis) ?: 0
+        }
     }
     
     
     override suspend fun getMonthlyIncomesAndExpenses(year: Int, month: Int): BaseResult<Pair<Int, Int>> = safeSuspendCall {
-        val startDate = LocalDate(year, month, 1)
-        val endDate = startDate.plus(1, DateTimeUnit.MONTH)
-        
-        val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-        val endMillis = endDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-        
-        val currentUserId = userApi.getCurrentUserId()
-        
-        // Use new category-based queries
-        val income = transactionDao.getTotalByType(currentUserId, startMillis, endMillis, "INCOME") ?: 0
-        val expense = transactionDao.getTotalByType(currentUserId, startMillis, endMillis, "EXPENSE") ?: 0
-        
-        
-        
-        income to expense
+        withContext(Dispatchers.IO) {
+            val startDate = LocalDate(year, month, 1)
+            val endDate = startDate.plus(1, DateTimeUnit.MONTH)
+
+            val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+            val endMillis = endDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+
+            val currentUserId = userApi.getCurrentUserId()
+
+            // Use new category-based queries
+            val income = transactionDao.getTotalByType(currentUserId, startMillis, endMillis, "INCOME") ?: 0
+            val expense = transactionDao.getTotalByType(currentUserId, startMillis, endMillis, "EXPENSE") ?: 0
+
+            income to expense
+        }
     }
     
     override suspend fun addTransaction(
@@ -100,7 +107,7 @@ class TransactionRepositoryImpl @Inject constructor(
         transactionDate: kotlinx.datetime.Instant?,
         location: com.ccxiaoji.feature.ledger.domain.model.LocationData?,
         transactionId: String?
-    ): BaseResult<String> = safeSuspendCall {
+    ): BaseResult<String> = safeSuspendCall { withContext(Dispatchers.IO) {
         val actualTransactionId = transactionId ?: UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
         
@@ -139,17 +146,20 @@ class TransactionRepositoryImpl @Inject constructor(
         val balanceChange = if (category?.type == "INCOME") amountCents.toLong() else -amountCents.toLong()
         accountDao.updateBalance(actualAccountId, balanceChange, now)
         
-        // Increment category usage count
-        categoryDao.incrementUsageCount(categoryId)
+        // Increment category usage count（跳过转账相关分类）
+        val isTransferLike = category?.name?.contains("转账") == true
+        if (!isTransferLike) {
+            categoryDao.incrementUsageCount(categoryId)
+        }
         
         // Log the change for sync
         logChange("transactions", actualTransactionId, "INSERT", entity)
         
         println("✅ [TransactionRepo] 交易创建成功: '$actualTransactionId'")
         actualTransactionId
-    }
+    }}
     
-    override suspend fun updateTransaction(transaction: Transaction): BaseResult<Unit> = safeSuspendCall {
+    override suspend fun updateTransaction(transaction: Transaction): BaseResult<Unit> = safeSuspendCall { withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
         val entity = transaction.toEntity(userApi.getCurrentUserId(), now)
         
@@ -157,22 +167,27 @@ class TransactionRepositoryImpl @Inject constructor(
         
         // Log the change for sync
         logChange("transactions", transaction.id, "UPDATE", entity)
-    }
+    }}
     
-    override suspend fun deleteTransaction(transactionId: String): BaseResult<Unit> = safeSuspendCall {
+    override suspend fun deleteTransaction(transactionId: String): BaseResult<Unit> = safeSuspendCall { withContext(Dispatchers.IO) {
         val now = System.currentTimeMillis()
         
         transactionDao.softDeleteTransaction(transactionId, now)
         
         // Log the change for sync
         logChange("transactions", transactionId, "DELETE", mapOf("id" to transactionId))
-    }
+    }}
     
     override fun getRecentTransactions(limit: Int): Flow<List<Transaction>> {
-        return transactionDao.getTransactionsByUser(userApi.getCurrentUserId())
-            .map { entities -> 
-                entities.take(limit).map { it.toDomainModel() }
+        return transactionDao.getRecentTransactionsByUser(userApi.getCurrentUserId(), limit)
+            .map { entities ->
+                val list = mutableListOf<Transaction>()
+                for (entity in entities) {
+                    list.add(toDomainModelWithEnrichment(entity, null))
+                }
+                list
             }
+            .flowOn(Dispatchers.IO)
     }
     
     private suspend fun logChange(table: String, rowId: String, operation: String, payload: Any) {
@@ -188,7 +203,14 @@ class TransactionRepositoryImpl @Inject constructor(
     
     override fun searchTransactions(query: String): Flow<List<Transaction>> {
         return transactionDao.searchTransactions(userApi.getCurrentUserId(), query)
-            .map { entities -> entities.map { it.toDomainModel() } }
+            .map { entities ->
+                val list = mutableListOf<Transaction>()
+                for (entity in entities) {
+                    list.add(toDomainModelWithEnrichment(entity, null))
+                }
+                list
+            }
+            .flowOn(Dispatchers.IO)
     }
     
     override fun getTransactionsByAccount(accountId: String): Flow<List<Transaction>> {
@@ -204,9 +226,10 @@ class TransactionRepositoryImpl @Inject constructor(
                             type = category.type
                         )
                     }
-                    entity.toDomainModel(categoryDetails)
+                    toDomainModelWithEnrichment(entity, categoryDetails)
                 }
             }
+            .flowOn(Dispatchers.IO)
     }
     
     override fun getTransactionsByCategory(categoryId: String): Flow<List<Transaction>> {
@@ -216,6 +239,7 @@ class TransactionRepositoryImpl @Inject constructor(
                     entity.toDomainModel()
                 }
             }
+            .flowOn(Dispatchers.IO)
     }
     
     override fun getTransactionsByAccountAndDateRange(accountId: String, startDate: LocalDate, endDate: LocalDate): Flow<List<Transaction>> {
@@ -234,13 +258,14 @@ class TransactionRepositoryImpl @Inject constructor(
                             type = category.type
                         )
                     }
-                    entity.toDomainModel(categoryDetails)
+                    toDomainModelWithEnrichment(entity, categoryDetails)
                 }
             }
+            .flowOn(Dispatchers.IO)
     }
     
     // Statistics methods
-    override suspend fun getDailyTotals(startDate: LocalDate, endDate: LocalDate): BaseResult<Map<LocalDate, Pair<Int, Int>>> = safeSuspendCall {
+    override suspend fun getDailyTotals(startDate: LocalDate, endDate: LocalDate): BaseResult<Map<LocalDate, Pair<Int, Int>>> = safeSuspendCall { withContext(Dispatchers.IO) {
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
@@ -261,13 +286,13 @@ class TransactionRepositoryImpl @Inject constructor(
             
             income to expense
         }
-    }
+    }}
     
     override suspend fun getCategoryStatistics(
         categoryType: String?,
         startDate: Long,
         endDate: Long
-    ): BaseResult<List<CategoryStatistic>> = safeSuspendCall {
+    ): BaseResult<List<CategoryStatistic>> = safeSuspendCall { withContext(Dispatchers.IO) {
         val stats = if (categoryType != null) {
             transactionDao.getCategoryStatisticsByType(userApi.getCurrentUserId(), startDate, endDate, categoryType)
         } else {
@@ -284,28 +309,46 @@ class TransactionRepositoryImpl @Inject constructor(
                 transactionCount = dao.transactionCount
             )
         }
-    }
+    }}
     
-    override suspend fun getTopTransactions(startDate: LocalDate, endDate: LocalDate, type: String, limit: Int): BaseResult<List<Transaction>> = safeSuspendCall {
+    override suspend fun getTopTransactions(startDate: LocalDate, endDate: LocalDate, type: String, limit: Int): BaseResult<List<Transaction>> = safeSuspendCall { withContext(Dispatchers.IO) {
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
-        transactionDao.getTopTransactionsByType(userApi.getCurrentUserId(), startMillis, endMillis, type, limit)
-            .map { entity ->
-                val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
-                    CategoryDetails(
-                        id = category.id,
-                        name = category.name,
-                        icon = category.icon,
-                        color = category.color,
-                        type = category.type
-                    )
-                }
-                entity.toDomainModel(categoryDetails)
+        val topEntities = transactionDao.getTopTransactionsByType(userApi.getCurrentUserId(), startMillis, endMillis, type, limit)
+        val list = mutableListOf<Transaction>()
+        for (entity in topEntities) {
+            val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
+                CategoryDetails(
+                    id = category.id,
+                    name = category.name,
+                    icon = category.icon,
+                    color = category.color,
+                    type = category.type
+                )
             }
+            list.add(toDomainModelWithEnrichment(entity, categoryDetails))
+        }
+        list
+    }}
+
+    // 构建带对端账户信息的领域模型
+    private suspend fun toDomainModelWithEnrichment(entity: TransactionEntity, categoryDetails: CategoryDetails?): Transaction {
+        val base = entity.toDomainModel(categoryDetails)
+        val relatedId = entity.relatedTransactionId
+        var cpId: String? = null
+        var cpName: String? = null
+        if (relatedId != null) {
+            val other = transactionDao.getTransactionById(relatedId)
+            cpId = other?.accountId
+            if (cpId != null) {
+                cpName = accountDao.getAccountById(cpId!!)?.name
+            }
+        }
+        return base.copy(counterpartyAccountId = cpId, counterpartyAccountName = cpName)
     }
     
-    override suspend fun calculateSavingsRate(startDate: LocalDate, endDate: LocalDate): BaseResult<Float> = safeSuspendCall {
+    override suspend fun calculateSavingsRate(startDate: LocalDate, endDate: LocalDate): BaseResult<Float> = safeSuspendCall { withContext(Dispatchers.IO) {
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
@@ -317,20 +360,22 @@ class TransactionRepositoryImpl @Inject constructor(
         } else {
             0f
         }
-    }
+    }}
     
     override suspend fun getTransactionById(transactionId: String): Transaction? {
-        val entity = transactionDao.getTransactionById(transactionId) ?: return null
-        val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
-            CategoryDetails(
-                id = category.id,
-                name = category.name,
-                icon = category.icon,
-                color = category.color,
-                type = category.type
-            )
+        return withContext(Dispatchers.IO) {
+            val entity = transactionDao.getTransactionById(transactionId) ?: return@withContext null
+            val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
+                CategoryDetails(
+                    id = category.id,
+                    name = category.name,
+                    icon = category.icon,
+                    color = category.color,
+                    type = category.type
+                )
+            }
+            toDomainModelWithEnrichment(entity, categoryDetails)
         }
-        return entity.toDomainModel(categoryDetails)
     }
     
     override fun getTransactionsPaginated(
@@ -351,9 +396,8 @@ class TransactionRepositoryImpl @Inject constructor(
             endDateMillis = endDate
         )
         
-        
-        
-        val transactions = result.first.map { entity ->
+        val transactions = mutableListOf<Transaction>()
+        for (entity in result.first) {
             val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
                 CategoryDetails(
                     id = category.id,
@@ -363,20 +407,21 @@ class TransactionRepositoryImpl @Inject constructor(
                     type = category.type
                 )
             }
-            entity.toDomainModel(categoryDetails)
+            transactions.add(toDomainModelWithEnrichment(entity, categoryDetails))
         }
         
-        
         emit(BaseResult.Success(Pair(transactions, result.second)))
-    }.catch { e ->
+    }.flowOn(Dispatchers.IO).catch { e ->
         emit(BaseResult.Error(if (e is Exception) e else Exception(e)))
     }
     
     // 记账簿相关的方法实现
     override fun getTransactionsByLedger(ledgerId: String): Flow<List<Transaction>> {
-        return transactionDao.getTransactionsByLedger(ledgerId).map { entities ->
-            entities.map { it.toDomainModel() }
-        }
+        return transactionDao.getTransactionsByLedger(ledgerId)
+            .map { entities ->
+                entities.map { it.toDomainModel() }
+            }
+            .flowOn(Dispatchers.IO)
     }
     
     override fun getTransactionsByLedgerAndDateRange(
@@ -387,15 +432,19 @@ class TransactionRepositoryImpl @Inject constructor(
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
-        return transactionDao.getTransactionsByLedgerAndDateRange(ledgerId, startMillis, endMillis).map { entities ->
-            entities.map { it.toDomainModel() }
-        }
+        return transactionDao.getTransactionsByLedgerAndDateRange(ledgerId, startMillis, endMillis)
+            .map { entities ->
+                entities.map { it.toDomainModel() }
+            }
+            .flowOn(Dispatchers.IO)
     }
     
     override fun getTransactionsByLedgers(ledgerIds: List<String>): Flow<List<Transaction>> {
-        return transactionDao.getTransactionsByLedgers(ledgerIds).map { entities ->
-            entities.map { it.toDomainModel() }
-        }
+        return transactionDao.getTransactionsByLedgers(ledgerIds)
+            .map { entities ->
+                entities.map { it.toDomainModel() }
+            }
+            .flowOn(Dispatchers.IO)
     }
     
     override suspend fun getMonthlyIncomesAndExpensesByLedger(
@@ -403,7 +452,7 @@ class TransactionRepositoryImpl @Inject constructor(
         year: Int,
         month: Int
     ): BaseResult<Pair<Int, Int>> {
-        return safeSuspendCall {
+        return safeSuspendCall { withContext(Dispatchers.IO) {
             val startOfMonth = LocalDate(year, month, 1)
             val endOfMonth = startOfMonth.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY)
             val startMillis = startOfMonth.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
@@ -411,7 +460,7 @@ class TransactionRepositoryImpl @Inject constructor(
             
             val result = transactionDao.getMonthlyIncomesAndExpensesByLedger(ledgerId, startMillis, endMillis)
             Pair(result?.income ?: 0, result?.expense ?: 0)
-        }
+        }}
     }
     
     // 记账簿筛选的统计方法实现
@@ -420,7 +469,7 @@ class TransactionRepositoryImpl @Inject constructor(
         categoryType: String?,
         startDate: Long,
         endDate: Long
-    ): BaseResult<List<CategoryStatistic>> = safeSuspendCall {
+    ): BaseResult<List<CategoryStatistic>> = safeSuspendCall { withContext(Dispatchers.IO) {
         val stats = if (categoryType != null) {
             transactionDao.getCategoryStatisticsByLedgerAndType(ledgerId, startDate, endDate, categoryType)
         } else {
@@ -437,14 +486,14 @@ class TransactionRepositoryImpl @Inject constructor(
                 transactionCount = dao.transactionCount
             )
         }
-    }
+    }}
     
     override suspend fun getCategoryStatisticsByLedgers(
         ledgerIds: List<String>,
         categoryType: String?,
         startDate: Long,
         endDate: Long
-    ): BaseResult<List<CategoryStatistic>> = safeSuspendCall {
+    ): BaseResult<List<CategoryStatistic>> = safeSuspendCall { withContext(Dispatchers.IO) {
         val stats = if (categoryType != null) {
             transactionDao.getCategoryStatisticsByLedgersAndType(ledgerIds, startDate, endDate, categoryType)
         } else {
@@ -461,13 +510,13 @@ class TransactionRepositoryImpl @Inject constructor(
                 transactionCount = dao.transactionCount
             )
         }
-    }
+    }}
     
     override suspend fun getDailyTotalsByLedger(
         ledgerId: String,
         startDate: LocalDate, 
         endDate: LocalDate
-    ): BaseResult<Map<LocalDate, Pair<Int, Int>>> = safeSuspendCall {
+    ): BaseResult<Map<LocalDate, Pair<Int, Int>>> = safeSuspendCall { withContext(Dispatchers.IO) {
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
@@ -488,13 +537,13 @@ class TransactionRepositoryImpl @Inject constructor(
             
             income to expense
         }
-    }
+    }}
     
     override suspend fun getDailyTotalsByLedgers(
         ledgerIds: List<String>,
         startDate: LocalDate, 
         endDate: LocalDate
-    ): BaseResult<Map<LocalDate, Pair<Int, Int>>> = safeSuspendCall {
+    ): BaseResult<Map<LocalDate, Pair<Int, Int>>> = safeSuspendCall { withContext(Dispatchers.IO) {
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
@@ -515,7 +564,7 @@ class TransactionRepositoryImpl @Inject constructor(
             
             income to expense
         }
-    }
+    }}
     
     override suspend fun getTopTransactionsByLedger(
         ledgerId: String,
@@ -523,7 +572,7 @@ class TransactionRepositoryImpl @Inject constructor(
         endDate: LocalDate, 
         type: String, 
         limit: Int
-    ): BaseResult<List<Transaction>> = safeSuspendCall {
+    ): BaseResult<List<Transaction>> = safeSuspendCall { withContext(Dispatchers.IO) {
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
@@ -540,7 +589,7 @@ class TransactionRepositoryImpl @Inject constructor(
                 }
                 entity.toDomainModel(categoryDetails)
             }
-    }
+    }}
     
     override suspend fun getTopTransactionsByLedgers(
         ledgerIds: List<String>,
@@ -548,7 +597,7 @@ class TransactionRepositoryImpl @Inject constructor(
         endDate: LocalDate, 
         type: String, 
         limit: Int
-    ): BaseResult<List<Transaction>> = safeSuspendCall {
+    ): BaseResult<List<Transaction>> = safeSuspendCall { withContext(Dispatchers.IO) {
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
@@ -565,13 +614,13 @@ class TransactionRepositoryImpl @Inject constructor(
                 }
                 entity.toDomainModel(categoryDetails)
             }
-    }
+    }}
     
     override suspend fun calculateSavingsRateByLedger(
         ledgerId: String,
         startDate: LocalDate, 
         endDate: LocalDate
-    ): BaseResult<Float> = safeSuspendCall {
+    ): BaseResult<Float> = safeSuspendCall { withContext(Dispatchers.IO) {
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
@@ -583,13 +632,13 @@ class TransactionRepositoryImpl @Inject constructor(
         } else {
             0f
         }
-    }
+    }}
     
     override suspend fun calculateSavingsRateByLedgers(
         ledgerIds: List<String>,
         startDate: LocalDate, 
         endDate: LocalDate
-    ): BaseResult<Float> = safeSuspendCall {
+    ): BaseResult<Float> = safeSuspendCall { withContext(Dispatchers.IO) {
         val startMillis = startDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
@@ -601,7 +650,7 @@ class TransactionRepositoryImpl @Inject constructor(
         } else {
             0f
         }
-    }
+    }}
     
     override fun getTransactionsPaginatedByLedger(
         ledgerId: String,
@@ -620,7 +669,8 @@ class TransactionRepositoryImpl @Inject constructor(
             endDateMillis = endDate
         )
         
-        val transactions = result.first.map { entity ->
+        val transactions = mutableListOf<Transaction>()
+        for (entity in result.first) {
             val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
                 CategoryDetails(
                     id = category.id,
@@ -630,11 +680,11 @@ class TransactionRepositoryImpl @Inject constructor(
                     type = category.type
                 )
             }
-            entity.toDomainModel(categoryDetails)
+            transactions.add(toDomainModelWithEnrichment(entity, categoryDetails))
         }
         
         emit(BaseResult.Success(Pair(transactions, result.second)))
-    }.catch { e ->
+    }.flowOn(Dispatchers.IO).catch { e ->
         emit(BaseResult.Error(if (e is Exception) e else Exception(e)))
     }
     
@@ -669,7 +719,7 @@ class TransactionRepositoryImpl @Inject constructor(
         }
         
         emit(BaseResult.Success(Pair(transactions, result.second)))
-    }.catch { e ->
+    }.flowOn(Dispatchers.IO).catch { e ->
         emit(BaseResult.Error(if (e is Exception) e else Exception(e)))
     }
 }
@@ -696,7 +746,10 @@ private fun TransactionEntity.toDomainModel(categoryDetails: CategoryDetails? = 
         createdAt = Instant.fromEpochMilliseconds(createdAt),
         updatedAt = Instant.fromEpochMilliseconds(updatedAt),
         transactionDate = transactionDate?.let { Instant.fromEpochMilliseconds(it) },
-        location = location
+        location = location,
+        transferId = transferId,
+        transferType = transferType?.let { com.ccxiaoji.feature.ledger.domain.model.TransferType.valueOf(it) },
+        relatedTransactionId = relatedTransactionId
     )
 }
 
@@ -717,6 +770,9 @@ private fun Transaction.toEntity(userId: String, updatedAt: Long): TransactionEn
         locationAddress = location?.address,
         locationPrecision = location?.precision,
         locationProvider = location?.provider,
-        syncStatus = SyncStatus.PENDING_SYNC
+        syncStatus = SyncStatus.PENDING_SYNC,
+        transferId = transferId,
+        transferType = transferType?.name,
+        relatedTransactionId = relatedTransactionId
     )
 }

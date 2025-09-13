@@ -9,7 +9,6 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
-// 移除 RemoteInput 以精简为“点击通知主体进入编辑页”的半自动模式
 import androidx.work.Data
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
@@ -52,8 +51,7 @@ class AutoLedgerNotificationManager @Inject constructor(
         // 通知Action的RequestCode
         private const val REQUEST_UNDO = 1001
         private const val REQUEST_EDIT = 1002
-        private const val REQUEST_MANUAL_CONFIRM = 1003
-        private const val REQUEST_QUICK_SAVE = 1004
+        private const val REQUEST_CONTENT = 1003
     }
     
     private val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -218,13 +216,13 @@ class AutoLedgerNotificationManager @Inject constructor(
         }
         val contentIntent: PendingIntent = PendingIntent.getActivity(
             context,
-            REQUEST_MANUAL_CONFIRM + notificationId + 8888,
+            REQUEST_CONTENT + notificationId + 8888,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
         Log.d(TAG, "🛠️ 构建确认通知对象...")
-        val notification = NotificationCompat.Builder(context, CHANNEL_PROMPT_ID)
+        val builder = NotificationCompat.Builder(context, CHANNEL_PROMPT_ID)
             .setSmallIcon(R.drawable.ic_notification_24)
             .setContentTitle("发现支付通知")
             .setContentText(paymentSummary)
@@ -234,7 +232,8 @@ class AutoLedgerNotificationManager @Inject constructor(
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setAutoCancel(true)
             .setContentIntent(contentIntent)
-            .build()
+
+        val notification = builder.build()
         
         Log.i(TAG, "🚀 发送确认通知到系统 (ID: $notificationId)")
         try {
@@ -251,35 +250,7 @@ class AutoLedgerNotificationManager @Inject constructor(
         scheduleNotificationCleanup(notificationId, UNDO_WINDOW_SECONDS)
     }
 
-    private fun createQuickAddActivityPendingIntent(
-        paymentNotification: PaymentNotification,
-        recommendedTransaction: Transaction,
-        notificationId: Int
-    ): PendingIntent {
-        val activityIntent = Intent(context, com.ccxiaoji.feature.ledger.presentation.quickadd.QuickLedgerActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra("notificationId", notificationId)
-            putExtra("pn_key", paymentNotification.notificationKey)
-            putExtra("pn_title", paymentNotification.originalTitle)
-            putExtra("pn_text", paymentNotification.originalText)
-            putExtra("pn_amount_cents", paymentNotification.amountCents.toInt())
-            putExtra("pn_direction", paymentNotification.direction.name)
-            putExtra("pn_merchant", paymentNotification.normalizedMerchant)
-            putExtra("pn_post_time", paymentNotification.postedTime)
-            putExtra("pn_source_app", paymentNotification.sourceApp)
-            // 推荐信息（可能为null）
-            putExtra("rec_account_id", recommendedTransaction.accountId)
-            putExtra("rec_category_id", recommendedTransaction.categoryId)
-            putExtra("rec_ledger_id", recommendedTransaction.ledgerId)
-            putExtra("rec_note", recommendedTransaction.note)
-        }
-        return PendingIntent.getActivity(
-            context,
-            REQUEST_MANUAL_CONFIRM + notificationId + 999,
-            activityIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-    }
+    // 旧的弹窗/一键相关意图已移除，半自动仅通过点击主体跳转到添加页
     
     /**
      * 撤销记账操作
@@ -353,77 +324,7 @@ class AutoLedgerNotificationManager @Inject constructor(
         )
     }
     
-    /**
-     * 创建半自动确认Intent
-     * 
-     * 注意：由于PaymentNotification和Transaction对象复杂，
-     * 这里使用JSON序列化传递数据，避免Parcelable实现的复杂性
-     */
-    private fun createConfirmIntent(
-        paymentNotification: PaymentNotification,
-        recommendedTransaction: Transaction,
-        notificationId: Int
-    ): PendingIntent {
-        val intent = Intent(context, AutoLedgerBroadcastReceiver::class.java).apply {
-            action = AutoLedgerBroadcastReceiver.ACTION_MANUAL_CONFIRM
-            putExtra("notificationId", notificationId)
-            // 传递支付关键信息
-            putExtra("pn_key", paymentNotification.notificationKey)
-            putExtra("pn_title", paymentNotification.originalTitle)
-            putExtra("pn_text", paymentNotification.originalText)
-            putExtra("pn_amount_cents", paymentNotification.amountCents.toInt())
-            putExtra("pn_direction", paymentNotification.direction.name)
-            putExtra("pn_merchant", paymentNotification.normalizedMerchant)
-            putExtra("pn_post_time", paymentNotification.postedTime)
-            putExtra("pn_source_app", paymentNotification.sourceApp)
-            // 推荐信息（可能为null）
-            putExtra("rec_account_id", recommendedTransaction.accountId)
-            putExtra("rec_category_id", recommendedTransaction.categoryId)
-            putExtra("rec_ledger_id", recommendedTransaction.ledgerId)
-            putExtra("rec_note", recommendedTransaction.note)
-        }
-        
-        return PendingIntent.getBroadcast(
-            context,
-            REQUEST_MANUAL_CONFIRM + notificationId,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-    }
-
-    /**
-     * 创建一键记账Intent（无需切前台，直接落库）
-     */
-    private fun createQuickSaveIntent(
-        paymentNotification: PaymentNotification,
-        recommendedTransaction: Transaction,
-        notificationId: Int
-    ): PendingIntent {
-        val intent = Intent(context, AutoLedgerBroadcastReceiver::class.java).apply {
-            action = AutoLedgerBroadcastReceiver.ACTION_QUICK_SAVE
-            putExtra("notificationId", notificationId)
-            // 传递支付关键信息
-            putExtra("pn_key", paymentNotification.notificationKey)
-            putExtra("pn_title", paymentNotification.originalTitle)
-            putExtra("pn_text", paymentNotification.originalText)
-            putExtra("pn_amount_cents", paymentNotification.amountCents.toInt())
-            putExtra("pn_direction", paymentNotification.direction.name)
-            putExtra("pn_merchant", paymentNotification.normalizedMerchant)
-            putExtra("pn_post_time", paymentNotification.postedTime)
-            putExtra("pn_source_app", paymentNotification.sourceApp)
-            // 推荐信息（可能为null）
-            putExtra("rec_account_id", recommendedTransaction.accountId)
-            putExtra("rec_category_id", recommendedTransaction.categoryId)
-            putExtra("rec_ledger_id", recommendedTransaction.ledgerId)
-            putExtra("rec_note", recommendedTransaction.note)
-        }
-        return PendingIntent.getBroadcast(
-            context,
-            REQUEST_QUICK_SAVE + notificationId,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-    }
+    
     
     /**
      * 安排通知清理任务

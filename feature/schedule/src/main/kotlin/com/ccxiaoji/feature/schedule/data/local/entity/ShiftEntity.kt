@@ -3,6 +3,7 @@ package com.ccxiaoji.feature.schedule.data.local.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.ccxiaoji.common.model.SyncStatus
 
 /**
  * 班次实体类
@@ -32,18 +33,13 @@ data class ShiftEntity(
     @ColumnInfo(name = "is_active")
     val isActive: Boolean = true,
     
+    // 统一使用全局 SyncStatus（由全局 Converters 转换为 TEXT）
     @ColumnInfo(name = "sync_status")
-    val syncStatus: Int = 0,
+    val syncStatus: SyncStatus = SyncStatus.PENDING,
     
     @ColumnInfo(name = "created_at")
     val createdAt: Long = System.currentTimeMillis(),
     
     @ColumnInfo(name = "updated_at")
     val updatedAt: Long = System.currentTimeMillis()
-) {
-    companion object {
-        const val SYNC_STATUS_LOCAL = 0
-        const val SYNC_STATUS_SYNCED = 1
-        const val SYNC_STATUS_PENDING = 2
-    }
-}
+)

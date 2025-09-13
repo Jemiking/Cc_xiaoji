@@ -61,6 +61,7 @@ class CategoryRepositoryImpl @Inject constructor(
                         isDefault = categoryWithCount.isDefault,
                         isActive = categoryWithCount.isActive,
                         isSystem = categoryWithCount.isSystem,
+                        isHidden = false,
                         createdAt = kotlinx.datetime.Instant.fromEpochMilliseconds(categoryWithCount.createdAt),
                         updatedAt = kotlinx.datetime.Instant.fromEpochMilliseconds(categoryWithCount.updatedAt)
                     ),
@@ -91,6 +92,11 @@ class CategoryRepositoryImpl @Inject constructor(
             val parent = categoryDao.getCategoryById(parentId)
             if (parent != null) "${parent.name}/$name" else name
         }
+        // 计算显示顺序：父分类使用当前最大顺序 + 1；子分类顺序在 createSubcategory 中处理
+        val displayOrder = if (parentId == null) {
+            val maxOrder = categoryDao.getMaxParentDisplayOrder(userApi.getCurrentUserId(), type) ?: -1
+            maxOrder + 1
+        } else 0
         
         val category = CategoryEntity(
             id = categoryId,
@@ -102,7 +108,7 @@ class CategoryRepositoryImpl @Inject constructor(
             parentId = parentId,
             level = level,
             path = path,
-            displayOrder = 0,
+            displayOrder = displayOrder,
             isDefault = false,
             isActive = true,
             isSystem = false,
@@ -137,6 +143,8 @@ class CategoryRepositoryImpl @Inject constructor(
                 level = category.level,
                 path = newPath,
                 isActive = category.isActive,
+                isSystem = category.isSystem,
+                isHidden = category.isHidden,
                 updatedAt = Clock.System.now().toEpochMilliseconds(),
                 syncStatus = SyncStatus.PENDING_SYNC
             )
@@ -255,6 +263,7 @@ class CategoryRepositoryImpl @Inject constructor(
                 isDefault = true,
                 isActive = true,
                 isSystem = true,
+                isHidden = false,
                 usageCount = 0,
                 createdAt = timestamp,
                 updatedAt = timestamp,
@@ -279,6 +288,7 @@ class CategoryRepositoryImpl @Inject constructor(
                     isDefault = true,
                     isActive = true,
                     isSystem = true,
+                    isHidden = false,
                     usageCount = 0,
                     createdAt = timestamp,
                     updatedAt = timestamp,
@@ -306,6 +316,7 @@ class CategoryRepositoryImpl @Inject constructor(
                 isDefault = true,
                 isActive = true,
                 isSystem = true,
+                isHidden = false,
                 usageCount = 0,
                 createdAt = timestamp,
                 updatedAt = timestamp,
@@ -330,6 +341,7 @@ class CategoryRepositoryImpl @Inject constructor(
                     isDefault = true,
                     isActive = true,
                     isSystem = true,
+                    isHidden = false,
                     usageCount = 0,
                     createdAt = timestamp,
                     updatedAt = timestamp,
@@ -475,6 +487,7 @@ class CategoryRepositoryImpl @Inject constructor(
             isDefault = false,
             isActive = true,
             isSystem = false,
+            isHidden = false,
             usageCount = 0,
             createdAt = timestamp,
             updatedAt = timestamp,
@@ -558,6 +571,7 @@ class CategoryRepositoryImpl @Inject constructor(
             isDefault = true,
             isActive = true,
             isSystem = true, // 标记为系统分类
+            isHidden = false,
             usageCount = 0,
             createdAt = timestamp,
             updatedAt = timestamp,
@@ -586,6 +600,7 @@ private fun CategoryEntity.toDomainModel(): Category {
         isDefault = isDefault,
         isActive = isActive,
         isSystem = isSystem,
+        isHidden = isHidden,
         createdAt = kotlinx.datetime.Instant.fromEpochMilliseconds(createdAt),
         updatedAt = kotlinx.datetime.Instant.fromEpochMilliseconds(updatedAt)
     )
@@ -606,6 +621,7 @@ private fun Category.toEntity(userId: String): CategoryEntity {
         isDefault = isDefault,
         isActive = isActive,
         isSystem = isSystem,
+        isHidden = isHidden,
         usageCount = 0,
         createdAt = createdAt.toEpochMilliseconds(),
         updatedAt = updatedAt.toEpochMilliseconds(),

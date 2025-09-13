@@ -136,7 +136,7 @@ class LedgerViewModel @Inject constructor(
         val finalAccountId = accountId ?: _uiState.value.selectedAccountId 
             ?: _uiState.value.accounts.firstOrNull()?.id ?: return@launch
         
-        // 获取当前选中的记账簿ID
+        // 获取当前选中的账本 ID
         val currentLedgerId = _uiState.value.currentLedger?.id
         
         runCatching {
@@ -145,7 +145,7 @@ class LedgerViewModel @Inject constructor(
                 categoryId = categoryId, 
                 note = note, 
                 accountId = finalAccountId,
-                ledgerId = currentLedgerId  // 传递当前记账簿ID
+                ledgerId = currentLedgerId  // 传递当前账本 ID
             )
             checkBudget(categoryId, onBudgetAlert)
             loadMonthlySummary()
@@ -171,7 +171,7 @@ class LedgerViewModel @Inject constructor(
     }
     
     fun copyTransaction(transaction: Transaction) = launch {
-        // 获取当前选中的记账簿ID
+        // 获取当前选中的账本 ID
         val currentLedgerId = _uiState.value.currentLedger?.id
         
         runCatching {
@@ -194,7 +194,7 @@ class LedgerViewModel @Inject constructor(
             val currentLedger = _uiState.value.currentLedger
             
             if (currentLedger != null) {
-                // 使用记账簿过滤的月度统计
+                // 使用账本过滤的月度统计
                 val result = transactionRepository.getMonthlyIncomesAndExpensesByLedger(
                     ledgerId = currentLedger.id,
                     year = month.year,
@@ -246,10 +246,10 @@ class LedgerViewModel @Inject constructor(
         }
     }
     
-    // ==================== 记账簿管理方法 ====================
+    // ==================== 账本管理方法 ====================
     
     /**
-     * 加载记账簿列表
+     * 加载账本列表
      */
     private fun loadLedgers() = launch {
         try {
@@ -264,15 +264,15 @@ class LedgerViewModel @Inject constructor(
                 is com.ccxiaoji.feature.ledger.domain.service.DefaultLedgerInitResult.Failure -> { /* no-op */ }
             }
             
-            // 收集记账簿列表Flow
+            // 收集账本列表 Flow
             manageLedgerUseCase.getUserLedgers(userId).collect { ledgers ->
-                // 获取用户偏好的记账簿选择
+                // 获取用户偏好的账本选择
                 ledgerUIPreferencesRepository.getUIPreferences().collect { preferences ->
                     val preferredLedgerId = preferences.selectedLedgerId
                     val preferredLedger = ledgers.find { ledger -> ledger.id == preferredLedgerId }
                     val defaultLedger = ledgers.find { ledger -> ledger.isDefault }
                     
-                    // 选择逻辑：偏好记账簿 -> 默认记账簿 -> 第一个记账簿
+                    // 选择逻辑：偏好账本 -> 默认账本 -> 第一个账本
                     val selectedLedger = preferredLedger ?: defaultLedger ?: ledgers.firstOrNull()
                     
                     _uiState.update { 
@@ -283,7 +283,7 @@ class LedgerViewModel @Inject constructor(
                             isLedgerLoading = false
                         )
                     }
-                    // 如果实际选择的记账簿与偏好不同，更新偏好设置
+                    // 如果实际选择的账本与偏好不同，更新偏好设置
                     if (selectedLedger?.id != preferredLedgerId) {
                         selectedLedger?.id?.let { ledgerId -> 
                             launch {
@@ -299,7 +299,7 @@ class LedgerViewModel @Inject constructor(
     }
     
     /**
-     * 选择记账簿
+     * 选择账本
      */
     fun selectLedger(ledgerId: String) = launch {
         try {
@@ -314,10 +314,10 @@ class LedgerViewModel @Inject constructor(
                     )
                 }
                 
-                // 保存用户的记账簿选择到偏好设置
+                // 保存用户的账本选择到偏好设置
                 ledgerUIPreferencesRepository.updateSelectedLedgerId(ledgerId)
                 
-                // 重新加载基于记账簿的数据
+                // 重新加载基于账本的数据
                 loadTransactions()
                 loadMonthlySummary()
             } else {
@@ -329,14 +329,14 @@ class LedgerViewModel @Inject constructor(
     }
     
     /**
-     * 获取当前记账簿
+     * 获取当前账本
      */
     fun getCurrentLedger(): Ledger? {
         return _uiState.value.currentLedger
     }
     
     /**
-     * 刷新记账簿列表
+     * 刷新账本列表
      */
     fun refreshLedgers() {
         loadLedgers()
@@ -371,7 +371,7 @@ data class LedgerUiState(
     // 分类相关数据
     val categories: List<Category> = emptyList(),
     
-    // 记账簿相关数据
+    // 账本相关数据
     val ledgers: List<Ledger> = emptyList(),
     val currentLedger: Ledger? = null,
     val selectedLedgerId: String? = null,

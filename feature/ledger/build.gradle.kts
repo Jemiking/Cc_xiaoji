@@ -73,6 +73,7 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
     implementation(libs.hilt.navigation.compose)
+    implementation(libs.androidx.activity.compose)
     
     // WorkManager
     implementation(libs.androidx.work)

@@ -3,15 +3,15 @@ package com.ccxiaoji.feature.ledger.domain.model
 import kotlinx.datetime.Instant
 
 /**
- * 记账簿联动关系领域模型
- * 
- * 定义记账簿之间的联动同步关系，支持多种同步模式。
- * 当一个记账簿中的交易发生变化时，根据联动规则自动同步到相关记账簿。
+ * 账本联动关系领域模型
+ *
+ * 定义账本之间的联动同步关系，支持多种同步模式。
+ * 当一个账本中的交易发生变化时，根据联动规则自动同步到相关账本。
  */
 data class LedgerLink(
     val id: String,
-    val parentLedgerId: String, // 父记账簿ID（通常是总记账簿）
-    val childLedgerId: String,  // 子记账簿ID
+    val parentLedgerId: String, // 父账本 ID（通常是总账本）
+    val childLedgerId: String,  // 子账本 ID
     val syncMode: SyncMode = SyncMode.BIDIRECTIONAL,
     val autoSyncEnabled: Boolean = true,
     val createdAt: Instant,
@@ -20,7 +20,7 @@ data class LedgerLink(
 ) {
     
     /**
-     * 检查是否需要从父记账簿同步到子记账簿
+     * 检查是否需要从父账本同步到子账本
      */
     fun shouldSyncFromParent(): Boolean {
         return isActive && autoSyncEnabled && 
@@ -28,7 +28,7 @@ data class LedgerLink(
     }
     
     /**
-     * 检查是否需要从子记账簿同步到父记账簿
+     * 检查是否需要从子账本同步到父账本
      */
     fun shouldSyncFromChild(): Boolean {
         return isActive && autoSyncEnabled && 
@@ -36,7 +36,7 @@ data class LedgerLink(
     }
     
     /**
-     * 获取其他关联的记账簿ID
+     * 获取其他关联的账本 ID
      */
     fun getOtherLedgerId(currentLedgerId: String): String? {
         return when (currentLedgerId) {
@@ -47,12 +47,12 @@ data class LedgerLink(
     }
     
     /**
-     * 检查指定记账簿是否是父记账簿
+     * 检查指定账本是否是父账本
      */
     fun isParentLedger(ledgerId: String): Boolean = ledgerId == parentLedgerId
     
     /**
-     * 检查指定记账簿是否是子记账簿
+     * 检查指定账本是否是子账本
      */
     fun isChildLedger(ledgerId: String): Boolean = ledgerId == childLedgerId
 }
@@ -62,27 +62,27 @@ data class LedgerLink(
  */
 enum class SyncMode(val displayName: String, val description: String) {
     /**
-     * 双向同步：父子记账簿之间的交易会相互同步
+     * 双向同步：父子账本之间的交易会相互同步
      */
     BIDIRECTIONAL(
         "双向同步",
-        "父子记账簿之间的交易会相互同步，保持数据一致"
+        "父子账本之间的交易会相互同步，保持数据一致"
     ),
     
     /**
-     * 仅父到子：只从父记账簿同步到子记账簿
+     * 仅父到子：只从父账本同步到子账本
      */
     PARENT_TO_CHILD(
         "仅父到子",
-        "只将父记账簿的交易同步到子记账簿，子记账簿的变化不影响父记账簿"
+        "只将父账本的交易同步到子账本，子账本的变化不影响父账本"
     ),
     
     /**
-     * 仅子到父：只从子记账簿同步到父记账簿
+     * 仅子到父：只从子账本同步到父账本
      */
     CHILD_TO_PARENT(
         "仅子到父",
-        "只将子记账簿的交易同步到父记账簿，父记账簿的变化不影响子记账簿"
+        "只将子账本的交易同步到父账本，父账本的变化不影响子账本"
     );
     
     companion object {
@@ -93,7 +93,7 @@ enum class SyncMode(val displayName: String, val description: String) {
 }
 
 /**
- * 记账簿联动状态
+ * 账本联动状态
  */
 data class LedgerLinkStatus(
     val link: LedgerLink,

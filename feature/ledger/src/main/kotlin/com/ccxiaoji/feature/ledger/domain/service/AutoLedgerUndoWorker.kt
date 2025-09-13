@@ -91,10 +91,9 @@ class AutoLedgerUndoWorker @AssistedInject constructor(
      * TODO: 需要在Transaction模型中添加标记字段，或通过其他方式识别
      */
     private fun isAutoLedgerTransaction(transaction: com.ccxiaoji.feature.ledger.domain.model.Transaction): Boolean {
-        // 暂时的实现：通过note字段来判断
-        // 更好的方案是在Transaction模型中添加source字段
-        return transaction.note?.contains("自动记账") == true ||
-               transaction.note?.contains("#auto") == true
+        // 改进：标准化标记以提高可靠性（无需DB迁移）
+        val note = transaction.note ?: return false
+        return note.contains("[AUTO]") || note.contains("#auto") || note.contains("自动记账")
     }
     
     /**

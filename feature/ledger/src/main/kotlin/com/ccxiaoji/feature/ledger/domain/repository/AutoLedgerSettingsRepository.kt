@@ -17,5 +17,14 @@ interface AutoLedgerSettingsRepository {
      * 设置全局开关
      */
     suspend fun setGlobalEnabled(enabled: Boolean)
-}
 
+    /**
+     * 模式：SEMI（半自动）/ FULL（全自动）
+     */
+    fun mode(): Flow<String>
+
+    /**
+     * 设置模式（"SEMI" 或 "FULL"）
+     */
+    suspend fun setMode(mode: String)
+}

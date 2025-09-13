@@ -148,18 +148,6 @@ fun ProfileScreen(
                         onClick = { navController.navigate(ThemeSettingsRoute.route) }
                     ),
                     SettingsItem(
-                        icon = Icons.Default.Visibility,
-                        title = "Discord风格预览",
-                        subtitle = "查看Discord风格UI效果",
-                        onClick = { navController.navigate(DiscordDemoRoute.route) }
-                    ),
-                    SettingsItem(
-                        icon = Icons.Default.ViewQuilt,
-                        title = "Discord风格V2",
-                        subtitle = "新架构Discord风格演示",
-                        onClick = { navController.navigate(DiscordDemoV2Route.route) }
-                    ),
-                    SettingsItem(
                         icon = Icons.Default.Apps,
                         title = "模块管理",
                         subtitle = "自定义首页模块显示",
@@ -240,6 +228,12 @@ fun ProfileScreen(
                         title = "布局Demo",
                         subtitle = "查看添加记账页面的不同布局方案",
                         onClick = { navController.navigate("layout_demo") }
+                    ),
+                    SettingsItem(
+                        icon = Icons.Default.Palette,
+                        title = "风格Demo（记账）",
+                        subtitle = "查看11种记账列表风格展示",
+                        onClick = { navController.navigate(StyleCatalogDemoRoute.route) }
                     ),
                     SettingsItem(
                         icon = Icons.Default.SystemUpdate,

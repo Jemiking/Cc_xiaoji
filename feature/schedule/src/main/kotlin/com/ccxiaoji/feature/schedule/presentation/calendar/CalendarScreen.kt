@@ -33,7 +33,7 @@ import java.util.Locale
 import androidx.compose.ui.unit.sp
 import com.ccxiaoji.feature.schedule.presentation.debug.DefaultDebugParams
 import com.ccxiaoji.feature.schedule.presentation.debug.CalendarViewParams
-import com.ccxiaoji.feature.schedule.presentation.adapter.CalendarDemoAdapter
+import com.ccxiaoji.feature.schedule.presentation.demo.CalendarDemoApi
 import com.ccxiaoji.feature.schedule.presentation.adapter.CalendarConfigBridge
 import com.ccxiaoji.feature.schedule.presentation.adapter.CalendarInteractionBridge
 import com.ccxiaoji.feature.schedule.presentation.demo.parts.MonthCalendarPanel
@@ -91,12 +91,12 @@ fun CalendarScreen(
     
     // 转换数据格式为Demo组件需要的DemoData
     val demoData = remember(currentYearMonth, schedules) {
-        CalendarDemoAdapter.convertToDemoData(currentYearMonth, schedules)
+        CalendarDemoApi.convertToDemoData(currentYearMonth, schedules)
     }
     
     // 获取A3基线配置
     val (labelConfig, overviewConfig, indicatorStyle) = remember {
-        CalendarDemoAdapter.getA3BaselineConfig()
+        CalendarDemoApi.getBaselineConfig()
     }
     
     
@@ -249,7 +249,7 @@ fun CalendarScreen(
                 Spacer(modifier = Modifier.height(params.layout.screenVerticalPadding))
 
                 // ★ Demo A3完整组件：替换原有CalendarView为MonthCalendarPanel（含统计与底部详情卡）
-                MonthCalendarPanel(
+                CalendarDemoApi.MonthCalendarPanel(
                     data = demoData,
                     style = indicatorStyle,
                     emphasizeNight = false,

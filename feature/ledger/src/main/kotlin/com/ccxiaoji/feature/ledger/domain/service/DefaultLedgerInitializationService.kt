@@ -9,9 +9,9 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * 默认记账簿初始化服务
- * 
- * 负责确保用户始终拥有可用的默认记账簿，并处理各种边界情况
+ * 默认账本初始化服务
+ *
+ * 负责确保用户始终拥有可用的默认账本，并处理各种边界情况
  */
 @Singleton
 class DefaultLedgerInitializationService @Inject constructor(
@@ -22,14 +22,14 @@ class DefaultLedgerInitializationService @Inject constructor(
     companion object {}
     
     /**
-     * 执行完整的默认记账簿初始化
-     * 
+     * 执行完整的默认账本初始化
+     *
      * @param userId 用户ID
-     * @return 初始化结果，包含默认记账簿或错误信息
+     * @return 初始化结果，包含默认账本或错误信息
      */
     suspend fun initializeDefaultLedger(userId: String): DefaultLedgerInitResult {
         try {
-            // 1. 确保默认记账簿存在
+            // 1. 确保默认账本存在
             val ensureResult = manageLedgerUseCase.ensureDefaultLedger(userId)
             
             val defaultLedger = when (ensureResult) {
@@ -38,27 +38,27 @@ class DefaultLedgerInitializationService @Inject constructor(
                 }
                 is BaseResult.Error -> {
                     return DefaultLedgerInitResult.Failure(
-                        message = "无法创建默认记账簿: ${ensureResult.exception.message}",
+                        message = "无法创建默认账本: ${ensureResult.exception.message}",
                         exception = ensureResult.exception
                     )
                 }
             }
             
-            // 2. 验证记账簿列表的完整性
+            // 2. 验证账本列表的完整性
             val ledgers = manageLedgerUseCase.getUserLedgers(userId).first()
             
             if (ledgers.isEmpty()) {
                 return DefaultLedgerInitResult.Failure(
-                    message = "记账簿列表为空，可能存在数据问题",
+                    message = "账本列表为空，可能存在数据问题",
                     exception = Exception("Empty ledger list after initialization")
                 )
             }
             
-            // 3. 验证默认记账簿在列表中
+            // 3. 验证默认账本在列表中
             val defaultInList = ledgers.find { it.isDefault }
             if (defaultInList == null) {
                 
-                // 尝试将第一个记账簿设为默认
+                // 尝试将第一个账本设为默认
                 val firstLedger = ledgers.first()
                 val setDefaultResult = manageLedgerUseCase.setDefaultLedger(userId, firstLedger.id)
                 
@@ -71,11 +71,11 @@ class DefaultLedgerInitializationService @Inject constructor(
             } else {
             }
             
-            // 4. 更新UI偏好设置
+            // 4. 更新 UI 偏好设置
             val preferences = ledgerUIPreferencesRepository.getUIPreferences().first()
             val currentSelectedId = preferences.selectedLedgerId
             
-            // 如果没有选中的记账簿，或选中的记账簿不在列表中，选择默认记账簿
+            // 如果没有选中的账本，或选中的账本不在列表中，选择默认账本
             val actualDefaultLedger = ledgers.find { it.isDefault } ?: ledgers.first()
             val selectedLedgerExists = currentSelectedId?.let { id ->
                 ledgers.any { it.id == id }
@@ -95,10 +95,10 @@ class DefaultLedgerInitializationService @Inject constructor(
                             ensureResult.data.name == Ledger.DEFAULT_LEDGER_NAME,
                 issues = mutableListOf<String>().apply {
                     if (defaultInList == null) {
-                        add("默认记账簿标记不一致，已自动修复")
+                        add("默认账本标记不一致，已自动修复")
                     }
                     if (!selectedLedgerExists) {
-                        add("选中记账簿无效，已重置为默认记账簿")
+                        add("选中账本无效，已重置为默认账本")
                     }
                 }
             )
@@ -114,8 +114,8 @@ class DefaultLedgerInitializationService @Inject constructor(
     }
     
     /**
-     * 快速检查默认记账簿状态
-     * 
+     * 快速检查默认账本状态
+     *
      * @param userId 用户ID
      * @return 检查结果
      */
@@ -163,7 +163,7 @@ class DefaultLedgerInitializationService @Inject constructor(
 }
 
 /**
- * 默认记账簿初始化结果
+ * 默认账本初始化结果
  */
 sealed class DefaultLedgerInitResult {
     data class Success(val report: DefaultLedgerInitReport) : DefaultLedgerInitResult()
@@ -171,7 +171,7 @@ sealed class DefaultLedgerInitResult {
 }
 
 /**
- * 默认记账簿初始化报告
+ * 默认账本初始化报告
  */
 data class DefaultLedgerInitReport(
     val totalLedgers: Int,
@@ -182,7 +182,7 @@ data class DefaultLedgerInitReport(
 )
 
 /**
- * 默认记账簿状态检查结果
+ * 默认账本状态检查结果
  */
 data class DefaultLedgerStatusCheck(
     val hasDefaultLedger: Boolean,

@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.R
@@ -29,6 +30,7 @@ import kotlinx.coroutines.launch
 fun EditTransactionScreen(
     transactionId: String,
     navController: NavController,
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: EditTransactionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -38,6 +40,9 @@ fun EditTransactionScreen(
         viewModel.loadTransaction(transactionId)
     }
     
+    // 系统返回
+    BackHandler { onNavigateBack?.invoke() ?: navController.navigateUp() }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -49,7 +54,7 @@ fun EditTransactionScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController.navigateUp() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack, 
                             contentDescription = stringResource(R.string.back),
@@ -177,7 +182,7 @@ fun EditTransactionScreen(
                     onClick = { 
                         scope.launch {
                             viewModel.saveTransaction {
-                                navController.navigateUp()
+                                onNavigateBack?.invoke() ?: navController.navigateUp()
                             }
                         }
                     },

@@ -1012,20 +1012,21 @@ class LedgerApiImpl @Inject constructor(
     
     // Screen Providers
     @Composable
-    override fun getLedgerScreen(navController: NavHostController, accountId: String?) {
+    override fun getLedgerScreen(navController: NavHostController, accountId: String?, onBack: (() -> Unit)?) {
         if (accountId != null) {
-            LedgerScreen(navController = navController, accountId = accountId)
+            LedgerScreen(navController = navController, accountId = accountId, onBack = onBack)
         } else {
-            LedgerScreen(navController = navController)
+            LedgerScreen(navController = navController, onBack = onBack)
         }
     }
     
     @Composable
-    override fun getTransactionDetailScreen(transactionId: String, navController: NavHostController) {
+    override fun getTransactionDetailScreen(transactionId: String, navController: NavHostController, onNavigateBack: (() -> Unit)?) {
         TransactionDetailScreen(
             transactionId = transactionId,
             navController = navController,
-            viewModel = hiltViewModel()
+            viewModel = hiltViewModel(),
+            onNavigateBack = onNavigateBack
         )
     }
     

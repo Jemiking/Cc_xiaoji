@@ -18,6 +18,10 @@ data class Transaction(
     val transferId: String? = null, // 转账批次ID
     val transferType: TransferType? = null, // 转账类型
     val relatedTransactionId: String? = null // 关联的另一笔转账记录ID
+    ,
+    // 对端账户信息（用于展示，无写库要求）
+    val counterpartyAccountId: String? = null,
+    val counterpartyAccountName: String? = null
 ) {
     val amountYuan: Double
         get() = amountCents / 100.0

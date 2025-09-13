@@ -25,7 +25,8 @@ class AccountCategoryRecommender @Inject constructor(
     private val categoryRepository: CategoryRepository,
     private val ledgerRepository: LedgerRepository,
     private val transactionRepository: TransactionRepository,
-    private val userApi: com.ccxiaoji.shared.user.api.UserApi
+    private val userApi: com.ccxiaoji.shared.user.api.UserApi,
+    private val manageLedgerUseCase: com.ccxiaoji.feature.ledger.domain.usecase.ManageLedgerUseCase
 ) {
     
     /**
@@ -85,9 +86,11 @@ class AccountCategoryRecommender @Inject constructor(
             try {
                 val userId = userApi.getCurrentUserId()
                 
-                // 获取默认记账簿
-                // TODO: 获取默认记账簿的正确实现
-                val ledgerId = "default_ledger"
+                // 获取默认记账簿（真实）
+                val ledgerId = try {
+                    val def = manageLedgerUseCase.getDefaultLedger(userId)
+                    if (def is com.ccxiaoji.common.base.BaseResult.Success) def.data.id else ""
+                } catch (_: Exception) { "" }
                 
                 // 1. 推荐账户
                 val recommendedAccountId = recommendAccount(notification, userId)

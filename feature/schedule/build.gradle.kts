@@ -23,6 +23,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // 调试开关：release版本禁用排班日历详细日志
+            buildConfigField("boolean", "DEBUG_CALENDAR_LOGS", "false")
         }
         debug {
             // 调试开关：启用排班日历详细日志

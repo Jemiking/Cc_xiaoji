@@ -2,8 +2,7 @@ package com.ccxiaoji.app.di
 
 import android.content.Context
 import androidx.room.Room
-import androidx.room.RoomDatabase
-import androidx.sqlite.db.SupportSQLiteDatabase
+// no onCreate callback here; no SupportSQLiteDatabase needed
 import com.ccxiaoji.app.data.local.CcDatabase
 import com.ccxiaoji.app.data.local.dao.CountdownDao
 import com.ccxiaoji.shared.sync.data.local.dao.ChangeLogDao
@@ -16,10 +15,10 @@ import com.ccxiaoji.feature.ledger.data.local.dao.SavingsGoalDao
 import com.ccxiaoji.feature.ledger.data.local.dao.CreditCardPaymentDao
 import com.ccxiaoji.feature.ledger.data.local.dao.CreditCardBillDao
 import com.ccxiaoji.feature.ledger.data.local.dao.LedgerDao
+import com.ccxiaoji.feature.ledger.data.local.dao.CardDao
 import com.ccxiaoji.core.database.dao.AutoLedgerDedupDao
 import com.ccxiaoji.core.database.dao.AppAutoLedgerConfigDao
 import com.ccxiaoji.shared.user.data.local.dao.UserDao
-import com.ccxiaoji.common.constants.DatabaseConstants
 import com.ccxiaoji.core.database.migrations.DatabaseMigrations
 import com.ccxiaoji.core.database.DatabaseModuleDebugHelper
 import dagger.Module
@@ -27,10 +26,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.util.UUID
+// removed coroutine and UUID imports since seeding moved to Application
 import javax.inject.Singleton
 
 @Module
@@ -42,109 +38,19 @@ object DatabaseModule {
     fun provideDatabase(@ApplicationContext context: Context): CcDatabase {
         val databaseName = DatabaseModuleDebugHelper.getDatabaseName(context)
         
-        return Room.databaseBuilder(
+        val builder = Room.databaseBuilder(
             context,
             CcDatabase::class.java,
             databaseName
         )
-            .addCallback(object : RoomDatabase.Callback() {
-                override fun onCreate(db: SupportSQLiteDatabase) {
-                    super.onCreate(db)
-                    // 创建默认数据
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val currentTime = System.currentTimeMillis()
-                        
-                        // 插入默认用户
-                        db.execSQL(
-                            "INSERT INTO users (id, email, createdAt, updatedAt, isDeleted) VALUES (?, ?, ?, ?, ?)",
-                            arrayOf("current_user_id", "default@ccxiaoji.com", currentTime, currentTime, 0)
-                        )
-                        
-                        // 插入默认账户
-                        db.execSQL(
-                            "INSERT INTO accounts (id, userId, name, type, balanceCents, currency, isDefault, creditLimitCents, billingDay, paymentDueDay, gracePeriodDays, createdAt, updatedAt, isDeleted, syncStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                            arrayOf("default_account_id", "current_user_id", "现金账户", "CASH", 0L, "CNY", 1, null, null, null, null, currentTime, currentTime, 0, "SYNCED")
-                        )
-                        
-                        // 创建默认分类
-                        val expenseCategories = listOf(
-                            Triple("餐饮", "🍜", "#FF6B6B"),
-                            Triple("交通", "🚇", "#4ECDC4"),
-                            Triple("购物", "🛍️", "#45B7D1"),
-                            Triple("娱乐", "🎮", "#F7DC6F"),
-                            Triple("医疗", "🏥", "#E74C3C"),
-                            Triple("教育", "📚", "#3498DB"),
-                            Triple("居住", "🏠", "#9B59B6"),
-                            Triple("水电", "💡", "#1ABC9C"),
-                            Triple("通讯", "📱", "#34495E"),
-                            Triple("其他", "📌", "#95A5A6")
-                        )
-                        
-                        val incomeCategories = listOf(
-                            Triple("工资", "💰", "#27AE60"),
-                            Triple("奖金", "🎁", "#F39C12"),
-                            Triple("投资", "📈", "#8E44AD"),
-                            Triple("兼职", "💼", "#2980B9"),
-                            Triple("其他", "💸", "#16A085")
-                        )
-                        
-                        // 插入支出分类
-                        expenseCategories.forEachIndexed { index, (name, icon, color) ->
-                            db.execSQL(
-                                "INSERT INTO categories (id, userId, name, type, icon, color, parentId, displayOrder, isSystem, usageCount, createdAt, updatedAt, isDeleted, syncStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                arrayOf(UUID.randomUUID().toString(), "current_user_id", name, "EXPENSE", icon, color, null, index, 1, 0, currentTime, currentTime, 0, "SYNCED")
-                            )
-                        }
-                        
-                        // 插入收入分类
-                        incomeCategories.forEachIndexed { index, (name, icon, color) ->
-                            db.execSQL(
-                                "INSERT INTO categories (id, userId, name, type, icon, color, parentId, displayOrder, isSystem, usageCount, createdAt, updatedAt, isDeleted, syncStatus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                arrayOf(UUID.randomUUID().toString(), "current_user_id", name, "INCOME", icon, color, null, index, 1, 0, currentTime, currentTime, 0, "SYNCED")
-                            )
-                        }
-                        
-                        // 插入默认记账簿
-                        android.util.Log.d("DATABASE_DEBUG", "🚀 开始创建默认记账簿...")
-                        val defaultLedgerId = UUID.randomUUID().toString()
-                        android.util.Log.d("DATABASE_DEBUG", "📝 默认记账簿ID: $defaultLedgerId")
-                        android.util.Log.d("DATABASE_DEBUG", "👤 用户ID: current_user_id")
-                        
-                        try {
-                            db.execSQL(
-                                "INSERT INTO ledgers (id, userId, name, description, color, icon, isDefault, displayOrder, isActive, createdAt, updatedAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                arrayOf(
-                                    defaultLedgerId,
-                                    "current_user_id",
-                                    "总记账簿",
-                                    "默认记账簿，包含所有基本记账数据",
-                                    "#3A7AFE",
-                                    "book",
-                                    1, // isDefault = true
-                                    0, // displayOrder = 0
-                                    1, // isActive = true
-                                    currentTime,
-                                    currentTime
-                                )
-                            )
-                            android.util.Log.d("DATABASE_DEBUG", "✅ 默认记账簿创建成功！")
-                            
-                            // 验证插入结果
-                            val cursor = db.query("SELECT COUNT(*) FROM ledgers WHERE userId = 'current_user_id' AND isDefault = 1")
-                            if (cursor.moveToFirst()) {
-                                val count = cursor.getInt(0)
-                                android.util.Log.d("DATABASE_DEBUG", "📊 验证结果: 找到 $count 个默认记账簿")
-                            }
-                            cursor.close()
-                            
-                        } catch (e: Exception) {
-                            android.util.Log.e("DATABASE_DEBUG", "❌ 创建默认记账簿失败: ${e.message}", e)
-                        }
-                    }
-                }
-            })
-            .addMigrations(*DatabaseMigrations.getAllMigrations())
-            .build()
+        // 统一初始化路径到 Application，移除这里的 onCreate 预置数据
+        // 注册本模块新增的迁移
+        builder.addMigrations(com.ccxiaoji.app.data.local.migrations.AppMigrations.MIGRATION_19_20)
+        builder.addMigrations(com.ccxiaoji.app.data.local.migrations.AppMigrations.MIGRATION_20_21)
+        // 保留已有的迁移集合
+        builder.addMigrations(*com.ccxiaoji.core.database.migrations.DatabaseMigrations.getAllMigrations())
+
+        return builder.build()
     }
     
     @Provides
@@ -218,4 +124,7 @@ object DatabaseModule {
     
     @Provides
     fun provideAppAutoLedgerConfigDao(database: CcDatabase): AppAutoLedgerConfigDao = database.appAutoLedgerConfigDao()
+
+    @Provides
+    fun provideCardDao(database: CcDatabase): CardDao = database.cardDao()
 }

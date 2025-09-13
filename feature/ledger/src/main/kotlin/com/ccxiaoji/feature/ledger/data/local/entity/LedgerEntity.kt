@@ -11,7 +11,7 @@ import kotlinx.datetime.Instant
 import java.util.UUID
 
 /**
- * 记账簿数据库实体
+ * 账本数据库实体
  */
 @Entity(
     tableName = "ledgers",
@@ -105,7 +105,7 @@ data class LedgerEntity(
 }
 
 /**
- * 记账簿统计数据查询结果
+ * 账本统计数据查询结果
  */
 data class LedgerWithStatsEntity(
     @Embedded val ledger: LedgerEntity,

@@ -15,7 +15,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * 记账簿仓库实现
+ * 账本仓库实现
  */
 @Singleton
 class LedgerRepositoryImpl @Inject constructor(
@@ -48,10 +48,10 @@ class LedgerRepositoryImpl @Inject constructor(
             if (entity != null) {
                 BaseResult.Success(entity.toDomain())
             } else {
-                BaseResult.Error(Exception("未找到默认记账簿"))
+                BaseResult.Error(Exception("未找到默认账本"))
             }
         } catch (e: Exception) {
-            BaseResult.Error(Exception("获取默认记账簿失败: ${e.message}"))
+            BaseResult.Error(Exception("获取默认账本失败: ${e.message}"))
         }
     }
     
@@ -61,10 +61,10 @@ class LedgerRepositoryImpl @Inject constructor(
             if (entity != null) {
                 BaseResult.Success(entity.toDomain())
             } else {
-                BaseResult.Error(Exception("记账簿不存在"))
+                BaseResult.Error(Exception("账本不存在"))
             }
         } catch (e: Exception) {
-            BaseResult.Error(Exception("获取记账簿失败: ${e.message}"))
+            BaseResult.Error(Exception("获取账本失败: ${e.message}"))
         }
     }
     
@@ -101,7 +101,7 @@ class LedgerRepositoryImpl @Inject constructor(
             ledgerDao.insertLedger(ledger)
             BaseResult.Success(ledger.toDomain())
         } catch (e: Exception) {
-            BaseResult.Error(Exception("创建记账簿失败: ${e.message}"))
+            BaseResult.Error(Exception("创建账本失败: ${e.message}"))
         }
     }
     
@@ -113,7 +113,7 @@ class LedgerRepositoryImpl @Inject constructor(
             ledgerDao.updateLedger(updatedLedger)
             BaseResult.Success(Unit)
         } catch (e: Exception) {
-            BaseResult.Error(Exception("更新记账簿失败: ${e.message}"))
+            BaseResult.Error(Exception("更新账本失败: ${e.message}"))
         }
     }
     
@@ -123,7 +123,7 @@ class LedgerRepositoryImpl @Inject constructor(
             ledgerDao.deactivateLedger(ledgerId, now.epochSeconds)
             BaseResult.Success(Unit)
         } catch (e: Exception) {
-            BaseResult.Error(Exception("删除记账簿失败: ${e.message}"))
+            BaseResult.Error(Exception("删除账本失败: ${e.message}"))
         }
     }
     
@@ -133,7 +133,7 @@ class LedgerRepositoryImpl @Inject constructor(
             ledgerDao.setDefaultLedger(userId, ledgerId, now.epochSeconds)
             BaseResult.Success(Unit)
         } catch (e: Exception) {
-            BaseResult.Error(Exception("设置默认记账簿失败: ${e.message}"))
+            BaseResult.Error(Exception("设置默认账本失败: ${e.message}"))
         }
     }
     
@@ -143,18 +143,18 @@ class LedgerRepositoryImpl @Inject constructor(
             ledgerDao.updateLedgerOrder(ledgerId, newOrder, now.epochSeconds)
             BaseResult.Success(Unit)
         } catch (e: Exception) {
-            BaseResult.Error(Exception("更新记账簿顺序失败: ${e.message}"))
+            BaseResult.Error(Exception("更新账本顺序失败: ${e.message}"))
         }
     }
     
     override suspend fun ensureDefaultLedger(userId: String): BaseResult<Ledger> {
         return try {
-            // 检查是否已有默认记账簿
+            // 检查是否已有默认账本
             val hasDefault = ledgerDao.hasDefaultLedger(userId)
             if (hasDefault) {
                 getDefaultLedger(userId)
             } else {
-                // 创建默认记账簿
+                // 创建默认账本
                 createLedger(
                     userId = userId,
                     name = Ledger.DEFAULT_LEDGER_NAME,
@@ -165,7 +165,7 @@ class LedgerRepositoryImpl @Inject constructor(
                 )
             }
         } catch (e: Exception) {
-            BaseResult.Error(Exception("确保默认记账簿失败: ${e.message}"))
+            BaseResult.Error(Exception("确保默认账本失败: ${e.message}"))
         }
     }
     
@@ -174,7 +174,7 @@ class LedgerRepositoryImpl @Inject constructor(
             val hasDefault = ledgerDao.hasDefaultLedger(userId)
             BaseResult.Success(hasDefault)
         } catch (e: Exception) {
-            BaseResult.Error(Exception("检查默认记账簿失败: ${e.message}"))
+            BaseResult.Error(Exception("检查默认账本失败: ${e.message}"))
         }
     }
     
@@ -186,7 +186,7 @@ class LedgerRepositoryImpl @Inject constructor(
             }
             BaseResult.Success(Unit)
         } catch (e: Exception) {
-            BaseResult.Error(Exception("批量更新记账簿顺序失败: ${e.message}"))
+            BaseResult.Error(Exception("批量更新账本顺序失败: ${e.message}"))
         }
     }
 }

@@ -17,8 +17,8 @@ class NotificationParserFactory @Inject constructor() {
      */
     private val parsers: List<BaseNotificationParser> = listOf(
         AlipayNotificationParser(),
-        // WechatNotificationParser(),  // 将在Task 2.1实现
-        // UnionPayNotificationParser() // 将在Task 3.1实现
+        WechatNotificationParser(),
+        // UnionPayNotificationParser() // 规划中
     )
     
     /**

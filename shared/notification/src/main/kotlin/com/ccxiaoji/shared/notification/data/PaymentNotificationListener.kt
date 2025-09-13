@@ -51,7 +51,8 @@ class PaymentNotificationListener : NotificationListenerService() {
      * 支持的支付应用包名（极简MVP：仅支付宝）
      */
     private val supportedPackages = setOf(
-        "com.eg.android.AlipayGphone" // 支付宝
+        "com.eg.android.AlipayGphone", // 支付宝
+        "com.tencent.mm"               // 微信
     )
     
     /**
@@ -143,21 +144,26 @@ class PaymentNotificationListener : NotificationListenerService() {
         
         val notification = sbn.notification
         
-        // 群组摘要：默认跳过，可配置透传
+        // 先提取通知内容（用于后续判断组摘要放行例外）
+        val title = notification.extras?.getString(Notification.EXTRA_TITLE)
+        val text = extractNotificationText(notification)
+
+        // 群组摘要：默认跳过，可配置透传；
+        // 例外：微信且文本含强支付关键词（红包/转账/收款）时放行，避免漏判
         if (isGroupSummaryNotification(notification)) {
-            if (!emitGroupSummary) {
+            val strongWeChatKeywords = setOf("红包", "转账", "收款", "已收款")
+            val contentForGroup = "${title.orEmpty()} ${text.orEmpty()}"
+            val allowWeChatGroup = sbn.packageName == "com.tencent.mm" &&
+                    strongWeChatKeywords.any { contentForGroup.contains(it) }
+            if (!emitGroupSummary && !allowWeChatGroup) {
                 Log.v(TAG, "⚪ 跳过群组摘要通知（可在设置中开启透传）")
                 notificationEventRepository.recordSkippedGroupSummary()
                 return
             } else {
-                Log.i(TAG, "🟡 群组摘要通知按配置透传")
+                Log.i(TAG, if (allowWeChatGroup) "🟡 WeChat强支付关键词命中，放行群组摘要" else "🟡 群组摘要通知按配置透传")
             }
         }
-        
-        // 提取通知内容
-        val title = notification.extras?.getString(Notification.EXTRA_TITLE)
-        val text = extractNotificationText(notification)
-        
+
         Log.d(TAG, "📄 通知内容 - 标题: '$title', 文本: '$text'")
         
         // 关键词检测（仅用于日志与诊断，不再作为硬过滤条件）

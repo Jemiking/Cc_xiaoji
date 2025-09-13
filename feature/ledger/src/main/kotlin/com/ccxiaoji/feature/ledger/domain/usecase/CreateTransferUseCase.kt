@@ -29,7 +29,9 @@ private const val TRANSFER_CATEGORY_ID = "TRANSFER_CATEGORY"
 @Singleton
 class CreateTransferUseCase @Inject constructor(
     private val transactionRepository: TransactionRepository,
-    private val accountRepository: AccountRepository
+    private val accountRepository: AccountRepository,
+    private val categoryRepository: com.ccxiaoji.feature.ledger.domain.repository.CategoryRepository,
+    private val userApi: com.ccxiaoji.shared.user.api.UserApi
 ) {
     
     /**
@@ -89,7 +91,27 @@ class CreateTransferUseCase @Inject constructor(
                     )
                 }
                 
-                // 4. 生成转账批次ID和交易ID
+                // 4. 选择分类（暂用兜底：优先“转账*”，否则选择各自类型的“其他”或第一个父分类）
+                suspend fun fallbackCategoryId(type: String): String {
+                    val userId = userApi.getCurrentUserId()
+                    // 优先找包含“转账”字样的父分类
+                    val parents = categoryRepository.getParentCategories(userId, type)
+                    val transferLike = parents.firstOrNull { it.name.contains("转账") }
+                    if (transferLike != null) return transferLike.id
+                    // 其次“其他/其它/Other”
+                    val other = parents.firstOrNull { 
+                        val n = it.name.trim()
+                        n.contains("其他") || n.contains("其它") || n.equals("Other", ignoreCase = true)
+                    }
+                    if (other != null) return other.id
+                    // 最后回退第一个父分类
+                    return parents.firstOrNull()?.id ?: throw IllegalStateException("找不到可用的$type 分类")
+                }
+
+                val outCategoryId = fallbackCategoryId("EXPENSE")
+                val inCategoryId = fallbackCategoryId("INCOME")
+
+                // 5. 生成转账批次ID和交易ID
                 val transferId = UUID.randomUUID().toString()
                 val transferOutId = UUID.randomUUID().toString()
                 val transferInId = UUID.randomUUID().toString()
@@ -100,14 +122,14 @@ class CreateTransferUseCase @Inject constructor(
                 println("  - 转出记录ID: $transferOutId")
                 println("  - 转入记录ID: $transferInId")
                 
-                // 5. 创建转出交易记录
+                // 6. 创建转出交易记录（使用正数金额 + 支出类分类）
                 val transferOutNote = note?.let { "转账给${toAccount.name}: $it" } 
                     ?: "转账给${toAccount.name}"
                 
                 println("💸 [CreateTransfer] 创建转出记录")
                 val transferOutResult = transactionRepository.addTransaction(
-                    amountCents = -amountCents, // 负数表示支出
-                    categoryId = TRANSFER_CATEGORY_ID, // 使用转账专用分类
+                    amountCents = amountCents, // 使用正数金额，方向由分类类型控制
+                    categoryId = outCategoryId, // 暂用支出类兜底分类
                     note = transferOutNote,
                     accountId = fromAccountId,
                     ledgerId = ledgerId,
@@ -128,14 +150,14 @@ class CreateTransferUseCase @Inject constructor(
                     }
                 }
                 
-                // 6. 创建转入交易记录
+                // 7. 创建转入交易记录（使用正数金额 + 收入类分类）
                 val transferInNote = note?.let { "从${fromAccount.name}转入: $it" } 
                     ?: "从${fromAccount.name}转入"
                 
                 println("💰 [CreateTransfer] 创建转入记录")
                 val transferInResult = transactionRepository.addTransaction(
-                    amountCents = amountCents, // 正数表示收入
-                    categoryId = TRANSFER_CATEGORY_ID, // 使用转账专用分类
+                    amountCents = amountCents, // 正数金额
+                    categoryId = inCategoryId, // 暂用收入类兜底分类
                     note = transferInNote,
                     accountId = toAccountId,
                     ledgerId = ledgerId,
@@ -147,7 +169,10 @@ class CreateTransferUseCase @Inject constructor(
                 when (transferInResult) {
                     is BaseResult.Error -> {
                         println("❌ [CreateTransfer] 转入记录创建失败: ${transferInResult.exception.message}")
-                        // TODO: 这里应该回滚转出记录，但当前Repository没有事务支持
+                        // 回滚已创建的转出记录
+                        try {
+                            transactionRepository.deleteTransaction(transferOutId)
+                        } catch (_: Exception) { }
                         return@withContext BaseResult.Error(
                             Exception("创建转入记录失败: ${transferInResult.exception.message}")
                         )
@@ -157,15 +182,34 @@ class CreateTransferUseCase @Inject constructor(
                     }
                 }
                 
-                // 7. 更新转账记录的关联信息（需要Repository层支持）
-                // 注意：当前Repository的addTransaction不支持转账字段
-                // 这里先创建成功，后续需要通过updateTransaction来添加转账字段
-                
+                // 8. 更新转账记录的关联信息（通过 updateTransaction 回填元信息）
                 println("🔗 [CreateTransfer] 更新转账关联信息")
-                // 这里需要获取刚创建的Transaction并更新转账字段
-                // 由于当前架构限制，暂时跳过，在后续版本中完善
+                val out = transactionRepository.getTransactionById(transferOutId)
+                val `in` = transactionRepository.getTransactionById(transferInId)
+                if (out == null || `in` == null) {
+                    println("❌ [CreateTransfer] 无法读取刚创建的交易用于回填转账信息")
+                    return@withContext BaseResult.Error(Exception("转账关联失败：读取交易失败"))
+                }
+                val outUpdated = out.copy(
+                    transferId = transferId,
+                    transferType = TransferType.TRANSFER_OUT,
+                    relatedTransactionId = transferInId
+                )
+                val inUpdated = `in`.copy(
+                    transferId = transferId,
+                    transferType = TransferType.TRANSFER_IN,
+                    relatedTransactionId = transferOutId
+                )
+                when (val u1 = transactionRepository.updateTransaction(outUpdated)) {
+                    is BaseResult.Error -> return@withContext BaseResult.Error(u1.exception)
+                    else -> {}
+                }
+                when (val u2 = transactionRepository.updateTransaction(inUpdated)) {
+                    is BaseResult.Error -> return@withContext BaseResult.Error(u2.exception)
+                    else -> {}
+                }
                 
-                // 8. 构造转账结果
+                // 9. 构造转账结果
                 val result = TransferResult(
                     transferId = transferId,
                     transferOutTransactionId = transferOutId,

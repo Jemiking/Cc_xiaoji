@@ -31,7 +31,7 @@ import com.ccxiaoji.feature.ledger.domain.model.Ledger
 import com.ccxiaoji.ui.theme.DesignTokens
 
 /**
- * 记账簿选择器组件
+ * 账本选择器组件
  */
 @Composable
 fun LedgerSelector(
@@ -53,7 +53,7 @@ fun LedgerSelector(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // 记账簿图标
+            // 账本图标
             Box(
                 modifier = Modifier
                     .size(32.dp)
@@ -77,12 +77,12 @@ fun LedgerSelector(
                 )
             }
             
-            // 记账簿信息
+            // 账本信息
             Column(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = selectedLedger?.name ?: "选择记账簿",
+                    text = selectedLedger?.name ?: "选择账本",
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -143,7 +143,7 @@ fun LedgerSelectorDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "选择记账簿",
+                            text = "选择账本",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
@@ -159,7 +159,7 @@ fun LedgerSelectorDialog(
                     
                     Divider()
                     
-                    // 记账簿列表
+                    // 账本列表
                     LazyColumn(
                         modifier = Modifier.fillMaxWidth(),
                         contentPadding = PaddingValues(vertical = 8.dp)

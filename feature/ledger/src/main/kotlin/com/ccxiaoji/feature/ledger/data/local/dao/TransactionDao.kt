@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.Flow
 interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE userId = :userId AND isDeleted = 0 ORDER BY createdAt DESC")
     fun getTransactionsByUser(userId: String): Flow<List<TransactionEntity>>
+
+    @Query("SELECT * FROM transactions WHERE userId = :userId AND isDeleted = 0 ORDER BY createdAt DESC LIMIT :limit")
+    fun getRecentTransactionsByUser(userId: String, limit: Int): Flow<List<TransactionEntity>>
     
     @Query("SELECT * FROM transactions WHERE userId = :userId AND createdAt >= :startTime AND createdAt < :endTime AND isDeleted = 0 ORDER BY createdAt DESC")
     fun getTransactionsByDateRange(userId: String, startTime: Long, endTime: Long): Flow<List<TransactionEntity>>
@@ -58,6 +61,7 @@ interface TransactionDao {
         AND t.createdAt >= :startTime 
         AND t.createdAt < :endTime 
         AND t.isDeleted = 0
+        AND t.transferId IS NULL
         AND c.type = :type
         GROUP BY c.id
         ORDER BY totalAmount DESC
@@ -70,6 +74,7 @@ interface TransactionDao {
         AND createdAt >= :startTime 
         AND createdAt < :endTime 
         AND isDeleted = 0
+        AND transferId IS NULL
         AND categoryId IN (SELECT id FROM categories WHERE type = :type)
         ORDER BY amountCents DESC
         LIMIT :limit
@@ -83,6 +88,7 @@ interface TransactionDao {
         AND t.createdAt >= :startTime 
         AND t.createdAt < :endTime 
         AND t.isDeleted = 0
+        AND t.transferId IS NULL
         AND c.type = :type
     """)
     suspend fun getTotalByType(userId: String, startTime: Long, endTime: Long, type: String): Int?
@@ -117,6 +123,7 @@ interface TransactionDao {
         AND t.createdAt >= :startTime 
         AND t.createdAt < :endTime 
         AND t.isDeleted = 0
+        AND t.transferId IS NULL
     """)
     suspend fun getMonthlyIncomesAndExpensesByLedger(ledgerId: String, startTime: Long, endTime: Long): IncomeExpensePair?
     
@@ -144,6 +151,7 @@ interface TransactionDao {
         AND t.createdAt >= :startDate 
         AND t.createdAt <= :endDate 
         AND t.isDeleted = 0
+        AND t.transferId IS NULL
     """)
     suspend fun getTotalExpenseInBillingCycle(
         accountId: String,
@@ -259,6 +267,7 @@ interface TransactionDao {
         AND t.createdAt >= :startTime 
         AND t.createdAt < :endTime 
         AND t.isDeleted = 0
+        AND t.transferId IS NULL
         AND c.type = :type
         GROUP BY c.id
         ORDER BY totalAmount DESC
@@ -274,6 +283,7 @@ interface TransactionDao {
         AND t.createdAt >= :startTime 
         AND t.createdAt < :endTime 
         AND t.isDeleted = 0
+        AND t.transferId IS NULL
         AND c.type = :type
         GROUP BY c.id
         ORDER BY totalAmount DESC
@@ -293,6 +303,7 @@ interface TransactionDao {
         AND t.createdAt >= :startTime 
         AND t.createdAt < :endTime 
         AND t.isDeleted = 0
+        AND t.transferId IS NULL
         AND c.type = :type
         ORDER BY t.amountCents DESC
         LIMIT :limit
@@ -306,6 +317,7 @@ interface TransactionDao {
         AND t.createdAt >= :startTime 
         AND t.createdAt < :endTime 
         AND t.isDeleted = 0
+        AND t.transferId IS NULL
         AND c.type = :type
         ORDER BY t.amountCents DESC
         LIMIT :limit
@@ -319,6 +331,7 @@ interface TransactionDao {
         AND t.createdAt >= :startTime 
         AND t.createdAt < :endTime 
         AND t.isDeleted = 0
+        AND t.transferId IS NULL
         AND c.type = :type
     """)
     suspend fun getTotalByLedgerAndType(ledgerId: String, startTime: Long, endTime: Long, type: String): Int?
@@ -330,6 +343,7 @@ interface TransactionDao {
         AND t.createdAt >= :startTime 
         AND t.createdAt < :endTime 
         AND t.isDeleted = 0
+        AND t.transferId IS NULL
         AND c.type = :type
     """)
     suspend fun getTotalByLedgersAndType(ledgerIds: List<String>, startTime: Long, endTime: Long, type: String): Int?

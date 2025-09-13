@@ -17,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.R
@@ -31,6 +32,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun FilterTransactionScreen(
     navController: NavController,
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: FilterTransactionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -59,13 +61,15 @@ fun FilterTransactionScreen(
                 .toEpochMilli()
         }
     )
+// 系统返回：优先回调（回到记账首页）
+BackHandler { onNavigateBack?.invoke() ?: navController.popBackStack() }
     
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(stringResource(R.string.filter_transactions)) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
                 },
@@ -74,7 +78,7 @@ fun FilterTransactionScreen(
                         onClick = {
                             scope.launch {
                                 viewModel.clearFilter()
-                                navController.popBackStack()
+                                onNavigateBack?.invoke() ?: navController.popBackStack()
                             }
                         }
                     ) {
@@ -94,7 +98,7 @@ fun FilterTransactionScreen(
                         .padding(16.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = { navController.popBackStack() }) {
+                    TextButton(onClick = { onNavigateBack?.invoke() ?: navController.popBackStack() }) {
                         Text(stringResource(R.string.cancel))
                     }
                     Spacer(modifier = Modifier.width(8.dp))
@@ -102,7 +106,7 @@ fun FilterTransactionScreen(
                         onClick = {
                             scope.launch {
                                 viewModel.applyFilter()
-                                navController.popBackStack()
+                                onNavigateBack?.invoke() ?: navController.popBackStack()
                             }
                         }
                     ) {
@@ -345,3 +349,5 @@ private fun DatePickerDialog(
         DatePicker(state = datePickerState)
     }
 }
+
+

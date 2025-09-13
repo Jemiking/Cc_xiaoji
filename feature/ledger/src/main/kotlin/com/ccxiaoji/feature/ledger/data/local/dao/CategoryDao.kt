@@ -6,35 +6,38 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CategoryDao {
-    @Query("SELECT * FROM categories WHERE userId = :userId AND isDeleted = 0 ORDER BY type, displayOrder, name")
+    @Query("SELECT * FROM categories WHERE userId = :userId AND isDeleted = 0 AND isHidden = 0 ORDER BY type, displayOrder, name")
     fun getCategoriesByUser(userId: String): Flow<List<CategoryEntity>>
     
-    @Query("SELECT * FROM categories WHERE userId = :userId AND isDeleted = 0 ORDER BY type, displayOrder, name")
+    @Query("SELECT * FROM categories WHERE userId = :userId AND isDeleted = 0 AND isHidden = 0 ORDER BY type, displayOrder, name")
     suspend fun getCategoriesByUserSync(userId: String): List<CategoryEntity>
     
-    @Query("SELECT * FROM categories WHERE userId = :userId AND type = :type AND isDeleted = 0 ORDER BY displayOrder, name")
+    @Query("SELECT * FROM categories WHERE userId = :userId AND type = :type AND isDeleted = 0 AND isHidden = 0 ORDER BY displayOrder, name")
     fun getCategoriesByType(userId: String, type: String): Flow<List<CategoryEntity>>
     
-    @Query("SELECT * FROM categories WHERE userId = :userId AND type = 'EXPENSE' AND isDeleted = 0 ORDER BY displayOrder, name")
+    @Query("SELECT * FROM categories WHERE userId = :userId AND type = 'EXPENSE' AND isDeleted = 0 AND isHidden = 0 ORDER BY displayOrder, name")
     fun getExpenseCategories(userId: String): Flow<List<CategoryEntity>>
     
     @Query("SELECT * FROM categories WHERE id = :categoryId AND isDeleted = 0")
     suspend fun getCategoryById(categoryId: String): CategoryEntity?
     
-    @Query("SELECT * FROM categories WHERE userId = :userId AND parentId = :parentId AND isDeleted = 0 ORDER BY displayOrder, name")
+    @Query("SELECT * FROM categories WHERE userId = :userId AND parentId = :parentId AND isDeleted = 0 AND isHidden = 0 ORDER BY displayOrder, name")
     suspend fun getSubcategories(userId: String, parentId: String): List<CategoryEntity>
     
-    @Query("SELECT * FROM categories WHERE userId = :userId AND level = 1 AND type = :type AND isDeleted = 0 AND isActive = 1 ORDER BY displayOrder, name")
+    @Query("SELECT * FROM categories WHERE userId = :userId AND level = 1 AND type = :type AND isDeleted = 0 AND isActive = 1 AND isHidden = 0 ORDER BY displayOrder, name")
     suspend fun getParentCategories(userId: String, type: String): List<CategoryEntity>
+
+    @Query("SELECT MAX(displayOrder) FROM categories WHERE userId = :userId AND type = :type AND level = 1 AND isDeleted = 0")
+    suspend fun getMaxParentDisplayOrder(userId: String, type: String): Int?
     
-    @Query("SELECT * FROM categories WHERE userId = :userId AND level = 2 AND type = :type AND isDeleted = 0 AND isActive = 1 ORDER BY displayOrder, name")
+    @Query("SELECT * FROM categories WHERE userId = :userId AND level = 2 AND type = :type AND isDeleted = 0 AND isActive = 1 AND isHidden = 0 ORDER BY displayOrder, name")
     suspend fun getLeafCategories(userId: String, type: String): List<CategoryEntity>
     
-    @Query("SELECT * FROM categories WHERE parentId = :parentId AND isDeleted = 0 AND isActive = 1 ORDER BY displayOrder, name")
+    @Query("SELECT * FROM categories WHERE parentId = :parentId AND isDeleted = 0 AND isActive = 1 AND isHidden = 0 ORDER BY displayOrder, name")
     suspend fun getChildCategories(parentId: String): List<CategoryEntity>
     
     @Query("""SELECT * FROM categories 
-        WHERE userId = :userId AND type = :type AND isDeleted = 0 AND isActive = 1 
+        WHERE userId = :userId AND type = :type AND isDeleted = 0 AND isActive = 1 AND isHidden = 0 
         ORDER BY level, parentId, displayOrder, name""")
     suspend fun getCategoriesByTypeWithLevels(userId: String, type: String): List<CategoryEntity>
     

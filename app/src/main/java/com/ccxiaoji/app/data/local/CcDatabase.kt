@@ -18,6 +18,7 @@ import com.ccxiaoji.feature.ledger.data.local.dao.CreditCardBillDao
 import com.ccxiaoji.feature.ledger.data.local.dao.LedgerDao
 import com.ccxiaoji.feature.ledger.data.local.dao.LedgerLinkDao
 import com.ccxiaoji.feature.ledger.data.local.dao.TransactionLedgerRelationDao
+import com.ccxiaoji.feature.ledger.data.local.dao.CardDao
 import com.ccxiaoji.feature.ledger.data.local.entity.AccountEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.CategoryEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.TransactionEntity
@@ -30,6 +31,7 @@ import com.ccxiaoji.feature.ledger.data.local.entity.CreditCardBillEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.LedgerEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.LedgerLinkEntity
 import com.ccxiaoji.feature.ledger.data.local.entity.TransactionLedgerRelationEntity
+import com.ccxiaoji.feature.ledger.data.local.entity.CardEntity
 import com.ccxiaoji.core.database.Converters
 import com.ccxiaoji.core.database.dao.AutoLedgerDedupDao
 import com.ccxiaoji.core.database.dao.AppAutoLedgerConfigDao
@@ -85,9 +87,10 @@ import com.ccxiaoji.feature.plan.data.local.entity.TemplateEntity
         MilestoneEntity::class,
         TemplateEntity::class,
         AutoLedgerDedupEntity::class,
-        AppAutoLedgerConfigEntity::class
+        AppAutoLedgerConfigEntity::class,
+        CardEntity::class
     ],
-    version = 16,
+    version = 21,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -116,4 +119,5 @@ abstract class CcDatabase : RoomDatabase() {
     abstract fun templateDao(): TemplateDao
     abstract fun autoLedgerDedupDao(): AutoLedgerDedupDao
     abstract fun appAutoLedgerConfigDao(): AppAutoLedgerConfigDao
+    abstract fun cardDao(): CardDao
 }

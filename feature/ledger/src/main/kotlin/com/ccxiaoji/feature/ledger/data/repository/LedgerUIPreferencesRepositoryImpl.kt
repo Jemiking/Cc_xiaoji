@@ -77,7 +77,7 @@ class LedgerUIPreferencesRepositoryImpl @Inject constructor(
             preferences[UI_STYLE_KEY] = LedgerUIStyle.BALANCED.name
             preferences[ANIMATION_DURATION_KEY] = 300
             preferences[ICON_DISPLAY_MODE_KEY] = IconDisplayMode.EMOJI.name
-            preferences.remove(SELECTED_LEDGER_ID_KEY) // 清除记账簿选择，让系统重新选择默认记账簿
+            preferences.remove(SELECTED_LEDGER_ID_KEY) // 清除账本选择，让系统重新选择默认账本
         }
     }
 }

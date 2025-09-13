@@ -29,7 +29,8 @@ import com.ccxiaoji.shared.user.data.local.entity.UserEntity
         Index("type"),
         Index("displayOrder"),
         Index("level"),
-        Index(value = ["userId", "name", "parentId"], unique = true)
+        // 唯一索引增加 type，允许不同类型下同名分类共存
+        Index(value = ["userId", "type", "name", "parentId"], unique = true)
     ]
 )
 data class CategoryEntity(
@@ -47,6 +48,7 @@ data class CategoryEntity(
     val isDefault: Boolean = false, // 是否为系统预设分类
     val isActive: Boolean = true, // 是否启用
     val isSystem: Boolean = false, // System categories cannot be deleted
+    val isHidden: Boolean = false, // Hidden from normal selection UIs
     val usageCount: Long = 0, // Track how many times this category is used
     val createdAt: Long,
     val updatedAt: Long,

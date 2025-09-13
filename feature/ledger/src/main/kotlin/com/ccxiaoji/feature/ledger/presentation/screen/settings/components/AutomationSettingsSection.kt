@@ -45,19 +45,11 @@ fun AutomationSettingsSection(
             SettingItem(
                 icon = Icons.Default.Settings,
                 title = "自动记账设置",
-                subtitle = "启用/关闭自动记账与状态",
+                subtitle = "启用/关闭自动记账与状态。如未弹横幅，请检查通知权限与渠道设置",
                 onClick = onNavigateToAutoLedgerSettings
             )
 
-            // 自动记账调试面板
-            if (BuildConfig.DEBUG) {
-                SettingItem(
-                    icon = Icons.Default.BugReport,
-                    title = "自动记账调试面板",
-                    subtitle = "查看解析记录和性能统计",
-                    onClick = onNavigateToAutoLedgerDebug
-                )
-            }
+            // 调试面板入口已迁移到“开发者设置”页面，这里不再展示
 
             Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
             

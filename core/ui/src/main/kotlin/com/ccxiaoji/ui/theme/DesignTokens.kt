@@ -1,5 +1,7 @@
 package com.ccxiaoji.ui.theme
 
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -163,6 +165,64 @@ object DesignTokens {
                 Color.Black.copy(alpha = 0.8f),
                 Color.Black.copy(alpha = 0.6f)
             )
+        )
+    }
+    
+    /**
+     * 动效系统 - 统一的动画时长和缓动
+     */
+    object Motion {
+        /**
+         * 动画时长
+         */
+        object Duration {
+            const val instant = 50        // 瞬间 - 涟漪效果
+            const val fast = 150          // 快速 - 芯片选择、小元素状态变化
+            const val normal = 300        // 标准 - 页面切换、列表项、默认过渡
+            const val slow = 500          // 缓慢 - 大型动画、首次加载
+            const val emphasized = 700    // 强调 - 特殊效果、引导动画
+        }
+        
+        /**
+         * 动画延迟
+         */
+        object Delay {
+            const val short = 25          // 短延迟 - 快速序列
+            const val stagger = 50        // 错开延迟 - 列表项依次进入
+            const val cascade = 100       // 级联延迟 - 分组动画
+            const val sequential = 150    // 顺序延迟 - 步骤动画
+        }
+        
+        /**
+         * 标准缓动函数
+         */
+        fun <T> standardEasing() = tween<T>(
+            durationMillis = Duration.normal,
+            delayMillis = 0
+        )
+        
+        /**
+         * 快速缓动函数
+         */
+        fun <T> fastEasing() = tween<T>(
+            durationMillis = Duration.fast,
+            delayMillis = 0
+        )
+        
+        /**
+         * 强调缓动函数 - 使用弹簧动画
+         */
+        fun <T> emphasizedEasing() = spring<T>(
+            dampingRatio = 0.8f,
+            stiffness = 380f
+        )
+        
+        /**
+         * 列表项进入动画专用
+         */
+        fun <T> listItemEasing(index: Int) = tween<T>(
+            durationMillis = Duration.normal,
+            delayMillis = index * Delay.stagger
         )
     }
 }

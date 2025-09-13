@@ -9,7 +9,7 @@ object ScheduleDebug {
     private const val BASE_TAG = "ScheduleDebug"
 
     val enabled: Boolean
-        get() = BuildConfig.DEBUG && (try { BuildConfig.DEBUG_CALENDAR_LOGS } catch (_: Throwable) { true })
+        get() = BuildConfig.DEBUG && BuildConfig.DEBUG_CALENDAR_LOGS
 
     fun log(tag: String, msg: String) {
         if (enabled) android.util.Log.d("$BASE_TAG-$tag", msg)

@@ -15,6 +15,7 @@ data class Category(
     val isDefault: Boolean = false,  // 是否为系统预设分类
     val isActive: Boolean = true,  // 是否启用
     val isSystem: Boolean = false,
+    val isHidden: Boolean = false,
     val createdAt: Instant,
     val updatedAt: Instant
 ) {

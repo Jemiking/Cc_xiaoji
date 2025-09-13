@@ -6,13 +6,13 @@ import com.ccxiaoji.feature.ledger.data.local.entity.LedgerWithStatsEntity
 import kotlinx.coroutines.flow.Flow
 
 /**
- * 记账簿数据访问对象
+ * 账本数据访问对象
  */
 @Dao
 interface LedgerDao {
     
     /**
-     * 获取用户的所有激活记账簿（按显示顺序排序）
+     * 获取用户的所有激活账本（按显示顺序排序）
      */
     @Query("""
         SELECT * FROM ledgers 
@@ -22,7 +22,7 @@ interface LedgerDao {
     fun getUserLedgers(userId: String): Flow<List<LedgerEntity>>
     
     /**
-     * 获取用户的默认记账簿
+     * 获取用户的默认账本
      */
     @Query("""
         SELECT * FROM ledgers 
@@ -32,13 +32,13 @@ interface LedgerDao {
     suspend fun getDefaultLedger(userId: String): LedgerEntity?
     
     /**
-     * 根据ID获取记账簿
+     * 根据 ID 获取账本
      */
     @Query("SELECT * FROM ledgers WHERE id = :ledgerId")
     suspend fun getLedgerById(ledgerId: String): LedgerEntity?
     
     /**
-     * 获取记账簿及其统计数据
+     * 获取账本及其统计数据
      */
     @Query("""
         SELECT 
@@ -56,31 +56,31 @@ interface LedgerDao {
     fun getUserLedgersWithStats(userId: String): Flow<List<LedgerWithStatsEntity>>
     
     /**
-     * 插入记账簿
+     * 插入账本
      */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertLedger(ledger: LedgerEntity): Long
     
     /**
-     * 更新记账簿
+     * 更新账本
      */
     @Update
     suspend fun updateLedger(ledger: LedgerEntity)
     
     /**
-     * 删除记账簿（软删除 - 设置为非激活状态）
+     * 删除账本（软删除 - 设置为非激活状态）
      */
     @Query("UPDATE ledgers SET isActive = 0, updatedAt = :updatedAt WHERE id = :ledgerId")
     suspend fun deactivateLedger(ledgerId: String, updatedAt: Long)
     
     /**
-     * 硬删除记账簿（仅用于清理操作）
+     * 硬删除账本（仅用于清理操作）
      */
     @Delete
     suspend fun deleteLedger(ledger: LedgerEntity)
     
     /**
-     * 检查用户是否有默认记账簿
+     * 检查用户是否有默认账本
      */
     @Query("""
         SELECT COUNT(*) > 0 FROM ledgers 
@@ -89,30 +89,30 @@ interface LedgerDao {
     suspend fun hasDefaultLedger(userId: String): Boolean
     
     /**
-     * 设置默认记账簿（先清除其他默认记账簿）
+     * 设置默认账本（先清除其他默认账本）
      */
     @Transaction
     suspend fun setDefaultLedger(userId: String, ledgerId: String, updatedAt: Long) {
-        // 清除其他默认记账簿
+        // 清除其他默认账本
         clearDefaultLedgers(userId, updatedAt)
-        // 设置新的默认记账簿
+        // 设置新的默认账本
         setLedgerAsDefault(ledgerId, updatedAt)
     }
     
     /**
-     * 清除用户的所有默认记账簿标记
+     * 清除用户的所有默认账本标记
      */
     @Query("UPDATE ledgers SET isDefault = 0, updatedAt = :updatedAt WHERE userId = :userId")
     suspend fun clearDefaultLedgers(userId: String, updatedAt: Long)
     
     /**
-     * 设置指定记账簿为默认
+     * 设置指定账本为默认
      */
     @Query("UPDATE ledgers SET isDefault = 1, updatedAt = :updatedAt WHERE id = :ledgerId")
     suspend fun setLedgerAsDefault(ledgerId: String, updatedAt: Long)
     
     /**
-     * 更新记账簿显示顺序
+     * 更新账本显示顺序
      */
     @Query("UPDATE ledgers SET displayOrder = :order, updatedAt = :updatedAt WHERE id = :ledgerId")
     suspend fun updateLedgerOrder(ledgerId: String, order: Int, updatedAt: Long)

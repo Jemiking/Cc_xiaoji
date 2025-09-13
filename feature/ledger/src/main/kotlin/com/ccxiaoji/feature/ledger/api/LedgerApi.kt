@@ -260,10 +260,10 @@ interface LedgerApi {
     
     // Screen Providers
     @Composable
-    fun getLedgerScreen(navController: NavHostController, accountId: String?)
+    fun getLedgerScreen(navController: NavHostController, accountId: String?, onBack: (() -> Unit)?)
     
     @Composable
-    fun getTransactionDetailScreen(transactionId: String, navController: NavHostController)
+    fun getTransactionDetailScreen(transactionId: String, navController: NavHostController, onNavigateBack: (() -> Unit)?)
     
     @Composable
     fun getAccountScreen(navController: NavHostController)

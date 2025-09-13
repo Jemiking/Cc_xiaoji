@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.activity.compose.BackHandler
 import com.ccxiaoji.ui.theme.DesignTokens
 import com.ccxiaoji.feature.ledger.domain.model.Transaction
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerViewModel
@@ -25,7 +26,8 @@ import java.time.format.DateTimeFormatter
 fun TransactionDetailScreen(
     transactionId: String,
     navController: NavController,
-    viewModel: LedgerViewModel
+    viewModel: LedgerViewModel,
+    onNavigateBack: (() -> Unit)? = null
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val transaction = uiState.transactions.find { it.id == transactionId }
@@ -38,13 +40,16 @@ fun TransactionDetailScreen(
         return
     }
     
+    // 统一系统返回
+    BackHandler { onNavigateBack?.invoke() ?: navController.popBackStack() }
+
     // 监听删除结果
     LaunchedEffect(key1 = navController.currentBackStackEntry) {
         navController.currentBackStackEntry?.savedStateHandle
             ?.getLiveData<Boolean>("transaction_deleted")
             ?.observeForever { deleted ->
                 if (deleted == true) {
-                    navController.popBackStack()
+                    onNavigateBack?.invoke() ?: navController.popBackStack()
                 }
             }
     }
@@ -55,7 +60,7 @@ fun TransactionDetailScreen(
             TopAppBar(
                 title = { Text("交易详情") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController.popBackStack() }) {
                         Icon(
                             Icons.Default.ArrowBack, 
                             contentDescription = "返回"
@@ -106,6 +111,25 @@ fun TransactionDetailScreen(
             
             // 交易详情
             TransactionDetailCard {
+                // 转账标识
+                if (transaction.isTransfer) {
+                    DetailRow(
+                        icon = Icons.Default.CompareArrows,
+                        label = "转账",
+                        value = buildString {
+                            append(transaction.getTransferDisplayName() ?: "转账")
+                            transaction.transferId?.let { append("  • 批次:").append(it.take(8)) }
+                        }
+                    )
+                    // 对端账户
+                    val counterparty = transaction.counterpartyAccountName ?: "未知账户"
+                    DetailRow(
+                        icon = Icons.Default.AccountBalance,
+                        label = "对端账户",
+                        value = counterparty
+                    )
+                    Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
+                }
                 // 日期和时间
                 DetailRow(
                     icon = Icons.Default.CalendarToday,

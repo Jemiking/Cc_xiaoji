@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
@@ -92,7 +93,9 @@ class HomeViewModel @Inject constructor(
             transactionRepository.getTransactionsByDateRange(
                 now.date,
                 now.date
-            ).collect { todayTransactions ->
+            ).catch { e ->
+                Log.e(TAG, "Error loading today's transactions", e)
+            }.collect { todayTransactions ->
                 val todayIncome = todayTransactions
                     .filter { it.categoryDetails?.type == "INCOME" }
                     .sumOf { it.amountCents }
@@ -127,6 +130,8 @@ class HomeViewModel @Inject constructor(
                 habitApi.getTodayCheckedHabitsCount()
             ) { habitsWithStreaks, todayCheckedCount ->
                 Triple(habitsWithStreaks, todayCheckedCount, habitsWithStreaks.maxOfOrNull { it.currentStreak } ?: 0)
+            }.catch { e ->
+                Log.e(TAG, "Error loading habits data", e)
             }.collect { (habitsWithStreaks, todayCheckedCount, longestStreak) ->
                 _uiState.value = _uiState.value.copy(
                     activeHabits = habitsWithStreaks.size,
@@ -139,7 +144,9 @@ class HomeViewModel @Inject constructor(
         
         viewModelScope.launch {
             // Load recent transactions
-            transactionRepository.getRecentTransactions(5).collect { transactions ->
+            transactionRepository.getRecentTransactions(5)
+                .catch { e -> Log.e(TAG, "Error loading recent transactions", e) }
+                .collect { transactions ->
                 _uiState.value = _uiState.value.copy(recentTransactions = transactions)
             }
         }
@@ -147,7 +154,9 @@ class HomeViewModel @Inject constructor(
         
         viewModelScope.launch {
             // Load upcoming countdowns
-            countdownRepository.getUpcomingCountdowns(3).collect { countdowns ->
+            countdownRepository.getUpcomingCountdowns(3)
+                .catch { e -> Log.e(TAG, "Error loading countdowns", e) }
+                .collect { countdowns ->
                 _uiState.value = _uiState.value.copy(upcomingCountdowns = countdowns)
             }
         }
@@ -155,7 +164,9 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             // Load budget overview
             val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-            budgetRepository.getBudgetsWithSpent(now.year, now.monthNumber).collect { budgets ->
+            budgetRepository.getBudgetsWithSpent(now.year, now.monthNumber)
+                .catch { e -> Log.e(TAG, "Error loading budgets", e) }
+                .collect { budgets ->
                 // Calculate total budget and spent
                 val totalBudgetCents = budgets.sumOf { it.budgetAmountCents }
                 val totalSpentCents = budgets.sumOf { it.spentAmountCents }
@@ -176,7 +187,9 @@ class HomeViewModel @Inject constructor(
         
         viewModelScope.launch {
             // Load active savings goals
-            savingsGoalRepository.getActiveSavingsGoals().collect { goals ->
+            savingsGoalRepository.getActiveSavingsGoals()
+                .catch { e -> Log.e(TAG, "Error loading savings goals", e) }
+                .collect { goals ->
                 _uiState.value = _uiState.value.copy(savingsGoals = goals.take(3))
             }
         }

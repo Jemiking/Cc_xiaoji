@@ -34,9 +34,9 @@ import androidx.compose.ui.window.DialogProperties
 import com.ccxiaoji.feature.ledger.domain.model.Ledger
 
 /**
- * 记账簿切换器组件
+ * 账本切换器组件
  * 
- * 用于在侧边栏显示当前记账簿，并提供切换功能
+ * 用于在侧边栏显示当前账本，并提供切换功能
  */
 @Composable
 fun LedgerSwitcher(
@@ -48,7 +48,7 @@ fun LedgerSwitcher(
 ) {
     var showLedgerSelector by remember { mutableStateOf(false) }
     
-    // 主要的记账簿切换按钮
+    // 主要的账本切换按钮
     LedgerSwitcherButton(
         currentLedger = currentLedger,
         isLoading = isLoading,
@@ -56,7 +56,7 @@ fun LedgerSwitcher(
         modifier = modifier
     )
     
-    // 记账簿选择弹窗
+    // 账本选择弹窗
     if (showLedgerSelector) {
         LedgerSelectorDialog(
             currentLedger = currentLedger,
@@ -71,7 +71,7 @@ fun LedgerSwitcher(
 }
 
 /**
- * 记账簿切换按钮
+ * 账本切换按钮
  */
 @Composable
 private fun LedgerSwitcherButton(
@@ -104,14 +104,14 @@ private fun LedgerSwitcherButton(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // 记账簿图标
+            // 账本图标
             LedgerIcon(
                 icon = currentLedger?.icon ?: "book",
                 color = ledgerColor,
                 modifier = Modifier.size(32.dp)
             )
             
-            // 记账簿信息
+            // 账本信息
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -137,7 +137,7 @@ private fun LedgerSwitcherButton(
                     )
                 } else {
                     Text(
-                        text = currentLedger?.name ?: "未选择记账簿",
+                        text = currentLedger?.name ?: "未选择账本",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium,
                         maxLines = 1,
@@ -163,7 +163,7 @@ private fun LedgerSwitcherButton(
             
             Icon(
                 imageVector = if (isLoading) Icons.Default.Refresh else Icons.Default.KeyboardArrowDown,
-                contentDescription = "切换记账簿",
+                contentDescription = "切换账本",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .size(20.dp)
@@ -174,7 +174,7 @@ private fun LedgerSwitcherButton(
 }
 
 /**
- * 记账簿选择弹窗
+ * 账本选择弹窗
  */
 @Composable
 private fun LedgerSelectorDialog(
@@ -208,7 +208,7 @@ private fun LedgerSelectorDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "选择记账簿",
+                        text = "选择账本",
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Medium
                     )
@@ -227,7 +227,7 @@ private fun LedgerSelectorDialog(
                 
                 Spacer(modifier = Modifier.height(12.dp))
                 
-                // 记账簿列表
+                // 账本列表
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                     modifier = Modifier.heightIn(max = 400.dp)
@@ -259,7 +259,7 @@ private fun LedgerSelectorDialog(
                                 modifier = Modifier.size(32.dp)
                             )
                             Text(
-                                text = "暂无记账簿",
+                                text = "暂无账本",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -272,7 +272,7 @@ private fun LedgerSelectorDialog(
 }
 
 /**
- * 记账簿列表项
+ * 账本列表项
  */
 @Composable
 private fun LedgerItem(
@@ -331,14 +331,14 @@ private fun LedgerItem(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // 记账簿图标
+            // 账本图标
             LedgerIcon(
                 icon = ledger.icon,
                 color = ledgerColor,
                 modifier = Modifier.size(28.dp)
             )
             
-            // 记账簿信息
+            // 账本信息
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -443,7 +443,7 @@ private fun LedgerIcon(
 }
 
 /**
- * 简化版记账簿切换器
+ * 简化版账本切换器
  * 用于较小的空间
  */
 @Composable
@@ -479,9 +479,9 @@ fun CompactLedgerSwitcher(
             )
         }
         
-        // 记账簿名称
+        // 账本名称
         Text(
-            text = currentLedger?.name ?: "记账簿",
+            text = currentLedger?.name ?: "账本",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Medium,
             maxLines = 1,

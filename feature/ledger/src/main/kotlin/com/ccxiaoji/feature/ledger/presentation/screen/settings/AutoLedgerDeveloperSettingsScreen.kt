@@ -2,16 +2,20 @@ package com.ccxiaoji.feature.ledger.presentation.screen.settings
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
@@ -30,6 +34,9 @@ fun AutoLedgerDeveloperSettingsScreen(
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var showConfirmGroupSummary by remember { mutableStateOf(false) }
+    var showConfirmLogUnmatched by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
 
     Scaffold(
         topBar = {
@@ -37,7 +44,7 @@ fun AutoLedgerDeveloperSettingsScreen(
                 title = { Text("自动记账 · 开发者设置") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "返回")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                     }
                 }
             )
@@ -48,7 +55,8 @@ fun AutoLedgerDeveloperSettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             // 去重设置
@@ -62,7 +70,7 @@ fun AutoLedgerDeveloperSettingsScreen(
                         )
                     }
                 )
-                Divider()
+                HorizontalDivider()
                 ListItem(
                     headlineContent = { Text("去重窗口（秒）") },
                     supportingContent = { Text("建议 10~60 秒；过小可能导致重复入账") },
@@ -76,7 +84,7 @@ fun AutoLedgerDeveloperSettingsScreen(
                         }
                     }
                 )
-                Divider()
+                HorizontalDivider()
                 ListItem(
                     headlineContent = { Text("去重跳过仍解析（采样）") },
                     supportingContent = { Text("用于调试去重误判场景，默认关闭") },
@@ -87,7 +95,7 @@ fun AutoLedgerDeveloperSettingsScreen(
                         )
                     }
                 )
-                Divider()
+                HorizontalDivider()
                 ListItem(
                     headlineContent = { Text("去重缓存") },
                     supportingContent = { Text("清空当前去重缓存（不影响历史流水）") },
@@ -113,14 +121,20 @@ fun AutoLedgerDeveloperSettingsScreen(
                         )
                     }
                 )
-                Divider()
+                HorizontalDivider()
                 ListItem(
                     headlineContent = { Text("透传群组摘要（高风险）") },
                     supportingContent = { Text("群组摘要多为聚合通知，默认跳过；仅在必要时临时开启调试。") },
                     trailingContent = {
                         Switch(
                             checked = uiState.emitGroupSummary,
-                            onCheckedChange = { checked -> viewModel.toggleEmitGroupSummary(checked) }
+                            onCheckedChange = { checked ->
+                                if (checked && !uiState.emitGroupSummary) {
+                                    showConfirmGroupSummary = true
+                                } else {
+                                    viewModel.toggleEmitGroupSummary(checked)
+                                }
+                            }
                         )
                     }
                 )
@@ -141,7 +155,7 @@ fun AutoLedgerDeveloperSettingsScreen(
                         )
                     }
                 )
-                Divider()
+                HorizontalDivider()
                 ListItem(
                     headlineContent = { Text("最小金额（分）") },
                     supportingContent = { Text("低于该金额不自动入账，可仅提示或降权") },
@@ -165,11 +179,17 @@ fun AutoLedgerDeveloperSettingsScreen(
                     trailingContent = {
                         Switch(
                             checked = uiState.logUnmatchedNotifications,
-                            onCheckedChange = { viewModel.toggleLogUnmatched(it) }
+                            onCheckedChange = { checked ->
+                                if (checked && !uiState.logUnmatchedNotifications) {
+                                    showConfirmLogUnmatched = true
+                                } else {
+                                    viewModel.toggleLogUnmatched(checked)
+                                }
+                            }
                         )
                     }
                 )
-                Divider()
+                HorizontalDivider()
                 ListItem(
                     headlineContent = { Text("调试工具") },
                     supportingContent = { Text("打印最近5条交易，便于核对自动入账结果") },
@@ -177,7 +197,7 @@ fun AutoLedgerDeveloperSettingsScreen(
                         TextButton(onClick = { viewModel.printRecentTransactions(5) }) { Text("打印最近5条交易") }
                     }
                 )
-                Divider()
+                HorizontalDivider()
                 ListItem(
                     headlineContent = { Text("恢复默认设置") },
                     supportingContent = { Text("重置开发者设置为推荐值（不影响用户基础设置）") },
@@ -186,6 +206,17 @@ fun AutoLedgerDeveloperSettingsScreen(
                             viewModel.resetDeveloperSettings()
                             scope.launch { snackbarHostState.showSnackbar("已恢复调试设置为默认") }
                         }) { Text("恢复默认") }
+                    }
+                )
+            }
+
+            // 进入调试面板
+            Card(modifier = Modifier.fillMaxWidth()) {
+                ListItem(
+                    headlineContent = { Text("自动记账调试面板") },
+                    supportingContent = { Text("查看解析记录、监听诊断与导出数据") },
+                    trailingContent = {
+                        TextButton(onClick = { navController.navigate("auto_ledger_debug") }) { Text("进入") }
                     }
                 )
             }
@@ -208,7 +239,39 @@ fun AutoLedgerDeveloperSettingsScreen(
             if (uiState.error != null) {
                 Text(text = uiState.error ?: "", color = MaterialTheme.colorScheme.error)
             }
+            // 高风险确认弹窗
+            if (showConfirmGroupSummary) {
+                AlertDialog(
+                    onDismissRequest = { showConfirmGroupSummary = false },
+                    title = { Text("开启高风险选项？") },
+                    text = { Text("透传群组摘要可能误触发自动记账，确认开启？") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            viewModel.toggleEmitGroupSummary(true)
+                            showConfirmGroupSummary = false
+                        }) { Text("确认开启") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showConfirmGroupSummary = false }) { Text("取消") }
+                    }
+                )
+            }
+            if (showConfirmLogUnmatched) {
+                AlertDialog(
+                    onDismissRequest = { showConfirmLogUnmatched = false },
+                    title = { Text("开启高风险选项？") },
+                    text = { Text("记录未匹配日志可能包含大量噪音与隐私，确认开启？") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            viewModel.toggleLogUnmatched(true)
+                            showConfirmLogUnmatched = false
+                        }) { Text("确认开启") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showConfirmLogUnmatched = false }) { Text("取消") }
+                    }
+                )
+            }
         }
     }
 }
-

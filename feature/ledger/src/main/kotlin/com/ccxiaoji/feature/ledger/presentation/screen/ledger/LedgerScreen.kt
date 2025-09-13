@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.graphics.toArgb
@@ -61,6 +62,7 @@ import java.time.YearMonth
 fun LedgerScreen(
     navController: androidx.navigation.NavController? = null,
     accountId: String? = null,
+    onBack: (() -> Unit)? = null,
     viewModel: LedgerViewModel = hiltViewModel(),
     selectionViewModel: SelectionViewModel = hiltViewModel(),
     searchViewModel: SearchViewModel = hiltViewModel(),
@@ -125,6 +127,25 @@ fun LedgerScreen(
     val currentLedger = uiState.currentLedger
     val allLedgers = uiState.ledgers
     
+    // 统一处理系统返回：抽屉/搜索/选择 优先处理，否则回退到父级
+    BackHandler {
+        when {
+            drawerState.isOpen -> {
+                coroutineScope.launch { drawerState.close() }
+            }
+            searchState.isSearchMode -> {
+                searchViewModel.toggleSearchMode()
+                searchViewModel.clearSearch()
+            }
+            selectionState.isSelectionMode -> {
+                selectionViewModel.toggleSelectionMode()
+            }
+            else -> {
+                onBack?.invoke() ?: navController?.popBackStack()
+            }
+        }
+    }
+
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -142,6 +163,10 @@ fun LedgerScreen(
                 },
                 onNavigateToCategoryManagement = {
                     navController?.navigate(LedgerNavigation.CategoryManagementRoute)
+                },
+                onNavigateToCardManagement = {
+                    // 使用App路由跳转
+                    navController?.navigate("card_management")
                 },
                 onNavigateToRecurringTransaction = {
                     navController?.navigate(LedgerNavigation.RecurringTransactionRoute)
@@ -576,4 +601,3 @@ fun LedgerScreen(
     }
     }
 }
-

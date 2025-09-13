@@ -1,4 +1,4 @@
-package com.ccxiaoji.feature.ledger.presentation.viewmodel
+﻿package com.ccxiaoji.feature.ledger.presentation.viewmodel
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -88,7 +88,6 @@ class AddTransactionViewModel @Inject constructor(
     
     private val _uiState = MutableStateFlow(AddTransactionUiState())
     val uiState: StateFlow<AddTransactionUiState> = _uiState.asStateFlow()
-    
     private val currentUserId = userApi.getCurrentUserId()
     private val preselectedAccountId: String? = savedStateHandle["accountId"]
     private val transactionId: String? = savedStateHandle["transactionId"]
@@ -106,32 +105,30 @@ class AddTransactionViewModel @Inject constructor(
         loadData()
         loadSettings()
 
-        // 应用自动记账预填（若存在）
-        applyAutoLedgerPrefill()
         
-        // 如果有transactionId，则进入编辑模式并加载交易数据
+        // 应用自动预填
+        applyAutoLedgerPrefill()
+        // 如果有 transactionId，则进入编辑模式并加载交易数据
         transactionId?.let { id ->
             loadTransactionForEdit(id)
-        } ?: run {
         }
     }
-
     private fun applyAutoLedgerPrefill() {
         viewModelScope.launch(Dispatchers.Default) {
             try {
-                // 方向优先（触发分类加载）
+                // 方向优先（触发分类加权）
                 prefillDirection?.let { dir ->
                     val type = if (dir.equals("INCOME", ignoreCase = true)) TransactionType.INCOME else TransactionType.EXPENSE
                     setTransactionType(type)
                 }
 
-                // 金额（分→元字符串）
+                // 金额（分为单位的字符串）
                 prefillAmountCents?.takeIf { it > 0 }?.let { cents ->
                     val yuan = cents.toDouble() / 100.0
                     updateAmount("" + (if (yuan % 1.0 == 0.0) yuan.toInt() else String.format(java.util.Locale.getDefault(),"%.2f", yuan)))
                 }
 
-                // 备注：仅在 DeepLink 明确提供 note 时才设置；否则保持为空，交由用户填写
+                // 备注：仅在 DeepLink 明确提供 note 时设置，否则保持为空，由用户填写
                 prefillNote?.takeIf { it.isNotBlank() }?.let { provided ->
                     updateNote(provided)
                 }
@@ -172,12 +169,10 @@ class AddTransactionViewModel @Inject constructor(
                 }
             }
         }
-        
         viewModelScope.launch {
-            // 加载记账簿
+            // 加载账本
             manageLedgerUseCase.getUserLedgers(currentUserId).collect { ledgers ->
                 val defaultLedger = ledgers.find { it.isDefault } ?: ledgers.firstOrNull()
-                
                 _uiState.update {
                     it.copy(
                         ledgers = ledgers,
@@ -189,7 +184,7 @@ class AddTransactionViewModel @Inject constructor(
         }
         
         viewModelScope.launch {
-            // 加载分类树和常用分类
+            // 加载分类树与常用分类
             loadCategories()
         }
     }
@@ -209,7 +204,7 @@ class AddTransactionViewModel @Inject constructor(
             )
         }
         updateCanSave()
-        // 当选择记账簿时，加载可用的联动目标
+        // 当选择账本时，加载可用的联动目标
         loadLinkTargets(ledger.id)
     }
     
@@ -237,7 +232,7 @@ class AddTransactionViewModel @Inject constructor(
         }
     }
     
-    // 设置交易类型（新增方法）
+    // 设置交易类型（新方法）
     fun setTransactionType(type: TransactionType) {
         _uiState.update {
             it.copy(
@@ -309,7 +304,7 @@ class AddTransactionViewModel @Inject constructor(
         }
     }
     
-    // 转账账户选择器控制方法
+    // 显示转出账户选择器
     fun showFromAccountPicker() {
         _uiState.update {
             it.copy(showFromAccountPicker = true)
@@ -347,7 +342,16 @@ class AddTransactionViewModel @Inject constructor(
     }
     
     fun updateAmount(amount: String) {
-        val filteredAmount = amount.filter { it.isDigit() || it == '.' }
+        val filteredAmount = run {
+            val cleaned = amount.filter { it.isDigit() || it == '.' }
+            val parts = cleaned.split('.')
+            val normalized = when {
+                parts.size > 2 -> parts[0] + "." + parts[1]
+                parts.size == 2 -> parts[0] + "." + parts[1].take(2)
+                else -> cleaned
+            }
+            normalized.trimStart('.')
+        }
         val error = when {
             filteredAmount.isEmpty() -> null
             filteredAmount.toDoubleOrNull() == null -> "请输入有效金额"
@@ -394,25 +398,53 @@ class AddTransactionViewModel @Inject constructor(
         
         // 加载分类树
         val categoryGroups = getCategoryTree(userId, type)
+        android.util.Log.d("AddTxn_DefaultSelection", "加载分类树 ${categoryGroups.size} 组，当前类型=$type")
+        categoryGroups.forEachIndexed { idx, g ->
+            android.util.Log.d(
+                "AddTxn_DefaultSelection",
+                "组$idx: parent='${g.parent.name}' (id=${g.parent.id}, children=${g.children.size}, order=${g.parent.displayOrder})"
+            )
+        }
         
+        // 鍔犺浇甯哥敤鍒嗙被
         // 加载常用分类
         val frequentCategories = getFrequentCategories(userId, type, 5)
+        android.util.Log.d("AddTxn_DefaultSelection", "常用分类数量=${frequentCategories.size}")
         
-        // 如果没有选中的分类，选择第一个常用分类或第一个可用分类（若无子分类则回退父分类）
         val selectedInfo = _uiState.value.selectedCategoryInfo
         val newSelectedInfo = if (selectedInfo == null || selectedInfo.categoryId.isEmpty()) {
-            // 优先选择常用分类
-            frequentCategories.firstOrNull()?.let { category ->
-                // 找到对应的完整信息
-                categoryRepository.getCategoryFullInfo(category.id)
-            } ?: 
-            // 如果没有常用分类，优先选择第一个分组的第一个子分类；若无子分类则回退父分类
-            categoryGroups.firstOrNull()?.let { group ->
-                group.children.firstOrNull()?.let { child ->
-                    categoryRepository.getCategoryFullInfo(child.id)
-                } ?: run {
-                    // 回退到父分类
-                    categoryRepository.getCategoryFullInfo(group.parent.id)
+            // 优先从常用分类中选择（跳过“其他/未分类”等兜底项）
+            var picked: SelectedCategoryInfo? = null
+            for (c in frequentCategories) {
+                val info = categoryRepository.getCategoryFullInfo(c.id)
+                val parent = info?.parentName?.trim()
+                val name = info?.categoryName?.trim()
+                val isOtherBucket = parent != null && (parent.contains("其他") || parent.equals("Other", ignoreCase = true))
+                val isFallbackName = name != null && (name.equals("Other", ignoreCase = true) || name.equals("Uncategorized", ignoreCase = true))
+                if (isOtherBucket || isFallbackName) continue
+                if (info != null) { picked = info; break }
+            }
+            if (picked != null) {
+                android.util.Log.d("AddTxn_DefaultSelection", "默认选择=常用分类 ${picked.categoryName} (${picked.categoryId})")
+                picked
+            } else {
+                // 没有常用分类，回退到分类树
+                val groupWithChildren = categoryGroups.firstOrNull { it.children.isNotEmpty() }
+                if (groupWithChildren != null) {
+                    val firstChild = groupWithChildren.children.first()
+                    categoryRepository.getCategoryFullInfo(firstChild.id)
+                } else {
+                    val nonOtherParent = categoryGroups.firstOrNull {
+                        val n = it.parent.name.trim()
+                        !(n.contains("其他") || n.equals("Other", ignoreCase = true))
+                    }?.parent
+                    if (nonOtherParent != null) {
+                        categoryRepository.getCategoryFullInfo(nonOtherParent.id)
+                    } else {
+                        categoryGroups.firstOrNull()?.let { group ->
+                            categoryRepository.getCategoryFullInfo(group.parent.id)
+                        }
+                    }
                 }
             }
         } else {
@@ -426,8 +458,13 @@ class AddTransactionViewModel @Inject constructor(
                 selectedCategoryInfo = newSelectedInfo
             )
         }
-        newSelectedInfo?.let { info ->
-        } ?: run {
+        if (newSelectedInfo != null) {
+            android.util.Log.d(
+                "AddTxn_DefaultSelection",
+                "最终默认选择: ${newSelectedInfo.fullPath ?: newSelectedInfo.categoryName} (${newSelectedInfo.categoryId})"
+            )
+        } else {
+            android.util.Log.d("AddTxn_DefaultSelection", "最终默认选择: null (保持空)")
         }
         updateCanSave()
     }
@@ -441,13 +478,13 @@ class AddTransactionViewModel @Inject constructor(
                            state.selectedLedger != null
             
             val canSave = if (state.transactionType == TransactionType.TRANSFER) {
-                // 转账模式：需要转出账户、转入账户，不需要分类
+                // 转账模式：需要转出账户与转入账户，不需要分类
                 baseValid &&
                 state.fromAccount != null &&
                 state.toAccount != null &&
-                state.fromAccount != state.toAccount // 转出转入账户不能相同
+                 state.fromAccount != state.toAccount // 转出与转入账户不能相同
             } else {
-                // 普通交易模式：需要分类和账户
+                // 普通模式：需要分类与账户
                 baseValid &&
                 state.selectedCategoryInfo != null &&
                 state.selectedAccount != null
@@ -487,7 +524,7 @@ class AddTransactionViewModel @Inject constructor(
                         )
                     }
                     
-                    // 更新UI状态为编辑模式
+                    // 更新 UI 状态为编辑模式
                     _uiState.update { state ->
                         state.copy(
                             isEditMode = true,
@@ -505,8 +542,7 @@ class AddTransactionViewModel @Inject constructor(
                         )
                     }
                     
-                    // 重新计算canSave状态
-                    updateCanSave()
+                    // 閲嶆柊璁＄畻canSave鐘舵€?                    updateCanSave()
                 } else {
                     _uiState.update { it.copy(isLoading = false) }
                 }
@@ -518,71 +554,54 @@ class AddTransactionViewModel @Inject constructor(
     
     fun saveTransaction(onSuccess: () -> Unit) {
         val canSave = _uiState.value.canSave
-        
         if (!canSave) {
-            with(_uiState.value) {
-            }
-            // 交互兜底：若未选择分类，引导用户打开分类选择器
             if (_uiState.value.selectedCategoryInfo == null && _uiState.value.transactionType != TransactionType.TRANSFER) {
                 _uiState.update { it.copy(showCategoryPicker = true) }
             }
             return
         }
-        
+
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(isLoading = true) }
-            
             try {
                 val state = _uiState.value
                 val amountCents = ((state.amountText.toDoubleOrNull() ?: 0.0) * 100).toInt()
-                
-                
-                
-                
-                // 组合日期和时间为Instant
                 val transactionDateTime = LocalDateTime(state.selectedDate, state.selectedTime)
                     .toInstant(TimeZone.currentSystemDefault())
-                
-                // 验证必要字段
+
                 if (state.selectedLedger == null) {
-                    throw IllegalStateException("未选择记账簿")
+                    _uiState.update { it.copy(showLedgerSelector = true, amountError = "Please select a ledger") }
+                    _uiState.update { it.copy(isLoading = false) }
+                    return@launch
                 }
-                if (amountCents <= 0) {
-                    throw IllegalStateException("金额必须大于0")
-                }
-                
-                // 根据交易类型进行不同的验证
+                if (amountCents <= 0) throw IllegalStateException("Amount must be greater than 0")
+
                 if (state.transactionType == TransactionType.TRANSFER) {
-                    // 转账交易验证：需要转出和转入账户
                     if (state.fromAccount == null) {
-                        throw IllegalStateException("未选择转出账户")
+                        _uiState.update { it.copy(showFromAccountPicker = true, amountError = "Please select a source account") }
+                        _uiState.update { it.copy(isLoading = false) }
+                        return@launch
                     }
                     if (state.toAccount == null) {
-                        throw IllegalStateException("未选择转入账户")
+                        _uiState.update { it.copy(showToAccountPicker = true, amountError = "Please select a destination account") }
+                        _uiState.update { it.copy(isLoading = false) }
+                        return@launch
                     }
                     if (state.fromAccount == state.toAccount) {
                         throw IllegalStateException("转出和转入账户不能相同")
                     }
                 } else {
-                    // 普通交易验证：需要账户和分类
-                    if (state.selectedAccount == null) {
-                        throw IllegalStateException("未选择账户")
-                    }
-                    if (state.selectedCategoryInfo == null) {
-                        throw IllegalStateException("未选择分类")
-                    }
+                    if (state.selectedAccount == null) throw IllegalStateException("未选择账户")
+                    if (state.selectedCategoryInfo == null) throw IllegalStateException("未选择分类")
                 }
-                
-                // 编辑模式处理
+
                 if (state.isEditMode && state.editingTransactionId != null) {
-                    
-                    // 创建更新后的交易对象
-                    val updatedTransaction = com.ccxiaoji.feature.ledger.domain.model.Transaction(
+                    val updated = com.ccxiaoji.feature.ledger.domain.model.Transaction(
                         id = state.editingTransactionId!!,
                         accountId = state.selectedAccount!!.id,
                         amountCents = amountCents,
                         categoryId = state.selectedCategoryInfo!!.categoryId,
-                        categoryDetails = null, // 会在repository层设置
+                        categoryDetails = null,
                         note = state.note.ifBlank { null },
                         ledgerId = state.selectedLedger!!.id,
                         createdAt = transactionDateTime,
@@ -590,15 +609,10 @@ class AddTransactionViewModel @Inject constructor(
                         transactionDate = transactionDateTime,
                         location = state.selectedLocation
                     )
-                    
-                    // 更新交易
-                    transactionRepository.updateTransaction(updatedTransaction)
+                    transactionRepository.updateTransaction(updated)
                     onSuccess()
                 } else {
-                    // 创建模式处理
                     if (state.transactionType == TransactionType.TRANSFER) {
-                        // 转账交易创建逻辑
-                        
                         val result = createTransferUseCase.createTransfer(
                             fromAccountId = state.fromAccount!!.id,
                             toAccountId = state.toAccount!!.id,
@@ -607,27 +621,15 @@ class AddTransactionViewModel @Inject constructor(
                             ledgerId = state.selectedLedger!!.id,
                             transactionDate = transactionDateTime,
                             location = state.selectedLocation,
-                            checkBalance = false // 暂时不检查余额
+                            checkBalance = false
                         )
-                        
                         when (result) {
-                            is com.ccxiaoji.common.base.BaseResult.Success -> {
-                                onSuccess()
-                            }
-                            is com.ccxiaoji.common.base.BaseResult.Error -> {
-                                throw result.exception
-                            }
+                            is com.ccxiaoji.common.base.BaseResult.Success -> onSuccess()
+                            is com.ccxiaoji.common.base.BaseResult.Error -> throw result.exception
                         }
-                        
                     } else {
-                        // 普通交易创建逻辑
-                        // 如果有选择的同步目标，使用联动交易创建；否则使用普通交易创建
-                        if (state.selectedSyncTargets.isNotEmpty()) {
-                        } else {
-                        }
-                        
-                        if (state.selectedSyncTargets.isNotEmpty()) {
-                            val result = createLinkedTransactionUseCase.createLinkedTransaction(
+                        val result = if (state.selectedSyncTargets.isNotEmpty()) {
+                            createLinkedTransactionUseCase.createLinkedTransaction(
                                 primaryLedgerId = state.selectedLedger!!.id,
                                 accountId = state.selectedAccount!!.id,
                                 amountCents = amountCents,
@@ -635,51 +637,29 @@ class AddTransactionViewModel @Inject constructor(
                                 note = state.note.ifBlank { null },
                                 transactionDate = transactionDateTime,
                                 location = state.selectedLocation,
-                                autoSync = false, // 手动选择了目标，不使用自动同步
+                                autoSync = false,
                                 specificTargetLedgers = state.selectedSyncTargets.toList()
                             )
-                    
-                    when (result) {
-                        is com.ccxiaoji.common.base.BaseResult.Success -> {
-                            onSuccess()
+                        } else {
+                            createLinkedTransactionUseCase.createLinkedTransaction(
+                                primaryLedgerId = state.selectedLedger!!.id,
+                                accountId = state.selectedAccount!!.id,
+                                amountCents = amountCents,
+                                categoryId = state.selectedCategoryInfo!!.categoryId,
+                                note = state.note.ifBlank { null },
+                                transactionDate = transactionDateTime,
+                                location = state.selectedLocation,
+                                autoSync = true,
+                                specificTargetLedgers = emptyList()
+                            )
                         }
-                        is com.ccxiaoji.common.base.BaseResult.Error -> {
-                            throw result.exception
-                        }
-                    }
-                } else {
-                    // 普通交易创建（可能会触发自动同步）
-                    val primaryLedgerId = state.selectedLedger!!.id
-                    val accountId = state.selectedAccount!!.id
-                    val categoryId = state.selectedCategoryInfo!!.categoryId
-                    
-                    val result = createLinkedTransactionUseCase.createLinkedTransaction(
-                        primaryLedgerId = primaryLedgerId,
-                        accountId = accountId,
-                        amountCents = amountCents,
-                        categoryId = categoryId,
-                        note = state.note.ifBlank { null },
-                        transactionDate = transactionDateTime,
-                        location = state.selectedLocation,
-                        autoSync = true, // 启用自动同步规则
-                        specificTargetLedgers = emptyList()
-                    )
-                    
-                    
-                    when (result) {
-                        is com.ccxiaoji.common.base.BaseResult.Success -> {
-                            onSuccess()
-                        }
-                        is com.ccxiaoji.common.base.BaseResult.Error -> {
-                            throw result.exception
+                        when (result) {
+                            is com.ccxiaoji.common.base.BaseResult.Success -> onSuccess()
+                            is com.ccxiaoji.common.base.BaseResult.Error -> throw result.exception
                         }
                     }
-                } // 结束普通交易else分支
-                } // 结束普通交易逻辑
-                } // 结束创建模式处理
-                
+                }
             } catch (e: Exception) {
-                // 处理错误
                 android.util.Log.e("AddTransactionViewModel", "保存交易失败", e)
                 _uiState.update { it.copy(amountError = e.message) }
             } finally {
@@ -694,7 +674,7 @@ class AddTransactionViewModel @Inject constructor(
                 // 检查并初始化默认分类
                 manageCategory.checkAndInitializeDefaultCategories(currentUserId)
             } catch (e: Exception) {
-                // 初始化失败不影响主流程，只记录日志
+                // 初始化失败不影响主流程，仅记录日志
                 android.util.Log.e("AddTransactionViewModel", "初始化默认分类失败", e)
             }
         }
@@ -705,16 +685,16 @@ class AddTransactionViewModel @Inject constructor(
     // =============================================================================
     
     /**
-     * 加载指定记账簿的可用联动目标
+     * 加载指定账本的可用联动目标
      */
     private fun loadLinkTargets(ledgerId: String) {
         viewModelScope.launch {
             try {
-                // 获取该记账簿的联动关系
+                // 获取该账本的联动关系
                 val linksFlow = manageLedgerLinkUseCase.getLedgerLinks(ledgerId)
                 
                 linksFlow.collect { links ->
-                    // 根据联动关系确定可用的目标记账簿
+                    // 根据联动关系确定可用的目标账本
                     val currentLedgers = _uiState.value.ledgers
                     val availableTargets = mutableListOf<Ledger>()
                     

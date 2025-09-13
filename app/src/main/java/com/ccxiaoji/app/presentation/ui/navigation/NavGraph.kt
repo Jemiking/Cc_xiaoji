@@ -60,14 +60,19 @@ fun NavGraph(
         }
         
         composable(Screen.Ledger.route) {
-            ledgerApi.getLedgerScreen(navController, null)
+            ledgerApi.getLedgerScreen(
+                navController = navController,
+                accountId = null,
+                onBack = { navController.smartBackToHome() }
+            )
         }
         
         composable(LedgerWithAccountRoute.route) { backStackEntry ->
             val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
             ledgerApi.getLedgerScreen(
                 navController = navController,
-                accountId = accountId
+                accountId = accountId,
+                onBack = { navController.smartBackToHome() }
             )
         }
         
@@ -110,20 +115,10 @@ fun NavGraph(
                 onNavigateToSettings = {
                     navController.navigate(ScheduleSettingsRoute.route)
                 },
-                onNavigateToDebug = {
-                    navController.navigate("CalendarDebug")
-                },
-                onNavigateToFlatDemo = {
-                    navController.navigate("CalendarFlatDemo")
-                },
-                onNavigateToStyleDemo = {
-                    android.util.Log.d("NavGraph", "Navigate to StyleDemo from App")
-                    navController.navigate("style_demo")
-                },
-                onNavigateToHomeRedesignA3Demo = {
-                    android.util.Log.d("NavGraph", "Navigate to HomeRedesignA3Demo from App")
-                    navController.navigate("home_redesign_a3_demo")
-                },
+                onNavigateToDebug = { navController.navigate("CalendarDebug") },
+                onNavigateToFlatDemo = { /* demo已移除 */ },
+                onNavigateToStyleDemo = { /* demo已移除 */ },
+                onNavigateToHomeRedesignA3Demo = { /* demo已移除 */ },
                 onNavigateBack = {
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Home.route) { inclusive = true }
@@ -141,7 +136,8 @@ fun NavGraph(
             val transactionId = backStackEntry.arguments?.getString("transactionId") ?: ""
             ledgerApi.getTransactionDetailScreen(
                 transactionId = transactionId,
-                navController = navController
+                navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
         
@@ -194,6 +190,30 @@ fun NavGraph(
         
         composable(CategoryManagementRoute.route) {
             ledgerApi.getCategoryManagementScreen(navController = navController)
+        }
+
+        // 卡片管理（非资金账户的卡片信息）
+        composable(CardManagementRoute.route) {
+            com.ccxiaoji.feature.ledger.presentation.screen.card.CardManagementScreen(
+                navController = navController
+            )
+        }
+
+        composable(
+            route = AddEditCardRoute.route,
+            arguments = listOf(
+                androidx.navigation.navArgument("cardId") {
+                    type = androidx.navigation.NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val cardId = backStackEntry.arguments?.getString("cardId")
+            com.ccxiaoji.feature.ledger.presentation.screen.card.AddEditCardScreen(
+                navController = navController,
+                cardId = cardId
+            )
         }
         
         composable(BudgetRoute.route) {
@@ -277,7 +297,8 @@ fun NavGraph(
             val transactionId = backStackEntry.arguments?.getString("transactionId")
             com.ccxiaoji.feature.ledger.presentation.screen.transaction.AddTransactionScreen(
                 navController = navController,
-                transactionId = transactionId
+                transactionId = transactionId,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
         
@@ -286,6 +307,11 @@ fun NavGraph(
             arguments = listOf(
                 androidx.navigation.navArgument("transactionId") {
                     type = androidx.navigation.NavType.StringType
+                }
+            ),
+            deepLinks = listOf(
+                androidx.navigation.navDeepLink {
+                    uriPattern = "ccxiaoji://app/edit_transaction/{transactionId}"
                 }
             )
         ) { backStackEntry ->
@@ -297,7 +323,8 @@ fun NavGraph(
             
             com.ccxiaoji.feature.ledger.presentation.screen.transaction.AddTransactionScreen(
                 transactionId = transactionId,
-                navController = navController
+                navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
         
@@ -444,7 +471,11 @@ fun NavGraph(
                 onNavigateToUIStyleSettings = { navController.navigate(LedgerUIStyleRoute.route) },
                 onNavigateToLedgerBookManagement = { navController.navigate(LedgerBookManagementRoute.route) },
                 onNavigateToPermissionGuide = { navController.navigate(PermissionGuideRoute.route) },
-                onNavigateToAutoLedgerDebug = { navController.navigate(AutoLedgerDebugRoute.route) },
+                onNavigateToAutoLedgerDebug = {
+                    if (com.ccxiaoji.app.BuildConfig.DEBUG) {
+                        navController.navigate(AutoLedgerDebugRoute.route)
+                    }
+                },
                 onNavigateToAutoLedgerSettings = { navController.navigate(AutoLedgerSettingsRoute.route) },
                 navController = navController
             )
@@ -470,18 +501,6 @@ fun NavGraph(
         composable(ThemeSettingsRoute.route) {
             ThemeSettingsScreen(
                 onNavigateBack = { navController.popBackStack() }
-            )
-        }
-        
-        composable(DiscordDemoRoute.route) {
-            com.ccxiaoji.app.presentation.ui.demo.DiscordMobileLayoutScreen(
-                navController = navController
-            )
-        }
-        
-        composable(DiscordDemoV2Route.route) {
-            com.ccxiaoji.app.presentation.ui.demo.DiscordStyleDemoV2Screen(
-                navController = navController
             )
         }
         
@@ -561,26 +580,6 @@ fun NavGraph(
             )
         }
 
-        // 扁平化排班 Demo（无阴影布局）
-        composable("CalendarFlatDemo") {
-            com.ccxiaoji.feature.schedule.presentation.demo.FlatScheduleDemoScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        // UI设计风格Demo（包含5种设计风格对比）
-        composable("style_demo") {
-            com.ccxiaoji.feature.schedule.presentation.demo.StyleDemoScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
-
-        // 排班主页 UI 设计 Demo（A3 单页演示）
-        composable("home_redesign_a3_demo") {
-            com.ccxiaoji.feature.schedule.presentation.demo.HomeRedesignDemoScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
-        }
         
         // Plan module route
         composable(PlanRoute.route) {
@@ -839,10 +838,12 @@ fun NavGraph(
             )
         }
 
-        composable(AutoLedgerDeveloperSettingsRoute.route) {
-            com.ccxiaoji.feature.ledger.presentation.screen.settings.AutoLedgerDeveloperSettingsScreen(
-                navController = navController
-            )
+        if (com.ccxiaoji.app.BuildConfig.DEBUG) {
+            composable(AutoLedgerDeveloperSettingsRoute.route) {
+                com.ccxiaoji.feature.ledger.presentation.screen.settings.AutoLedgerDeveloperSettingsScreen(
+                    navController = navController
+                )
+            }
         }
         
         composable(HomeDisplaySettingsRoute.route) {
@@ -857,10 +858,12 @@ fun NavGraph(
             )
         }
         
-        composable(AutoLedgerDebugRoute.route) {
-            ledgerApi.getAutoLedgerDebugScreen(
-                navController = navController
-            )
+        if (com.ccxiaoji.app.BuildConfig.DEBUG) {
+            composable(AutoLedgerDebugRoute.route) {
+                ledgerApi.getAutoLedgerDebugScreen(
+                    navController = navController
+                )
+            }
         }
         
         composable(LedgerUIStyleRoute.route) {
@@ -945,7 +948,8 @@ fun NavGraph(
             )
         ) { backStackEntry ->
             com.ccxiaoji.feature.ledger.presentation.screen.transaction.FilterTransactionScreen(
-                navController = navController
+                navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
         
@@ -990,6 +994,22 @@ fun NavGraph(
                     // TODO: 添加新建记账簿页面导航
                 }
             )
+        }
+        
+        // Style Catalog Demo - Debug only
+        if (com.ccxiaoji.app.BuildConfig.DEBUG) {
+            composable(StyleCatalogDemoRoute.route) {
+                // Launch the demo activity with full 11-style system
+                val context = androidx.compose.ui.platform.LocalContext.current
+                androidx.compose.runtime.LaunchedEffect(Unit) {
+                    val intent = android.content.Intent(
+                        context,
+                        com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.StyleCatalogDemoActivity::class.java
+                    )
+                    context.startActivity(intent)
+                    navController.popBackStack()
+                }
+            }
         }
     }
 }

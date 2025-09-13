@@ -24,7 +24,8 @@ import javax.inject.Inject
 class AutoLedgerDebugViewModel @Inject constructor(
     private val debugRepository: AutoLedgerDebugRepository,
     private val notificationEventRepository: NotificationEventRepository,
-    private val dataStore: DataStore<Preferences>
+    private val dataStore: DataStore<Preferences>,
+    @dagger.hilt.android.qualifiers.ApplicationContext private val appContext: android.content.Context
 ) : ViewModel() {
     
     private val _uiState = MutableStateFlow(DebugUiState())
@@ -135,16 +136,20 @@ class AutoLedgerDebugViewModel @Inject constructor(
      * 导出调试数据
      */
     fun exportDebugData() {
-        viewModelScope.launch {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             try {
                 when (val result = debugRepository.exportDebugRecords(
                     masked = _uiState.value.maskSensitiveData,
                     limit = 1000
                 )) {
                     is BaseResult.Success -> {
-                        // TODO: 保存文件到设备存储
+                        val json = result.data
+                        val dir = java.io.File(appContext.filesDir, "debug")
+                        if (!dir.exists()) dir.mkdirs()
+                        val file = java.io.File(dir, "auto_ledger_debug_" + java.text.SimpleDateFormat("yyyyMMdd_HHmmss", java.util.Locale.getDefault()).format(java.util.Date()) + ".json")
+                        file.writeText(json, charset("UTF-8"))
                         _uiState.value = _uiState.value.copy(
-                            exportSuccess = "调试数据已导出 (${result.data.length} 字符)"
+                            exportSuccess = "已导出到：${file.absolutePath}"
                         )
                     }
                     is BaseResult.Error -> {

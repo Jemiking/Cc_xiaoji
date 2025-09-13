@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import com.ccxiaoji.feature.schedule.presentation.demo.CalendarDemoApi
 import com.ccxiaoji.feature.schedule.presentation.demo.parts.DisplayMode
 import com.ccxiaoji.feature.schedule.presentation.viewmodel.CalendarViewMode
 import com.ccxiaoji.feature.schedule.presentation.viewmodel.CalendarViewModel
@@ -19,7 +20,7 @@ class CalendarConfigBridge(
     
     // 内部状态管理
     private var _displayMode by mutableStateOf(
-        CalendarDemoAdapter.viewModeToDisplayMode(viewModel.viewMode.value)
+        CalendarDemoApi.viewModeToDisplayMode(viewModel.viewMode.value)
     )
     
     val displayMode: DisplayMode get() = _displayMode
@@ -53,7 +54,7 @@ class CalendarConfigBridge(
      * 保持双向数据绑定
      */
     fun syncFromViewModel(viewMode: CalendarViewMode) {
-        val expectedDisplayMode = CalendarDemoAdapter.viewModeToDisplayMode(viewMode)
+        val expectedDisplayMode = CalendarDemoApi.viewModeToDisplayMode(viewMode)
         if (_displayMode != expectedDisplayMode) {
             _displayMode = expectedDisplayMode
         }

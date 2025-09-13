@@ -100,6 +100,18 @@ abstract class LedgerModule {
     abstract fun bindAutoLedgerSettingsRepository(
         impl: AutoLedgerSettingsRepositoryImpl
     ): AutoLedgerSettingsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAutoLedgerDeveloperSettingsRepository(
+        impl: com.ccxiaoji.feature.ledger.data.repository.AutoLedgerDeveloperSettingsRepositoryImpl
+    ): com.ccxiaoji.feature.ledger.domain.repository.AutoLedgerDeveloperSettingsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCardRepository(
+        impl: CardRepositoryImpl
+    ): CardRepository
     
     companion object {
         @Provides

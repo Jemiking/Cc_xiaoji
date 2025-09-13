@@ -25,6 +25,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toLocalDateTime
 import java.time.format.DateTimeFormatter
+import com.ccxiaoji.feature.ledger.domain.model.TransferType
 
 /**
  * 支持多种风格的交易项组件
@@ -174,6 +175,22 @@ private fun BalancedTransactionItem(
                             fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
+                        // 转账徽标
+                        if (transaction.isTransfer) {
+                            Spacer(Modifier.height(2.dp))
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                            ) {
+                                Text(
+                                    text = transaction.getTransferDisplayName() ?: "转账",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
                         // 只显示一行备注（如果有）
                         transaction.note?.let { note ->
                             Text(
@@ -302,6 +319,33 @@ private fun HierarchicalTransactionItem(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
+                // 对端账户标识（简短，准确来源）
+                if (transaction.isTransfer) {
+                    val cp = transaction.counterpartyAccountName?.let { name ->
+                        if (transaction.isTransferOut) "转出·$name" else "转入·$name"
+                    }
+                    cp?.let { label ->
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+                if (transaction.isTransfer) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
+                    ) {
+                        Text(
+                            text = transaction.getTransferDisplayName() ?: "转账",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
             }
             
             Text(
@@ -436,5 +480,30 @@ private fun TransactionContextMenu(
             },
             modifier = Modifier.padding(horizontal = DesignTokens.Spacing.small)
         )
+    }
+}
+
+// 从备注中解析对端账户简短标识
+private fun extractCounterpartyFromNote(note: String?, type: TransferType?): String? {
+    if (note.isNullOrBlank() || type == null) return null
+    return when (type) {
+        TransferType.TRANSFER_OUT -> {
+            // 形如 "转账给<账户名>: ..."
+            val start = note.indexOf("转账给")
+            if (start >= 0) {
+                val rest = note.substring(start + 3) // after 转账给
+                val name = rest.substringBefore(":").takeIf { it.isNotBlank() } ?: rest
+                "转出·${name.trim()}"
+            } else null
+        }
+        TransferType.TRANSFER_IN -> {
+            // 形如 "从<账户名>转入: ..."
+            val start = note.indexOf("从")
+            val mid = note.indexOf("转入")
+            if (start >= 0 && mid > start) {
+                val name = note.substring(start + 1, mid)
+                "转入·${name.trim()}"
+            } else null
+        }
     }
 }

@@ -24,7 +24,7 @@ import com.ccxiaoji.ui.theme.DesignTokens
 
 /**
  * 同步目标选择对话框
- * 让用户选择要同步到哪些联动记账簿
+ * 让用户选择要同步到哪些联动账本
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,7 +93,7 @@ fun SyncTargetSelectorDialog(
                         Spacer(modifier = Modifier.width(DesignTokens.Spacing.small))
                         
                         Text(
-                            text = "选择要同步到的记账簿，未选择将使用自动同步规则",
+                            text = "选择要同步到的账本，未选择将使用自动同步规则",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                         )
@@ -138,7 +138,7 @@ fun SyncTargetSelectorDialog(
                     Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
                 }
                 
-                // 目标记账簿列表
+                // 目标账本列表
                 if (availableTargets.isEmpty()) {
                     // 无可选目标
                     Box(
@@ -164,7 +164,7 @@ fun SyncTargetSelectorDialog(
                             )
                             Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
                             Text(
-                                text = "请先在记账簿管理中设置联动关系",
+                                text = "请先在账本管理中设置联动关系",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
                             )
@@ -223,7 +223,7 @@ fun SyncTargetSelectorDialog(
                         Spacer(modifier = Modifier.width(DesignTokens.Spacing.small))
                         
                         Button(onClick = onConfirm) {
-                            Text("确认")
+                            Text("确定")
                         }
                     }
                 }
@@ -264,7 +264,7 @@ private fun SyncTargetItem(
                 .padding(DesignTokens.Spacing.medium),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 记账簿图标
+            // 账本图标
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -288,7 +288,7 @@ private fun SyncTargetItem(
             
             Spacer(modifier = Modifier.width(DesignTokens.Spacing.medium))
             
-            // 记账簿信息
+            // 账本信息
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = ledger.name,

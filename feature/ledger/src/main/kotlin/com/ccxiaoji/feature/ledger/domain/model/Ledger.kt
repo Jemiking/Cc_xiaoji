@@ -3,10 +3,10 @@ package com.ccxiaoji.feature.ledger.domain.model
 import kotlinx.datetime.Instant
 
 /**
- * 记账簿领域模型
- * 
- * 记账簿是交易记录的逻辑分组单位，用于将交易按用途进行分类管理。
- * 账户、分类等基础数据在所有记账簿间共享。
+ * 账本领域模型
+ *
+ * 账本是交易记录的逻辑分组单位，用于将交易按用途进行分类管理。
+ * 账户、分类等基础数据在所有账本间共享。
  */
 data class Ledger(
     val id: String,
@@ -22,8 +22,8 @@ data class Ledger(
     val updatedAt: Instant
 ) {
     companion object {
-        const val DEFAULT_LEDGER_NAME = "总记账簿"
-        const val DEFAULT_LEDGER_DESCRIPTION = "默认记账簿，包含所有基本记账数据"
+        const val DEFAULT_LEDGER_NAME = "总账本"
+        const val DEFAULT_LEDGER_DESCRIPTION = "默认账本，包含所有基本记账数据"
         
         // 预定义图标
         val PREDEFINED_ICONS = listOf(
@@ -40,7 +40,7 @@ data class Ledger(
 }
 
 /**
- * 记账簿与统计数据
+ * 账本与统计数据
  */
 data class LedgerWithStats(
     val ledger: Ledger,

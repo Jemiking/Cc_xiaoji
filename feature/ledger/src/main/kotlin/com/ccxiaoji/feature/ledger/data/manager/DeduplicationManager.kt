@@ -47,8 +47,13 @@ class DeduplicationManager @Inject constructor(
      * 电商订单关键词黑名单
      */
     private val ecommerceOrderKeywords = setOf(
-        "订单", "下单", "购买成功", "支付完成", "已下单", 
-        "商品", "订单确认", "购物", "发货", "物流"
+        "订单", "下单", "已下单",
+        "商品", "订单确认", "购物", "发货", "物流", "包裹", "配送", "签收"
+    )
+
+    // 强支付关键词白名单：命中则不因电商关键词而拦截
+    private val strongPaymentKeywords = setOf(
+        "支付", "付款", "扣款", "支付成功", "已支付", "收款", "已收款", "到账", "入账"
     )
     
     /**
@@ -69,15 +74,22 @@ class DeduplicationManager @Inject constructor(
                 return@withContext ProcessDecision.Skip("电商应用，忽略订单通知")
             }
             
-            // 2. 检查是否包含电商订单关键词
+            // 2. 检查是否包含电商订单关键词（强支付关键词白名单兜底）
             val content = "${event.title.orEmpty()} ${event.text.orEmpty()}".lowercase()
-            if (ecommerceOrderKeywords.any { content.contains(it) }) {
+            val hasEcommerce = ecommerceOrderKeywords.any { content.contains(it) }
+            val hasStrongPay = strongPaymentKeywords.any { content.contains(it) }
+            if (hasEcommerce && !hasStrongPay) {
                 return@withContext ProcessDecision.Skip("包含电商订单关键词")
             }
             
-            // 3. 检查群组摘要通知
+            // 3. 检查群组摘要通知（WeChat强支付关键词例外）
             if (event.isGroupSummary) {
-                return@withContext ProcessDecision.Skip("群组摘要通知，忽略")
+                val strongWeChatKeywords = setOf("红包", "转账", "收款", "已收款")
+                val allowWeChatGroup = event.packageName == "com.tencent.mm" &&
+                        strongWeChatKeywords.any { (event.title.orEmpty() + " " + event.text.orEmpty()).contains(it) }
+                if (!allowWeChatGroup) {
+                    return@withContext ProcessDecision.Skip("群组摘要通知，忽略")
+                }
             }
 
             // 4. 原始文本短窗去重（双阶段第一步）

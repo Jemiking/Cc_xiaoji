@@ -277,7 +277,7 @@ fun ScheduleNavHost(
         // UI Demo 页面
         composable(Screen.UiDemo.route) {
             android.util.Log.d("UiDemoNav", "Entering UI Demo route")
-            com.ccxiaoji.feature.schedule.presentation.demo.CalendarUiDemoScreen(
+            com.ccxiaoji.feature.schedule.presentation.demo.CalendarDemoApi.CalendarUiDemo(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -293,7 +293,7 @@ fun ScheduleNavHost(
 
         // 扁平化排班 Demo 页面
         composable(Screen.CalendarFlatDemo.route) {
-            com.ccxiaoji.feature.schedule.presentation.demo.FlatScheduleDemoScreen(
+            com.ccxiaoji.feature.schedule.presentation.demo.CalendarDemoApi.CalendarFlatDemo(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -301,14 +301,14 @@ fun ScheduleNavHost(
         // UI设计风格Demo页面
         composable(Screen.StyleDemo.route) {
             android.util.Log.d("ScheduleNavHost", "StyleDemo composable reached!")
-            com.ccxiaoji.feature.schedule.presentation.demo.StyleDemoScreen(
+            com.ccxiaoji.feature.schedule.presentation.demo.CalendarDemoApi.StyleDemo(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
 
         // 排班主页 UI 设计 Demo（A3 单页演示）
         composable(Screen.HomeRedesignA3Demo.route) {
-            com.ccxiaoji.feature.schedule.presentation.demo.HomeRedesignDemoScreen(
+            com.ccxiaoji.feature.schedule.presentation.demo.CalendarDemoApi.HomeRedesignDemo(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

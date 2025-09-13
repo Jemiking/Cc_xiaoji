@@ -8,44 +8,44 @@ import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
 /**
- * 记账簿管理用例
- * 
- * 提供记账簿的创建、编辑、删除、查询等核心业务操作
+ * 账本管理用例
+ *
+ * 提供账本的创建、编辑、删除、查询等核心业务操作
  */
 class ManageLedgerUseCase @Inject constructor(
     private val ledgerRepository: LedgerRepository
 ) {
     
     /**
-     * 获取用户的所有记账簿
+     * 获取用户的所有账本
      */
     fun getUserLedgers(userId: String): Flow<List<Ledger>> {
         return ledgerRepository.getUserLedgers(userId)
     }
     
     /**
-     * 获取用户的记账簿及统计数据
+     * 获取用户的账本及统计数据
      */
     fun getUserLedgersWithStats(userId: String): Flow<List<LedgerWithStats>> {
         return ledgerRepository.getUserLedgersWithStats(userId)
     }
     
     /**
-     * 获取用户的默认记账簿
+     * 获取用户的默认账本
      */
     suspend fun getDefaultLedger(userId: String): BaseResult<Ledger> {
         return ledgerRepository.getDefaultLedger(userId)
     }
     
     /**
-     * 根据ID获取记账簿
+     * 根据 ID 获取账本
      */
     suspend fun getLedgerById(ledgerId: String): BaseResult<Ledger> {
         return ledgerRepository.getLedgerById(ledgerId)
     }
     
     /**
-     * 创建新记账簿
+     * 创建新账本
      */
     suspend fun createLedger(
         userId: String,
@@ -54,13 +54,13 @@ class ManageLedgerUseCase @Inject constructor(
         color: String = "#3A7AFE",
         icon: String = "book"
     ): BaseResult<Ledger> {
-        // 验证记账簿名称
+        // 验证账本名称
         if (name.isBlank()) {
-            return BaseResult.Error(Exception("记账簿名称不能为空"))
+            return BaseResult.Error(Exception("账本名称不能为空"))
         }
         
         if (name.length > 50) {
-            return BaseResult.Error(Exception("记账簿名称不能超过50个字符"))
+            return BaseResult.Error(Exception("账本名称不能超过50个字符"))
         }
         
         // 验证颜色格式
@@ -74,12 +74,12 @@ class ManageLedgerUseCase @Inject constructor(
             description = description?.trim(),
             color = color,
             icon = icon,
-            isDefault = false // 新创建的记账簿不是默认的
+            isDefault = false // 新创建的账本不是默认的
         )
     }
     
     /**
-     * 更新记账簿信息
+     * 更新账本信息
      */
     suspend fun updateLedger(
         ledger: Ledger,
@@ -91,10 +91,10 @@ class ManageLedgerUseCase @Inject constructor(
         // 验证参数
         name?.let {
             if (it.isBlank()) {
-                return BaseResult.Error(Exception("记账簿名称不能为空"))
+                return BaseResult.Error(Exception("账本名称不能为空"))
             }
             if (it.length > 50) {
-                return BaseResult.Error(Exception("记账簿名称不能超过50个字符"))
+                return BaseResult.Error(Exception("账本名称不能超过50个字符"))
             }
         }
         
@@ -115,23 +115,23 @@ class ManageLedgerUseCase @Inject constructor(
     }
     
     /**
-     * 删除记账簿
+     * 删除账本
      */
     suspend fun deleteLedger(ledgerId: String, userId: String): BaseResult<Unit> {
-        // 检查是否为默认记账簿
+        // 检查是否为默认账本
         val defaultLedgerResult = ledgerRepository.getDefaultLedger(userId)
         if (defaultLedgerResult is BaseResult.Success && defaultLedgerResult.data.id == ledgerId) {
-            return BaseResult.Error(Exception("无法删除默认记账簿"))
+            return BaseResult.Error(Exception("无法删除默认账本"))
         }
         
         return ledgerRepository.deleteLedger(ledgerId)
     }
     
     /**
-     * 设置默认记账簿
+     * 设置默认账本
      */
     suspend fun setDefaultLedger(userId: String, ledgerId: String): BaseResult<Unit> {
-        // 验证记账簿是否存在
+        // 验证账本是否存在
         val ledgerResult = ledgerRepository.getLedgerById(ledgerId)
         if (ledgerResult is BaseResult.Error) {
             return ledgerResult
@@ -139,21 +139,21 @@ class ManageLedgerUseCase @Inject constructor(
         
         val ledger = (ledgerResult as BaseResult.Success).data
         if (ledger.userId != userId) {
-            return BaseResult.Error(Exception("无权限操作此记账簿"))
+            return BaseResult.Error(Exception("无权限操作此账本"))
         }
         
         return ledgerRepository.setDefaultLedger(userId, ledgerId)
     }
     
     /**
-     * 确保用户有默认记账簿
+     * 确保用户有默认账本
      */
     suspend fun ensureDefaultLedger(userId: String): BaseResult<Ledger> {
         return ledgerRepository.ensureDefaultLedger(userId)
     }
     
     /**
-     * 重新排序记账簿
+     * 重新排序账本
      */
     suspend fun reorderLedgers(ledgerOrders: List<Pair<String, Int>>): BaseResult<Unit> {
         if (ledgerOrders.isEmpty()) {

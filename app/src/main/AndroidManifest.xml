@@ -11,10 +11,11 @@
     <!-- 位置权限 -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.CAMERA" />
     
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
-    <application
+<application
         android:name=".CcXiaoJiApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -44,6 +45,16 @@
                     android:host="app"
                     android:pathPrefix="/add_transaction" />
             </intent-filter>
+            <!-- 支持应用内 DeepLink 跳转到编辑交易页：ccxiaoji://app/edit_transaction/{transactionId} -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="ccxiaoji"
+                    android:host="app"
+                    android:pathPrefix="/edit_transaction" />
+            </intent-filter>
         </activity>
         
         <!-- Widget provider for countdown -->
@@ -66,8 +77,6 @@
             <intent-filter>
                 <action android:name="com.ccxiaoji.feature.ledger.ACTION_UNDO" />
                 <action android:name="com.ccxiaoji.feature.ledger.ACTION_EDIT" />
-                <action android:name="com.ccxiaoji.feature.ledger.ACTION_MANUAL_CONFIRM" />
-                <action android:name="com.ccxiaoji.feature.ledger.ACTION_QUICK_SAVE" />
             </intent-filter>
         </receiver>
         

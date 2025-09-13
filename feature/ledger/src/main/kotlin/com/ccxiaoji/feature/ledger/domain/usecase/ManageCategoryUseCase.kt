@@ -16,6 +16,41 @@ class ManageCategoryUseCase @Inject constructor(
     private val categoryRepository: CategoryRepository
 ) {
     /**
+     * 确保系统转账分类存在（转账-转出/转账-转入）
+     * 不影响现有数据：存在则跳过，不存在则创建父分类（一级）
+     */
+    suspend fun ensureTransferCategories(userId: String) {
+        // 支出：转账-转出
+        val expenseParents = categoryRepository.getParentCategories(userId, "EXPENSE")
+        val outCat = expenseParents.find { it.name == "转账-转出" }
+        if (outCat == null) {
+            categoryRepository.createCategory(
+                name = "转账-转出",
+                type = "EXPENSE",
+                icon = "↗️",
+                color = "#607D8B",
+                parentId = null
+            )
+        } else if (!outCat.isSystem || !outCat.isHidden) {
+            categoryRepository.updateCategory(outCat.copy(isSystem = true, isHidden = true))
+        }
+
+        // 收入：转账-转入
+        val incomeParents = categoryRepository.getParentCategories(userId, "INCOME")
+        val inCat = incomeParents.find { it.name == "转账-转入" }
+        if (inCat == null) {
+            categoryRepository.createCategory(
+                name = "转账-转入",
+                type = "INCOME",
+                icon = "↙️",
+                color = "#607D8B",
+                parentId = null
+            )
+        } else if (!inCat.isSystem || !inCat.isHidden) {
+            categoryRepository.updateCategory(inCat.copy(isSystem = true, isHidden = true))
+        }
+    }
+    /**
      * 创建父分类（一级分类）
      */
     suspend fun createParentCategory(
@@ -198,6 +233,13 @@ class ManageCategoryUseCase @Inject constructor(
             println("🔧 [ManageCategoryUseCase] 默认分类创建完成")
         } else {
             println("🔧 [ManageCategoryUseCase] 用户已有分类，跳过默认分类创建")
+        }
+
+        // 无论是否已有分类，都确保转账分类存在
+        try {
+            ensureTransferCategories(userId)
+        } catch (e: Exception) {
+            println("❌ [ManageCategoryUseCase] 确保转账分类失败: ${e.message}")
         }
     }
     

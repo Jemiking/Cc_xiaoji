@@ -1,4 +1,4 @@
-package com.ccxiaoji.feature.ledger.presentation.screen.transaction
+﻿package com.ccxiaoji.feature.ledger.presentation.screen.transaction
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.verticalScroll
@@ -10,6 +10,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -34,6 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.R
@@ -55,24 +61,29 @@ import com.ccxiaoji.feature.ledger.domain.model.Account
 import com.ccxiaoji.feature.ledger.domain.model.AccountType
 import com.ccxiaoji.ui.theme.DesignTokens
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.ExperimentalFoundationApi
 import kotlinx.coroutines.Dispatchers
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddTransactionScreen(
     navController: NavController,
     transactionId: String? = null,
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: AddTransactionViewModel = hiltViewModel(),
     uiStyleViewModel: LedgerUIStyleViewModel = hiltViewModel()
 ) {
-    println("🔍 [AddTransactionScreen] 组件创建！")
+    println("[AddTransactionScreen] created")
     println("   - transactionId: '$transactionId'")
     println("   - 是否为编辑模式: ${!transactionId.isNullOrBlank()}")
     println("   - viewModel: $viewModel")
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val uiPreferences by uiStyleViewModel.uiPreferences.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
-    // 币种：优先账户币种，其次默认CNY；支持本页覆盖
+    
+    // 统一系统返回：优先回调，否则向上返回
+    BackHandler { onNavigateBack?.invoke() ?: navController.navigateUp() }
+    // 币种：优先账户币种，其次默认 CNY，支持本地覆盖
     val accountCurrency = uiState.selectedAccount?.currency
     var userCurrencyOverride by rememberSaveable { mutableStateOf(false) }
     var selectedCurrency by rememberSaveable { mutableStateOf(accountCurrency ?: "CNY") }
@@ -82,7 +93,7 @@ fun AddTransactionScreen(
         }
     }
     
-    // 硬编码的调试参数
+    // 布局微调参数
     val adjustmentParams = LayoutAdjustmentParams(
         // === 分类图标区域 ===
         categoryIconSize = 25.930233f,
@@ -94,18 +105,18 @@ fun AddTransactionScreen(
         categoryCardPadding = 4.0f,
         gridColumnCount = 6,
         
-        // === Tab切换区域 ===
+        // === Tab鍒囨崲鍖哄煙 ===
         tabRowHeight = 40.0f,
         tabRowWidth = 200.0f,
         tabCornerRadius = 8.0f,
         tabVerticalPadding = 8.0f,
         
-        // === 输入区域布局 ===
+        // === 杈撳叆鍖哄煙甯冨眬 ===
         inputAreaHeight = 315.4261f,
         inputAreaCornerRadius = 0.0f,
         inputAreaPadding = 0.0f,
         
-        // === 备注区域细节 ===
+        // === 澶囨敞鍖哄煙缁嗚妭 ===
         noteFieldTopPadding = 0.0f,
         noteFieldBottomPadding = 0.0f,
         noteFieldHorizontalPadding = 0.0f,
@@ -113,7 +124,7 @@ fun AddTransactionScreen(
         noteTextSize = 14.0f,
         noteToAmountSpacing = 0.0f,
         
-        // === 金额显示区域 ===
+        // === 閲戦鏄剧ず鍖哄煙 ===
         amountTextSize = 25.841871f,
         amountTextPadding = 15.795361f,
         accountTextSize = 15.110469f,
@@ -121,7 +132,7 @@ fun AddTransactionScreen(
         accountToNoteSpacing = 0.0f,
         amountToKeypadSpacing = 0.0f,
         
-        // === 键盘区域 ===
+        // === 閿洏鍖哄煙 ===
         keypadButtonSize = 48.0f,
         keypadButtonSpacing = 8.0f,
         keypadRowSpacing = 3.4232678f,
@@ -130,16 +141,13 @@ fun AddTransactionScreen(
         keypadBottomPadding = 16.0f,
         keypadHorizontalPadding = 10.775346f,
         
-        // === 整体布局权重 ===
+        // === 鏁翠綋甯冨眬鏉冮噸 ===
         categoryGridWeight = 1.0f
     )
 
-    // 使用真实的分类数据
+    // 使用实际的分类数据（DAO 已过滤隐藏分类）
     val currentCategories = remember(uiState.categoryGroups) {
-        // 将CategoryGroup中的父分类（一级分类）提取出来作为网格显示的分类
-        uiState.categoryGroups.map { categoryGroup ->
-            categoryGroup.parent
-        }
+        uiState.categoryGroups.map { it.parent }
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -149,7 +157,7 @@ fun AddTransactionScreen(
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // 顶部：返回键和收入/支出切换在同一行
+            // 头部：返回键与 收入/支出/转账 切换在同一行
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -158,7 +166,7 @@ fun AddTransactionScreen(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 // 左侧：返回键
-                IconButton(onClick = { navController.navigateUp() }) {
+                IconButton(onClick = { onNavigateBack?.invoke() ?: navController.navigateUp() }) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack, 
                         contentDescription = stringResource(R.string.back),
@@ -166,16 +174,17 @@ fun AddTransactionScreen(
                     )
                 }
                 
-                // 中间：收入/支出切换
+                // 中间：收支/转账 切换
                 TabRow(
                     selectedTabIndex = when (uiState.transactionType) {
                         TransactionType.EXPENSE -> 0
                         TransactionType.INCOME -> 1
                         TransactionType.TRANSFER -> 2
-                        TransactionType.ALL -> 0 // 默认显示支出Tab
+                        TransactionType.ALL -> 0 // 默认显示支出 Tab
+                        else -> 0 // 默认值
                     },
                     modifier = Modifier
-                        .width((adjustmentParams.tabRowWidth * 1.5f).dp) // 增加宽度以容纳第三个Tab
+                        .width((adjustmentParams.tabRowWidth * 1.5f).dp) // 增加宽度以容纳三个 Tab
                         .height(adjustmentParams.tabRowHeight.dp),
                     indicator = { },
                     divider = { }
@@ -224,7 +233,7 @@ fun AddTransactionScreen(
                     }
                 }
                 
-                // 右侧：空占位，保持布局平衡
+                // 右侧：占位，保持布局对齐
                 Spacer(modifier = Modifier.width(48.dp))
             }
             
@@ -253,7 +262,6 @@ fun AddTransactionScreen(
                         ) {
                             Text(
                                 text = "从账户",
-                                style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             OutlinedButton(
@@ -286,7 +294,6 @@ fun AddTransactionScreen(
                         ) {
                             Text(
                                 text = "到账户",
-                                style = MaterialTheme.typography.labelLarge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             OutlinedButton(
@@ -303,7 +310,11 @@ fun AddTransactionScreen(
                     Spacer(modifier = Modifier.weight(1f))
                 }
             } else {
-                // 支出/收入模式：显示分类网格
+                // 支出/收入模式：展示分类网格（支持卡内展开子分类）
+                var expandedParentId by rememberSaveable { mutableStateOf<String?>(null) }
+                val parentIndexMap = remember(currentCategories) {
+                    currentCategories.withIndex().associate { it.value.id to it.index }
+                }
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(adjustmentParams.gridColumnCount),
                     modifier = Modifier
@@ -313,22 +324,96 @@ fun AddTransactionScreen(
                     verticalArrangement = Arrangement.spacedBy(adjustmentParams.categoryVerticalSpacing.dp),
                     horizontalArrangement = Arrangement.spacedBy(adjustmentParams.categoryHorizontalSpacing.dp)
                 ) {
-                    items(currentCategories) { category ->
-                        ProductionCategoryCard(
-                            category = category,
-                            isSelected = uiState.selectedCategoryInfo?.categoryId == category.id,
-                            onClick = { 
-                                // 点击分类，直接选择该分类
-                                viewModel.selectCategory(category)
-                            },
-                            params = adjustmentParams,
-                            iconDisplayMode = uiPreferences.iconDisplayMode
-                        )
+                    val cols = adjustmentParams.gridColumnCount
+                    val total = currentCategories.size
+                    var i = 0
+                    while (i < total) {
+                        val end = minOf(i + cols - 1, total - 1)
+                        // 一行内的父分类卡片
+                        for (j in i..end) {
+                            val category = currentCategories[j]
+                            item {
+                                val group = uiState.categoryGroups.firstOrNull { it.parent.id == category.id }
+                                val hasChildren = group?.children?.isNotEmpty() == true
+                                val isSelected = uiState.selectedCategoryInfo?.let { sel ->
+                                    sel.categoryId == category.id || sel.parentId == category.id
+                                } ?: false
+                                ProductionCategoryCard(
+                                    category = category,
+                                    isSelected = isSelected,
+                                    onClick = {
+                                        if (hasChildren) {
+                                            // 规则：
+                                            // 1) 若当前选中不属于该父分类，则切换选中到父分类
+                                            // 2) 然后切换展开/收起
+                                            val belongsToParent = uiState.selectedCategoryInfo?.let { sel ->
+                                                sel.categoryId == category.id || sel.parentId == category.id
+                                            } ?: false
+                                            if (!belongsToParent) {
+                                                viewModel.selectCategory(category)
+                                            }
+                                            expandedParentId = if (expandedParentId == category.id) null else category.id
+                                        } else {
+                                            // 鏃犲瓙鍒嗙被锛氱洿鎺ラ€変腑骞舵敹璧蜂换浣曞睍寮€
+                                            expandedParentId = null
+                                            viewModel.selectCategory(category)
+                                        }
+                                    },
+                                    params = adjustmentParams,
+                                    iconDisplayMode = uiPreferences.iconDisplayMode
+                                )
+                            }
+                        }
+                        // 鑻ュ綋鍓嶈鍖呭惈灞曞紑鐨勭埗鍒嗙被锛屽垯鍦ㄨ琛屼笅鏂规彃鍏ヤ竴涓法鍒楃殑瀛愬垎绫绘
+                        val rowContainsExpanded = expandedParentId?.let { pid ->
+                            val idx = parentIndexMap[pid]
+                            idx != null && idx in i..end
+                        } ?: false
+                        if (rowContainsExpanded) {
+                            item(span = { GridItemSpan(cols) }) {
+                                val bringIntoViewRequester = remember { BringIntoViewRequester() }
+                                val children = uiState.categoryGroups.firstOrNull { it.parent.id == expandedParentId }?.children ?: emptyList()
+                                Card(
+                                    shape = RoundedCornerShape(8.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 8.dp)
+                                        .bringIntoViewRequester(bringIntoViewRequester)
+                                ) {
+                                    // 全宽子分类网格（自动换行，无横向滚动）
+                                    FlowRow(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        children.forEach { child ->
+                                            CategoryChip(
+                                                category = child,
+                                                isSelected = uiState.selectedCategoryInfo?.categoryId == child.id,
+                                                onClick = {
+                                                    // 选中子分类，但不收起卡片，便于查看高频状态
+                                                    viewModel.selectCategory(child)
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
+                                // 展开时自动滚动，确保卡片完全可见
+                                LaunchedEffect(expandedParentId) {
+                                    bringIntoViewRequester.bringIntoView()
+                                }
+                            }
+                        }
+                        i = end + 1
                     }
                 }
             }
             
-            // 底部：输入区域（方案B：上方可滚动 + 底部固定键盘）
+            // 底部：输入区域（方案 B：上部可滚动 + 底部固定键盘）
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -356,7 +441,7 @@ fun AddTransactionScreen(
                         OutlinedTextField(
                             value = uiState.note,
                             onValueChange = viewModel::updateNote,
-                            placeholder = { Text("点此输入备注...", fontSize = adjustmentParams.noteTextSize.sp) },
+                            placeholder = { Text("在此输入备注...", fontSize = adjustmentParams.noteTextSize.sp) },
                             modifier = Modifier.weight(1f).height(56.dp),
                             textStyle = MaterialTheme.typography.bodyMedium.copy(fontSize = adjustmentParams.noteTextSize.sp),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -380,7 +465,7 @@ fun AddTransactionScreen(
                                 horizontalArrangement = Arrangement.spacedBy(2.dp)
                             ) {
                                 Text(text = selectedCurrency, style = MaterialTheme.typography.titleSmall)
-                                Icon(Icons.Default.UnfoldMore, contentDescription = "选择币种", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Icon(Icons.Default.UnfoldMore, contentDescription = "閫夋嫨甯佺", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             DropdownMenu(expanded = currencyMenu, onDismissRequest = { currencyMenu = false }) {
                                 val common = listOf("CNY","USD","EUR","JPY","GBP","HKD","AUD","CAD","SGD","TWD","KRW")
@@ -394,7 +479,7 @@ fun AddTransactionScreen(
                             }
                         }
                     }
-                    // 第二行：左 记账簿图标 + 功能图标；右 账户文字按钮
+                    // 绗簩琛岋細宸?璁拌处绨垮浘鏍?+ 鍔熻兘鍥炬爣锛涘彸 璐︽埛鏂囧瓧鎸夐挳
                     Spacer(Modifier.height(0.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -402,13 +487,12 @@ fun AddTransactionScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(onClick = { viewModel.showLedgerSelector() }) { Icon(Icons.Default.MenuBook, contentDescription = "选择记账簿") }
-                            IconButton(onClick = { viewModel.showDateTimePicker() }) { Icon(Icons.Default.DateRange, contentDescription = "选择日期") }
-                            IconButton(onClick = { scope.launch { snackbarHostState.showSnackbar("报销功能开发中") } }) { Icon(Icons.Default.Receipt, contentDescription = "报销") }
-                            IconButton(onClick = { scope.launch { snackbarHostState.showSnackbar("图片功能开发中") } }) { Icon(Icons.Default.Image, contentDescription = "图片") }
-                            IconButton(onClick = { scope.launch { snackbarHostState.showSnackbar("标记功能开发中") } }) { Icon(Icons.Default.Label, contentDescription = "标记") }
+                            IconButton(onClick = { viewModel.showLedgerSelector() }) { Icon(Icons.Default.MenuBook, contentDescription = "choose ledger") }
+                            IconButton(onClick = { viewModel.showDateTimePicker() }) { Icon(Icons.Default.DateRange, contentDescription = "choose date") }
+                            IconButton(onClick = { scope.launch { snackbarHostState.showSnackbar("reimburse WIP") } }) { Icon(Icons.Default.Receipt, contentDescription = "reimburse") }
+                            IconButton(onClick = { scope.launch { snackbarHostState.showSnackbar("image WIP") } }) { Icon(Icons.Default.Image, contentDescription = "image") }
                         }
-                        // 账户选择（轻量下拉菜单）
+                        // 璐︽埛閫夋嫨锛堣交閲忎笅鎷夎彍鍗曪級
                         Box {
                             var accountMenu by remember { mutableStateOf(false) }
                             TextButton(onClick = { accountMenu = true }) {
@@ -473,19 +557,12 @@ fun AddTransactionScreen(
                         onMinusClick = { /* TODO: 减法功能 */ },
                         onAgainClick = { /* TODO: 再记功能 */ },
                         onSaveClick = {
-                            println("🎯 [UI] 用户点击保存按钮")
+                            println("[UI] 用户点击保存按钮")
                             scope.launch {
-                                println("🚀 [UI] 开始调用viewModel.saveTransaction")
+                                println("[UI] 开始调用 viewModel.saveTransaction")
                                 viewModel.saveTransaction {
-                                    println("✅ [UI] saveTransaction成功回调，准备导航")
-                                    // 确保导航操作在主线程中执行
-                                    scope.launch(Dispatchers.Main) {
-                                        println("📍 [UI] 在主线程中执行导航")
-                                        navController.navigate("ledger") {
-                                            popUpTo("ledger") { inclusive = false }
-                                        }
-                                        println("📍 [UI] 导航到ledger页面完成")
-                                    }
+                                    println("[UI] saveTransaction 成功")
+                                    // 在此处执行保存成功后的操作（如导航）
                                 }
                             }
                         },
@@ -515,7 +592,7 @@ fun AddTransactionScreen(
             title = if (uiState.isIncome) "选择收入分类" else "选择支出分类"
         )
         
-        // 记账簿选择器对话框
+        // 璁拌处绨块€夋嫨鍣ㄥ璇濇
         LedgerSelectorDialog(
             isVisible = uiState.showLedgerSelector,
             ledgers = uiState.ledgers,
@@ -524,7 +601,7 @@ fun AddTransactionScreen(
             onDismiss = viewModel::hideLedgerSelector
         )
         
-        // 同步目标选择器对话框
+        // 鍚屾鐩爣閫夋嫨鍣ㄥ璇濇
         SyncTargetSelectorDialog(
             isVisible = uiState.showLinkTargetSelector,
             availableTargets = uiState.availableLinkTargets,
@@ -570,7 +647,7 @@ fun AddTransactionScreen(
                 onDateSelected = viewModel::updateDate,
                 onTimeSelected = viewModel::updateTime,
                 onDismiss = viewModel::hideDateTimePicker,
-                enableTimeSelection = uiState.enableTimeRecording  // 传递设置状态
+                enableTimeSelection = uiState.enableTimeRecording  // 传入设置状态
             )
         }
     }
@@ -707,7 +784,7 @@ data class LayoutAdjustmentParams(
     val categoryCardPadding: Float = 4.0f,
     val gridColumnCount: Int = 6,
     
-    // === Tab切换区域 ===
+    // === Tab 切换区域 ===
     val tabRowHeight: Float = 40.0f,
     val tabRowWidth: Float = 200.0f,
     val tabCornerRadius: Float = 8.0f,
@@ -718,7 +795,7 @@ data class LayoutAdjustmentParams(
     val inputAreaCornerRadius: Float = 0.0f,
     val inputAreaPadding: Float = 0.0f,
     
-    // === 备注区域细节 ===
+    // === 备注区域节点 ===
     val noteFieldTopPadding: Float = 0.0f,
     val noteFieldBottomPadding: Float = 0.0f,
     val noteFieldHorizontalPadding: Float = 0.0f,
@@ -825,7 +902,7 @@ private fun ProductionNumberKeypad(
     Column(
         verticalArrangement = Arrangement.spacedBy(params.keypadRowSpacing.dp)
     ) {
-        // 第一行：1 2 3
+        // 第一行：1 2 3 删除
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(params.keypadButtonSpacing.dp)
@@ -844,7 +921,7 @@ private fun ProductionNumberKeypad(
             ProductionKeypadButton("4", Modifier.weight(1f), params) { onNumberClick("4") }
             ProductionKeypadButton("5", Modifier.weight(1f), params) { onNumberClick("5") }
             ProductionKeypadButton("6", Modifier.weight(1f), params) { onNumberClick("6") }
-            ProductionKeypadButton("−", Modifier.weight(1f), params) { onMinusClick() }
+            ProductionKeypadButton("-", Modifier.weight(1f), params) { onMinusClick() }
         }
         
         // 第三行：7 8 9 +
@@ -934,7 +1011,7 @@ private fun SimpleDateTimePickerDialog(
     onDismiss: () -> Unit,
     enableTimeSelection: Boolean = false  // 新增参数：控制是否显示时间选择
 ) {
-    // 只有2种模式：月历、下拉框
+    // 仅有 2 种模式：月历 / 下拉框
     var pickerMode by remember { mutableStateOf(DatePickerMode.CALENDAR) }
     var showTimePicker by remember { mutableStateOf(false) }
     
@@ -954,7 +1031,7 @@ private fun SimpleDateTimePickerDialog(
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // 模式切换器（只有2个选项）
+                // 妯″紡鍒囨崲鍣紙鍙湁2涓€夐」锛?
                 Surface(
                     shape = RoundedCornerShape(DesignTokens.BorderRadius.medium),
                     color = MaterialTheme.colorScheme.secondaryContainer,
@@ -965,13 +1042,13 @@ private fun SimpleDateTimePickerDialog(
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         DatePickerModeTab(
-                            text = "月历",
+                            text = "鏈堝巻",
                             isSelected = pickerMode == DatePickerMode.CALENDAR,
                             onClick = { pickerMode = DatePickerMode.CALENDAR },
                             modifier = Modifier.weight(1f)
                         )
                         DatePickerModeTab(
-                            text = "下拉框",
+                            text = "下拉",
                             isSelected = pickerMode == DatePickerMode.DROPDOWN,
                             onClick = { pickerMode = DatePickerMode.DROPDOWN },
                             modifier = Modifier.weight(1f)
@@ -979,7 +1056,7 @@ private fun SimpleDateTimePickerDialog(
                     }
                 }
                 
-                // 日期选择区域
+                // 鏃ユ湡閫夋嫨鍖哄煙
                 when (pickerMode) {
                     DatePickerMode.CALENDAR -> {
                         CalendarModeContent(
@@ -993,10 +1070,10 @@ private fun SimpleDateTimePickerDialog(
                             onDateSelected = onDateSelected
                         )
                     }
-                    else -> {}  // 不再支持其他模式
+                    else -> {}  // 涓嶅啀鏀寔鍏朵粬妯″紡
                 }
                 
-                // 条件显示时间选择区域
+                // 鏉′欢鏄剧ず鏃堕棿閫夋嫨鍖哄煙
                 if (enableTimeSelection) {
                     TimeSelector(
                         selectedTime = selectedTime,
@@ -1022,7 +1099,7 @@ private fun SimpleDateTimePickerDialog(
         }
     )
     
-    // 时间选择器对话框（只在开启时间记录时显示）
+    // 鏃堕棿閫夋嫨鍣ㄥ璇濇锛堝彧鍦ㄥ紑鍚椂闂磋褰曟椂鏄剧ず锛?
     if (showTimePicker && enableTimeSelection) {
         EnhancedTimePickerDialog(
             selectedTime = selectedTime,
@@ -1035,7 +1112,7 @@ private fun SimpleDateTimePickerDialog(
     }
 }
 
-// 选择器模式枚举（只保留2种模式）
+// 閫夋嫨鍣ㄦā寮忔灇涓撅紙鍙繚鐣?绉嶆ā寮忥級
 private enum class DatePickerMode {
     CALENDAR, DROPDOWN
 }
@@ -1071,7 +1148,7 @@ private fun DatePickerModeTab(
     }
 }
 
-// 月历模式内容：集成快捷选择和日历网格
+// 鏈堝巻妯″紡鍐呭锛氶泦鎴愬揩鎹烽€夋嫨鍜屾棩鍘嗙綉鏍?
 @Composable
 private fun CalendarModeContent(
     selectedDate: LocalDate,
@@ -1096,7 +1173,7 @@ private fun CalendarModeContent(
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 快捷选择按钮组（直接嵌入）
+        // 蹇嵎閫夋嫨鎸夐挳缁勶紙鐩存帴宓屽叆锛?
         Text(
             text = "快捷选择",
             style = MaterialTheme.typography.labelMedium,
@@ -1149,8 +1226,8 @@ private fun CalendarModeContent(
                 ) {
                     IconButton(onClick = { currentYearMonth = currentYearMonth.minusMonths(1) }) {
                         Icon(
-                            Icons.Default.ChevronLeft,
-                            contentDescription = "上个月",
+                            imageVector = Icons.Default.ChevronLeft,
+                            contentDescription = "prev month",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -1162,8 +1239,8 @@ private fun CalendarModeContent(
                     )
                     IconButton(onClick = { currentYearMonth = currentYearMonth.plusMonths(1) }) {
                         Icon(
-                            Icons.Default.ChevronRight,
-                            contentDescription = "下个月",
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = "next month",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -1196,12 +1273,12 @@ private fun DropdownDateSelector(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = "下拉框选择",
+            text = "下拉选择",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
-        // 美化的下拉框容器
+        // 下拉选择容器
         Surface(
             shape = RoundedCornerShape(DesignTokens.BorderRadius.medium),
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
@@ -1211,7 +1288,7 @@ private fun DropdownDateSelector(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.padding(16.dp)
             ) {
-                // 年份下拉框 - 改进版
+                // 年份下拉框
                 Box(modifier = Modifier.weight(1f)) {
                     Surface(
                         onClick = { showYearMenu = true },
@@ -1245,11 +1322,13 @@ private fun DropdownDateSelector(
                         onDismissRequest = { showYearMenu = false },
                         modifier = Modifier.heightIn(max = 300.dp)
                     ) {
-                        for (year in (selectedDate.year - 10)..(selectedDate.year + 10)) {
+                        val startYear = selectedDate.year - 50
+                        val endYear = selectedDate.year + 50
+                        for (year in startYear..endYear) {
                             DropdownMenuItem(
-                                text = { 
+                                text = {
                                     Text(
-                                        "${year}年",
+                                        text = "${year}年",
                                         fontWeight = if (year == selectedDate.year) FontWeight.Bold else FontWeight.Normal,
                                         color = if (year == selectedDate.year) DesignTokens.BrandColors.Ledger else MaterialTheme.colorScheme.onSurface
                                     )
@@ -1270,7 +1349,7 @@ private fun DropdownDateSelector(
                     }
                 }
                 
-                // 月份下拉框 - 改进版
+                // 月份下拉框
                 Box(modifier = Modifier.weight(1f)) {
                     Surface(
                         onClick = { showMonthMenu = true },
@@ -1286,7 +1365,6 @@ private fun DropdownDateSelector(
                         ) {
                             Text(
                                 text = "${selectedDate.monthNumber}月",
-                                style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -1306,10 +1384,9 @@ private fun DropdownDateSelector(
                     ) {
                         for (month in 1..12) {
                             DropdownMenuItem(
-                                text = { 
+                                text = {
                                     Text(
-                                        "${month}月",
-                                        fontWeight = if (month == selectedDate.monthNumber) FontWeight.Bold else FontWeight.Normal,
+                                        text = "${month}月",
                                         color = if (month == selectedDate.monthNumber) DesignTokens.BrandColors.Ledger else MaterialTheme.colorScheme.onSurface
                                     )
                                 },
@@ -1329,7 +1406,7 @@ private fun DropdownDateSelector(
                     }
                 }
                 
-                // 日期下拉框 - 改进版
+                // 日期下拉框
                 Box(modifier = Modifier.weight(1f)) {
                     Surface(
                         onClick = { showDayMenu = true },
@@ -1345,7 +1422,6 @@ private fun DropdownDateSelector(
                         ) {
                             Text(
                                 text = "${selectedDate.dayOfMonth}日",
-                                style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
@@ -1367,10 +1443,9 @@ private fun DropdownDateSelector(
                         val daysInMonth = tempDate.plus(1, DateTimeUnit.MONTH).minus(1, DateTimeUnit.DAY).dayOfMonth
                         for (day in 1..daysInMonth) {
                             DropdownMenuItem(
-                                text = { 
+                                text = {
                                     Text(
-                                        "${day}日",
-                                        fontWeight = if (day == selectedDate.dayOfMonth) FontWeight.Bold else FontWeight.Normal,
+                                        text = "${day}日",
                                         color = if (day == selectedDate.dayOfMonth) DesignTokens.BrandColors.Ledger else MaterialTheme.colorScheme.onSurface
                                     )
                                 },
@@ -1396,7 +1471,7 @@ private fun TimeSelector(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "时间选择",
+            text = "鏃堕棿閫夋嫨",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -1418,12 +1493,12 @@ private fun TimeSelector(
                 ) {
                     Icon(
                         Icons.Default.AccessTime,
-                        contentDescription = "时间",
+                        contentDescription = "鏃堕棿",
                         tint = DesignTokens.BrandColors.Ledger
                     )
                     Column {
                         Text(
-                            text = "点击设置时间",
+                            text = "鐐瑰嚮璁剧疆鏃堕棿",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -1436,7 +1511,7 @@ private fun TimeSelector(
                 }
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "设置",
+                    contentDescription = "璁剧疆",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -1444,7 +1519,7 @@ private fun TimeSelector(
     }
 }
 
-// 紧凑版日历网格
+// 绱у噾鐗堟棩鍘嗙綉鏍?
 @Composable
 private fun CompactCalendarGrid(
     yearMonth: java.time.YearMonth,
@@ -1465,22 +1540,22 @@ private fun CompactCalendarGrid(
     }
     
     Column {
-        // 星期标题
+        // 鏄熸湡鏍囬
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(vertical = 4.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            val weekDays = listOf("一", "二", "三", "四", "五", "六", "日")
-            weekDays.forEach { day ->
+            val weekDays = listOf("周一", "周二", "周三", "周四", "周五", "周六", "周日")
+            weekDays.forEachIndexed { idx, day ->
                 Text(
                     text = day,
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    color = if (day in listOf("六", "日")) {
+                    color = if (idx >= 5) {
                         DesignTokens.BrandColors.Warning
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
@@ -1556,7 +1631,7 @@ private fun CompactCalendarDateCell(
 private fun SelectedDateTimePreview(
     selectedDate: LocalDate,
     selectedTime: LocalTime,
-    showTime: Boolean = true  // 新增参数：控制是否显示时间
+    showTime: Boolean = true // 仅在开启时间记录时显示时间
 ) {
     Card(
         colors = CardDefaults.cardColors(
@@ -1594,7 +1669,7 @@ private fun SelectedDateTimePreview(
                     )
                 }
                 
-                // 只在开启时间记录时显示时间
+                // 仅在开启时间记录时显示时间
                 if (showTime) {
                     Text(
                         text = formatTime(selectedTime),
@@ -1609,7 +1684,7 @@ private fun SelectedDateTimePreview(
 }
 
 
-// 增强型时间选择器对话框
+// 澧炲己鍨嬫椂闂撮€夋嫨鍣ㄥ璇濇
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun EnhancedTimePickerDialog(
@@ -1753,7 +1828,7 @@ private fun getDateDescription(date: LocalDate): String {
         date == today.plus(1, DateTimeUnit.DAY) -> "明天"
         date == today.plus(2, DateTimeUnit.DAY) -> "后天"
         else -> {
-            val dayOfWeek = when (date.dayOfWeek) {
+            when (date.dayOfWeek) {
                 DayOfWeek.MONDAY -> "周一"
                 DayOfWeek.TUESDAY -> "周二"
                 DayOfWeek.WEDNESDAY -> "周三"
@@ -1762,7 +1837,6 @@ private fun getDateDescription(date: LocalDate): String {
                 DayOfWeek.SATURDAY -> "周六"
                 DayOfWeek.SUNDAY -> "周日"
             }
-            dayOfWeek
         }
     }
 }

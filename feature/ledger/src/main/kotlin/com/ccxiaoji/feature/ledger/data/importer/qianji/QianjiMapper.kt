@@ -123,7 +123,7 @@ class QianjiMapper @Inject constructor(
                 amountCents = amountCents,
                 categoryId = categoryId,
                 note = note,
-                ledgerId = "default", // 默认记账簿
+                ledgerId = "default", // 默认账本
                 createdAt = timestamp,
                 updatedAt = timestamp,
                 transactionDate = timestamp,
