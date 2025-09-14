@@ -19,8 +19,6 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LedgerViewModel @Inject constructor(
-    private val getTransactionsUseCase: GetTransactionsUseCase,
-    private val getPaginatedTransactionsUseCase: GetPaginatedTransactionsUseCase,
     private val addTransactionUseCase: AddTransactionUseCase,
     private val updateTransactionUseCase: UpdateTransactionUseCase,
     private val deleteTransactionUseCase: DeleteTransactionUseCase,
@@ -35,30 +33,24 @@ class LedgerViewModel @Inject constructor(
     private val userApi: UserApi,
     private val defaultLedgerInitService: DefaultLedgerInitializationService
 ) : ViewModel() {
+    private val enableReactiveLedgerHome = true
     private val _uiState = MutableStateFlow(LedgerUiState())
     val uiState = _uiState.asStateFlow()
     private val _selectedMonth = MutableStateFlow(YearMonth.now())
     val selectedMonth = _selectedMonth.asStateFlow()
-    private var currentPage = 0
-    private val pageSize = 10000  // 设置足够大的数值，一次获取所有交易
-    private var hasMoreData = true
-    private var isLoadingMore = false
     
     init {
         loadAccounts()
         loadCategories()
         loadLedgers()
-        loadTransactions()
-        loadMonthlySummary()
+        subscribeReactiveTransactions()
     }
     
     
     
     fun selectMonth(yearMonth: YearMonth) {
         _selectedMonth.value = yearMonth
-        currentPage = 0  // 总是从第0页开始，一次加载所有数据
-        loadTransactions()
-        loadMonthlySummary()
+        // reactive 订阅会自动更新列表与统计
     }
     
     private fun getMonthDateRange(month: YearMonth): Pair<Long, Long> {
@@ -70,64 +62,7 @@ class LedgerViewModel @Inject constructor(
         return start to end
     }
     
-    private fun loadTransactions() {
-        viewModelScope.launch {
-            currentPage = 0
-            _uiState.update { it.copy(isLoading = true) }
-            val (start, end) = getMonthDateRange(_selectedMonth.value)
-            val accountIdForQuery = _uiState.value.selectedAccountId?.let { id ->
-                if (id.startsWith("default_account_")) null else id
-            }
-            val ledgerIdForQuery = _uiState.value.selectedLedgerId
-            val transactionFlow = if (ledgerIdForQuery != null) {
-                transactionRepository.getTransactionsPaginatedByLedger(
-                    ledgerId = ledgerIdForQuery,
-                    offset = currentPage * pageSize,
-                    limit = pageSize,
-                    accountId = accountIdForQuery,
-                    startDate = start,
-                    endDate = end
-                ).map { result ->
-                    when (result) {
-                        is BaseResult.Success -> {
-                            val (transactions, totalCount) = result.data
-                            BaseResult.Success(
-                                GetPaginatedTransactionsUseCase.PaginatedResult(
-                                    transactions = transactions,
-                                    hasMore = (currentPage + 1) * pageSize < totalCount,
-                                    totalCount = totalCount
-                                )
-                            )
-                        }
-                        is BaseResult.Error -> BaseResult.Error(result.exception)
-                    }
-                }
-            } else {
-                getPaginatedTransactionsUseCase(currentPage, pageSize, accountIdForQuery, start, end)
-            }
-            transactionFlow.collect { result -> handleTransactionResult(result) }
-        }
-    }
-    
-    private fun handleTransactionResult(result: BaseResult<GetPaginatedTransactionsUseCase.PaginatedResult>) {
-        when (result) {
-            is BaseResult.Success -> {
-                val data = result.data
-                _uiState.update {
-                    it.copy(
-                        transactions = data.transactions,  // 直接设置所有交易
-                        isLoading = false,
-                        isLoadingMore = false,
-                        hasMoreData = false  // 一次加载所有，不需要更多
-                    )
-                }
-                cacheManager.updateRecentTransactionsCache(data.transactions)
-            }
-            is BaseResult.Error -> {
-                _uiState.update { it.copy(isLoading = false, isLoadingMore = false) }
-            }
-        }
-    }
+    // 旧的分页拉取逻辑已废弃：由 subscribeReactiveTransactions 统一管理
     
     fun addTransaction(
         amountCents: Int, categoryId: String, note: String?, 
@@ -148,8 +83,7 @@ class LedgerViewModel @Inject constructor(
                 ledgerId = currentLedgerId  // 传递当前账本 ID
             )
             checkBudget(categoryId, onBudgetAlert)
-            loadMonthlySummary()
-            loadTransactions()  // 刷新交易列表
+            // reactive 模式：列表与统计会自动更新
         }
     }
     
@@ -182,8 +116,7 @@ class LedgerViewModel @Inject constructor(
                 accountId = transaction.accountId,
                 ledgerId = currentLedgerId  // 传递当前记账簿ID
             )
-            loadTransactions()
-            loadMonthlySummary()
+            // reactive 模式：自动更新
             
         }
     }
@@ -233,9 +166,7 @@ class LedgerViewModel @Inject constructor(
             }
             _uiState.update { it.copy(accounts = accounts, selectedAccountId = selectedAccountId) }
             cacheManager.updateAccountsCache(accounts)
-            if (previousSelectedId != selectedAccountId) {
-                loadTransactions()
-            }
+            // reactive 模式：账户切换由订阅自动更新
         }
     }
     
@@ -317,15 +248,50 @@ class LedgerViewModel @Inject constructor(
                 // 保存用户的账本选择到偏好设置
                 ledgerUIPreferencesRepository.updateSelectedLedgerId(ledgerId)
                 
-                // 重新加载基于账本的数据
-                loadTransactions()
-                loadMonthlySummary()
+                // reactive 模式：订阅自动更新
             } else {
                 
             }
         } catch (e: Exception) {
             
         }
+    }
+
+    private fun subscribeReactiveTransactions() = launch {
+        // 由 选中账本 + 选中月份（起止毫秒）+ 可选账户 组合决定订阅范围
+        combine(
+            uiState.map { it.selectedLedgerId }.filterNotNull().distinctUntilChanged(),
+            selectedMonth,
+            uiState.map { it.selectedAccountId }.distinctUntilChanged()
+        ) { ledgerId, ym, accId -> Triple(ledgerId, ym, accId) }
+            .flatMapLatest { (ledgerId, ym, accId) ->
+                val (start, end) = getMonthDateRange(ym)
+                val accountIdForQuery = accId?.let { id -> if (id.startsWith("default_account_")) null else id }
+                val txFlow = transactionRepository.getTransactionsByLedgerFlow(
+                    ledgerId = ledgerId,
+                    startMillis = start,
+                    endMillis = end,
+                    accountId = accountIdForQuery
+                )
+                val statsFlow = transactionRepository.getMonthlyIncomesAndExpensesByLedgerFlow(
+                    ledgerId = ledgerId,
+                    startMillis = start,
+                    endMillis = end
+                )
+                combine(txFlow, statsFlow) { txs, stats ->
+                    Triple(txs, stats.first, stats.second)
+                }
+            }
+            .collect { (txs, income, expense) ->
+                _uiState.update {
+                    it.copy(
+                        transactions = txs,
+                        monthlyIncome = income / 100.0,
+                        monthlyExpense = expense / 100.0,
+                        isLoading = false
+                    )
+                }
+            }
     }
     
     /**
@@ -346,12 +312,11 @@ class LedgerViewModel @Inject constructor(
     
     fun selectAccount(accountId: String?) {
         _uiState.update { it.copy(selectedAccountId = accountId) }
-        loadTransactions()  // 重新加载所有交易
+        // reactive 模式：订阅会根据账户筛选自动更新
     }
     
     fun refreshTransactions() {
-        loadTransactions()  // 刷新所有交易
-        loadMonthlySummary()
+        // reactive 模式下无需手动刷新（保留占位，兼容旧调用）
     }
     
     private fun launch(block: suspend () -> Unit) = viewModelScope.launch { block() }
@@ -378,7 +343,5 @@ data class LedgerUiState(
     val isLedgerLoading: Boolean = false,
     
     // 加载状态
-    val isLoading: Boolean = false,
-    val isLoadingMore: Boolean = false,
-    val hasMoreData: Boolean = true
+    val isLoading: Boolean = false
 )

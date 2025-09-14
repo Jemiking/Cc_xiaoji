@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.activity.compose.BackHandler
 import com.ccxiaoji.feature.ledger.R
 import com.ccxiaoji.feature.ledger.domain.model.Card
 import com.ccxiaoji.feature.ledger.domain.model.CardType
@@ -33,7 +34,8 @@ import java.io.File
 
 @Composable
 fun CardManagementScreen(
-    navController: NavHostController
+    navController: NavHostController,
+    onNavigateBack: (() -> Unit)? = null
 ) {
     val viewModel: CardViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsState()
@@ -41,12 +43,15 @@ fun CardManagementScreen(
 
     // 从弹窗编辑改为完整页面导航
 
+    // 系统返回
+    BackHandler { onNavigateBack?.invoke() ?: navController.popBackStack() }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(text = "卡片管理", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "返回")
                     }
                 }

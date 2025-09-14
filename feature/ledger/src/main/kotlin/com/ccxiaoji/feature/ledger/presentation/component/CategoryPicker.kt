@@ -193,11 +193,9 @@ private fun CategoryGroupPickerItem(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable { 
-                        if (categoryGroup.children.isEmpty()) {
-                            // 如果没有子分类，直接选择父分类
-                            onCategorySelected(categoryGroup.parent)
-                        } else {
-                            // 有子分类则展开/折叠
+                        // 点击父类：选中父类；若有子类，同时切换展开/收起
+                        onCategorySelected(categoryGroup.parent)
+                        if (categoryGroup.children.isNotEmpty()) {
                             isExpanded = !isExpanded
                         }
                     }
@@ -253,8 +251,8 @@ private fun CategoryGroupPickerItem(
                     }
                 }
                 
-                // 选中标记（仅在没有子分类时显示）
-                if (categoryGroup.children.isEmpty() && categoryGroup.parent.id == selectedCategoryId) {
+                // 父分类选中标记（无论是否有子分类）
+                if (categoryGroup.parent.id == selectedCategoryId) {
                     Spacer(modifier = Modifier.weight(1f))
                     Icon(
                         Icons.Default.Check,

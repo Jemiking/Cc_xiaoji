@@ -336,25 +336,24 @@ fun AddTransactionScreen(
                                 val group = uiState.categoryGroups.firstOrNull { it.parent.id == category.id }
                                 val hasChildren = group?.children?.isNotEmpty() == true
                                 val isSelected = uiState.selectedCategoryInfo?.let { sel ->
-                                    sel.categoryId == category.id || sel.parentId == category.id
+                                    // 仅当真正选中了父分类本身时，高亮父分类
+                                    sel.categoryId == category.id
                                 } ?: false
                                 ProductionCategoryCard(
                                     category = category,
                                     isSelected = isSelected,
                                     onClick = {
                                         if (hasChildren) {
-                                            // 规则：
-                                            // 1) 若当前选中不属于该父分类，则切换选中到父分类
-                                            // 2) 然后切换展开/收起
-                                            val belongsToParent = uiState.selectedCategoryInfo?.let { sel ->
-                                                sel.categoryId == category.id || sel.parentId == category.id
-                                            } ?: false
-                                            if (!belongsToParent) {
+                                            if (expandedParentId == category.id) {
+                                                // 已展开：仅切换为收起，不改变当前选中（可能是父或子）
+                                                expandedParentId = null
+                                            } else {
+                                                // 未展开：选中父分类并展开
                                                 viewModel.selectCategory(category)
+                                                expandedParentId = category.id
                                             }
-                                            expandedParentId = if (expandedParentId == category.id) null else category.id
                                         } else {
-                                            // 鏃犲瓙鍒嗙被锛氱洿鎺ラ€変腑骞舵敹璧蜂换浣曞睍寮€
+                                            // 无子类：直接选择父分类
                                             expandedParentId = null
                                             viewModel.selectCategory(category)
                                         }
@@ -529,6 +528,22 @@ fun AddTransactionScreen(
                             bottom = 10.dp
                         )
                 ) {
+                    // 计算保存禁用提示文案
+                    val disabledHint: String? = if (!uiState.canSave) {
+                        when {
+                            uiState.amountError != null -> uiState.amountError
+                            uiState.amountText.isBlank() -> "请输入有效金额"
+                            uiState.amountText.toDoubleOrNull()?.let { it <= 0 } == true -> "金额必须大于0"
+                            uiState.selectedLedger == null -> "请选择账本"
+                            uiState.transactionType == TransactionType.TRANSFER && uiState.fromAccount == null -> "请选择转出账户"
+                            uiState.transactionType == TransactionType.TRANSFER && uiState.toAccount == null -> "请选择转入账户"
+                            uiState.transactionType == TransactionType.TRANSFER && uiState.fromAccount == uiState.toAccount -> "转出和转入账户不能相同"
+                            uiState.transactionType != TransactionType.TRANSFER && uiState.selectedAccount == null -> "请选择账户"
+                            uiState.transactionType != TransactionType.TRANSFER && uiState.selectedCategoryInfo == null -> "请选择分类"
+                            else -> null
+                        }
+                    } else null
+
                     ProductionNumberKeypad(
                         onNumberClick = { number ->
                             val currentAmount = uiState.amountText
@@ -561,11 +576,16 @@ fun AddTransactionScreen(
                             scope.launch {
                                 println("[UI] 开始调用 viewModel.saveTransaction")
                                 viewModel.saveTransaction {
-                                    println("[UI] saveTransaction 成功")
-                                    // 在此处执行保存成功后的操作（如导航）
+                                    println("[UI] saveTransaction 成功，准备返回上一页")
+                                    // onSuccess 可能在 IO 线程回调；切回主线程执行导航
+                                    scope.launch {
+                                        onNavigateBack?.invoke() ?: navController.navigateUp()
+                                    }
                                 }
                             }
                         },
+                        saveEnabled = uiState.canSave,
+                        disabledHint = disabledHint,
                         params = adjustmentParams
                     )
                 }
@@ -897,6 +917,8 @@ private fun ProductionNumberKeypad(
     onMinusClick: () -> Unit,
     onAgainClick: () -> Unit,
     onSaveClick: () -> Unit,
+    saveEnabled: Boolean,
+    disabledHint: String?,
     params: LayoutAdjustmentParams
 ) {
     Column(
@@ -943,7 +965,22 @@ private fun ProductionNumberKeypad(
             ProductionKeypadButton("再记", Modifier.weight(1f), params) { onAgainClick() }
             ProductionKeypadButton("0", Modifier.weight(1f), params) { onNumberClick("0") }
             ProductionKeypadButton(".", Modifier.weight(1f), params) { onDotClick() }
-            ProductionKeypadButton("保存", Modifier.weight(1f), params, DesignTokens.BrandColors.Error) { onSaveClick() }
+            ProductionKeypadButton(
+                text = "保存",
+                modifier = Modifier.weight(1f),
+                params = params,
+                buttonColor = DesignTokens.BrandColors.Error,
+                enabled = saveEnabled
+            ) { onSaveClick() }
+        }
+        if (!saveEnabled && !disabledHint.isNullOrBlank()) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = disabledHint,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 4.dp)
+            )
         }
     }
 }
@@ -954,11 +991,13 @@ private fun ProductionKeypadButton(
     modifier: Modifier = Modifier,
     params: LayoutAdjustmentParams,
     buttonColor: Color? = null,
+    enabled: Boolean = true,
     onClick: () -> Unit
 ) {
     Button(
         onClick = onClick,
         modifier = modifier.height(params.keypadButtonSize.dp),
+        enabled = enabled,
         colors = ButtonDefaults.buttonColors(
             containerColor = buttonColor ?: MaterialTheme.colorScheme.surface,
             contentColor = if (buttonColor != null) Color.White else MaterialTheme.colorScheme.onSurface

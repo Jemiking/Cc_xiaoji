@@ -24,6 +24,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.data.local.entity.CategoryEntity
@@ -40,6 +41,7 @@ import com.ccxiaoji.ui.components.FlatButton
 fun AddEditBudgetScreen(
     categoryId: String? = null,
     navController: NavController,
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: AddEditBudgetViewModel = hiltViewModel()
 ) {
     val TAG = "AddEditBudgetScreen"
@@ -66,6 +68,9 @@ fun AddEditBudgetScreen(
         }
     }
     
+    // 系统返回
+    BackHandler { onNavigateBack?.invoke() ?: navController.navigateUp() }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -77,7 +82,7 @@ fun AddEditBudgetScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController.navigateUp() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack, 
                             contentDescription = "返回",
@@ -291,6 +296,7 @@ private fun AlertThresholdSection(
 @Composable
 fun CategorySelectionScreen(
     navController: NavController,
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: AddEditBudgetViewModel = hiltViewModel()
 ) {
     val categories by viewModel.expenseCategories.collectAsStateWithLifecycle()
@@ -306,7 +312,7 @@ fun CategorySelectionScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController.navigateUp() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack, 
                             contentDescription = "返回",
@@ -334,7 +340,7 @@ fun CategorySelectionScreen(
                         navController.previousBackStackEntry
                             ?.savedStateHandle
                             ?.set("selected_category_id", category.id)
-                        navController.navigateUp()
+                        onNavigateBack?.invoke() ?: navController.navigateUp()
                     }
                 )
             }

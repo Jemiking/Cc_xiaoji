@@ -21,6 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.domain.model.Category
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.EditCategoryViewModel
@@ -34,17 +35,21 @@ import com.ccxiaoji.ui.theme.DesignTokens
 fun EditCategoryScreen(
     categoryId: String,
     navController: NavController,
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: EditCategoryViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
+    // 系统返回
+    BackHandler { onNavigateBack?.invoke() ?: navController.popBackStack() }
+
     // 处理保存成功
     LaunchedEffect(uiState.isSaved) {
         if (uiState.isSaved) {
             navController.previousBackStackEntry
                 ?.savedStateHandle
                 ?.set("category_updated", true)
-            navController.popBackStack()
+            onNavigateBack?.invoke() ?: navController.popBackStack()
         }
     }
     
@@ -53,7 +58,7 @@ fun EditCategoryScreen(
             TopAppBar(
                 title = { Text("编辑分类") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                     }
                 },

@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.HomeDisplaySettingsViewModel
 import com.ccxiaoji.ui.theme.DesignTokens
@@ -22,16 +23,20 @@ import com.ccxiaoji.ui.theme.DesignTokens
 @Composable
 fun HomeDisplaySettingsScreen(
     navController: NavController,
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: HomeDisplaySettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
+    // 系统返回
+    BackHandler { onNavigateBack?.invoke() ?: navController.popBackStack() }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("首页显示设置") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "返回"
@@ -45,7 +50,7 @@ fun HomeDisplaySettingsScreen(
                             navController.previousBackStackEntry
                                 ?.savedStateHandle
                                 ?.set("home_display_settings_updated", true)
-                            navController.popBackStack()
+                            onNavigateBack?.invoke() ?: navController.popBackStack()
                         }
                     ) {
                         Text("保存")

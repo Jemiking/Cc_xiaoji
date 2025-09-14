@@ -54,6 +54,16 @@ interface TransactionRepository {
      * 根据多个记账簿获取交易记录（联合查询）
      */
     fun getTransactionsByLedgers(ledgerIds: List<String>): Flow<List<Transaction>>
+
+    /**
+     * 使用 Room 热流，按记账簿 + 时间范围（毫秒）订阅交易变化，可选账户过滤
+     */
+    fun getTransactionsByLedgerFlow(
+        ledgerId: String,
+        startMillis: Long,
+        endMillis: Long,
+        accountId: String? = null
+    ): Flow<List<Transaction>>
     
     /**
      * 获取记账簿的月度收入和支出
@@ -63,6 +73,15 @@ interface TransactionRepository {
         year: Int,
         month: Int
     ): BaseResult<Pair<Int, Int>>
+
+    /**
+     * 热流 - 获取指定记账簿在起止时间内的收入/支出（单位：分）
+     */
+    fun getMonthlyIncomesAndExpensesByLedgerFlow(
+        ledgerId: String,
+        startMillis: Long,
+        endMillis: Long
+    ): Flow<Pair<Int, Int>>
     
     /**
      * 添加交易记录

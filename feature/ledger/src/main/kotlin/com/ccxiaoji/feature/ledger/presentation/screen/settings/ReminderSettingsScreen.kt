@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.ReminderSettingsViewModel
 import com.ccxiaoji.ui.theme.DesignTokens
@@ -23,17 +24,21 @@ import com.ccxiaoji.ui.theme.DesignTokens
 @Composable
 fun ReminderSettingsScreen(
     navController: NavController,
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: ReminderSettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var showTimePicker by remember { mutableStateOf(false) }
     
+    // 系统返回
+    BackHandler { onNavigateBack?.invoke() ?: navController.popBackStack() }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("记账提醒设置") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "返回"
@@ -47,7 +52,7 @@ fun ReminderSettingsScreen(
                             navController.previousBackStackEntry
                                 ?.savedStateHandle
                                 ?.set("reminder_settings_updated", true)
-                            navController.popBackStack()
+                            onNavigateBack?.invoke() ?: navController.popBackStack()
                         }
                     ) {
                         Text("保存")

@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.activity.compose.BackHandler
 import com.ccxiaoji.feature.ledger.domain.model.Card
 import com.ccxiaoji.feature.ledger.domain.model.CardType
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.CardViewModel
@@ -38,7 +39,8 @@ import androidx.compose.foundation.layout.FlowRow
 @Composable
 fun AddEditCardScreen(
     navController: NavHostController,
-    cardId: String? = null
+    cardId: String? = null,
+    onNavigateBack: (() -> Unit)? = null
 ) {
     val vm: CardViewModel = hiltViewModel()
     val uiState by vm.uiState.collectAsState()
@@ -94,12 +96,15 @@ fun AddEditCardScreen(
         }
     }
 
+    // 系统返回
+    BackHandler { onNavigateBack?.invoke() ?: navController.popBackStack() }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(if (cardId == null) "添加卡片" else "编辑卡片", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = null)
                     }
                 },
@@ -125,7 +130,7 @@ fun AddEditCardScreen(
                             expiryYear = null,
                             note = note.ifBlank { null }
                         )
-                        navController.popBackStack()
+                        onNavigateBack?.invoke() ?: navController.popBackStack()
                     }) {
                         Icon(Icons.Default.Save, contentDescription = null)
                     }

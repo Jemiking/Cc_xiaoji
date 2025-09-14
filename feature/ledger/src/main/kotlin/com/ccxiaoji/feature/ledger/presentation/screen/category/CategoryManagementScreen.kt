@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.domain.model.Category
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.CategoryTab
@@ -26,6 +27,7 @@ import com.ccxiaoji.feature.ledger.presentation.navigation.LedgerNavigation
 @Composable
 fun CategoryManagementScreen(
     navController: NavController,
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: CategoryManagementViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -52,6 +54,9 @@ fun CategoryManagementScreen(
             }
     }
     
+    // 系统返回
+    BackHandler { onNavigateBack?.invoke() ?: navController.navigateUp() }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -63,7 +68,7 @@ fun CategoryManagementScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController.navigateUp() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack, 
                             contentDescription = "返回",

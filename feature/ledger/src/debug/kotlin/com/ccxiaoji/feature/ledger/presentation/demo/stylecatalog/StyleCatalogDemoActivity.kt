@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DemoNavHost
+import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DEMO_ROUTE_EXPENSE_PREVIEW
 import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.theme.DemoThemeProvider
 import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.viewmodel.DemoViewModel
 import androidx.compose.ui.graphics.Color
@@ -44,7 +45,8 @@ fun StyleCatalogDemoApp() {
         // 独立的导航系统 - 传递共享的viewModel
         DemoNavHost(
             viewModel = viewModel,
-            startDestination = com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DemoScreen.ExpenseTrackerPreview.route
+            // 恢复为以预览页为起点，回到改前行为
+            startDestination = DEMO_ROUTE_EXPENSE_PREVIEW
         )
     }
 }

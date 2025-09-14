@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.AutoLedgerSettingsViewModel
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.AutoMode
@@ -27,18 +28,22 @@ import com.ccxiaoji.feature.ledger.presentation.viewmodel.AutoMode
 @Composable
 fun AutoLedgerSettingsScreen(
     navController: NavController,
+    onNavigateBack: (() -> Unit)? = null,
     onNavigateToPermissionGuide: () -> Unit = {},
     viewModel: AutoLedgerSettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // 系统返回
+    BackHandler { onNavigateBack?.invoke() ?: navController.popBackStack() }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(text = "自动记账设置") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                     }
                 }

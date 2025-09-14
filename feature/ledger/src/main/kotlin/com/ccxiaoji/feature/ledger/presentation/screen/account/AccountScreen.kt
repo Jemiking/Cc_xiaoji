@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.R
 import com.ccxiaoji.feature.ledger.domain.model.Account
@@ -26,6 +27,7 @@ import com.ccxiaoji.ui.theme.DesignTokens
 @Composable
 fun AccountScreen(
     navController: NavController? = null,
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: AccountViewModel = hiltViewModel()
 ) {
     val TAG = "AccountScreen"
@@ -52,6 +54,9 @@ fun AccountScreen(
         uiState.accounts.groupBy { it.type }
     }
     
+    // 系统返回
+    BackHandler { onNavigateBack?.invoke() ?: navController?.popBackStack() }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -62,7 +67,7 @@ fun AccountScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController?.navigateUp() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController?.navigateUp() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack, 
                             contentDescription = stringResource(R.string.back)

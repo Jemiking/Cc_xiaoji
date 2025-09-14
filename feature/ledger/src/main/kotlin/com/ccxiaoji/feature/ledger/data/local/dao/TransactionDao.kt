@@ -111,14 +111,35 @@ interface TransactionDao {
     
     @Query("SELECT * FROM transactions WHERE ledgerId = :ledgerId AND createdAt >= :startTime AND createdAt < :endTime AND isDeleted = 0 ORDER BY createdAt DESC")
     fun getTransactionsByLedgerAndDateRange(ledgerId: String, startTime: Long, endTime: Long): Flow<List<TransactionEntity>>
+
+    // 带账户可选过滤的热流查询（当 accountId 为空时忽略账户条件）
+    @Query(
+        """
+        SELECT * FROM transactions 
+        WHERE ledgerId = :ledgerId 
+          AND isDeleted = 0 
+          AND (:accountId IS NULL OR accountId = :accountId)
+          AND createdAt >= :startTime 
+          AND createdAt < :endTime 
+        ORDER BY createdAt DESC
+        """
+    )
+    fun getTransactionsByLedgerAndDateRangeWithAccount(
+        ledgerId: String,
+        startTime: Long,
+        endTime: Long,
+        accountId: String?
+    ): Flow<List<TransactionEntity>>
     
     @Query("SELECT * FROM transactions WHERE ledgerId IN (:ledgerIds) AND isDeleted = 0 ORDER BY createdAt DESC")
     fun getTransactionsByLedgers(ledgerIds: List<String>): Flow<List<TransactionEntity>>
     
     @Query("""
-        SELECT SUM(CASE WHEN t.amountCents > 0 THEN t.amountCents ELSE 0 END) as income,
-               ABS(SUM(CASE WHEN t.amountCents < 0 THEN t.amountCents ELSE 0 END)) as expense
+        SELECT 
+            SUM(CASE WHEN c.type = 'INCOME' THEN t.amountCents ELSE 0 END) AS income,
+            SUM(CASE WHEN c.type = 'EXPENSE' THEN t.amountCents ELSE 0 END) AS expense
         FROM transactions t
+        JOIN categories c ON t.categoryId = c.id
         WHERE t.ledgerId = :ledgerId 
         AND t.createdAt >= :startTime 
         AND t.createdAt < :endTime 
@@ -126,6 +147,26 @@ interface TransactionDao {
         AND t.transferId IS NULL
     """)
     suspend fun getMonthlyIncomesAndExpensesByLedger(ledgerId: String, startTime: Long, endTime: Long): IncomeExpensePair?
+
+    @Query(
+        """
+        SELECT 
+            SUM(CASE WHEN c.type = 'INCOME' THEN t.amountCents ELSE 0 END) AS income,
+            SUM(CASE WHEN c.type = 'EXPENSE' THEN t.amountCents ELSE 0 END) AS expense
+        FROM transactions t
+        JOIN categories c ON t.categoryId = c.id
+        WHERE t.ledgerId = :ledgerId 
+        AND t.createdAt >= :startTime 
+        AND t.createdAt < :endTime 
+        AND t.isDeleted = 0
+        AND t.transferId IS NULL
+        """
+    )
+    fun getMonthlyIncomesAndExpensesByLedgerFlow(
+        ledgerId: String,
+        startTime: Long,
+        endTime: Long
+    ): kotlinx.coroutines.flow.Flow<IncomeExpensePair?>
     
     // 查询账单周期内的交易
     @Query("""

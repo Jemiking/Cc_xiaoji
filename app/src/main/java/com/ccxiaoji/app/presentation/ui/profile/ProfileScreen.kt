@@ -207,41 +207,49 @@ fun ProfileScreen(
             // Other
             SettingsSection(
                 title = "其他",
-                items = listOf(
-                    SettingsItem(
-                        icon = Icons.Default.HelpOutline,
-                        title = "使用帮助",
-                        onClick = { navController.navigate(HelpRoute.route) }
-                    ),
-                    SettingsItem(
-                        icon = Icons.Default.Feedback,
-                        title = "意见反馈",
-                        onClick = { navController.navigate(FeedbackRoute.route) }
-                    ),
-                    SettingsItem(
-                        icon = Icons.Default.Info,
-                        title = "关于我们",
-                        onClick = { navController.navigate(AboutRoute.route) }
-                    ),
-                    SettingsItem(
-                        icon = Icons.Default.Dashboard,
-                        title = "布局Demo",
-                        subtitle = "查看添加记账页面的不同布局方案",
-                        onClick = { navController.navigate("layout_demo") }
-                    ),
-                    SettingsItem(
-                        icon = Icons.Default.Palette,
-                        title = "风格Demo（记账）",
-                        subtitle = "查看11种记账列表风格展示",
-                        onClick = { navController.navigate(StyleCatalogDemoRoute.route) }
-                    ),
-                    SettingsItem(
-                        icon = Icons.Default.SystemUpdate,
-                        title = "版本更新",
-                        value = "v${uiState.appVersion}",
-                        onClick = { viewModel.checkForUpdates() }
+                items = buildList {
+                    add(
+                        SettingsItem(
+                            icon = Icons.Default.HelpOutline,
+                            title = "使用帮助",
+                            onClick = { navController.navigate(HelpRoute.route) }
+                        )
                     )
-                )
+                    add(
+                        SettingsItem(
+                            icon = Icons.Default.Feedback,
+                            title = "意见反馈",
+                            onClick = { navController.navigate(FeedbackRoute.route) }
+                        )
+                    )
+                    add(
+                        SettingsItem(
+                            icon = Icons.Default.Info,
+                            title = "关于我们",
+                            onClick = { navController.navigate(AboutRoute.route) }
+                        )
+                    )
+                    // 布局Demo已下线，入口移除
+                    // 仅在开启标志时显示风格 Demo 入口
+                    if (com.ccxiaoji.app.BuildConfig.SHOW_STYLE_DEMO) {
+                        add(
+                            SettingsItem(
+                                icon = Icons.Default.Palette,
+                                title = "风格Demo（记账）",
+                                subtitle = "查看11种记账列表风格展示",
+                                onClick = { navController.navigate(StyleCatalogDemoRoute.route) }
+                            )
+                        )
+                    }
+                    add(
+                        SettingsItem(
+                            icon = Icons.Default.SystemUpdate,
+                            title = "版本更新",
+                            value = "v${uiState.appVersion}",
+                            onClick = { viewModel.checkForUpdates() }
+                        )
+                    )
+                }
             )
             
             Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))

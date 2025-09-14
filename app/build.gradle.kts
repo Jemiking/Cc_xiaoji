@@ -64,6 +64,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            // 显示/隐藏 Demo 功能的显式开关（Release 默认关闭）
+            buildConfigField("boolean", "SHOW_STYLE_DEMO", "false")
             signingConfig = if (keystorePropertiesFile.exists()) {
                 signingConfigs.getByName("release")
             } else {
@@ -84,6 +86,8 @@ android {
             buildConfigField("String", "BUILD_TYPE", "\"DEBUG\"")
             buildConfigField("boolean", "LOGGING_ENABLED", "true")
             buildConfigField("boolean", "DEBUG_MODE", "true")
+            // Debug 打开 Demo 功能入口
+            buildConfigField("boolean", "SHOW_STYLE_DEMO", "true")
             
             // 构建性能优化（加快debug构建速度）
             isJniDebuggable = false

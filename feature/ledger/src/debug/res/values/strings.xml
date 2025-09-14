@@ -1,18 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name_style_demo">风格 Demo（记账）</string>
-    <string name="demo_title">记账 · 交易列表 · Demo</string>
-    <string name="demo_density_switch">密度切换</string>
-    <string name="demo_style_compact">紧凑</string>
-    <string name="demo_style_medium">中等</string>
-    <string name="demo_overview_income">收入</string>
-    <string name="demo_overview_expense">支出</string>
-    <string name="demo_overview_balance">结余</string>
-    <string name="demo_filter_date">日期</string>
-    <string name="demo_filter_category">分类</string>
-    <string name="demo_filter_account">账户</string>
-    <string name="demo_search">搜索</string>
-    <string name="demo_previous_page">上一页</string>
-    <string name="demo_next_page">下一页</string>
-    <string name="demo_pagination_info">第 %1$d 页 / 共 %2$d 页</string>
 </resources>

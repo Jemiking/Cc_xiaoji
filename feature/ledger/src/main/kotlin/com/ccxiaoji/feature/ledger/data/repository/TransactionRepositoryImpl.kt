@@ -62,7 +62,20 @@ class TransactionRepositoryImpl @Inject constructor(
         val endMillis = endDate.plus(1, DateTimeUnit.DAY).atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         
         return transactionDao.getTransactionsByDateRange(userApi.getCurrentUserId(), startMillis, endMillis)
-            .map { entities -> entities.map { toDomainModelWithEnrichment(it, null) } }
+            .map { entities ->
+                entities.map { entity ->
+                    val categoryDetails = categoryDao.getCategoryById(entity.categoryId)?.let { category ->
+                        CategoryDetails(
+                            id = category.id,
+                            name = category.name,
+                            icon = category.icon,
+                            color = category.color,
+                            type = category.type
+                        )
+                    }
+                    toDomainModelWithEnrichment(entity, categoryDetails)
+                }
+            }
             .flowOn(Dispatchers.IO)
     }
     
@@ -446,6 +459,35 @@ class TransactionRepositoryImpl @Inject constructor(
             }
             .flowOn(Dispatchers.IO)
     }
+
+    override fun getTransactionsByLedgerFlow(
+        ledgerId: String,
+        startMillis: Long,
+        endMillis: Long,
+        accountId: String?
+    ): Flow<List<Transaction>> {
+        return transactionDao.getTransactionsByLedgerAndDateRangeWithAccount(
+            ledgerId = ledgerId,
+            startTime = startMillis,
+            endTime = endMillis,
+            accountId = accountId
+        ).map { entities ->
+            // 富化分类信息，避免 UI 出现“未分类”
+            entities.map { entity ->
+                val category = categoryDao.getCategoryByIdSync(entity.categoryId)
+                val details = category?.let { c ->
+                    CategoryDetails(
+                        id = c.id,
+                        name = c.name,
+                        icon = c.icon,
+                        color = c.color,
+                        type = c.type
+                    )
+                }
+                toDomainModelWithEnrichment(entity, details)
+            }
+        }.flowOn(Dispatchers.IO)
+    }
     
     override suspend fun getMonthlyIncomesAndExpensesByLedger(
         ledgerId: String,
@@ -461,6 +503,21 @@ class TransactionRepositoryImpl @Inject constructor(
             val result = transactionDao.getMonthlyIncomesAndExpensesByLedger(ledgerId, startMillis, endMillis)
             Pair(result?.income ?: 0, result?.expense ?: 0)
         }}
+    }
+
+    override fun getMonthlyIncomesAndExpensesByLedgerFlow(
+        ledgerId: String,
+        startMillis: Long,
+        endMillis: Long
+    ): Flow<Pair<Int, Int>> {
+        return transactionDao.getMonthlyIncomesAndExpensesByLedgerFlow(ledgerId, startMillis, endMillis)
+            .map { pair ->
+                // pair 可能为 null（无记录），统一返回 0
+                val income = pair?.income ?: 0
+                val expense = pair?.expense ?: 0
+                income to expense
+            }
+            .flowOn(Dispatchers.IO)
     }
     
     // 记账簿筛选的统计方法实现

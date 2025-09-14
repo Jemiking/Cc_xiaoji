@@ -413,26 +413,27 @@ class AddTransactionViewModel @Inject constructor(
         
         val selectedInfo = _uiState.value.selectedCategoryInfo
         val newSelectedInfo = if (selectedInfo == null || selectedInfo.categoryId.isEmpty()) {
-            // 优先从常用分类中选择（跳过“其他/未分类”等兜底项）
+            // 优先从常用分类中选择（跳过“其他/未分类”等兜底项），并优先选择父分类
             var picked: SelectedCategoryInfo? = null
             for (c in frequentCategories) {
                 val info = categoryRepository.getCategoryFullInfo(c.id)
-                val parent = info?.parentName?.trim()
+                val parentName = info?.parentName?.trim()
                 val name = info?.categoryName?.trim()
-                val isOtherBucket = parent != null && (parent.contains("其他") || parent.equals("Other", ignoreCase = true))
+                val isOtherBucket = parentName != null && (parentName.contains("其他") || parentName.equals("Other", ignoreCase = true))
                 val isFallbackName = name != null && (name.equals("Other", ignoreCase = true) || name.equals("Uncategorized", ignoreCase = true))
                 if (isOtherBucket || isFallbackName) continue
-                if (info != null) { picked = info; break }
+                val parentInfo = info?.parentId?.let { pid -> categoryRepository.getCategoryFullInfo(pid) }
+                val candidate = parentInfo ?: info
+                if (candidate != null) { picked = candidate; break }
             }
             if (picked != null) {
-                android.util.Log.d("AddTxn_DefaultSelection", "默认选择=常用分类 ${picked.categoryName} (${picked.categoryId})")
+                android.util.Log.d("AddTxn_DefaultSelection", "默认选择=常用父分类 ${picked.categoryName} (${picked.categoryId})")
                 picked
             } else {
-                // 没有常用分类，回退到分类树
+                // 没有常用分类，回退到分类树：优先选择首个有子类的父分类
                 val groupWithChildren = categoryGroups.firstOrNull { it.children.isNotEmpty() }
                 if (groupWithChildren != null) {
-                    val firstChild = groupWithChildren.children.first()
-                    categoryRepository.getCategoryFullInfo(firstChild.id)
+                    categoryRepository.getCategoryFullInfo(groupWithChildren.parent.id)
                 } else {
                     val nonOtherParent = categoryGroups.firstOrNull {
                         val n = it.parent.name.trim()

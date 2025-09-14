@@ -1031,13 +1031,13 @@ class LedgerApiImpl @Inject constructor(
     }
     
     @Composable
-    override fun getAccountScreen(navController: NavHostController) {
-        AccountScreen(navController = navController)
+    override fun getAccountScreen(navController: NavHostController, onNavigateBack: () -> Unit) {
+        AccountScreen(navController = navController, onNavigateBack = onNavigateBack)
     }
     
     @Composable
-    override fun getCategoryManagementScreen(navController: NavHostController) {
-        CategoryManagementScreen(navController = navController)
+    override fun getCategoryManagementScreen(navController: NavHostController, onNavigateBack: () -> Unit) {
+        CategoryManagementScreen(navController = navController, onNavigateBack = onNavigateBack)
     }
     
     @Composable

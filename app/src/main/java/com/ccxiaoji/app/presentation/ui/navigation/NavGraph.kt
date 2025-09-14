@@ -157,7 +157,10 @@ fun NavGraph(
         }
         
         composable(AccountManagementRoute.route) {
-            ledgerApi.getAccountScreen(navController = navController)
+            ledgerApi.getAccountScreen(
+                navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() }
+            )
         }
         
         // TODO: 信用卡功能暂时禁用 - 相关屏幕组件已删除
@@ -189,13 +192,17 @@ fun NavGraph(
         }
         
         composable(CategoryManagementRoute.route) {
-            ledgerApi.getCategoryManagementScreen(navController = navController)
+            ledgerApi.getCategoryManagementScreen(
+                navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() }
+            )
         }
 
         // 卡片管理（非资金账户的卡片信息）
         composable(CardManagementRoute.route) {
             com.ccxiaoji.feature.ledger.presentation.screen.card.CardManagementScreen(
-                navController = navController
+                navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
 
@@ -212,13 +219,14 @@ fun NavGraph(
             val cardId = backStackEntry.arguments?.getString("cardId")
             com.ccxiaoji.feature.ledger.presentation.screen.card.AddEditCardScreen(
                 navController = navController,
-                cardId = cardId
+                cardId = cardId,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
         
         composable(BudgetRoute.route) {
             ledgerApi.getBudgetScreen(
-                onNavigateBack = { navController.popBackStack() },
+                onNavigateBack = { navController.smartBackToLedger() },
                 onNavigateToAddEditBudget = { categoryId ->
                     navController.navigate(AddEditBudgetRoute.createRoute(categoryId))
                 }
@@ -238,13 +246,15 @@ fun NavGraph(
             val categoryId = backStackEntry.arguments?.getString("categoryId")
             com.ccxiaoji.feature.ledger.presentation.screen.budget.AddEditBudgetScreen(
                 categoryId = categoryId,
-                navController = navController
+                navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
         
         composable(SelectCategoryRoute.route) {
             com.ccxiaoji.feature.ledger.presentation.screen.budget.CategorySelectionScreen(
-                navController = navController
+                navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
         
@@ -330,7 +340,8 @@ fun NavGraph(
         
         composable(AddAccountRoute.route) {
             com.ccxiaoji.feature.ledger.presentation.screen.account.AddAccountScreen(
-                navController = navController
+                navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
         
@@ -345,13 +356,15 @@ fun NavGraph(
             val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
             com.ccxiaoji.feature.ledger.presentation.screen.account.EditAccountScreen(
                 accountId = accountId,
-                navController = navController
+                navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
         
         composable(TransferRoute.route) {
             com.ccxiaoji.feature.ledger.presentation.screen.account.TransferScreen(
-                navController = navController
+                navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
         
@@ -815,25 +828,29 @@ fun NavGraph(
         
         composable(CurrencySelectionRoute.route) {
             com.ccxiaoji.feature.ledger.presentation.screen.settings.CurrencySelectionScreen(
-                navController = navController
+                navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
         
         composable(AccountSelectionRoute.route) {
             com.ccxiaoji.feature.ledger.presentation.screen.settings.AccountSelectionScreen(
-                navController = navController
+                navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
         
         composable(ReminderSettingsRoute.route) {
             com.ccxiaoji.feature.ledger.presentation.screen.settings.ReminderSettingsScreen(
-                navController = navController
+                navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
 
         composable(AutoLedgerSettingsRoute.route) {
             com.ccxiaoji.feature.ledger.presentation.screen.settings.AutoLedgerSettingsScreen(
                 navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() },
                 onNavigateToPermissionGuide = { navController.navigate(PermissionGuideRoute.route) }
             )
         }
@@ -841,20 +858,22 @@ fun NavGraph(
         if (com.ccxiaoji.app.BuildConfig.DEBUG) {
             composable(AutoLedgerDeveloperSettingsRoute.route) {
                 com.ccxiaoji.feature.ledger.presentation.screen.settings.AutoLedgerDeveloperSettingsScreen(
-                    navController = navController
+                    navController = navController,
+                    onNavigateBack = { navController.smartBackToLedger() }
                 )
             }
         }
         
         composable(HomeDisplaySettingsRoute.route) {
             com.ccxiaoji.feature.ledger.presentation.screen.settings.HomeDisplaySettingsScreen(
-                navController = navController
+                navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
         
         composable(PermissionGuideRoute.route) {
             com.ccxiaoji.feature.ledger.presentation.screen.settings.PermissionGuideScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
         
@@ -868,7 +887,8 @@ fun NavGraph(
         
         composable(LedgerUIStyleRoute.route) {
             com.ccxiaoji.feature.ledger.presentation.screen.settings.LedgerUIStyleScreen(
-                navController = navController
+                navController = navController,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
         }
         
@@ -996,18 +1016,27 @@ fun NavGraph(
             )
         }
         
-        // Style Catalog Demo - Debug only
-        if (com.ccxiaoji.app.BuildConfig.DEBUG) {
+        // Style Catalog Demo - only when explicitly enabled
+        if (com.ccxiaoji.app.BuildConfig.SHOW_STYLE_DEMO) {
             composable(StyleCatalogDemoRoute.route) {
-                // Launch the demo activity with full 11-style system
+                // Launch the demo activity via reflection to avoid release build references
                 val context = androidx.compose.ui.platform.LocalContext.current
                 androidx.compose.runtime.LaunchedEffect(Unit) {
-                    val intent = android.content.Intent(
-                        context,
-                        com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.StyleCatalogDemoActivity::class.java
-                    )
-                    context.startActivity(intent)
-                    navController.popBackStack()
+                    try {
+                        val clazz = Class.forName(
+                            "com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.StyleCatalogDemoActivity"
+                        )
+                        val intent = android.content.Intent(context, clazz)
+                        context.startActivity(intent)
+                    } catch (e: ClassNotFoundException) {
+                        android.widget.Toast.makeText(
+                            context,
+                            "Demo 不可用",
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    } finally {
+                        navController.popBackStack()
+                    }
                 }
             }
         }

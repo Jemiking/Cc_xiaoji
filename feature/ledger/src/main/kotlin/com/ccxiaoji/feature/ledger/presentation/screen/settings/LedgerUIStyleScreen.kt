@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.domain.model.LedgerUIStyle
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerUIStyleViewModel
@@ -34,6 +35,7 @@ import com.ccxiaoji.ui.theme.DesignTokens
 @Composable
 fun LedgerUIStyleScreen(
     navController: NavController,
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: LedgerUIStyleViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -46,12 +48,15 @@ fun LedgerUIStyleScreen(
         }
     }
     
+    // 系统返回
+    BackHandler { onNavigateBack?.invoke() ?: navController.popBackStack() }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("界面风格设置") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "返回"

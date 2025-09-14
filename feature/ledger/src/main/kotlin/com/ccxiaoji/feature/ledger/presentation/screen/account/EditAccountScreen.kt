@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.R
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.EditAccountViewModel
@@ -20,6 +21,7 @@ import com.ccxiaoji.ui.theme.DesignTokens
 fun EditAccountScreen(
     accountId: String,
     navController: NavController,
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: EditAccountViewModel = hiltViewModel()
 ) {
     val TAG = "EditAccountScreen"
@@ -44,6 +46,9 @@ fun EditAccountScreen(
         }
     }
     
+    // 系统返回
+    BackHandler { onNavigateBack?.invoke() ?: navController.navigateUp() }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -54,7 +59,7 @@ fun EditAccountScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController.navigateUp() }) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack, 
                             contentDescription = stringResource(R.string.back)

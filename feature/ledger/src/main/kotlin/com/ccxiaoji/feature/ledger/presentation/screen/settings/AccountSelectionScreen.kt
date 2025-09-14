@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.AccountSelectionViewModel
 import com.ccxiaoji.ui.theme.DesignTokens
@@ -22,16 +23,20 @@ import com.ccxiaoji.ui.theme.DesignTokens
 @Composable
 fun AccountSelectionScreen(
     navController: NavController,
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: AccountSelectionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
+    // 系统返回
+    BackHandler { onNavigateBack?.invoke() ?: navController.popBackStack() }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("选择默认账户") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController.popBackStack() }) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "返回"
@@ -80,7 +85,7 @@ fun AccountSelectionScreen(
                                     navController.previousBackStackEntry
                                         ?.savedStateHandle
                                         ?.set("selected_account_id", account.id.toLong())
-                                    navController.popBackStack()
+                                    onNavigateBack?.invoke() ?: navController.popBackStack()
                                 },
                                 colors = RadioButtonDefaults.colors(
                                     selectedColor = MaterialTheme.colorScheme.primary,
@@ -93,7 +98,7 @@ fun AccountSelectionScreen(
                             navController.previousBackStackEntry
                                 ?.savedStateHandle
                                 ?.set("selected_account_id", account.id.toLong())
-                            navController.popBackStack()
+                            onNavigateBack?.invoke() ?: navController.popBackStack()
                         }
                     )
                     

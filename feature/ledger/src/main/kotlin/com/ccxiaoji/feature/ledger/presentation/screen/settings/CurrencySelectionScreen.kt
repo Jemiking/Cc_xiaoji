@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.activity.compose.BackHandler
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.CurrencySelectionViewModel
 import com.ccxiaoji.ui.theme.DesignTokens
@@ -23,16 +24,20 @@ import com.ccxiaoji.ui.theme.DesignTokens
 @Composable
 fun CurrencySelectionScreen(
     navController: NavController,
+    onNavigateBack: (() -> Unit)? = null,
     viewModel: CurrencySelectionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
+    // 系统返回
+    BackHandler { onNavigateBack?.invoke() ?: navController.popBackStack() }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("选择默认币种") },
                 navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
+                    IconButton(onClick = { onNavigateBack?.invoke() ?: navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
                     }
                 }
@@ -67,7 +72,7 @@ fun CurrencySelectionScreen(
                         navController.previousBackStackEntry
                             ?.savedStateHandle
                             ?.set("selected_currency", currency.code)
-                        navController.popBackStack()
+                        onNavigateBack?.invoke() ?: navController.popBackStack()
                     }
                 )
             }
@@ -93,14 +98,14 @@ fun CurrencySelectionScreen(
                     CurrencyItem(
                         currency = currency,
                         isSelected = currency.code == uiState.selectedCurrency,
-                        onClick = {
-                            viewModel.selectCurrency(currency.code)
-                            navController.previousBackStackEntry
-                                ?.savedStateHandle
-                                ?.set("selected_currency", currency.code)
-                            navController.popBackStack()
-                        }
-                    )
+                    onClick = {
+                        viewModel.selectCurrency(currency.code)
+                        navController.previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.set("selected_currency", currency.code)
+                        onNavigateBack?.invoke() ?: navController.popBackStack()
+                    }
+                )
                 }
             }
         }
