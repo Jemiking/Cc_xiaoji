@@ -3,6 +3,7 @@ package com.ccxiaoji.feature.ledger.presentation.screen.ledger
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+ 
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -15,6 +16,13 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
+import android.view.View
+import android.view.ViewGroup
+import androidx.core.view.ViewCompat
+import com.ccxiaoji.common.util.DeviceUtils
+import com.ccxiaoji.feature.ledger.BuildConfig
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.Color
@@ -379,21 +387,26 @@ fun LedgerScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // 本月收支概览条
-            StyleableMonthlyOverviewBar(
-                monthlyIncome = uiState.monthlyIncome,
-                monthlyExpense = uiState.monthlyExpense,
-                currentStyle = uiStyleState.uiStyle,
-                animationDurationMs = uiStyleState.animationDurationMs
-            )
-            
-            // Budget Alert
-            dialogState.budgetAlert?.let { alert ->
-                BudgetAlertCard(
-                    alert = alert,
-                    onDismiss = { dialogViewModel.dismissBudgetAlert() },
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            val ctx = LocalContext.current
+            val longShotInterop = remember(ctx) { DeviceUtils.isLongShotInteropRecommended(ctx) && BuildConfig.DEBUG }
+
+            if (!longShotInterop) {
+                // 本月收支概览条（仅非互操作模式下在外部渲染，避免重复）
+                StyleableMonthlyOverviewBar(
+                    monthlyIncome = uiState.monthlyIncome,
+                    monthlyExpense = uiState.monthlyExpense,
+                    currentStyle = uiStyleState.uiStyle,
+                    animationDurationMs = uiStyleState.animationDurationMs
                 )
+
+                // Budget Alert（仅非互操作模式下在外部渲染）
+                dialogState.budgetAlert?.let { alert ->
+                    BudgetAlertCard(
+                        alert = alert,
+                        onDismiss = { dialogViewModel.dismissBudgetAlert() },
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
+                }
             }
             
             // Transactions List
@@ -404,11 +417,106 @@ fun LedgerScreen(
                 filteredTransactions
             }
             
-            LazyColumn(
-                modifier = Modifier.weight(1f),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
+            if (longShotInterop) {
+                // 互操作容器：NestedScrollView + ComposeView，便于系统长截屏识别
+                AndroidView(
+                    modifier = Modifier.weight(1f),
+                    factory = { context ->
+                        val host = androidx.core.widget.NestedScrollView(context).apply {
+                            isFillViewport = true
+                            overScrollMode = View.OVER_SCROLL_ALWAYS
+                            isVerticalScrollBarEnabled = true
+                            isScrollContainer = true
+                            ViewCompat.setNestedScrollingEnabled(this, true)
+                        }
+                        val composeView = androidx.compose.ui.platform.ComposeView(context).apply {
+                            // 初始内容在 update 阶段设置，避免捕获初始空数据
+                        }
+                        host.addView(
+                            composeView,
+                            ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+                        )
+                        host
+                    },
+                    update = { view ->
+                        val composeView = (view.getChildAt(0) as? androidx.compose.ui.platform.ComposeView)
+                        // 重新设置内容，以当前的最新状态驱动内部组合
+                        composeView?.setContent {
+                            MaterialTheme {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    // 概览条
+                                    StyleableMonthlyOverviewBar(
+                                        monthlyIncome = uiState.monthlyIncome,
+                                        monthlyExpense = uiState.monthlyExpense,
+                                        currentStyle = uiStyleState.uiStyle,
+                                        animationDurationMs = uiStyleState.animationDurationMs
+                                    )
+
+                                    // 预算提醒
+                                    dialogState.budgetAlert?.let { alert ->
+                                        BudgetAlertCard(
+                                            alert = alert,
+                                            onDismiss = { dialogViewModel.dismissBudgetAlert() }
+                                        )
+                                    }
+
+                                    // 分组交易（非 Lazy）
+                                    val groups = displayTransactions.groupByDate()
+                                    groups.forEach { group ->
+                                        StyleableComponentFactory.DateHeader(
+                                            date = group.date,
+                                            style = uiStyleState.uiStyle,
+                                            modifier = Modifier.fillMaxWidth()
+                                        )
+                                        Spacer(Modifier.height(4.dp))
+                                        group.transactions.forEach { tx ->
+                                            StyleableComponentFactory.TransactionItem(
+                                                transaction = tx,
+                                                style = uiStyleState.uiStyle,
+                                                isSelected = selectionState.selectedTransactionIds.contains(tx.id),
+                                                isSelectionMode = selectionState.isSelectionMode,
+                                                onItemClick = {
+                                                    if (selectionState.isSelectionMode) {
+                                                        selectionViewModel.toggleTransactionSelection(tx.id)
+                                                    } else {
+                                                        val editRoute = LedgerNavigation.editTransactionRoute(tx.id)
+                                                        navController?.navigate(editRoute)
+                                                    }
+                                                },
+                                                onItemLongClick = {
+                                                    if (!selectionState.isSelectionMode) {
+                                                        selectionViewModel.toggleSelectionMode()
+                                                        selectionViewModel.toggleTransactionSelection(tx.id)
+                                                    }
+                                                },
+                                                onEdit = {
+                                                    val editRoute = LedgerNavigation.editTransactionRoute(tx.id)
+                                                    navController?.navigate(editRoute)
+                                                },
+                                                onDelete = { viewModel.deleteTransaction(tx.id) },
+                                                onCopy = { viewModel.copyTransaction(tx) }
+                                            )
+                                            Spacer(Modifier.height(6.dp))
+                                        }
+                                        Spacer(Modifier.height(8.dp))
+                                    }
+                                    Spacer(Modifier.height(8.dp))
+                                }
+                            }
+                        }
+                    }
+                )
+            } else {
+                LazyColumn(
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                 if (searchState.isSearchMode && searchState.searchQuery.isNotEmpty() && displayTransactions.isEmpty()) {
                     item {
                         Box(
@@ -489,6 +597,7 @@ fun LedgerScreen(
                     },
                     animationDurationMs = uiStyleState.animationDurationMs
                 )
+            }
             }
         }
     }

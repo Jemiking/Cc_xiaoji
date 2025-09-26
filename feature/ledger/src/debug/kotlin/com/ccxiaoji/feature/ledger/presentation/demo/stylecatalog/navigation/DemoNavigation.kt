@@ -7,6 +7,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.screens.*
 import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DEMO_ROUTE_EXPENSE_PREVIEW
+import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DEMO_ROUTE_BOOK_SETTINGS
+import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DEMO_ROUTE_BOOK_EDIT
+import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DEMO_ROUTE_REPORT_STATS
+ 
 import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.viewmodel.DemoViewModel
 
 // Demo 璺敱瀹氫箟
@@ -17,6 +21,10 @@ sealed class DemoScreen(val route: String) {
     object CardBackup : DemoScreen("demo_card_backup")
     object Installments : DemoScreen("demo_installments")
     object SettingsAbout : DemoScreen("demo_settings_about")
+    object BookSettings : DemoScreen(DEMO_ROUTE_BOOK_SETTINGS)
+    object BookEdit : DemoScreen(DEMO_ROUTE_BOOK_EDIT)
+    object ReportStats : DemoScreen(DEMO_ROUTE_REPORT_STATS)
+    
 }
 
 @Composable
@@ -32,8 +40,11 @@ fun DemoNavHost(
         composable(DemoScreen.CardBackup.route) { CardBackupScreen(navController) }
         composable(DemoScreen.Installments.route) { InstallmentsScreen(navController) }
         composable(DemoScreen.SettingsAbout.route) { DemoSettingsAboutScreen(navController) }
+        composable(DemoScreen.BookSettings.route) { BookSettingsScreen(navController) }
+        composable(DemoScreen.BookEdit.route) { BookEditScreen(navController) }
+        composable(DemoScreen.ReportStats.route) { BookReportV2Screen(navController) }
+
     }
 }
 
     // 已移除底部导航相关定义（Home 已删除）
-

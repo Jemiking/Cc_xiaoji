@@ -54,7 +54,7 @@ fun BooksScreen(navController: NavController) {
                 title = "日常账本",
                 subtitle = "日常账本",
                 bg = Color(0xFF3B82F6),
-                onMoreClick = { /* 精简后不再跳转到账本设置 */ }
+                onMoreClick = { navController.navigate(com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DemoScreen.BookSettings.route) }
             )
             Spacer(Modifier.height(16.dp))
             // 其它示例卡
