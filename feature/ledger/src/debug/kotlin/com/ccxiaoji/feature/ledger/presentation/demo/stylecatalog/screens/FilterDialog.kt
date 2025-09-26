@@ -25,6 +25,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
 
 // 日期范围类型
 enum class DateRangeType {
@@ -39,8 +40,8 @@ enum class DateRangeType {
 // 筛选状态数据类
 data class FilterState(
     val dateRangeType: DateRangeType = DateRangeType.THIS_MONTH,
-    val customStartDate: String = "",
-    val customEndDate: String = "",
+    val startDate: LocalDate? = null,
+    val endDate: LocalDate? = null,
     val selectedLedgers: Set<String> = setOf("日常账本")  // 默认选中日常账本
 )
 
@@ -53,8 +54,19 @@ fun FilterDialog(
 ) {
     if (!isVisible) return
 
-    var filterState by remember(isVisible) { mutableStateOf(currentFilter) }
-    var showYearRange by remember { mutableStateOf(false) }
+    var filterState by remember(isVisible) {
+        mutableStateOf(
+            // 初始化时计算默认日期
+            currentFilter.let { state ->
+                if (state.startDate == null || state.endDate == null) {
+                    val (start, end) = calculateDateRange(state.dateRangeType)
+                    state.copy(startDate = start, endDate = end)
+                } else {
+                    state
+                }
+            }
+        )
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -155,7 +167,12 @@ fun FilterDialog(
                                     text = "本月",
                                     isSelected = filterState.dateRangeType == DateRangeType.THIS_MONTH,
                                     onClick = {
-                                        filterState = filterState.copy(dateRangeType = DateRangeType.THIS_MONTH)
+                                        val (start, end) = calculateDateRange(DateRangeType.THIS_MONTH)
+                                        filterState = filterState.copy(
+                                            dateRangeType = DateRangeType.THIS_MONTH,
+                                            startDate = start,
+                                            endDate = end
+                                        )
                                     },
                                     modifier = Modifier.weight(1f)
                                 )
@@ -163,7 +180,12 @@ fun FilterDialog(
                                     text = "上月",
                                     isSelected = filterState.dateRangeType == DateRangeType.LAST_MONTH,
                                     onClick = {
-                                        filterState = filterState.copy(dateRangeType = DateRangeType.LAST_MONTH)
+                                        val (start, end) = calculateDateRange(DateRangeType.LAST_MONTH)
+                                        filterState = filterState.copy(
+                                            dateRangeType = DateRangeType.LAST_MONTH,
+                                            startDate = start,
+                                            endDate = end
+                                        )
                                     },
                                     modifier = Modifier.weight(1f)
                                 )
@@ -171,7 +193,12 @@ fun FilterDialog(
                                     text = "今年",
                                     isSelected = filterState.dateRangeType == DateRangeType.THIS_YEAR,
                                     onClick = {
-                                        filterState = filterState.copy(dateRangeType = DateRangeType.THIS_YEAR)
+                                        val (start, end) = calculateDateRange(DateRangeType.THIS_YEAR)
+                                        filterState = filterState.copy(
+                                            dateRangeType = DateRangeType.THIS_YEAR,
+                                            startDate = start,
+                                            endDate = end
+                                        )
                                     },
                                     modifier = Modifier.weight(1f)
                                 )
@@ -179,7 +206,12 @@ fun FilterDialog(
                                     text = "去年",
                                     isSelected = filterState.dateRangeType == DateRangeType.LAST_YEAR,
                                     onClick = {
-                                        filterState = filterState.copy(dateRangeType = DateRangeType.LAST_YEAR)
+                                        val (start, end) = calculateDateRange(DateRangeType.LAST_YEAR)
+                                        filterState = filterState.copy(
+                                            dateRangeType = DateRangeType.LAST_YEAR,
+                                            startDate = start,
+                                            endDate = end
+                                        )
                                     },
                                     modifier = Modifier.weight(1f)
                                 )
@@ -187,35 +219,25 @@ fun FilterDialog(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // 第二行 - 年份范围和全部
+                            // 第二行 - 全部按钮
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
                                 DateQuickButton(
-                                    text = "2024-2025",
-                                    isSelected = showYearRange,
-                                    onClick = {
-                                        showYearRange = !showYearRange
-                                        if (showYearRange) {
-                                            filterState = filterState.copy(
-                                                dateRangeType = DateRangeType.CUSTOM_RANGE,
-                                                customStartDate = "2024-01-01",
-                                                customEndDate = "2025-12-31"
-                                            )
-                                        }
-                                    },
-                                    modifier = Modifier.weight(1f)
-                                )
-                                DateQuickButton(
                                     text = "全部",
                                     isSelected = filterState.dateRangeType == DateRangeType.ALL,
                                     onClick = {
-                                        filterState = filterState.copy(dateRangeType = DateRangeType.ALL)
+                                        val (start, end) = calculateDateRange(DateRangeType.ALL)
+                                        filterState = filterState.copy(
+                                            dateRangeType = DateRangeType.ALL,
+                                            startDate = start,
+                                            endDate = end
+                                        )
                                     },
                                     modifier = Modifier.weight(1f)
                                 )
-                                Spacer(modifier = Modifier.weight(2f))
+                                Spacer(modifier = Modifier.weight(3f))
                             }
                         }
                     }
@@ -246,9 +268,11 @@ fun FilterDialog(
                                 // 开始日期
                                 DatePickerField(
                                     label = "开始日期",
-                                    value = if (filterState.dateRangeType == DateRangeType.CUSTOM_RANGE)
-                                        filterState.customStartDate else "",
-                                    onClick = { /* 打开日期选择器 */ },
+                                    value = filterState.startDate?.let { formatDate(it) } ?: "",
+                                    onClick = {
+                                        // TODO: 打开日期选择器
+                                        // 选择后自动切换到CUSTOM_RANGE
+                                    },
                                     modifier = Modifier.weight(1f)
                                 )
 
@@ -261,9 +285,11 @@ fun FilterDialog(
                                 // 截止日期
                                 DatePickerField(
                                     label = "截止日期",
-                                    value = if (filterState.dateRangeType == DateRangeType.CUSTOM_RANGE)
-                                        filterState.customEndDate else "",
-                                    onClick = { /* 打开日期选择器 */ },
+                                    value = filterState.endDate?.let { formatDate(it) } ?: "",
+                                    onClick = {
+                                        // TODO: 打开日期选择器
+                                        // 选择后自动切换到CUSTOM_RANGE
+                                    },
                                     modifier = Modifier.weight(1f)
                                 )
                             }
@@ -332,6 +358,48 @@ fun FilterDialog(
             }
         }
     }
+}
+
+// 日期范围计算函数
+private fun calculateDateRange(type: DateRangeType): Pair<LocalDate, LocalDate> {
+    val today = LocalDate.now()
+    return when (type) {
+        DateRangeType.THIS_MONTH -> {
+            val firstDay = today.withDayOfMonth(1)
+            val lastDay = today.withDayOfMonth(today.lengthOfMonth())
+            firstDay to lastDay
+        }
+        DateRangeType.LAST_MONTH -> {
+            val lastMonth = today.minusMonths(1)
+            val firstDay = lastMonth.withDayOfMonth(1)
+            val lastDay = lastMonth.withDayOfMonth(lastMonth.lengthOfMonth())
+            firstDay to lastDay
+        }
+        DateRangeType.THIS_YEAR -> {
+            val firstDay = today.withDayOfYear(1)
+            val lastDay = today.withMonth(12).withDayOfMonth(31)
+            firstDay to lastDay
+        }
+        DateRangeType.LAST_YEAR -> {
+            val lastYear = today.minusYears(1)
+            val firstDay = lastYear.withDayOfYear(1)
+            val lastDay = lastYear.withMonth(12).withDayOfMonth(31)
+            firstDay to lastDay
+        }
+        DateRangeType.ALL -> {
+            // 全部：从2020年到今天（或根据实际需求调整）
+            LocalDate.of(2020, 1, 1) to today
+        }
+        DateRangeType.CUSTOM_RANGE -> {
+            // 自定义范围：默认为今天
+            today to today
+        }
+    }
+}
+
+// 日期格式化函数
+private fun formatDate(date: LocalDate): String {
+    return date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
 }
 
 @Composable

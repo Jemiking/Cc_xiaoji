@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(./gradlew:*)",
-      "Bash(.gradlew.bat :feature:ledger:compileDebugKotlin:*)"
+      "Bash(.gradlew.bat :feature:ledger:compileDebugKotlin:*)",
+      "Bash(git pull:*)",
+      "Bash(./gradlew.bat:*)"
     ],
     "deny": [],
     "ask": [],

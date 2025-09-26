@@ -10,6 +10,7 @@ import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DEM
 import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DEMO_ROUTE_BOOK_SETTINGS
 import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DEMO_ROUTE_BOOK_EDIT
 import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DEMO_ROUTE_REPORT_STATS
+import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DEMO_ROUTE_CATEGORY_MANAGEMENT
  
 import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.viewmodel.DemoViewModel
 
@@ -24,6 +25,7 @@ sealed class DemoScreen(val route: String) {
     object BookSettings : DemoScreen(DEMO_ROUTE_BOOK_SETTINGS)
     object BookEdit : DemoScreen(DEMO_ROUTE_BOOK_EDIT)
     object ReportStats : DemoScreen(DEMO_ROUTE_REPORT_STATS)
+    object CategoryManagement : DemoScreen(DEMO_ROUTE_CATEGORY_MANAGEMENT)
     
 }
 
@@ -43,6 +45,7 @@ fun DemoNavHost(
         composable(DemoScreen.BookSettings.route) { BookSettingsScreen(navController) }
         composable(DemoScreen.BookEdit.route) { BookEditScreen(navController) }
         composable(DemoScreen.ReportStats.route) { BookReportV2Screen(navController) }
+        composable(DemoScreen.CategoryManagement.route) { CategoryManagementScreen(navController) }
 
     }
 }

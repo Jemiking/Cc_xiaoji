@@ -67,7 +67,7 @@ fun BookSettingsScreen(navController: NavController) {
                 SettingsRow(
                     title = "分类管理",
                     trailing = { Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Color(0xFFC5C8CE)) },
-                    onClick = { }
+                    onClick = { navController.navigate(DemoScreen.CategoryManagement.route) }
                 )
                 Divider(color = Color(0xFFF0F0F0), thickness = 0.5.dp)
 
