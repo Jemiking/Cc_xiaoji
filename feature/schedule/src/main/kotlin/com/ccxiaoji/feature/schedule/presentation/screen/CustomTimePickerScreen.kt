@@ -224,7 +224,7 @@ fun CustomTimePickerScreen(
                         Text(stringResource(R.string.schedule_cancel))
                     }
                     
-                    // 确定按钮
+                    // 确定按钮 - 使用主要按钮样式突出显示
                     FlatButton(
                         onClick = { 
                             val selectedTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
@@ -232,9 +232,14 @@ fun CustomTimePickerScreen(
                                 ?.savedStateHandle
                                 ?.set("selected_custom_time", selectedTime)
                             navController.popBackStack()
-                        }
+                        },
+                        backgroundColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ) {
-                        Text(stringResource(R.string.schedule_confirm))
+                        Text(
+                            text = stringResource(R.string.schedule_confirm),
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
             }

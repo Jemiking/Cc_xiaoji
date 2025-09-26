@@ -2,7 +2,6 @@ package com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.spec.impl
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,7 +9,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -104,8 +102,6 @@ class AppleMinimalListSpec : ListSpec {
             modifier = modifier
                 .fillMaxWidth()
                 .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = rememberRipple(bounded = true, color = AppleColors.SystemGray3),
                     onClick = onClick
                 ),
             color = AppleColors.SecondaryBackground
@@ -639,8 +635,6 @@ class AppleMinimalSettingsSpec : SettingsSpec {
             modifier = modifier
                 .fillMaxWidth()
                 .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = rememberRipple(bounded = true, color = AppleColors.SystemGray3),
                     onClick = onClick
                 ),
             color = AppleColors.SecondaryBackground

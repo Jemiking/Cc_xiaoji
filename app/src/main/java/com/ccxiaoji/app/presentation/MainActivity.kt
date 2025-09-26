@@ -26,6 +26,10 @@ import android.util.Log
 import android.content.Intent
 import com.ccxiaoji.app.BuildConfig
 import android.widget.Toast
+import android.view.View
+import android.view.ViewGroup
+import androidx.core.view.ViewCompat
+import androidx.compose.ui.platform.ComposeView
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -131,6 +135,32 @@ class MainActivity : ComponentActivity() {
                     )
                 }
             }
+            }
+
+            // 标记 ComposeView 为可滚动容器，提升厂商长截屏识别概率（HyperOS/MIUI）
+            window.decorView.post {
+                try {
+                    val root = findViewById<ViewGroup>(android.R.id.content)
+                    fun markScrollContainer(v: View?) {
+                        if (v == null) return
+                        if (v is ComposeView) {
+                            v.isScrollContainer = true
+                            // 启用嵌套滚动，便于系统/厂商长截屏的滚动代理识别
+                            ViewCompat.setNestedScrollingEnabled(v, true)
+                            try {
+                                Log.d(TAG, "[LongShot] ComposeView marked scrollable: size=${v.width}x${v.height}, attached=${v.isAttachedToWindow}")
+                            } catch (_: Throwable) {}
+                        }
+                        if (v is ViewGroup) {
+                            for (i in 0 until v.childCount) {
+                                markScrollContainer(v.getChildAt(i))
+                            }
+                        }
+                    }
+                    markScrollContainer(root)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Mark ComposeView as scroll container failed", t)
+                }
             }
             
             Log.d(TAG, "MainActivity onCreate completed successfully")

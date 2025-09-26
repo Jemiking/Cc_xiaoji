@@ -592,6 +592,27 @@ fun NavGraph(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
+        
+        // 自定义时间选择页面 - 修复EditShiftScreen导航问题
+        composable(
+            route = "custom_time_picker/{initialHour}/{initialMinute}",
+            arguments = listOf(
+                androidx.navigation.navArgument("initialHour") { 
+                    type = androidx.navigation.NavType.IntType 
+                },
+                androidx.navigation.navArgument("initialMinute") { 
+                    type = androidx.navigation.NavType.IntType 
+                }
+            )
+        ) { backStackEntry ->
+            val initialHour = backStackEntry.arguments?.getInt("initialHour") ?: 8
+            val initialMinute = backStackEntry.arguments?.getInt("initialMinute") ?: 0
+            val initialTime = java.time.LocalTime.of(initialHour, initialMinute)
+            com.ccxiaoji.feature.schedule.presentation.screen.CustomTimePickerScreen(
+                initialTime = initialTime,
+                navController = navController
+            )
+        }
 
         
         // Plan module route

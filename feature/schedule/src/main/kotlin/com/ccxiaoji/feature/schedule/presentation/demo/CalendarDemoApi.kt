@@ -46,7 +46,8 @@ object CalendarDemoApi {
         onSwipePrevMonth: () -> Unit,
         onSwipeNextMonth: () -> Unit
     ) {
-        MonthCalendarPanel(
+        // 调用 parts 包中的实际实现，而不是递归调用自己
+        com.ccxiaoji.feature.schedule.presentation.demo.parts.MonthCalendarPanel(
             data = data,
             style = style,
             emphasizeNight = emphasizeNight,

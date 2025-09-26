@@ -2,9 +2,7 @@ package com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.spec.impl
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -112,11 +110,6 @@ class ElegantMinimalListSpec : ListSpec {
                 .fillMaxWidth()
                 .background(ElegantMinimalSpecs.Colors.White)
                 .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = rememberRipple(
-                        bounded = true,
-                        color = ElegantMinimalSpecs.Colors.Gray100
-                    ),
                     onClick = onClick
                 )
                 .padding(horizontal = ElegantMinimalSpecs.Spacing.m)
