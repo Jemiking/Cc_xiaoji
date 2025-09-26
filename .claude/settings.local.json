@@ -1,14 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "Bash(./gradlew:*)"
+      "Bash(./gradlew:*)",
+      "Bash(.gradlew.bat :feature:ledger:compileDebugKotlin:*)"
     ],
     "deny": [],
+    "ask": [],
     "defaultMode": "acceptEdits",
     "additionalDirectories": [
       "D:\\mnt\\d\\kotlin"
-    ],
-    "ask": []
+    ]
   },
   "enableAllProjectMcpServers": true,
   "outputStyle": "Explanatory"

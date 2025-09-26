@@ -61,6 +61,7 @@ fun BookReportV2Screen(navController: NavController) {
     SetStatusBar(color = ReportTokens.Palette.Card)
 
     var mode by remember { mutableStateOf(ReportMode.Month) }
+    android.util.Log.d("BookReport_DEBUG", "🔄 Screen recompose, current mode: $mode")
     val periodLabel = when (mode) {
         ReportMode.Month -> "2021-05"
         ReportMode.Year -> "2024"
@@ -69,18 +70,29 @@ fun BookReportV2Screen(navController: NavController) {
     var categoryDim by remember { mutableStateOf(CategoryDimension.Expense) }
     val context = LocalContext.current
 
+    // 筛选对话框状态
+    var showFilterDialog by remember { mutableStateOf(false) }
+    var filterState by remember { mutableStateOf(FilterState()) }
+
     val overview = remember(mode) {
+        android.util.Log.d("BookReport_DEBUG", "💰 Loading overview data for mode: $mode")
         when (mode) {
-            ReportMode.Month -> OverviewState(
-                expense = "\u00A510908.30",   // 去除千分位，统一视觉为黑色金额
-                income = "\u00A5260.00",
-                balance = "-\u00A510648.30",
-                averageDailyExpense = "\u00A5351.88",
-                extraMetrics = listOf(
-                    Metric(label = "\u4FE1\u7528\u5361\u8FD8\u6B3E", value = "\u00A5380.00")
+            ReportMode.Month -> {
+                android.util.Log.d("BookReport_DEBUG", "📊 Using MONTH overview data")
+                OverviewState(
+                    expense = "\u00A510908.30",   // 去除千分位，统一视觉为黑色金额
+                    income = "\u00A5260.00",
+                    balance = "-\u00A510648.30",
+                    averageDailyExpense = "\u00A5351.88",
+                    extraMetrics = listOf(
+                        Metric(label = "\u4FE1\u7528\u5361\u8FD8\u6B3E", value = "\u00A5380.00")
+                    )
                 )
-            )
-            ReportMode.Year -> demoYearOverviewData()
+            }
+            ReportMode.Year -> {
+                android.util.Log.d("BookReport_DEBUG", "📊 Using YEAR overview data")
+                demoYearOverviewData()
+            }
         }
     }
     val dailySeries = remember(mode) {
@@ -90,9 +102,16 @@ fun BookReportV2Screen(navController: NavController) {
         }
     }
     val categoryState = remember(mode) {
+        android.util.Log.d("BookReport_DEBUG", "🍰 Loading category data for mode: $mode")
         when (mode) {
-            ReportMode.Month -> demoCategoryState()
-            ReportMode.Year -> demoYearCategoryState()
+            ReportMode.Month -> {
+                android.util.Log.d("BookReport_DEBUG", "📈 Using MONTH category data")
+                demoCategoryState()
+            }
+            ReportMode.Year -> {
+                android.util.Log.d("BookReport_DEBUG", "📈 Using YEAR category data")
+                demoYearCategoryState()
+            }
         }
     }
     val tableRows = remember(mode) {
@@ -122,10 +141,16 @@ fun BookReportV2Screen(navController: NavController) {
 
                     ModeSegmentedCN(
                         isMonth = mode == ReportMode.Month,
-                        onChange = { mode = if (it) ReportMode.Month else ReportMode.Year }
+                        onChange = { isMonth ->
+                            android.util.Log.d("BookReport_DEBUG", "🔄 Segmented control clicked! isMonth=$isMonth, current mode=$mode")
+                            val newMode = if (isMonth) ReportMode.Month else ReportMode.Year
+                            android.util.Log.d("BookReport_DEBUG", "🔄 Changing mode from $mode to $newMode")
+                            mode = newMode
+                            android.util.Log.d("BookReport_DEBUG", "✅ Mode changed successfully to $mode")
+                        }
                     )
 
-                    IconButton(onClick = { /* open filter */ }) {
+                    IconButton(onClick = { showFilterDialog = true }) {
                         Icon(Icons.Filled.FilterList, contentDescription = null, tint = ReportTokens.Palette.TextPrimary)
                     }
 
@@ -146,59 +171,64 @@ fun BookReportV2Screen(navController: NavController) {
                         overScrollMode = View.OVER_SCROLL_ALWAYS
                         isVerticalScrollBarEnabled = true
                     }
-                    val composeView = androidx.compose.ui.platform.ComposeView(context).apply {
-                        setBackgroundColor(ReportTokens.Palette.PageBackground.toArgb())
-                        setContent {
-                            MaterialTheme {
-                                androidx.compose.foundation.layout.Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(ReportTokens.Palette.PageBackground)
-                                        .padding(padding)
-                                ) {
-                                    DateRow(periodLabel, onPrev = { }, onNext = { }, onPick = { })
-                                    OverviewCard(
-                                        state = overview,
-                                        modifier = Modifier
-                                            .padding(horizontal = ReportTokens.Metrics.PagePadding)
-                                            .fillMaxWidth()
-                                    )
-                                    Spacer(Modifier.height(10.dp))
-                                    DailyBarChartCard(
-                                        series = dailySeries,
-                                        tab = dailyTab,
-                                        onTabChange = { dailyTab = it },
-                                        periodLabel = periodLabel,
-                                        modifier = Modifier
-                                            .padding(horizontal = ReportTokens.Metrics.PagePadding)
-                                            .fillMaxWidth()
-                                    )
-                                    Spacer(Modifier.height(10.dp))
-                                    CategoryDonutCard(
-                                        state = categoryState,
-                                        dimension = categoryDim,
-                                        onDimensionChange = { categoryDim = it },
-                                        modifier = Modifier
-                                            .padding(horizontal = ReportTokens.Metrics.PagePadding)
-                                            .fillMaxWidth()
-                                    )
-                                    Spacer(Modifier.height(10.dp))
-                                    DailyTableCard(
-                                        rows = tableRows,
-                                        modifier = Modifier
-                                            .padding(horizontal = ReportTokens.Metrics.PagePadding)
-                                            .fillMaxWidth()
-                                    )
-                                    Spacer(Modifier.height(72.dp))
-                                }
-                            }
-                        }
-                    }
+                    val composeView = androidx.compose.ui.platform.ComposeView(context)
                     host.addView(
                         composeView,
                         ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
                     )
+                    // 返回一个Pair，包含host和composeView，以便在update中访问
+                    host.tag = composeView
                     host
+                },
+                update = { host ->
+                    // 每次重组时更新ComposeView的内容
+                    val composeView = host.tag as androidx.compose.ui.platform.ComposeView
+                    android.util.Log.d("BookReport_DEBUG", "🔄 Updating AndroidView content for mode: $mode")
+                    composeView.setContent {
+                        MaterialTheme {
+                            androidx.compose.foundation.layout.Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(ReportTokens.Palette.PageBackground)
+                                    .padding(padding)
+                            ) {
+                                DateRow(periodLabel, onPrev = { }, onNext = { }, onPick = { })
+                                OverviewCard(
+                                    state = overview,
+                                    modifier = Modifier
+                                        .padding(horizontal = ReportTokens.Metrics.PagePadding)
+                                        .fillMaxWidth()
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                DailyBarChartCard(
+                                    series = dailySeries,
+                                    tab = dailyTab,
+                                    onTabChange = { dailyTab = it },
+                                    periodLabel = periodLabel,
+                                    modifier = Modifier
+                                        .padding(horizontal = ReportTokens.Metrics.PagePadding)
+                                        .fillMaxWidth()
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                CategoryDonutCard(
+                                    state = categoryState,
+                                    dimension = categoryDim,
+                                    onDimensionChange = { categoryDim = it },
+                                    modifier = Modifier
+                                        .padding(horizontal = ReportTokens.Metrics.PagePadding)
+                                        .fillMaxWidth()
+                                )
+                                Spacer(Modifier.height(10.dp))
+                                DailyTableCard(
+                                    rows = tableRows,
+                                    modifier = Modifier
+                                        .padding(horizontal = ReportTokens.Metrics.PagePadding)
+                                        .fillMaxWidth()
+                                )
+                                Spacer(Modifier.height(72.dp))
+                            }
+                        }
+                    }
                 }
             )
         } else {
@@ -208,7 +238,8 @@ fun BookReportV2Screen(navController: NavController) {
                 contentPadding = padding
             ) {
                 item { DateRow(periodLabel, onPrev = { }, onNext = { }, onPick = { }) }
-                item {
+                item(key = "${mode}_overview_${overview.expense}") {
+                    // 使用key参数强制重组
                     OverviewCard(
                         state = overview,
                         modifier = Modifier
@@ -217,7 +248,7 @@ fun BookReportV2Screen(navController: NavController) {
                     )
                 }
                 item { Spacer(Modifier.height(10.dp)) }
-                item {
+                item(key = "${mode}_daily_chart") {
                     DailyBarChartCard(
                         series = dailySeries,
                         tab = dailyTab,
@@ -229,7 +260,8 @@ fun BookReportV2Screen(navController: NavController) {
                     )
                 }
                 item { Spacer(Modifier.height(10.dp)) }
-                item {
+                item(key = "${mode}_category_${categoryState.entries.firstOrNull()?.name}") {
+                    // 使用key参数强制重组
                     CategoryDonutCard(
                         state = categoryState,
                         dimension = categoryDim,
@@ -252,6 +284,19 @@ fun BookReportV2Screen(navController: NavController) {
             }
         }
     }
+
+    // 显示筛选对话框
+    FilterDialog(
+        isVisible = showFilterDialog,
+        currentFilter = filterState,
+        onDismiss = { showFilterDialog = false },
+        onConfirm = { newFilter ->
+            filterState = newFilter
+            showFilterDialog = false
+            // 这里可以根据筛选条件更新数据
+            android.util.Log.d("BookReport_DEBUG", "Filter applied: $filterState")
+        }
+    )
 }
 
 // removed legacy ModeSegmented (garbled labels)
@@ -321,6 +366,7 @@ private fun demoDailySeries(): DailySeries {
 }
 
 private fun demoCategoryState(): CategoryState {
+    android.util.Log.d("BookReport_DEBUG", "🎯 CALLED: demoCategoryState() - Returning MONTH category data")
     val colors = ReportTokens.Palette.Category
     val entries = listOf(
         CategoryEntry("电器数码", "¥5252.99", 0.4816f, colors[0], CategoryIcon.Electronics),
@@ -342,7 +388,9 @@ private fun demoCategoryState(): CategoryState {
         CategoryEntry("住房", "¥43.50", 0.0040f, colors[4], CategoryIcon.Housing),
         CategoryEntry("饮料", "¥14.00", 0.0013f, colors[5], CategoryIcon.Drinks)
     )
-    return CategoryState(entries)
+    return CategoryState(entries).also {
+        android.util.Log.d("BookReport_DEBUG", "🍰 MONTH Categories: Top3 = ${it.entries.take(3).map { "${it.name}(${(it.percent*100).toInt()}%)" }}")
+    }
 }
 
 
@@ -362,6 +410,20 @@ private fun demoDailyRows(): List<DailyRow> = listOf(
 // ---------------- 年模式专用数据函数 -----------------
 
 private fun demoYearOverviewData(): OverviewState {
+    android.util.Log.d("BookReport_DEBUG", "📊 CALLED: demoYearOverviewData() - Returning YEAR data")
+    return OverviewState(
+        expense = "¥79200.32",
+        income = "¥34834.31",
+        balance = "-¥44575.01",
+        averageDailyExpense = "¥8801.04",
+        extraMetrics = listOf(
+            Metric(label = "平均月支出", value = "¥778.02"),
+            Metric(label = "信用卡还款", value = "¥10499.51"),
+            Metric(label = "其他", value = "¥210.68")
+        )
+    ).also {
+        android.util.Log.d("BookReport_DEBUG", "💰 YEAR Overview: expense=${it.expense}, income=${it.income}")
+    }
     return OverviewState(
         expense = "\u00A579200.32",
         income = "\u00A534834.31",
@@ -376,33 +438,30 @@ private fun demoYearOverviewData(): OverviewState {
 }
 
 private fun demoYearCategoryState(): CategoryState {
+    android.util.Log.d("BookReport_DEBUG", "🎯 CALLED: demoYearCategoryState() - Returning YEAR category data")
     val colors = ReportTokens.Palette.Category
     val entries = listOf(
-        CategoryEntry("电器数码", "¥19342.30", 0.4816f, colors[0], CategoryIcon.Electronics),
-        CategoryEntry("学习", "¥12764.31", 0.1371f, colors[1], CategoryIcon.Study),
-        CategoryEntry("下馆子", "¥7383.42", 0.0904f, colors[2], CategoryIcon.Restaurant),
-        CategoryEntry("交通", "¥6500.26", 0.0650f, colors[3], CategoryIcon.Transport),
-        CategoryEntry("话费网费", "¥5431.99", 0.0686f, colors[4], CategoryIcon.Phone),
-        CategoryEntry("请客送礼", "¥5222.00", 0.0676f, colors[5], CategoryIcon.Gift),
-        CategoryEntry("住房", "¥3267.74", 0.0338f, colors[6], CategoryIcon.Housing),
-        CategoryEntry("日用品", "¥3001.24", 0.0307f, colors[7], CategoryIcon.Daily),
-        CategoryEntry("医疗", "¥2071.35", 0.0273f, colors[8], CategoryIcon.Medical),
-        CategoryEntry("电气家居", "¥2480.00", 0.0206f, colors[9], CategoryIcon.Other),
-        CategoryEntry("学习用品", "¥2327.52", 0.0194f, colors[10], CategoryIcon.Study),
-        CategoryEntry("买菜", "¥2248.69", 0.0086f, colors[11], CategoryIcon.Groceries),
-        CategoryEntry("衣服", "¥1383.57", 0.0120f, colors[0], CategoryIcon.Clothes),
-        CategoryEntry("经费网费", "¥1334.66", 0.0010f, colors[1], CategoryIcon.Phone),
-        CategoryEntry("超市", "¥1078.66", 0.0020f, colors[2], CategoryIcon.Supermarket),
-        CategoryEntry("柴米", "¥672.00", 0.0020f, colors[3], CategoryIcon.Essentials),
-        CategoryEntry("学费", "¥431.30", 0.0020f, colors[4], CategoryIcon.Study),
-        CategoryEntry("家具", "¥579.47", 0.0020f, colors[5], CategoryIcon.Other),
-        CategoryEntry("柴米油盐", "¥514.43", 0.0020f, colors[6], CategoryIcon.Essentials),
-        CategoryEntry("零食", "¥260.41", 0.0020f, colors[7], CategoryIcon.Snacks),
-        CategoryEntry("娱乐服务", "¥174.42", 0.0020f, colors[8], CategoryIcon.Entertainment),
-        CategoryEntry("租金", "¥117.00", 0.0020f, colors[9], CategoryIcon.Housing),
-        CategoryEntry("油料费", "¥15.50", 0.0200f, colors[10], CategoryIcon.Transport)
+        CategoryEntry("住房", "¥19008.08", 0.2400f, colors[0], CategoryIcon.Housing),
+        CategoryEntry("其他", "¥15602.46", 0.1970f, colors[1], CategoryIcon.Other),
+        CategoryEntry("下馆子", "¥7365.63", 0.0930f, colors[2], CategoryIcon.Restaurant),
+        CategoryEntry("交通", "¥6494.43", 0.0820f, colors[3], CategoryIcon.Transport),
+        CategoryEntry("话费网费", "¥5464.82", 0.0690f, colors[4], CategoryIcon.Phone),
+        CategoryEntry("请客送礼", "¥5227.22", 0.0660f, colors[5], CategoryIcon.Gift),
+        CategoryEntry("日用品", "¥3009.61", 0.0380f, colors[6], CategoryIcon.Daily),
+        CategoryEntry("学习用品", "¥2296.81", 0.0290f, colors[7], CategoryIcon.Study),
+        CategoryEntry("买菜", "¥2217.61", 0.0280f, colors[8], CategoryIcon.Groceries),
+        CategoryEntry("医疗", "¥2059.20", 0.0260f, colors[9], CategoryIcon.Medical),
+        CategoryEntry("衣服", "¥1346.41", 0.0170f, colors[10], CategoryIcon.Clothes),
+        CategoryEntry("柴米油盐", "¥633.60", 0.0080f, colors[11], CategoryIcon.Essentials),
+        CategoryEntry("家具", "¥554.40", 0.0070f, colors[0], CategoryIcon.Other),
+        CategoryEntry("学费", "¥396.00", 0.0050f, colors[1], CategoryIcon.Study),
+        CategoryEntry("零食", "¥237.60", 0.0030f, colors[2], CategoryIcon.Snacks),
+        CategoryEntry("娱乐服务", "¥158.40", 0.0020f, colors[3], CategoryIcon.Entertainment),
+        CategoryEntry("租金", "¥79.20", 0.0010f, colors[4], CategoryIcon.Housing)
     )
-    return CategoryState(entries)
+    return CategoryState(entries).also {
+        android.util.Log.d("BookReport_DEBUG", "🍰 YEAR Categories: Top3 = ${it.entries.take(3).map { "${it.name}(${(it.percent*100).toInt()}%)" }}")
+    }
 }
 
 private fun demoMonthlyRows(): List<DailyRow> = listOf(
