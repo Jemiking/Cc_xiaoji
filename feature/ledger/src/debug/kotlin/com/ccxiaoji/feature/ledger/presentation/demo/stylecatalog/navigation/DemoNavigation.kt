@@ -11,6 +11,8 @@ import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DEM
 import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DEMO_ROUTE_BOOK_EDIT
 import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DEMO_ROUTE_REPORT_STATS
 import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DEMO_ROUTE_CATEGORY_MANAGEMENT
+import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DEMO_ROUTE_MIGRATE_BOOK
+import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.navigation.DEMO_ROUTE_CLEAR_BILLS
  
 import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.viewmodel.DemoViewModel
 
@@ -26,7 +28,8 @@ sealed class DemoScreen(val route: String) {
     object BookEdit : DemoScreen(DEMO_ROUTE_BOOK_EDIT)
     object ReportStats : DemoScreen(DEMO_ROUTE_REPORT_STATS)
     object CategoryManagement : DemoScreen(DEMO_ROUTE_CATEGORY_MANAGEMENT)
-    
+    object MigrateBook : DemoScreen(DEMO_ROUTE_MIGRATE_BOOK)
+    object ClearBills : DemoScreen(DEMO_ROUTE_CLEAR_BILLS)
 }
 
 @Composable
@@ -46,7 +49,8 @@ fun DemoNavHost(
         composable(DemoScreen.BookEdit.route) { BookEditScreen(navController) }
         composable(DemoScreen.ReportStats.route) { BookReportV2Screen(navController) }
         composable(DemoScreen.CategoryManagement.route) { CategoryManagementScreen(navController) }
-
+        composable(DemoScreen.MigrateBook.route) { MigrateBookScreen(navController) }
+        composable(DemoScreen.ClearBills.route) { ClearBillsScreen(navController) }
     }
 }
 

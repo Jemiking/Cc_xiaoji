@@ -98,13 +98,13 @@ fun BookSettingsScreen(navController: NavController) {
                 SettingsRow(
                     title = "迁移账本",
                     trailing = { Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Color(0xFFC5C8CE)) },
-                    onClick = { }
+                    onClick = { navController.navigate(DemoScreen.MigrateBook.route) }
                 )
                 Divider(color = Color(0xFFF0F0F0), thickness = 0.5.dp)
                 SettingsRow(
                     title = "清除账单",
                     trailing = { Icon(Icons.Filled.ChevronRight, contentDescription = null, tint = Color(0xFFC5C8CE)) },
-                    onClick = { }
+                    onClick = { navController.navigate(DemoScreen.ClearBills.route) }
                 )
                 Divider(color = Color(0xFFF0F0F0), thickness = 0.5.dp)
                 SettingsRow(
