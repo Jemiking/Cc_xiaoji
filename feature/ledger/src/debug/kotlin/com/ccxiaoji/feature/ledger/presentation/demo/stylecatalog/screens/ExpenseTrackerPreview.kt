@@ -1,5 +1,8 @@
 package com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.screens
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -62,13 +65,23 @@ fun ExpenseTrackerPreviewScreen(navController: NavController) {
             DismissibleDrawerSheet(
                 drawerContainerColor = Color.White,
                 drawerContentColor = Color(0xFF374151),
-                modifier = Modifier.fillMaxWidth(0.85f)  // 限制抽屉宽度为屏幕的85%
+                modifier = Modifier.fillMaxWidth(0.70f)  // 限制抽屉宽度为屏幕的70%
             ) {
                 DrawerContent(navController)
             }
         }
     ) {
         Box(modifier = Modifier.fillMaxSize().background(Gray100)) {
+            // 计算蒙版透明度：使用spring弹簧动画实现更自然的过渡
+            val scrimAlpha by animateFloatAsState(
+                targetValue = if (drawerState.targetValue == DrawerValue.Open) 0.5f else 0f,
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,  // 无弹跳
+                    stiffness = Spring.StiffnessMediumLow  // 中低刚度，更柔和
+                ),
+                label = "scrimAlpha"
+            )
+
             // 顶部叠层：内容区顶部状态栏高度覆以蓝色
             val statusBarH = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
             Row(
@@ -167,6 +180,20 @@ fun ExpenseTrackerPreviewScreen(navController: NavController) {
             }
 
             FloatingAddButton(background = QianjiInspiredSpecs.Colors.Blue500, bottomPadding = 32.dp, modifier = Modifier.align(Alignment.BottomCenter))
+
+            // 蒙版层：使用spring弹簧动画实现柔和的淡入淡出
+            if (scrimAlpha > 0f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = scrimAlpha))
+                        .zIndex(2f)  // 确保在其他内容之上
+                        .clickable(
+                            enabled = drawerState.currentValue == DrawerValue.Open,
+                            onClick = { scope.launch { drawerState.close() } }
+                        )
+                )
+            }
         }
     }
 }
@@ -180,9 +207,27 @@ private fun IconPlaceholder() {
 
 @Composable
 private fun FloatingAddButton(background: Color, bottomPadding: Dp, modifier: Modifier = Modifier) {
-    FloatingActionButton(onClick = { }, containerColor = background, contentColor = Color.White, shape = CircleShape, modifier = modifier.padding(bottom = bottomPadding).size(56.dp)) {
+    var showAddBillDialog by remember { mutableStateOf(false) }
+
+    FloatingActionButton(
+        onClick = { showAddBillDialog = true },
+        containerColor = background,
+        contentColor = Color.White,
+        shape = CircleShape,
+        modifier = modifier.padding(bottom = bottomPadding).size(56.dp)
+    ) {
         Text("+", fontSize = 24.sp)
     }
+
+    // 使用V2版本 - 纯白背景iOS风格
+    AddBillScreenV2(
+        visible = showAddBillDialog,
+        onDismiss = { showAddBillDialog = false },
+        onSave = { billState ->
+            // TODO: 保存账单到数据库
+            android.util.Log.d("ExpenseTracker", "保存账单: $billState")
+        }
+    )
 }
 
 @Composable

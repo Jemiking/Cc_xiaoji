@@ -9,15 +9,19 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
@@ -27,6 +31,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,6 +43,12 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
 import java.util.Locale
+
+// 日期选择器模式
+private enum class DatePickerMode {
+    CALENDAR,  // 日历网格模式
+    WHEEL      // 滚轮模式
+}
 
 // 颜色定义
 private object DatePickerColors {
@@ -67,6 +79,7 @@ fun CustomDatePickerDialog(
     var selectedDate by remember { mutableStateOf(initialDate ?: LocalDate.now()) }
     var currentMonth by remember { mutableStateOf(YearMonth.from(selectedDate)) }
     var showYearMonthPicker by remember { mutableStateOf(false) }  // 新增：年月选择器状态
+    var pickerMode by remember { mutableStateOf(DatePickerMode.CALENDAR) }  // 新增：选择器模式
     val today = LocalDate.now()
 
     Dialog(onDismissRequest = onDismiss) {
@@ -86,7 +99,7 @@ fun CustomDatePickerDialog(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp)
                 ) {
-                    // 顶部日期显示（左对齐，右侧日历图标）
+                    // 顶部区域
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -94,53 +107,95 @@ fun CustomDatePickerDialog(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
-                            Text(
-                                text = "${selectedDate.year}年",
-                                fontSize = 12.sp,
-                                color = DatePickerColors.Secondary,
-                                fontWeight = FontWeight.Normal
-                            )
-                            Text(
-                                text = "${selectedDate.monthValue}月${selectedDate.dayOfMonth}日${getDayOfWeekChinese(selectedDate)}",
-                                fontSize = 17.sp,
-                                color = DatePickerColors.Primary,
-                                fontWeight = FontWeight.Medium
+                        // 日历模式：显示日期文字
+                        if (pickerMode == DatePickerMode.CALENDAR) {
+                            Column {
+                                Text(
+                                    text = "${selectedDate.year}年",
+                                    fontSize = 12.sp,
+                                    color = DatePickerColors.Secondary,
+                                    fontWeight = FontWeight.Normal
+                                )
+                                Text(
+                                    text = "${selectedDate.monthValue}月${selectedDate.dayOfMonth}日${getDayOfWeekChinese(selectedDate)}",
+                                    fontSize = 17.sp,
+                                    color = DatePickerColors.Primary,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        } else {
+                            // 滚轮模式：左侧留空
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+
+                        // 切换图标按钮
+                        IconButton(
+                            onClick = {
+                                pickerMode = if (pickerMode == DatePickerMode.CALENDAR) {
+                                    DatePickerMode.WHEEL
+                                } else {
+                                    DatePickerMode.CALENDAR
+                                }
+                            },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (pickerMode == DatePickerMode.CALENDAR) {
+                                    Icons.Default.ViewList  // 日历模式显示列表图标
+                                } else {
+                                    Icons.Default.CalendarToday  // 滚轮模式显示日历图标
+                                },
+                                contentDescription = "切换选择器模式",
+                                modifier = Modifier.size(20.dp),
+                                tint = DatePickerColors.Secondary
                             )
                         }
-                        Icon(
-                            imageVector = Icons.Default.CalendarToday,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = DatePickerColors.Secondary
-                        )
                     }
 
-                    // 月份导航栏
-                    MonthNavigator(
-                        currentMonth = currentMonth,
-                        onPreviousMonth = { currentMonth = currentMonth.minusMonths(1) },
-                        onNextMonth = { currentMonth = currentMonth.plusMonths(1) },
-                        onMonthYearClick = { showYearMonthPicker = true }  // 点击显示年月选择器
-                    )
+                    // 根据模式显示不同的选择器
+                    if (pickerMode == DatePickerMode.CALENDAR) {
+                        // 日历模式
+                        // 月份导航栏
+                        MonthNavigator(
+                            currentMonth = currentMonth,
+                            onPreviousMonth = { currentMonth = currentMonth.minusMonths(1) },
+                            onNextMonth = { currentMonth = currentMonth.plusMonths(1) },
+                            onMonthYearClick = { showYearMonthPicker = true }  // 点击显示年月选择器
+                        )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    // 星期标题行
-                    WeekdayHeaders()
+                        // 星期标题行
+                        WeekdayHeaders()
 
-                    // 可滑动的日历网格
-                    SwipeableCalendarGrid(
-                        currentMonth = currentMonth,
-                        selectedDate = selectedDate,
-                        today = today,
-                        minDate = minDate,
-                        maxDate = maxDate,
-                        onDateSelected = { selectedDate = it },
-                        onMonthChanged = { currentMonth = it }
-                    )
+                        // 可滑动的日历网格
+                        SwipeableCalendarGrid(
+                            currentMonth = currentMonth,
+                            selectedDate = selectedDate,
+                            today = today,
+                            minDate = minDate,
+                            maxDate = maxDate,
+                            onDateSelected = { selectedDate = it },
+                            onMonthChanged = { currentMonth = it }
+                        )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
+                    } else {
+                        // 滚轮模式
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        WheelDatePicker(
+                            selectedDate = selectedDate,
+                            minDate = minDate,
+                            maxDate = maxDate,
+                            onDateChanged = { newDate ->
+                                selectedDate = newDate
+                                currentMonth = YearMonth.from(newDate)
+                            }
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                 }
 
                 // 底部按钮栏
@@ -724,5 +779,208 @@ private fun getDayOfWeekChinese(date: LocalDate): String {
         DayOfWeek.FRIDAY -> "周五"
         DayOfWeek.SATURDAY -> "周六"
         DayOfWeek.SUNDAY -> "周日"
+    }
+}
+
+// 滚轮选择器核心组件
+@Composable
+private fun WheelPicker(
+    items: List<String>,
+    selectedIndex: Int,
+    onSelectedIndexChanged: (Int) -> Unit,
+    visibleItemCount: Int = 5,
+    modifier: Modifier = Modifier
+) {
+    val itemHeight = 48.dp
+    val density = LocalDensity.current
+    val itemHeightPx = with(density) { itemHeight.toPx() }
+    val halfVisibleItems = visibleItemCount / 2
+
+    // 在列表前后添加空白项，使选中项能居中
+    val paddedItems = List(halfVisibleItems) { "" } + items + List(halfVisibleItems) { "" }
+
+    val listState = rememberLazyListState(initialFirstVisibleItemIndex = selectedIndex)
+    val coroutineScope = rememberCoroutineScope()
+
+    // 监听滚动停止，自动对齐到最近项
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (!listState.isScrollInProgress) {
+            val firstVisibleIndex = listState.firstVisibleItemIndex
+            val firstVisibleOffset = listState.firstVisibleItemScrollOffset
+
+            // 计算最接近中心的项索引
+            val centerIndex = if (firstVisibleOffset > itemHeightPx / 2) {
+                firstVisibleIndex + 1
+            } else {
+                firstVisibleIndex
+            }
+
+            // 对齐到该项
+            listState.animateScrollToItem(centerIndex)
+
+            // 计算实际的数据索引（减去前面的padding）
+            val actualIndex = centerIndex - halfVisibleItems
+            if (actualIndex in items.indices && actualIndex != selectedIndex) {
+                onSelectedIndexChanged(actualIndex)
+            }
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .height(itemHeight * visibleItemCount)
+            .fillMaxWidth()
+    ) {
+        // 滚轮列表
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            itemsIndexed(paddedItems) { index, item ->
+                // 计算当前项与中心的距离
+                val firstVisibleIndex = listState.firstVisibleItemIndex
+                val firstVisibleOffset = listState.firstVisibleItemScrollOffset.toFloat()
+                val centerOffset = halfVisibleItems.toFloat() * itemHeightPx
+                val itemOffset = (index - firstVisibleIndex).toFloat() * itemHeightPx - firstVisibleOffset
+                val distanceFromCenter = kotlin.math.abs(itemOffset - centerOffset)
+
+                // 根据距离计算视觉效果
+                val normalizedDistance = (distanceFromCenter / itemHeightPx).coerceIn(0f, 2f)
+                val scale = 1f - normalizedDistance * 0.1f  // 0.8-1.0
+                val alpha = 1f - normalizedDistance * 0.35f  // 0.3-1.0
+
+                Box(
+                    modifier = Modifier
+                        .height(itemHeight)
+                        .fillMaxWidth()
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                            this.alpha = alpha
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (item.isNotEmpty()) {
+                        Text(
+                            text = item,
+                            fontSize = (16 + (1f - normalizedDistance / 2f) * 4).sp,  // 16-20sp
+                            color = if (normalizedDistance < 0.5f) {
+                                DatePickerColors.SelectedBg  // 中心项蓝色
+                            } else if (normalizedDistance < 1.5f) {
+                                Color(0xFF9CA3AF)  // ±1项灰色
+                            } else {
+                                Color(0xFFD1D5DB)  // ±2项淡灰色
+                            },
+                            fontWeight = if (normalizedDistance < 0.5f) FontWeight.Medium else FontWeight.Normal,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+
+        // 上分隔线
+        Divider(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .offset(y = (-itemHeight / 2))
+                .fillMaxWidth(),
+            color = DatePickerColors.Border,
+            thickness = 1.dp
+        )
+
+        // 下分隔线
+        Divider(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .offset(y = (itemHeight / 2))
+                .fillMaxWidth(),
+            color = DatePickerColors.Border,
+            thickness = 1.dp
+        )
+    }
+}
+
+// 日期滚轮选择器
+@Composable
+private fun WheelDatePicker(
+    selectedDate: LocalDate,
+    minDate: LocalDate?,
+    maxDate: LocalDate?,
+    onDateChanged: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val currentYear = LocalDate.now().year
+    val yearRange = (currentYear - 50)..(currentYear + 50)
+    val yearList = yearRange.map { "$it" }
+
+    var selectedYear by remember { mutableStateOf(selectedDate.year) }
+    var selectedMonth by remember { mutableStateOf(selectedDate.monthValue) }
+    var selectedDay by remember { mutableStateOf(selectedDate.dayOfMonth) }
+
+    // 根据年月动态计算天数
+    val daysInMonth = YearMonth.of(selectedYear, selectedMonth).lengthOfMonth()
+    val dayList = (1..daysInMonth).map { "$it" }
+
+    // 如果当前选中的日期超出范围，自动调整
+    LaunchedEffect(selectedYear, selectedMonth) {
+        if (selectedDay > daysInMonth) {
+            selectedDay = daysInMonth
+        }
+        // 通知日期变化
+        try {
+            val newDate = LocalDate.of(selectedYear, selectedMonth, selectedDay)
+            if (isDateInRange(newDate, minDate, maxDate)) {
+                onDateChanged(newDate)
+            }
+        } catch (e: Exception) {
+            // 日期无效，忽略
+        }
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(240.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        // 年份列
+        WheelPicker(
+            items = yearList,
+            selectedIndex = yearRange.indexOf(selectedYear),
+            onSelectedIndexChanged = { index ->
+                selectedYear = yearRange.first + index
+            },
+            modifier = Modifier.weight(1f)
+        )
+
+        // 月份列
+        WheelPicker(
+            items = (1..12).map { "${it}月" },
+            selectedIndex = selectedMonth - 1,
+            onSelectedIndexChanged = { index ->
+                selectedMonth = index + 1
+            },
+            modifier = Modifier.weight(1f)
+        )
+
+        // 日期列
+        WheelPicker(
+            items = dayList,
+            selectedIndex = selectedDay - 1,
+            onSelectedIndexChanged = { index ->
+                selectedDay = index + 1
+                // 通知日期变化
+                try {
+                    val newDate = LocalDate.of(selectedYear, selectedMonth, selectedDay)
+                    if (isDateInRange(newDate, minDate, maxDate)) {
+                        onDateChanged(newDate)
+                    }
+                } catch (e: Exception) {
+                    // 日期无效，忽略
+                }
+            },
+            modifier = Modifier.weight(1f)
+        )
     }
 }
