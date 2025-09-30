@@ -29,7 +29,7 @@ compose-bom = "2024.10.00"
 compose-compiler = "1.5.14"
 
 # Hilt
-hilt = "2.48.1"
+hilt = "2.51.1"
 hilt-androidx = "1.1.0"
 
 # Room
