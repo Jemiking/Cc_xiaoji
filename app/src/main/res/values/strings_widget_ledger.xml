@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_ledger_title_placeholder">记账</string>
+    <string name="widget_ledger_title_unconfigured">未选择账本</string>
+    <string name="widget_title_ledger">账本</string>
+    <string name="widget_label_today_income">今日收入</string>
+    <string name="widget_label_today_expense">今日支出</string>
+    <string name="widget_label_month_income">本月收入</string>
+    <string name="widget_label_month_expense">本月支出</string>
+    <string name="widget_quick_add">＋记一笔</string>
+    <string name="widget_desc_quick_add">快速记账</string>
+    <string name="widget_desc_refresh">刷新</string>
+    <string name="widget_desc_ledger_name_with_name">账本：%1$s</string>
+    <string name="widget_cd_today_income">今日收入 %1$s</string>
+    <string name="widget_cd_today_expense">今日支出 %1$s</string>
+    <string name="widget_cd_month_income">本月收入 %1$s</string>
+    <string name="widget_cd_month_expense">本月支出 %1$s</string>
+    <string name="widget_ledger_label">记账概览</string>
+</resources>

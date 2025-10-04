@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ccxiaoji.feature.ledger.R
 import com.ccxiaoji.feature.ledger.domain.model.LedgerUIStyle
@@ -57,6 +58,17 @@ fun StyleableTransactionItem(
             modifier = modifier
         )
         LedgerUIStyle.HIERARCHICAL -> HierarchicalTransactionItem(
+            transaction = transaction,
+            isSelected = isSelected,
+            isSelectionMode = isSelectionMode,
+            onItemClick = onItemClick,
+            onItemLongClick = onItemLongClick,
+            onEdit = onEdit,
+            onDelete = onDelete,
+            onCopy = onCopy,
+            modifier = modifier
+        )
+        LedgerUIStyle.HYBRID -> BalancedTransactionItem(
             transaction = transaction,
             isSelected = isSelected,
             isSelectionMode = isSelectionMode,
@@ -345,6 +357,19 @@ private fun HierarchicalTransactionItem(
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
+                }
+
+                // 备注：单行内联，省略号，不改变行高
+                transaction.note?.takeIf { it.isNotBlank() }?.let { note ->
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = note,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = true)
+                    )
                 }
             }
             

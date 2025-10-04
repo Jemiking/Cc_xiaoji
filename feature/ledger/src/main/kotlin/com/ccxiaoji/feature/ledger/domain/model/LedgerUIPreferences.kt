@@ -29,6 +29,10 @@ enum class LedgerUIStyle(
     HIERARCHICAL(
         displayName = "层次化设计",
         description = "品牌色彩的极简设计，突出重要信息，清晰的视觉层次"
+    ),
+    HYBRID(
+        displayName = "混合设计",
+        description = "层次化概览卡片 + 平衡增强交易列表"
     );
     
     companion object {

@@ -64,6 +64,14 @@ fun StyleableMonthlyOverviewBar(
                     modifier = Modifier.padding(horizontal = 16.dp)
                 )
             }
+            LedgerUIStyle.HYBRID -> {
+                // 混合风格：概览卡片采用层次化设计
+                HierarchicalOverviewCard(
+                    monthlyIncome = monthlyIncome,
+                    monthlyExpense = monthlyExpense,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
         }
     }
 }

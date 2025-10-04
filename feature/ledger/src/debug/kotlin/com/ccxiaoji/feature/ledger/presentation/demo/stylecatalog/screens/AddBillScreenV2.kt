@@ -8,17 +8,24 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
+import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.data.CategoryDataV2
 import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.viewmodel.AddBillState
 import com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.viewmodel.BillTab
 
@@ -92,6 +99,7 @@ private fun AddBillContent(
     onSave: (AddBillState) -> Unit
 ) {
     var state by remember { mutableStateOf(AddBillState()) }
+    var selectedCategoryId: String? by remember { mutableStateOf(null) }
 
     Column(
         modifier = Modifier
@@ -104,9 +112,10 @@ private fun AddBillContent(
             selectedTab = state.selectedTab,
             onTabSelected = { tab ->
                 state = state.copy(selectedTab = tab)
+                selectedCategoryId = null
             },
             onClose = onDismiss,
-            onAdd = { /* TODO */ }
+            onAdd = { /* TODO: 添加分类 */ }
         )
 
         // 2. 分类网格（可滚动）
@@ -117,9 +126,9 @@ private fun AddBillContent(
         ) {
             IOSStyleCategoryGrid(
                 tab = state.selectedTab,
-                selectedCategory = state.selectedCategory,
-                onCategorySelected = { category ->
-                    state = state.copy(selectedCategory = category)
+                selectedCategoryId = selectedCategoryId,
+                onCategorySelected = { categoryId ->
+                    selectedCategoryId = categoryId
                 }
             )
         }
@@ -155,7 +164,7 @@ private fun AddBillContent(
 }
 
 /**
- * iOS风格顶部栏
+ * iOS风格顶部栏 - 1:1复刻版本
  */
 @Composable
 private fun IOSStyleTopBar(
@@ -178,15 +187,21 @@ private fun IOSStyleTopBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // 关闭按钮 (X)
-            Text(
-                text = "✕",
-                fontSize = 24.sp,
-                color = Color.Black,
-                modifier = Modifier.clickable(onClick = onClose)
-            )
+            // 关闭按钮 (X) - 精确样式
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clickable(onClick = onClose),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "✕",
+                    fontSize = 24.sp,
+                    color = Color.Black
+                )
+            }
 
-            // Tab组
+            // Tab组 - 中央位置
             Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                 TabItem("支出", selectedTab == BillTab.EXPENSE) {
                     onTabSelected(BillTab.EXPENSE)
@@ -199,21 +214,21 @@ private fun IOSStyleTopBar(
                 }
             }
 
-            // 添加按钮 (+)
-            Surface(
+            // 添加按钮 (+) - 黑色圆形背景
+            Box(
                 modifier = Modifier
                     .size(32.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black)
                     .clickable(onClick = onAdd),
-                shape = androidx.compose.foundation.shape.CircleShape,
-                color = Color.Black
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "+",
-                        fontSize = 20.sp,
-                        color = Color.White
-                    )
-                }
+                Text(
+                    text = "+",
+                    fontSize = 20.sp,
+                    color = Color.White,
+                    fontWeight = FontWeight.Medium
+                )
             }
         }
     }
@@ -248,40 +263,90 @@ private fun TabItem(
 }
 
 /**
- * iOS风格分类网格
+ * iOS风格分类网格 - 1:1复刻版本
  */
 @Composable
 private fun IOSStyleCategoryGrid(
     tab: BillTab,
-    selectedCategory: Any?,
-    onCategorySelected: (Any) -> Unit
+    selectedCategoryId: String?,
+    onCategorySelected: (String) -> Unit
 ) {
-    // 临时分类数据
+    // 使用CategoryDataV2的数据
     val categories = when (tab) {
-        BillTab.EXPENSE -> expenseCategories
-        BillTab.INCOME -> incomeCategories
+        BillTab.EXPENSE -> CategoryDataV2.EXPENSE_CATEGORIES
+        BillTab.INCOME -> CategoryDataV2.INCOME_CATEGORIES
         BillTab.TRANSFER -> emptyList()
     }
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(5),
         contentPadding = PaddingValues(
-            horizontal = 16.dp,
-            vertical = 12.dp
+            horizontal = 20.dp,
+            vertical = 16.dp
         ),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
         modifier = Modifier.fillMaxSize()
     ) {
         items(categories) { category ->
-            IOSCategoryItem(
+            IOSCategoryItemV2(
                 category = category,
-                selected = category == selectedCategory,
-                onClick = { onCategorySelected(category) }
+                selected = category.id == selectedCategoryId,
+                onClick = { onCategorySelected(category.id) }
             )
         }
     }
 }
 
+/**
+ * iOS风格分类项 - 1:1复刻版本
+ * 彩色圆形背景 + 白色图标
+ */
+@Composable
+private fun IOSCategoryItemV2(
+    category: CategoryDataV2.Category,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 8.dp, horizontal = 4.dp)
+    ) {
+        // 彩色圆形背景 + 白色图标
+        Box(
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(
+                    if (selected) category.backgroundColor.copy(alpha = 0.8f)
+                    else category.backgroundColor
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = category.icon,
+                contentDescription = null,
+                tint = Color.White,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        Text(
+            text = category.name,
+            fontSize = 11.sp,
+            color = Color.Black, // 文字使用黑色
+            maxLines = 1,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+// 保留旧版本以兼容
 @Composable
 private fun IOSCategoryItem(
     category: TempCategory,
@@ -293,37 +358,35 @@ private fun IOSCategoryItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(4.dp)
+            .padding(vertical = 8.dp, horizontal = 4.dp)
     ) {
-        // 图标占位符
         Box(
             modifier = Modifier
-                .size(36.dp)
-                .background(
-                    color = if (selected) Color(0xFFE8E8E8) else Color(0xFFF5F5F5),
-                    shape = androidx.compose.foundation.shape.CircleShape
-                ),
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color(0xFFE0E0E0)),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = category.icon,
-                fontSize = 20.sp
+                text = category.name.take(1),
+                fontSize = 16.sp,
+                color = Color.Black
             )
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(6.dp))
 
         Text(
             text = category.name,
             fontSize = 11.sp,
-            color = Color(0xFF333333),
+            color = if (selected) Color(0xFF007AFF) else Color(0xFF333333),
             maxLines = 1
         )
     }
 }
 
 /**
- * iOS风格输入区域
+ * iOS风格输入区域 - 1:1复刻版本
  */
 @Composable
 private fun IOSStyleInputSection(
@@ -337,13 +400,14 @@ private fun IOSStyleInputSection(
             .background(Color.White)
     ) {
         // 分割线
-        Divider(color = Color(0xFFEEEEEE))
+        Divider(color = Color(0xFFEEEEEE), thickness = 0.5.dp)
 
         // 备注输入
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(44.dp)
+                .clickable { /* TODO: 打开备注输入 */ }
                 .padding(horizontal = 16.dp),
             contentAlignment = Alignment.CenterStart
         ) {
@@ -362,7 +426,7 @@ private fun IOSStyleInputSection(
             }
         }
 
-        Divider(color = Color(0xFFEEEEEE))
+        Divider(color = Color(0xFFEEEEEE), thickness = 0.5.dp)
 
         // 金额显示
         Box(
@@ -372,17 +436,33 @@ private fun IOSStyleInputSection(
                 .padding(horizontal = 16.dp),
             contentAlignment = Alignment.CenterEnd
         ) {
-            Text(
-                text = "$amount CNY >",
-                fontSize = 28.sp,
-                color = Color(0xFFFF3B30),
-                fontWeight = FontWeight.Normal
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = amount,
+                    fontSize = 28.sp,
+                    color = Color(0xFFFF3B30),
+                    fontWeight = FontWeight.Normal
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "CNY",
+                    fontSize = 16.sp,
+                    color = Color(0xFF666666)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = ">",
+                    fontSize = 20.sp,
+                    color = Color(0xFF999999)
+                )
+            }
         }
 
-        Divider(color = Color(0xFFEEEEEE))
+        Divider(color = Color(0xFFEEEEEE), thickness = 0.5.dp)
 
-        // 快捷按钮行
+        // 快捷按钮行 - 1:1复刻版本
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -391,13 +471,35 @@ private fun IOSStyleInputSection(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            QuickButton("骆一微信零钱")
+            QuickButton("骆-微信零钱")  // 注意是"-"而不是"一"
             QuickButton("今天 17:11")
             QuickButton("报销")
             QuickButton("图片")
+
+            // 购物车图标按钮
+            Surface(
+                modifier = Modifier
+                    .size(28.dp)
+                    .clickable { /* TODO: 购物车功能 */ },
+                shape = RoundedCornerShape(14.dp),
+                color = Color.White,
+                border = androidx.compose.foundation.BorderStroke(
+                    width = 1.dp,
+                    color = Color(0xFFDDDDDD)
+                )
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Filled.ShoppingCart,
+                        contentDescription = "购物车",
+                        tint = Color(0xFF666666),
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
         }
 
-        Divider(color = Color(0xFFEEEEEE))
+        Divider(color = Color(0xFFEEEEEE), thickness = 0.5.dp)
     }
 }
 
@@ -489,9 +591,9 @@ private fun KeyboardKey(
             .fillMaxHeight()
             .clickable(onClick = onClick),
         color = when {
-            isSave -> Color(0xFFFF6B6B)
-            isSpecial -> Color(0xFFE8E8E8)
-            else -> Color.White
+            isSave -> Color(0xFFFF6B6B)  // 保存按钮使用红色
+            isSpecial -> Color(0xFFE8E8E8)  // 功能键使用浅灰色
+            else -> Color.White  // 数字键使用白色
         },
         border = androidx.compose.foundation.BorderStroke(
             width = 0.5.dp,
@@ -510,42 +612,45 @@ private fun KeyboardKey(
 }
 
 // 临时数据类
-data class TempCategory(val name: String, val icon: String)
+data class TempCategory(
+    val id: String,
+    val name: String
+)
 
 val expenseCategories = listOf(
-    TempCategory("买菜", "🛒"),
-    TempCategory("早餐", "🍳"),
-    TempCategory("下馆子", "🍜"),
-    TempCategory("柴米油盐", "🧂"),
-    TempCategory("水果", "🍎"),
-    TempCategory("零食", "🍿"),
-    TempCategory("饮料", "☕"),
-    TempCategory("衣服", "👔"),
-    TempCategory("交通", "🚗"),
-    TempCategory("旅行", "✈️"),
-    TempCategory("话费网费", "📱"),
-    TempCategory("烟酒", "🍺"),
-    TempCategory("学习", "📚"),
-    TempCategory("日用品", "🧻"),
-    TempCategory("住房", "🏠"),
-    TempCategory("美妆", "💄"),
-    TempCategory("医疗", "🏥"),
-    TempCategory("发红包", "🧧"),
-    TempCategory("娱乐", "🎮"),
-    TempCategory("请客送礼", "🎁"),
-    TempCategory("电器数码", "📱"),
-    TempCategory("水电煤", "💡"),
-    TempCategory("其它", "📦"),
-    TempCategory("崔芳榕专用", "👤"),
-    TempCategory("超市", "🏪")
+    TempCategory("grocery", "买菜"),
+    TempCategory("breakfast", "早餐"),
+    TempCategory("dining", "下馆子"),
+    TempCategory("condiments", "柴米油盐"),
+    TempCategory("fruit", "水果"),
+    TempCategory("snack", "零食"),
+    TempCategory("beverage", "饮料"),
+    TempCategory("clothing", "衣服"),
+    TempCategory("transport", "交通"),
+    TempCategory("travel", "旅行"),
+    TempCategory("phone_bill", "话费网费"),
+    TempCategory("tobacco", "烟酒"),
+    TempCategory("study", "学习"),
+    TempCategory("daily", "日用品"),
+    TempCategory("housing", "住房"),
+    TempCategory("beauty", "美妆"),
+    TempCategory("medical", "医疗"),
+    TempCategory("red_packet", "发红包"),
+    TempCategory("entertainment", "娱乐"),
+    TempCategory("gift", "请客送礼"),
+    TempCategory("electronics", "电器数码"),
+    TempCategory("utilities", "水电煤"),
+    TempCategory("other", "其它"),
+    TempCategory("custom_1", "崔芳榕专用"),
+    TempCategory("supermarket", "超市")
 )
 
 val incomeCategories = listOf(
-    TempCategory("工资", "💰"),
-    TempCategory("奖金", "🏆"),
-    TempCategory("投资", "📈"),
-    TempCategory("兼职", "💼"),
-    TempCategory("红包", "🧧")
+    TempCategory("salary", "工资"),
+    TempCategory("bonus", "奖金"),
+    TempCategory("investment", "投资"),
+    TempCategory("part_time", "兼职"),
+    TempCategory("red_packet_in", "红包")
 )
 
 // 辅助函数

@@ -64,6 +64,13 @@ class CcXiaoJiApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         Log.d(TAG, "Application onCreate started")
+        // Ensure WorkManager is initialized since default initializer is removed in Manifest
+        try {
+            WorkManager.initialize(this, workManagerConfiguration)
+            Log.d(TAG, "WorkManager initialized via Configuration.Provider")
+        } catch (e: Exception) {
+            Log.e(TAG, "WorkManager initialization failed", e)
+        }
         
         try {
             Log.d(TAG, "Starting database initialization")

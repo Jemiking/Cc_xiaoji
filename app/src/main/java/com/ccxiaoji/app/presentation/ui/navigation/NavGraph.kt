@@ -506,11 +506,7 @@ fun NavGraph(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-        
-        composable(BatchOperationRoute.route) {
-            PlaceholderScreen(title = "批量操作", navController = navController)
-        }
-        
+
         composable(ThemeSettingsRoute.route) {
             ThemeSettingsScreen(
                 onNavigateBack = { navController.popBackStack() }
@@ -522,27 +518,19 @@ fun NavGraph(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
-        
-        composable(AppLockSettingsRoute.route) {
-            PlaceholderScreen(title = "应用锁", navController = navController)
-        }
-        
-        composable(PrivacySettingsRoute.route) {
-            PlaceholderScreen(title = "隐私设置", navController = navController)
-        }
-        
-        composable(HelpRoute.route) {
-            PlaceholderScreen(title = "使用帮助", navController = navController)
-        }
-        
-        composable(FeedbackRoute.route) {
-            PlaceholderScreen(title = "意见反馈", navController = navController)
-        }
-        
+
         composable(AboutRoute.route) {
-            PlaceholderScreen(title = "关于我们", navController = navController)
+            com.ccxiaoji.app.presentation.ui.profile.AboutScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
         }
-        
+
+        composable(PermissionManagementRoute.route) {
+            com.ccxiaoji.app.presentation.ui.profile.PermissionManagementScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
         // Schedule module routes
         composable(ShiftManageRoute.route) {
             com.ccxiaoji.feature.schedule.presentation.shift.ShiftManageScreen(

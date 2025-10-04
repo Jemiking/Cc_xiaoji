@@ -22,6 +22,7 @@ sealed class DemoScreen(val route: String) {
     object ExpenseTrackerPreview : DemoScreen(DEMO_ROUTE_EXPENSE_PREVIEW)
     object Books : DemoScreen("demo_accounts_books")
     object CardBackup : DemoScreen("demo_card_backup")
+    object AddCard : DemoScreen("demo_card_add")
     object Installments : DemoScreen("demo_installments")
     object SettingsAbout : DemoScreen("demo_settings_about")
     object BookSettings : DemoScreen(DEMO_ROUTE_BOOK_SETTINGS)
@@ -42,7 +43,8 @@ fun DemoNavHost(
         // 仅保留预览页及其可达页面
         composable(DemoScreen.ExpenseTrackerPreview.route) { ExpenseTrackerPreviewScreen(navController) }
         composable(DemoScreen.Books.route) { BooksScreen(navController) }
-        composable(DemoScreen.CardBackup.route) { CardBackupScreen(navController) }
+        composable(DemoScreen.CardBackup.route) { CardBackupScreenNew(navController) }
+        composable(DemoScreen.AddCard.route) { AddCardDemoScreen(navController) }
         composable(DemoScreen.Installments.route) { InstallmentsScreen(navController) }
         composable(DemoScreen.SettingsAbout.route) { DemoSettingsAboutScreen(navController) }
         composable(DemoScreen.BookSettings.route) { BookSettingsScreen(navController) }

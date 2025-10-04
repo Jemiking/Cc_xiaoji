@@ -239,9 +239,7 @@ object AddEditCardRoute {
     }
 }
 
-object BatchOperationRoute {
-    const val route = "batch_operation"
-}
+// 批量操作路由已移除 - 批量操作通过记账列表的选择模式进入
 
 object ThemeSettingsRoute {
     const val route = "theme_settings"
@@ -251,22 +249,6 @@ object ThemeSettingsRoute {
 
 object NotificationSettingsRoute {
     const val route = "notification_settings"
-}
-
-object AppLockSettingsRoute {
-    const val route = "app_lock_settings"
-}
-
-object PrivacySettingsRoute {
-    const val route = "privacy_settings"
-}
-
-object HelpRoute {
-    const val route = "help"
-}
-
-object FeedbackRoute {
-    const val route = "feedback"
 }
 
 object AboutRoute {
@@ -487,6 +469,11 @@ object AutoLedgerDeveloperSettingsRoute {
 // 风格Demo路由
 object StyleCatalogDemoRoute {
     const val route = "style_catalog_demo"
+}
+
+// 权限管理路由
+object PermissionManagementRoute {
+    const val route = "permission_management"
 }
 
 // 所有模块定义 - 只包含真正的功能模块

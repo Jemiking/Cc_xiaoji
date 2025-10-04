@@ -477,6 +477,21 @@ fun AddTransactionScreen(
                                 }
                             }
                         }
+                        // 金额相关错误提示：紧贴金额显示下方
+                        val amountErrorText = when {
+                            uiState.amountError != null -> uiState.amountError
+                            uiState.amountText.isBlank() -> "请输入有效金额"
+                            uiState.amountText.toDoubleOrNull()?.let { it <= 0 } == true -> "金额必须大于0"
+                            else -> null
+                        }
+                        amountErrorText?.let { msg ->
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = msg,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                     // 绗簩琛岋細宸?璁拌处绨垮浘鏍?+ 鍔熻兘鍥炬爣锛涘彸 璐︽埛鏂囧瓧鎸夐挳
                     Spacer(Modifier.height(0.dp))
@@ -531,9 +546,7 @@ fun AddTransactionScreen(
                     // 计算保存禁用提示文案
                     val disabledHint: String? = if (!uiState.canSave) {
                         when {
-                            uiState.amountError != null -> uiState.amountError
-                            uiState.amountText.isBlank() -> "请输入有效金额"
-                            uiState.amountText.toDoubleOrNull()?.let { it <= 0 } == true -> "金额必须大于0"
+                            // 金额相关错误已在金额下方展示，这里不再重复
                             uiState.selectedLedger == null -> "请选择账本"
                             uiState.transactionType == TransactionType.TRANSFER && uiState.fromAccount == null -> "请选择转出账户"
                             uiState.transactionType == TransactionType.TRANSFER && uiState.toAccount == null -> "请选择转入账户"

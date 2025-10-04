@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="widget_threshold_min_width_show_month">160</integer>
+    <integer name="widget_threshold_min_height_show_quick_add">110</integer>
+    <integer name="widget_min_height_content">90</integer>
+</resources>
+

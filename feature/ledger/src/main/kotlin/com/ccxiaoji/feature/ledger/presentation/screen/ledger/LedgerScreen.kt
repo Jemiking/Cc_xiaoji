@@ -411,6 +411,19 @@ fun LedgerScreen(
             
             // Transactions List
             val filteredTransactions = filterViewModel.applyFilter(uiState.transactions)
+            // 以当天所有交易（排除转账），按界面分组日期口径统计收支金额
+            val dailySums = filteredTransactions
+                .filterNot { it.isTransfer }
+                .groupBy { it.createdAt.toLocalDateTime(TimeZone.currentSystemDefault()).date }
+                .mapValues { (_, items) ->
+                    val incomeCents = items
+                        .filter { it.categoryDetails?.type == "INCOME" }
+                        .sumOf { kotlin.math.abs(it.amountCents).toLong() }
+                    val expenseCents = items
+                        .filter { it.categoryDetails?.type == "EXPENSE" }
+                        .sumOf { kotlin.math.abs(it.amountCents).toLong() }
+                    Pair(incomeCents / 100.0, expenseCents / 100.0)
+                }
             val displayTransactions = if (searchState.isSearchMode && searchState.searchQuery.isNotEmpty()) {
                 searchState.searchResults
             } else {
@@ -467,11 +480,25 @@ fun LedgerScreen(
 
                                     // 分组交易（非 Lazy）
                                     val groups = displayTransactions.groupByDate()
+                                    val dailySumsMap = filteredTransactions
+                                        .filterNot { it.isTransfer }
+                                        .groupBy { it.createdAt.toLocalDateTime(TimeZone.currentSystemDefault()).date }
+                                        .mapValues { (_, items) ->
+                                            val incomeCents = items
+                                                .filter { it.categoryDetails?.type == "INCOME" }
+                                                .sumOf { kotlin.math.abs(it.amountCents).toLong() }
+                                            val expenseCents = items
+                                                .filter { it.categoryDetails?.type == "EXPENSE" }
+                                                .sumOf { kotlin.math.abs(it.amountCents).toLong() }
+                                            Pair(incomeCents / 100.0, expenseCents / 100.0)
+                                        }
                                     groups.forEach { group ->
                                         StyleableComponentFactory.DateHeader(
                                             date = group.date,
                                             style = uiStyleState.uiStyle,
-                                            modifier = Modifier.fillMaxWidth()
+                                            modifier = Modifier.fillMaxWidth(),
+                                            dayIncome = dailySumsMap[group.date]?.first,
+                                            dayExpense = dailySumsMap[group.date]?.second
                                         )
                                         Spacer(Modifier.height(4.dp))
                                         group.transactions.forEach { tx ->
@@ -595,7 +622,8 @@ fun LedgerScreen(
                     onCopy = { transaction: Transaction ->
                         viewModel.copyTransaction(transaction)
                     },
-                    animationDurationMs = uiStyleState.animationDurationMs
+                    animationDurationMs = uiStyleState.animationDurationMs,
+                    dailySums = dailySums
                 )
             }
             }

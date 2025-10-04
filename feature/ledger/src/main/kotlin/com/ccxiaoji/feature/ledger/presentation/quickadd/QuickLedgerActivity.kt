@@ -23,7 +23,10 @@ class QuickLedgerActivity : ComponentActivity() {
                 Surface(color = MaterialTheme.colorScheme.surface) {
                     QuickLedgerDialog(
                         uiStateFlow = viewModel.uiState,
-                        onConfirm = { vmState -> viewModel.confirm(vmState) { finish() } },
+                        onConfirm = { vmState -> viewModel.confirm(vmState) {
+                            // 记账成功后，直接关闭；小部件刷新由仓库层统一触发
+                            finish()
+                        } },
                         onCancel = { finish() },
                         onSelectAccount = { viewModel.selectAccount(it) },
                         onSelectCategory = { viewModel.selectCategory(it) },

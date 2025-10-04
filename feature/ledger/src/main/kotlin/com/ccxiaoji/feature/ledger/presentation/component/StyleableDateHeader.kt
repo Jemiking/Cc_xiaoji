@@ -26,16 +26,26 @@ import kotlinx.datetime.toLocalDateTime
 fun StyleableDateHeader(
     date: LocalDate,
     style: LedgerUIStyle,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    dayIncome: Double? = null,
+    dayExpense: Double? = null
 ) {
     when (style) {
         LedgerUIStyle.BALANCED -> BalancedDateHeader(
             date = date,
-            modifier = modifier
+            modifier = modifier,
+            dayIncome = dayIncome,
+            dayExpense = dayExpense
         )
         LedgerUIStyle.HIERARCHICAL -> HierarchicalDateHeader(
             date = date,
             modifier = modifier
+        )
+        LedgerUIStyle.HYBRID -> BalancedDateHeader(
+            date = date,
+            modifier = modifier,
+            dayIncome = dayIncome,
+            dayExpense = dayExpense
         )
     }
 }
@@ -46,7 +56,9 @@ fun StyleableDateHeader(
 @Composable
 private fun BalancedDateHeader(
     date: LocalDate,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    dayIncome: Double? = null,
+    dayExpense: Double? = null
 ) {
     val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val dateText = when {
@@ -87,8 +99,23 @@ private fun BalancedDateHeader(
                 color = DesignTokens.BrandColors.Ledger
             )
             Spacer(modifier = Modifier.weight(1f))
+            // 右侧根据需求显示当日收支金额；若未提供则回退显示日期
+            val income = dayIncome
+            val expense = dayExpense
+            val rightText = if (income != null && expense != null) {
+                val hasIncome = income > 0.0
+                val hasExpense = expense > 0.0
+                when {
+                    hasIncome && hasExpense -> "收：¥%.2f · 支：¥%.2f".format(income, expense)
+                    hasIncome -> "收：¥%.2f".format(income)
+                    hasExpense -> "支：¥%.2f".format(expense)
+                    else -> "收：¥%.2f · 支：¥%.2f".format(income, expense)
+                }
+            } else {
+                date.toString()
+            }
             Text(
-                text = date.toString(),
+                text = rightText,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             )

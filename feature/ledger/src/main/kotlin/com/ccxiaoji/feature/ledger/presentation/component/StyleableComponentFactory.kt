@@ -46,6 +46,11 @@ object StyleableComponentFactory {
                 monthlyExpense = monthlyExpense,
                 modifier = modifier
             )
+            LedgerUIStyle.HYBRID -> HierarchicalOverviewCard(
+                monthlyIncome = monthlyIncome,
+                monthlyExpense = monthlyExpense,
+                modifier = modifier
+            )
         }
     }
     
@@ -56,12 +61,16 @@ object StyleableComponentFactory {
     fun DateHeader(
         date: LocalDate,
         style: LedgerUIStyle,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        dayIncome: Double? = null,
+        dayExpense: Double? = null
     ) {
         StyleableDateHeader(
             date = date,
             style = style,
-            modifier = modifier
+            modifier = modifier,
+            dayIncome = dayIncome,
+            dayExpense = dayExpense
         )
     }
     
@@ -132,7 +141,8 @@ fun LazyListScope.transactionItems(
     onEdit: (Transaction) -> Unit = {},
     onDelete: (Transaction) -> Unit = {},
     onCopy: (Transaction) -> Unit = {},
-    animationDurationMs: Int = 300
+    animationDurationMs: Int = 300,
+    dailySums: Map<LocalDate, Pair<Double, Double>>? = null
 ) {
     when (style) {
         LedgerUIStyle.BALANCED -> {
@@ -144,7 +154,9 @@ fun LazyListScope.transactionItems(
                 StyleableComponentFactory.DateHeader(
                     date = group.date,
                     style = style,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    dayIncome = dailySums?.get(group.date)?.first,
+                    dayExpense = dailySums?.get(group.date)?.second
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 
@@ -241,6 +253,62 @@ fun LazyListScope.transactionItems(
                 }
                 
                 Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
+        LedgerUIStyle.HYBRID -> {
+            // 混合风格：沿用平衡风格的交易列表与日期标题（支持当日收/支）
+            items(transactionGroups.size) { index ->
+                val group = transactionGroups[index]
+
+                // 日期标题（平衡风格，带当日收/支）
+                StyleableComponentFactory.DateHeader(
+                    date = group.date,
+                    style = style,
+                    modifier = Modifier.fillMaxWidth(),
+                    dayIncome = dailySums?.get(group.date)?.first,
+                    dayExpense = dailySums?.get(group.date)?.second
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // 该日期下的所有交易（沿用平衡风格的动画与布局）
+                group.transactions.forEachIndexed { transactionIndex, transaction ->
+                    AnimatedVisibility(
+                        visible = true,
+                        enter = fadeIn(
+                            animationSpec = androidx.compose.animation.core.tween(
+                                durationMillis = animationDurationMs,
+                                delayMillis = transactionIndex * 50
+                            )
+                        ) + slideInVertically(
+                            initialOffsetY = { it / 4 },
+                            animationSpec = androidx.compose.animation.core.tween(
+                                durationMillis = animationDurationMs,
+                                delayMillis = transactionIndex * 50
+                            )
+                        ),
+                        exit = fadeOut(
+                            animationSpec = androidx.compose.animation.core.tween(animationDurationMs / 2)
+                        ) + slideOutVertically(
+                            targetOffsetY = { -it / 4 },
+                            animationSpec = androidx.compose.animation.core.tween(animationDurationMs / 2)
+                        )
+                    ) {
+                        StyleableComponentFactory.TransactionItem(
+                            transaction = transaction,
+                            style = style,
+                            isSelected = selectedTransactionIds.contains(transaction.id),
+                            isSelectionMode = isSelectionMode,
+                            onItemClick = { onItemClick(transaction) },
+                            onItemLongClick = { onItemLongClick(transaction) },
+                            onEdit = { onEdit(transaction) },
+                            onDelete = { onDelete(transaction) },
+                            onCopy = { onCopy(transaction) }
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }

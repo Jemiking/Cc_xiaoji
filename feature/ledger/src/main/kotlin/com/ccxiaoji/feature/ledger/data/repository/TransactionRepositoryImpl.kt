@@ -1,5 +1,6 @@
-package com.ccxiaoji.feature.ledger.data.repository
+﻿package com.ccxiaoji.feature.ledger.data.repository
 
+import android.content.Context
 import com.ccxiaoji.common.base.BaseResult
 import com.ccxiaoji.common.base.DomainException
 import com.ccxiaoji.common.base.safeSuspendCall
@@ -17,6 +18,7 @@ import com.ccxiaoji.feature.ledger.domain.model.CategoryDetails
 import com.ccxiaoji.feature.ledger.domain.model.Transaction
 import com.ccxiaoji.shared.user.api.UserApi
 import com.google.gson.Gson
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -28,9 +30,11 @@ import kotlinx.datetime.*
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.ccxiaoji.feature.ledger.presentation.widget.WidgetRefreshBroadcaster
 
 @Singleton
 class TransactionRepositoryImpl @Inject constructor(
+    @ApplicationContext private val appContext: Context,
     private val transactionDao: TransactionDao,
     private val changeLogDao: ChangeLogDao,
     private val userApi: UserApi,
@@ -124,8 +128,8 @@ class TransactionRepositoryImpl @Inject constructor(
         val actualTransactionId = transactionId ?: UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
         
-        println("🔍 [TransactionRepo] 使用交易ID: '$actualTransactionId'")
-        println("🔍 [TransactionRepo] ID来源: ${if (transactionId != null) "外部传入" else "内部生成"}")
+        println("馃攳 [TransactionRepo] 浣跨敤浜ゆ槗ID: '$actualTransactionId'")
+        println("馃攳 [TransactionRepo] ID鏉ユ簮: ${if (transactionId != null) "澶栭儴浼犲叆" else "鍐呴儴鐢熸垚"}")
         
         // Use provided accountId
         val actualAccountId = accountId
@@ -159,16 +163,18 @@ class TransactionRepositoryImpl @Inject constructor(
         val balanceChange = if (category?.type == "INCOME") amountCents.toLong() else -amountCents.toLong()
         accountDao.updateBalance(actualAccountId, balanceChange, now)
         
-        // Increment category usage count（跳过转账相关分类）
-        val isTransferLike = category?.name?.contains("转账") == true
+        // Increment category usage count锛堣烦杩囪浆璐︾浉鍏冲垎绫伙級
+        val isTransferLike = category?.name?.contains("杞处") == true
         if (!isTransferLike) {
             categoryDao.incrementUsageCount(categoryId)
         }
         
         // Log the change for sync
         logChange("transactions", actualTransactionId, "INSERT", entity)
+        // Notify widgets to refresh (fire-and-forget)
+        try { com.ccxiaoji.feature.ledger.presentation.widget.WidgetRefreshBroadcaster.send(appContext) } catch (_: Exception) {}
         
-        println("✅ [TransactionRepo] 交易创建成功: '$actualTransactionId'")
+        println("鉁?[TransactionRepo] 浜ゆ槗鍒涘缓鎴愬姛: '$actualTransactionId'")
         actualTransactionId
     }}
     
@@ -180,6 +186,8 @@ class TransactionRepositoryImpl @Inject constructor(
         
         // Log the change for sync
         logChange("transactions", transaction.id, "UPDATE", entity)
+        // Notify widgets to refresh
+        try { com.ccxiaoji.feature.ledger.presentation.widget.WidgetRefreshBroadcaster.send(appContext) } catch (_: Exception) {}
     }}
     
     override suspend fun deleteTransaction(transactionId: String): BaseResult<Unit> = safeSuspendCall { withContext(Dispatchers.IO) {
@@ -189,6 +197,8 @@ class TransactionRepositoryImpl @Inject constructor(
         
         // Log the change for sync
         logChange("transactions", transactionId, "DELETE", mapOf("id" to transactionId))
+        // Notify widgets to refresh
+        try { com.ccxiaoji.feature.ledger.presentation.widget.WidgetRefreshBroadcaster.send(appContext) } catch (_: Exception) {}
     }}
     
     override fun getRecentTransactions(limit: Int): Flow<List<Transaction>> {
@@ -345,7 +355,7 @@ class TransactionRepositoryImpl @Inject constructor(
         list
     }}
 
-    // 构建带对端账户信息的领域模型
+    // 鏋勫缓甯﹀绔处鎴蜂俊鎭殑棰嗗煙妯″瀷
     private suspend fun toDomainModelWithEnrichment(entity: TransactionEntity, categoryDetails: CategoryDetails?): Transaction {
         val base = entity.toDomainModel(categoryDetails)
         val relatedId = entity.relatedTransactionId
@@ -428,7 +438,7 @@ class TransactionRepositoryImpl @Inject constructor(
         emit(BaseResult.Error(if (e is Exception) e else Exception(e)))
     }
     
-    // 记账簿相关的方法实现
+    // 璁拌处绨跨浉鍏崇殑鏂规硶瀹炵幇
     override fun getTransactionsByLedger(ledgerId: String): Flow<List<Transaction>> {
         return transactionDao.getTransactionsByLedger(ledgerId)
             .map { entities ->
@@ -512,7 +522,7 @@ class TransactionRepositoryImpl @Inject constructor(
     ): Flow<Pair<Int, Int>> {
         return transactionDao.getMonthlyIncomesAndExpensesByLedgerFlow(ledgerId, startMillis, endMillis)
             .map { pair ->
-                // pair 可能为 null（无记录），统一返回 0
+                // pair 鍙兘涓?null锛堟棤璁板綍锛夛紝缁熶竴杩斿洖 0
                 val income = pair?.income ?: 0
                 val expense = pair?.expense ?: 0
                 income to expense
@@ -520,7 +530,7 @@ class TransactionRepositoryImpl @Inject constructor(
             .flowOn(Dispatchers.IO)
     }
     
-    // 记账簿筛选的统计方法实现
+    // 璁拌处绨跨瓫閫夌殑缁熻鏂规硶瀹炵幇
     override suspend fun getCategoryStatisticsByLedger(
         ledgerId: String,
         categoryType: String?,

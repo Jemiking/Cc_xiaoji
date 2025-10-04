@@ -5,7 +5,13 @@
       "Bash(.gradlew.bat :feature:ledger:compileDebugKotlin:*)",
       "Bash(git pull:*)",
       "Bash(./gradlew.bat:*)",
-      "Bash(cmd /c:*)"
+      "Bash(cmd /c:*)",
+      "Bash(grep:*)",
+      "Bash(xargs:*)",
+      "Read(//d/**)",
+      "Bash(.gradlew.bat :app:compileDebugKotlin:*)",
+      "Bash(Select-Object -First 50)",
+      "Bash(cd:*)"
     ],
     "deny": [],
     "ask": [],

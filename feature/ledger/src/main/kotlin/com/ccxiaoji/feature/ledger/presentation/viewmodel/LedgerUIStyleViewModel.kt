@@ -82,7 +82,8 @@ class LedgerUIStyleViewModel @Inject constructor(
     fun toggleUIStyle() {
         val currentStyle = _uiState.value.uiStyle
         val nextStyle = when (currentStyle) {
-            LedgerUIStyle.BALANCED -> LedgerUIStyle.HIERARCHICAL
+            LedgerUIStyle.BALANCED -> LedgerUIStyle.HYBRID
+            LedgerUIStyle.HYBRID -> LedgerUIStyle.HIERARCHICAL
             LedgerUIStyle.HIERARCHICAL -> LedgerUIStyle.BALANCED
         }
         updateUIStyle(nextStyle)

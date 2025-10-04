@@ -119,12 +119,6 @@ fun ProfileScreen(
                         onClick = { navController.navigate(LedgerImportRoute.route) }
                     ),
                     SettingsItem(
-                        icon = Icons.Default.Build,
-                        title = "批量操作",
-                        subtitle = "批量删除、修改、导入",
-                        onClick = { navController.navigate(BatchOperationRoute.route) }
-                    ),
-                    SettingsItem(
                         icon = Icons.Default.Delete,
                         title = "清理缓存",
                         subtitle = "清理应用缓存数据",
@@ -154,50 +148,10 @@ fun ProfileScreen(
                         onClick = { navController.navigate(ModuleManagementRoute.route) }
                     ),
                     SettingsItem(
-                        icon = Icons.Default.Language,
-                        title = "语言设置",
-                        value = "中文简体",
-                        onClick = { /* TODO: Navigate to language settings */ }
-                    ),
-                    SettingsItem(
-                        icon = Icons.Default.TextFields,
-                        title = "字体大小",
-                        value = uiState.fontSize,
-                        onClick = { /* TODO: Navigate to font size settings */ }
-                    ),
-                    SettingsItem(
                         icon = Icons.Default.Notifications,
                         title = "通知设置",
                         subtitle = "管理应用通知",
                         onClick = { navController.navigate(NotificationSettingsRoute.route) }
-                    )
-                )
-            )
-            
-            Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
-            
-            // Security & Privacy
-            SettingsSection(
-                title = "安全隐私",
-                items = listOf(
-                    SettingsItem(
-                        icon = Icons.Default.Lock,
-                        title = "应用锁",
-                        subtitle = "设置应用访问密码",
-                        value = if (uiState.isAppLockEnabled) "已开启" else "未开启",
-                        onClick = { navController.navigate(AppLockSettingsRoute.route) }
-                    ),
-                    SettingsItem(
-                        icon = Icons.Default.Shield,
-                        title = "隐私设置",
-                        subtitle = "管理数据隐私",
-                        onClick = { navController.navigate(PrivacySettingsRoute.route) }
-                    ),
-                    SettingsItem(
-                        icon = Icons.Default.Key,
-                        title = "权限管理",
-                        subtitle = "管理应用权限",
-                        onClick = { /* TODO: Open system permissions */ }
                     )
                 )
             )
@@ -210,16 +164,10 @@ fun ProfileScreen(
                 items = buildList {
                     add(
                         SettingsItem(
-                            icon = Icons.Default.HelpOutline,
-                            title = "使用帮助",
-                            onClick = { navController.navigate(HelpRoute.route) }
-                        )
-                    )
-                    add(
-                        SettingsItem(
-                            icon = Icons.Default.Feedback,
-                            title = "意见反馈",
-                            onClick = { navController.navigate(FeedbackRoute.route) }
+                            icon = Icons.Default.Key,
+                            title = "权限管理",
+                            subtitle = "管理应用权限",
+                            onClick = { navController.navigate(PermissionManagementRoute.route) }
                         )
                     )
                     add(
