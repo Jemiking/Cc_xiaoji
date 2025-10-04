@@ -37,13 +37,44 @@ object AppMigrations {
     /**
      * 20 -> 21
      * - categories 表新增 isHidden 列（默认0）
-     * - 将名称包含“转账”的分类标记为系统+隐藏
+     * - 将名称包含"转账"的分类标记为系统+隐藏
      */
     val MIGRATION_20_21: Migration = object : Migration(20, 21) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE categories ADD COLUMN isHidden INTEGER NOT NULL DEFAULT 0")
-            // 将名称包含“转账”的父/子分类默认隐藏并标记系统
+            // 将名称包含"转账"的父/子分类默认隐藏并标记系统
             db.execSQL("UPDATE categories SET isHidden = 1, isSystem = 1, updatedAt = strftime('%s','now')*1000 WHERE name LIKE '%转账%'")
+        }
+    }
+
+    /**
+     * 21 -> 22
+     * - tasks 表新增提醒相关字段：reminderEnabled, reminderAt, reminderMinutesBefore
+     * - habits 表新增提醒相关字段：reminderEnabled, reminderTime
+     * - 支持单条提醒配置，旧数据自动继承全局配置（字段默认为null）
+     */
+    val MIGRATION_21_22: Migration = object : Migration(21, 22) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // ===== 迁移 tasks 表 =====
+            db.execSQL("ALTER TABLE tasks ADD COLUMN reminderEnabled INTEGER DEFAULT NULL")
+            db.execSQL("ALTER TABLE tasks ADD COLUMN reminderAt INTEGER DEFAULT NULL")
+            db.execSQL("ALTER TABLE tasks ADD COLUMN reminderMinutesBefore INTEGER DEFAULT NULL")
+
+            // ===== 迁移 habits 表 =====
+            db.execSQL("ALTER TABLE habits ADD COLUMN reminderEnabled INTEGER DEFAULT NULL")
+            db.execSQL("ALTER TABLE habits ADD COLUMN reminderTime TEXT DEFAULT NULL")
+        }
+    }
+
+    /**
+     * 22 -> 23
+     * - tasks 表新增固定时间提醒字段：reminderTime
+     * - 支持"每天HH:mm提醒"模式（Phase 3）
+     */
+    val MIGRATION_22_23: Migration = object : Migration(22, 23) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // 添加固定时间提醒字段（HH:mm格式字符串）
+            db.execSQL("ALTER TABLE tasks ADD COLUMN reminderTime TEXT DEFAULT NULL")
         }
     }
 }

@@ -10,7 +10,7 @@ echo 开始编译app模块...
 echo.
 
 REM 直接调用gradlew编译
-call gradlew.bat :app:compileDebugKotlin --no-daemon --console=plain
+call "%~dp0..\\gradlew.bat" :app:compileDebugKotlin --no-daemon --console=plain
 
 echo.
 echo 编译完成。查看上面的输出了解错误详情。

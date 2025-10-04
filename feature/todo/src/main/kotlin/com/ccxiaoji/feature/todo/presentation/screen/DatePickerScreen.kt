@@ -1,6 +1,8 @@
 package com.ccxiaoji.feature.todo.presentation.screen
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
@@ -47,6 +49,7 @@ fun DatePickerScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
+                .verticalScroll(rememberScrollState())
                 .padding(DesignTokens.Spacing.large),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.large)
@@ -123,12 +126,15 @@ fun DatePickerScreen(
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.weight(1f))
-            
+
+            // 增加间距，确保按钮区域明显分离
+            Spacer(modifier = Modifier.height(DesignTokens.Spacing.large))
+
             // 操作按钮
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = DesignTokens.Spacing.medium),
                 horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.medium)
             ) {
                 // 清除按钮（如果有初始日期）

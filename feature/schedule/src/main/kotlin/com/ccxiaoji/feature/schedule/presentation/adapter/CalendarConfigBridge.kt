@@ -94,10 +94,11 @@ class CalendarInteractionBridge(
     }
     
     /**
-     * 处理日期长按
+     * 处理日期长按（已不再使用快速选择，改为无操作或与点击一致）
      */
     fun onDateLongClick(date: java.time.LocalDate) {
-        viewModel.showQuickSelector(date)
+        // 简化处理：与点击一致，仅选中日期
+        viewModel.selectDate(date)
     }
     
     /**

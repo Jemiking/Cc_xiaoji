@@ -1,5 +1,6 @@
 package com.ccxiaoji.app.presentation.viewmodel
 
+import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -8,17 +9,30 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkManager
+import com.ccxiaoji.app.notification.NotificationScheduler
+import com.ccxiaoji.feature.todo.domain.repository.TodoRepository
+import com.ccxiaoji.feature.habit.domain.repository.HabitRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Instant
 import javax.inject.Inject
+import android.util.Log
 
 @HiltViewModel
 class NotificationSettingsViewModel @Inject constructor(
-    private val dataStore: DataStore<Preferences>
+    private val dataStore: DataStore<Preferences>,
+    private val notificationScheduler: NotificationScheduler,
+    private val todoRepository: TodoRepository,
+    private val habitRepository: HabitRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
-    
+
     companion object {
+        private const val TAG = "NotificationSettings"
+
         private val KEY_NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
         private val KEY_TASK_DUE_REMINDER = booleanPreferencesKey("task_due_reminder")
         private val KEY_TASK_REMINDER_MINUTES = intPreferencesKey("task_reminder_minutes")
@@ -35,8 +49,12 @@ class NotificationSettingsViewModel @Inject constructor(
     
     private val _uiState = MutableStateFlow(NotificationSettingsUiState())
     val uiState: StateFlow<NotificationSettingsUiState> = _uiState.asStateFlow()
-    
+
     init {
+        Log.d(TAG, "ViewModel created successfully")
+        Log.d(TAG, "NotificationScheduler: ${notificationScheduler.javaClass.simpleName}")
+        Log.d(TAG, "TodoRepository: ${todoRepository.javaClass.simpleName}")
+        Log.d(TAG, "HabitRepository: ${habitRepository.javaClass.simpleName}")
         loadSettings()
     }
     
@@ -73,8 +91,31 @@ class NotificationSettingsViewModel @Inject constructor(
     
     fun setTaskDueReminder(enabled: Boolean) {
         viewModelScope.launch {
-            dataStore.edit { preferences ->
-                preferences[KEY_TASK_DUE_REMINDER] = enabled
+            try {
+                dataStore.edit { preferences ->
+                    preferences[KEY_TASK_DUE_REMINDER] = enabled
+                }
+
+                if (enabled) {
+                    // 查询所有未完成且有截止时间的任务
+                    Log.d(TAG, "Scheduling task reminders...")
+                    val reminderMinutes = dataStore.data.first()[KEY_TASK_REMINDER_MINUTES] ?: 30
+                    todoRepository.getAllTodos().first()
+                        .filter { !it.completed && it.dueAt != null }
+                        .forEach { task ->
+                            Log.d(TAG, "Scheduling reminder for task: ${task.title}, dueAt: ${task.dueAt}, reminderMinutes: $reminderMinutes")
+                            notificationScheduler.scheduleTaskReminder(task.id, task.title, task.dueAt!!, reminderMinutes)
+                        }
+                    Log.d(TAG, "Task reminders scheduled")
+                } else {
+                    // 取消所有任务提醒
+                    Log.d(TAG, "Cancelling all task reminders")
+                    WorkManager.getInstance(context)
+                        .cancelAllWorkByTag(NotificationScheduler.TASK_REMINDER_WORK_TAG)
+                    Log.d(TAG, "All task reminders cancelled")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error setting task due reminder: enabled=$enabled", e)
             }
         }
     }
@@ -84,13 +125,48 @@ class NotificationSettingsViewModel @Inject constructor(
             dataStore.edit { preferences ->
                 preferences[KEY_TASK_REMINDER_MINUTES] = minutes
             }
+
+            // 如果提醒已开启，重新安排所有提醒
+            val isReminderEnabled = dataStore.data.first()[KEY_TASK_DUE_REMINDER] ?: true
+            if (isReminderEnabled) {
+                Log.d(TAG, "Task reminder minutes changed to $minutes, rescheduling...")
+                setTaskDueReminder(true)
+            }
         }
     }
     
     fun setHabitReminder(enabled: Boolean) {
         viewModelScope.launch {
-            dataStore.edit { preferences ->
-                preferences[KEY_HABIT_REMINDER] = enabled
+            try {
+                dataStore.edit { preferences ->
+                    preferences[KEY_HABIT_REMINDER] = enabled
+                }
+
+                if (enabled) {
+                    // 获取提醒时间
+                    val time = uiState.value.habitReminderTime.split(":")
+                    val hour = time[0].toInt()
+                    val minute = time[1].toInt()
+
+                    // 查询所有习惯（HabitRepository 会过滤已删除的）
+                    Log.d(TAG, "Scheduling habit reminders at $hour:$minute...")
+                    habitRepository.getHabits().first()
+                        .forEach { habit ->
+                            Log.d(TAG, "Scheduling reminder for habit: ${habit.title}")
+                            notificationScheduler.scheduleDailyHabitReminder(
+                                habit.id, habit.title, hour, minute
+                            )
+                        }
+                    Log.d(TAG, "Habit reminders scheduled")
+                } else {
+                    // 取消所有习惯提醒
+                    Log.d(TAG, "Cancelling all habit reminders")
+                    WorkManager.getInstance(context)
+                        .cancelAllWorkByTag(NotificationScheduler.HABIT_REMINDER_WORK_TAG)
+                    Log.d(TAG, "All habit reminders cancelled")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error setting habit reminder: enabled=$enabled", e)
             }
         }
     }
@@ -99,6 +175,13 @@ class NotificationSettingsViewModel @Inject constructor(
         viewModelScope.launch {
             dataStore.edit { preferences ->
                 preferences[KEY_HABIT_REMINDER_TIME] = time
+            }
+
+            // 如果提醒已开启，重新安排所有提醒
+            val isReminderEnabled = dataStore.data.first()[KEY_HABIT_REMINDER] ?: true
+            if (isReminderEnabled) {
+                Log.d(TAG, "Habit reminder time changed to $time, rescheduling...")
+                setHabitReminder(true)
             }
         }
     }

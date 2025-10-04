@@ -22,6 +22,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.datetime.*
 import kotlinx.datetime.DateTimePeriod
 import kotlinx.datetime.TimeZone
+import android.util.Log
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -256,6 +257,27 @@ class HabitRepositoryImpl @Inject constructor(
             longestStreak = longestStreak
         )
     }
+
+    override suspend fun updateHabitReminder(
+        habitId: String,
+        reminderEnabled: Boolean?,
+        reminderTime: String?
+    ): BaseResult<Unit> = safeSuspendCall {
+        val habit = habitDao.getHabitById(habitId)
+            ?: throw DomainException.DataException("Habit not found: $habitId")
+
+        // 更新提醒字段
+        val updated = habit.copy(
+            reminderEnabled = reminderEnabled,
+            reminderTime = reminderTime,
+            updatedAt = Clock.System.now().toEpochMilliseconds(),
+            syncStatus = SyncStatus.PENDING_SYNC
+        )
+
+        habitDao.updateHabit(updated)
+
+        Log.d("HabitRepository", "Habit reminder updated: habitId=$habitId, enabled=$reminderEnabled, time=$reminderTime")
+    }
 }
 
 private fun HabitEntity.toDomainModel(): Habit {
@@ -268,7 +290,11 @@ private fun HabitEntity.toDomainModel(): Habit {
         color = color,
         icon = icon,
         createdAt = Instant.fromEpochMilliseconds(createdAt),
-        updatedAt = Instant.fromEpochMilliseconds(updatedAt)
+        updatedAt = Instant.fromEpochMilliseconds(updatedAt),
+
+        // ===== 新增字段映射（Phase 2）=====
+        reminderEnabled = reminderEnabled,
+        reminderTime = reminderTime
     )
 }
 

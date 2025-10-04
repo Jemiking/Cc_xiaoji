@@ -1,4 +1,5 @@
 import java.util.Properties
+import java.io.File
 
 plugins {
     id("com.android.application")
@@ -8,11 +9,32 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
-// 读取签名配置
-val keystorePropertiesFile = rootProject.file("keystore.properties")
+// 读取签名配置（支持 env 与 tools/secrets 位置）
 val keystoreProperties = Properties()
-keystorePropertiesFile.takeIf { it.exists() }?.inputStream()?.use { input ->
-    keystoreProperties.load(input)
+val keystoreFilesToTry = listOf(
+    rootProject.file("tools/secrets/keystore.properties"),
+    rootProject.file("keystore.properties"),
+)
+keystoreFilesToTry.firstOrNull { it.exists() }?.let { f ->
+    f.inputStream().use { keystoreProperties.load(it) }
+}
+
+fun envOrProp(env: String, prop: String): String? =
+    System.getenv(env) ?: keystoreProperties.getProperty(prop)
+
+val vStoreFilePath: String? = System.getenv("KEYSTORE_FILE") ?: keystoreProperties.getProperty("storeFile")
+val vStorePassword: String? = envOrProp("KEYSTORE_PASSWORD", "storePassword")
+val vKeyAlias: String? = envOrProp("KEY_ALIAS", "keyAlias")
+val vKeyPassword: String? = envOrProp("KEY_PASSWORD", "keyPassword")
+
+val hasSigning: Boolean = run {
+    val ok = !vStoreFilePath.isNullOrBlank() &&
+            File(vStoreFilePath!!).exists() &&
+            !vStorePassword.isNullOrBlank() &&
+            !vKeyAlias.isNullOrBlank() &&
+            !vKeyPassword.isNullOrBlank()
+    if (!ok) println("ℹ️ Release signing not fully configured; falling back to debug signing.")
+    ok
 }
 
 android {
@@ -48,11 +70,11 @@ android {
 
     signingConfigs {
         create("release") {
-            if (keystorePropertiesFile.exists()) {
-                keyAlias = keystoreProperties.getProperty("keyAlias")
-                keyPassword = keystoreProperties.getProperty("keyPassword")
-                storeFile = file(keystoreProperties.getProperty("storeFile"))
-                storePassword = keystoreProperties.getProperty("storePassword")
+            if (hasSigning) {
+                keyAlias = vKeyAlias
+                keyPassword = vKeyPassword
+                storeFile = file(vStoreFilePath!!)
+                storePassword = vStorePassword
             }
         }
     }
@@ -66,10 +88,10 @@ android {
             )
             // 显示/隐藏 Demo 功能的显式开关（Release 默认关闭）
             buildConfigField("boolean", "SHOW_STYLE_DEMO", "false")
-            signingConfig = if (keystorePropertiesFile.exists()) {
+            signingConfig = if (hasSigning) {
                 signingConfigs.getByName("release")
             } else {
-                println("警告: 未找到keystore.properties，使用debug签名")
+                println("警告: 未配置发布签名参数，使用 debug 签名")
                 signingConfigs.getByName("debug")
             }
         }

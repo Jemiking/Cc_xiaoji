@@ -24,6 +24,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.habit.R
 import com.ccxiaoji.feature.habit.presentation.viewmodel.AddEditHabitViewModel
+import com.ccxiaoji.feature.habit.presentation.component.HabitReminderSettingSection
 import com.ccxiaoji.ui.theme.DesignTokens
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -320,7 +321,15 @@ fun AddEditHabitScreen(
                         }
                     }
                 )
-                
+
+                // 提醒设置（Phase 3）
+                HabitReminderSettingSection(
+                    reminderEnabled = uiState.reminderEnabled,
+                    reminderTime = uiState.reminderTime,
+                    onReminderEnabledChange = { viewModel.updateReminderEnabled(it) },
+                    onReminderTimeChange = { viewModel.updateReminderTime(it) }
+                )
+
                 // 保存结果处理
                 LaunchedEffect(uiState.isSaved) {
                     if (uiState.isSaved) {

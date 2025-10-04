@@ -16,9 +16,10 @@ import javax.inject.Inject
 class AddEditHabitViewModel @Inject constructor(
     private val createHabitUseCase: CreateHabitUseCase,
     private val updateHabitUseCase: UpdateHabitUseCase,
-    private val getHabitByIdUseCase: GetHabitByIdUseCase
+    private val getHabitByIdUseCase: GetHabitByIdUseCase,
+    private val habitRepository: com.ccxiaoji.feature.habit.domain.repository.HabitRepository
 ) : ViewModel() {
-    
+
     data class AddEditHabitUiState(
         val isLoading: Boolean = false,
         val title: String = "",
@@ -31,6 +32,10 @@ class AddEditHabitViewModel @Inject constructor(
         val targetError: String? = null,
         val isSaved: Boolean = false,
         val habitId: String? = null,
+
+        // ===== 提醒设置（Phase 3）=====
+        val reminderEnabled: Boolean? = null,  // null=使用全局配置
+        val reminderTime: String? = null,  // HH:mm 格式，null=使用全局配置
         val availableIcons: List<String> = listOf(
             "💪", "📚", "🏃", "🧘", "💤", "💧", "🎯", "✍️",
             "🎨", "🎵", "🌱", "🧠", "🏋️", "🚴", "🏊", "🤸",
@@ -56,7 +61,7 @@ class AddEditHabitViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 val habitWithStreak = getHabitByIdUseCase(habitId)
-                habitWithStreak?.let { 
+                habitWithStreak?.let {
                     val habit = it.habit
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -66,7 +71,9 @@ class AddEditHabitViewModel @Inject constructor(
                         target = habit.target.toString(),
                         selectedIcon = habit.icon ?: "💪",
                         selectedColor = habit.color ?: "#4CAF50",
-                        habitId = habitId
+                        habitId = habitId,
+                        reminderEnabled = habit.reminderEnabled,
+                        reminderTime = habit.reminderTime
                     )
                 } ?: run {
                     _uiState.value = _uiState.value.copy(isLoading = false)
@@ -114,7 +121,15 @@ class AddEditHabitViewModel @Inject constructor(
     fun updateColor(color: String) {
         _uiState.value = _uiState.value.copy(selectedColor = color)
     }
-    
+
+    fun updateReminderEnabled(enabled: Boolean?) {
+        _uiState.value = _uiState.value.copy(reminderEnabled = enabled)
+    }
+
+    fun updateReminderTime(time: String?) {
+        _uiState.value = _uiState.value.copy(reminderTime = time)
+    }
+
     fun randomizeIcon() {
         val randomIcon = _uiState.value.availableIcons.random()
         _uiState.value = _uiState.value.copy(selectedIcon = randomIcon)
@@ -136,8 +151,9 @@ class AddEditHabitViewModel @Inject constructor(
         
         viewModelScope.launch {
             _uiState.value = state.copy(isLoading = true)
-            
+
             try {
+                val savedHabitId: String
                 if (state.habitId != null) {
                     // 编辑模式
                     updateHabitUseCase(
@@ -149,9 +165,10 @@ class AddEditHabitViewModel @Inject constructor(
                         color = state.selectedColor,
                         icon = state.selectedIcon
                     )
+                    savedHabitId = state.habitId
                 } else {
                     // 添加模式
-                    createHabitUseCase(
+                    val newHabit = createHabitUseCase(
                         title = state.title,
                         description = state.description.ifEmpty { null },
                         period = state.period,
@@ -159,8 +176,18 @@ class AddEditHabitViewModel @Inject constructor(
                         color = state.selectedColor,
                         icon = state.selectedIcon
                     )
+                    savedHabitId = newHabit.id
                 }
-                
+
+                // 保存提醒设置（如果有自定义配置）
+                if (state.reminderEnabled != null || state.reminderTime != null) {
+                    habitRepository.updateHabitReminder(
+                        habitId = savedHabitId,
+                        reminderEnabled = state.reminderEnabled,
+                        reminderTime = state.reminderTime
+                    )
+                }
+
                 _uiState.value = state.copy(
                     isLoading = false,
                     isSaved = true

@@ -11,11 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Observer
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.schedule.presentation.calendar.CalendarView
 import com.ccxiaoji.feature.schedule.presentation.calendar.components.MonthlyStatisticsCard
@@ -53,8 +51,7 @@ fun DebugCalendarScreen(
     val schedules by viewModel.schedules.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
     val statistics by viewModel.monthlyStatistics.collectAsState()
-    val quickShifts by viewModel.quickShifts.collectAsState()
-    val quickSelectDate by viewModel.quickSelectDate.collectAsState()
+    // 移除快速班次选择相关状态
     val weekStartDay by viewModel.weekStartDay.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -64,37 +61,7 @@ fun DebugCalendarScreen(
     // 年月选择对话框状态
     var showYearMonthPicker by remember { mutableStateOf(false) }
     
-    // 处理快速班次选择结果
-    navController?.currentBackStackEntry?.savedStateHandle?.let { savedStateHandle ->
-        val lifecycleOwner = LocalLifecycleOwner.current
-        DisposableEffect(lifecycleOwner) {
-            val shiftIdObserver = Observer<Long> { shiftId ->
-                quickSelectDate?.let { date ->
-                    val shift = if (shiftId == null || shiftId == 0L) null else quickShifts.find { it.id == shiftId }
-                    viewModel.quickSetSchedule(date, shift)
-                }
-                savedStateHandle.remove<Long>("selected_shift_id")
-            }
-            
-            val navigateToFullObserver = Observer<Boolean> { shouldNavigate ->
-                if (shouldNavigate == true) {
-                    quickSelectDate?.let { date ->
-                        viewModel.hideQuickSelector()
-                        onNavigateToScheduleEdit(date)
-                    }
-                    savedStateHandle.remove<Boolean>("navigate_to_full_selector")
-                }
-            }
-            
-            savedStateHandle.getLiveData<Long>("selected_shift_id").observe(lifecycleOwner, shiftIdObserver)
-            savedStateHandle.getLiveData<Boolean>("navigate_to_full_selector").observe(lifecycleOwner, navigateToFullObserver)
-            
-            onDispose {
-                savedStateHandle.getLiveData<Long>("selected_shift_id").removeObserver(shiftIdObserver)
-                savedStateHandle.getLiveData<Boolean>("navigate_to_full_selector").removeObserver(navigateToFullObserver)
-            }
-        }
-    }
+    // 移除：快速班次选择的返回监听
     
     Scaffold(
         topBar = {
@@ -342,9 +309,7 @@ fun DebugCalendarScreen(
                 onDateSelected = { date ->
                     viewModel.selectDate(date)
                 },
-                onDateLongClick = { date ->
-                    viewModel.showQuickSelector(date)
-                },
+                // 长按不再触发快速选择
                 onMonthNavigate = { isNext ->
                     if (isNext) {
                         viewModel.navigateToNextMonth()
@@ -412,13 +377,7 @@ fun DebugCalendarScreen(
         }
     }
 
-    // 快速选择页面导航
-    LaunchedEffect(quickSelectDate) {
-        quickSelectDate?.let { date ->
-            navController?.navigate(Screen.QuickShiftSelection.createRoute(date.toString()))
-            viewModel.hideQuickSelector()
-        }
-    }
+    // 已移除：长按进入快速班次选择页面的导航
 
     // 年月选择对话框
     if (showYearMonthPicker) {

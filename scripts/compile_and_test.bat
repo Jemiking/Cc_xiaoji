@@ -3,7 +3,7 @@ echo === 编译并测试分类系统修复 ===
 echo.
 
 echo 1. 编译项目...
-call gradlew.bat :app:compileDebugKotlin
+call "%~dp0..\\gradlew.bat" :app:compileDebugKotlin
 if %errorlevel% neq 0 (
     echo    × 编译失败
     pause
@@ -13,7 +13,7 @@ echo    √ 编译成功
 
 echo.
 echo 2. 构建 APK...
-call gradlew.bat assembleDebug
+call "%~dp0..\\gradlew.bat" assembleDebug
 if %errorlevel% neq 0 (
     echo    × 构建失败
     pause

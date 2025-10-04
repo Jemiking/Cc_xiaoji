@@ -3,11 +3,12 @@ echo ========================================
 echo 测试调试输出
 echo ========================================
 
-cd /d D:\kotlin\Cc_xiaoji
+set PRJ=%~dp0..
+cd /d "%PRJ%"
 
 echo.
 echo 1. 清理项目...
-call gradlew.bat clean
+call "%PRJ%\\gradlew.bat" clean
 if errorlevel 1 (
     echo 清理失败！
     pause
@@ -16,7 +17,7 @@ if errorlevel 1 (
 
 echo.
 echo 2. 编译Debug版本...
-call gradlew.bat :app:assembleDebug
+call "%PRJ%\\gradlew.bat" :app:assembleDebug
 if errorlevel 1 (
     echo 编译失败！
     pause
@@ -25,7 +26,7 @@ if errorlevel 1 (
 
 echo.
 echo 3. 安装到设备...
-call gradlew.bat :app:installDebug
+call "%PRJ%\\gradlew.bat" :app:installDebug
 if errorlevel 1 (
     echo 安装失败！请确保设备已连接并启用调试模式
     pause

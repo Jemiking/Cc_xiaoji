@@ -32,5 +32,24 @@ data class HabitEntity(
     val createdAt: Long,
     val updatedAt: Long,
     val isDeleted: Boolean = false,
-    val syncStatus: SyncStatus = SyncStatus.SYNCED
+    val syncStatus: SyncStatus = SyncStatus.SYNCED,
+
+    // ===== 新增字段（Phase 2）=====
+    /**
+     * 是否启用提醒
+     * - null：继承全局配置
+     * - true/false：单习惯配置
+     */
+    val reminderEnabled: Boolean? = null,
+
+    /**
+     * 提醒时间（HH:mm格式字符串）
+     * - null：使用全局配置时间（如"20:00"）
+     * - 非null：使用单习惯配置（如"07:00"）
+     *
+     * 示例：
+     *   - 晨间跑步：reminderTime = "07:00"
+     *   - 睡前阅读：reminderTime = "21:00"
+     */
+    val reminderTime: String? = null
 )

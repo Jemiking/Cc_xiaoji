@@ -36,89 +36,126 @@ class NotificationScheduler @Inject constructor(
     }
     
     // 安排任务提醒
-    fun scheduleTaskReminder(taskId: String, taskTitle: String, dueAt: Instant) {
-        val now = Clock.System.now()
-        val delay = dueAt.toEpochMilliseconds() - now.toEpochMilliseconds()
-        
-        // 如果任务已经过期，不安排提醒
-        if (delay <= 0) return
-        
-        // 提前30分钟提醒
-        val reminderDelay = (delay - TimeUnit.MINUTES.toMillis(30)).coerceAtLeast(0)
-        
-        val data = workDataOf(
-            KEY_TASK_ID to taskId,
-            KEY_TASK_TITLE to taskTitle,
-            KEY_DUE_TIME to dueAt.toLocalDateTime(TimeZone.currentSystemDefault()).toString()
-        )
-        
-        val workRequest = OneTimeWorkRequestBuilder<TaskReminderWorker>()
-            .setInitialDelay(reminderDelay, TimeUnit.MILLISECONDS)
-            .setInputData(data)
-            .addTag(TASK_REMINDER_WORK_TAG)
-            .addTag(taskId)
-            .build()
-        
-        WorkManager.getInstance(context)
-            .enqueueUniqueWork(
-                "task_reminder_$taskId",
-                ExistingWorkPolicy.REPLACE,
-                workRequest
+    fun scheduleTaskReminder(
+        taskId: String,
+        taskTitle: String,
+        dueAt: Instant,
+        reminderMinutes: Int = 30  // 提前提醒分钟数（默认30分钟）
+    ) {
+        Log.d(TAG, "Scheduling task reminder: taskId=$taskId, title=$taskTitle, dueAt=$dueAt, reminderMinutes=$reminderMinutes")
+        try {
+            val now = Clock.System.now()
+            val delay = dueAt.toEpochMilliseconds() - now.toEpochMilliseconds()
+
+            // 如果任务已经过期，不安排提醒
+            if (delay <= 0) {
+                Log.w(TAG, "Task already overdue, skipping reminder: taskId=$taskId")
+                return
+            }
+
+            // 提前指定分钟数提醒（读取用户配置而非硬编码）
+            val reminderDelay = (delay - TimeUnit.MINUTES.toMillis(reminderMinutes.toLong())).coerceAtLeast(0)
+
+            val data = workDataOf(
+                KEY_TASK_ID to taskId,
+                KEY_TASK_TITLE to taskTitle,
+                KEY_DUE_TIME to dueAt.toLocalDateTime(TimeZone.currentSystemDefault()).toString()
             )
+
+            val workRequest = OneTimeWorkRequestBuilder<TaskReminderWorker>()
+                .setInitialDelay(reminderDelay, TimeUnit.MILLISECONDS)
+                .setInputData(data)
+                .addTag(TASK_REMINDER_WORK_TAG)
+                .addTag(taskId)
+                .build()
+
+            WorkManager.getInstance(context)
+                .enqueueUniqueWork(
+                    "task_reminder_$taskId",
+                    ExistingWorkPolicy.REPLACE,
+                    workRequest
+                )
+
+            Log.d(TAG, "Task reminder scheduled successfully: taskId=$taskId, delay=${reminderDelay}ms")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error scheduling task reminder: taskId=$taskId", e)
+            throw e
+        }
     }
     
     // 取消任务提醒
     fun cancelTaskReminder(taskId: String) {
-        WorkManager.getInstance(context)
-            .cancelAllWorkByTag(taskId)
+        Log.d(TAG, "Cancelling task reminder: taskId=$taskId")
+        try {
+            WorkManager.getInstance(context)
+                .cancelAllWorkByTag(taskId)
+            Log.d(TAG, "Task reminder cancelled successfully: taskId=$taskId")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error cancelling task reminder: taskId=$taskId", e)
+        }
     }
     
     // 安排每日习惯提醒
     fun scheduleDailyHabitReminder(habitId: String, habitTitle: String, reminderHour: Int, reminderMinute: Int) {
-        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-        var reminderTime = LocalDateTime(
-            now.date.year,
-            now.date.monthNumber,
-            now.date.dayOfMonth,
-            reminderHour,
-            reminderMinute,
-            0,
-            0
-        ).toInstant(TimeZone.currentSystemDefault())
-        
-        // 如果今天的提醒时间已过，安排明天的
-        if (reminderTime <= Clock.System.now()) {
-            reminderTime = reminderTime.plus(1, DateTimeUnit.DAY, TimeZone.currentSystemDefault())
-        }
-        
-        val delay = reminderTime.toEpochMilliseconds() - Clock.System.now().toEpochMilliseconds()
-        
-        val data = workDataOf(
-            KEY_HABIT_ID to habitId,
-            KEY_HABIT_TITLE to habitTitle
-        )
-        
-        val workRequest = PeriodicWorkRequestBuilder<HabitReminderWorker>(
-            1, TimeUnit.DAYS
-        )
-            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
-            .setInputData(data)
-            .addTag(HABIT_REMINDER_WORK_TAG)
-            .addTag(habitId)
-            .build()
-        
-        WorkManager.getInstance(context)
-            .enqueueUniquePeriodicWork(
-                "habit_reminder_$habitId",
-                ExistingPeriodicWorkPolicy.REPLACE,
-                workRequest
+        Log.d(TAG, "Scheduling daily habit reminder: habitId=$habitId, title=$habitTitle, time=$reminderHour:$reminderMinute")
+        try {
+            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            var reminderTime = LocalDateTime(
+                now.date.year,
+                now.date.monthNumber,
+                now.date.dayOfMonth,
+                reminderHour,
+                reminderMinute,
+                0,
+                0
+            ).toInstant(TimeZone.currentSystemDefault())
+
+            // 如果今天的提醒时间已过，安排明天的
+            if (reminderTime <= Clock.System.now()) {
+                reminderTime = reminderTime.plus(1, DateTimeUnit.DAY, TimeZone.currentSystemDefault())
+                Log.d(TAG, "Reminder time already passed today, scheduling for tomorrow: $reminderTime")
+            }
+
+            val delay = reminderTime.toEpochMilliseconds() - Clock.System.now().toEpochMilliseconds()
+
+            val data = workDataOf(
+                KEY_HABIT_ID to habitId,
+                KEY_HABIT_TITLE to habitTitle
             )
+
+            val workRequest = PeriodicWorkRequestBuilder<HabitReminderWorker>(
+                1, TimeUnit.DAYS
+            )
+                .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+                .setInputData(data)
+                .addTag(HABIT_REMINDER_WORK_TAG)
+                .addTag(habitId)
+                .build()
+
+            WorkManager.getInstance(context)
+                .enqueueUniquePeriodicWork(
+                    "habit_reminder_$habitId",
+                    ExistingPeriodicWorkPolicy.REPLACE,
+                    workRequest
+                )
+
+            Log.d(TAG, "Habit reminder scheduled successfully: habitId=$habitId, delay=${delay}ms")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error scheduling habit reminder: habitId=$habitId", e)
+            throw e
+        }
     }
     
     // 取消习惯提醒
     fun cancelHabitReminder(habitId: String) {
-        WorkManager.getInstance(context)
-            .cancelAllWorkByTag(habitId)
+        Log.d(TAG, "Cancelling habit reminder: habitId=$habitId")
+        try {
+            WorkManager.getInstance(context)
+                .cancelAllWorkByTag(habitId)
+            Log.d(TAG, "Habit reminder cancelled successfully: habitId=$habitId")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error cancelling habit reminder: habitId=$habitId", e)
+        }
     }
     
     // 安排每日检查（用于检查预算等）

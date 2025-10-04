@@ -323,11 +323,7 @@
     
     <!-- Component Dialog Strings -->
     <string name="schedule_dialog_select_time">选择时间</string>
-    <string name="schedule_dialog_quick_select_shift">快速选择班次</string>
-    <string name="schedule_dialog_close">关闭</string>
-    <string name="schedule_dialog_more_shifts">更多班次...</string>
-    <string name="schedule_dialog_clear_schedule">清除排班</string>
-    <string name="schedule_dialog_selected">已选中</string>
+    <!-- 已移除：快速班次选择相关文案 -->
     <string name="schedule_dialog_select_start_date">选择开始日期</string>
     <string name="schedule_dialog_select_end_date">选择结束日期</string>
     <string name="schedule_dialog_next_step">下一步</string>
@@ -351,7 +347,7 @@
     <!-- Date/Time Format Strings -->
     <string name="schedule_format_month_only">%1$d月</string>
     <string name="schedule_format_year_only">%1$d年</string>
-    <string name="schedule_format_date_pattern_month_day">MM月dd日 EEEE</string>
+    <!-- 已移除：快速班次选择使用的日期格式文案 -->
     <string name="schedule_format_date_pattern_year_month_day">yyyy年MM月dd日</string>
 
     <!-- Settings: default compact mode -->

@@ -6,7 +6,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.ccxiaoji.feature.schedule.presentation.calendar.CalendarScreen
 import com.ccxiaoji.feature.schedule.presentation.shift.ShiftManageScreen
-import com.ccxiaoji.feature.schedule.presentation.shift.QuickShiftSelectionScreen
 import com.ccxiaoji.feature.schedule.presentation.pattern.SchedulePatternScreen
 import com.ccxiaoji.feature.schedule.presentation.schedule.ScheduleEditScreen
 import com.ccxiaoji.feature.schedule.presentation.statistics.ScheduleStatisticsScreen
@@ -29,9 +28,6 @@ sealed class Screen(val route: String) {
     object ShiftManage : Screen("shift_manage")
     object ScheduleEdit : Screen("schedule_edit/{date}") {
         fun createRoute(date: String) = "schedule_edit/$date"
-    }
-    object QuickShiftSelection : Screen("quick_shift_selection/{selectedDate}") {
-        fun createRoute(date: String) = "quick_shift_selection/$date"
     }
     object SchedulePattern : Screen("schedule_pattern")
     object ScheduleStatistics : Screen("schedule_statistics")
@@ -149,15 +145,6 @@ fun ScheduleNavHost(
             )
         }
         
-        // 快速班次选择界面
-        composable(Screen.QuickShiftSelection.route) { backStackEntry ->
-            val selectedDate = backStackEntry.arguments?.getString("selectedDate")
-            android.util.Log.d("ScheduleNavHost", "Navigating to QuickShiftSelection screen with date: $selectedDate")
-            QuickShiftSelectionScreen(
-                navController = navController,
-                selectedDate = selectedDate ?: ""
-            )
-        }
         
         // 排班模式界面
         composable(Screen.SchedulePattern.route) {

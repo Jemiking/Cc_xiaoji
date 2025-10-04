@@ -11,7 +11,9 @@
       "Read(//d/**)",
       "Bash(.gradlew.bat :app:compileDebugKotlin:*)",
       "Bash(Select-Object -First 50)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(powershell:*)",
+      "Bash(gradlew.bat:*)"
     ],
     "deny": [],
     "ask": [],

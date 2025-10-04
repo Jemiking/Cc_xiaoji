@@ -12,6 +12,7 @@ import com.ccxiaoji.shared.user.api.UserApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.*
+import android.util.Log
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -130,6 +131,31 @@ class TodoRepositoryImpl @Inject constructor(
     override suspend fun getTodoById(todoId: String): BaseResult<Task?> = safeSuspendCall {
         taskDao.getTaskById(todoId)?.toDomainModel()
     }
+
+    override suspend fun updateTaskReminder(
+        todoId: String,
+        reminderEnabled: Boolean?,
+        reminderAt: Instant?,
+        reminderMinutesBefore: Int?,
+        reminderTime: String?
+    ): BaseResult<Unit> = safeSuspendCall {
+        val task = taskDao.getTaskById(todoId)
+            ?: throw DomainException.DataException("Task not found: $todoId")
+
+        // 更新提醒字段
+        val updated = task.copy(
+            reminderEnabled = reminderEnabled,
+            reminderAt = reminderAt?.toEpochMilliseconds(),
+            reminderMinutesBefore = reminderMinutesBefore,
+            reminderTime = reminderTime,
+            updatedAt = Clock.System.now().toEpochMilliseconds(),
+            syncStatus = SyncStatus.PENDING_SYNC
+        )
+
+        taskDao.updateTask(updated)
+
+        Log.d("TodoRepository", "Task reminder updated: todoId=$todoId, enabled=$reminderEnabled, at=$reminderAt, minutesBefore=$reminderMinutesBefore, time=$reminderTime")
+    }
 }
 
 private fun TaskEntity.toDomainModel(): Task {
@@ -142,6 +168,12 @@ private fun TaskEntity.toDomainModel(): Task {
         completed = completed,
         completedAt = completedAt?.let { Instant.fromEpochMilliseconds(it) },
         createdAt = Instant.fromEpochMilliseconds(createdAt),
-        updatedAt = Instant.fromEpochMilliseconds(updatedAt)
+        updatedAt = Instant.fromEpochMilliseconds(updatedAt),
+
+        // ===== 新增字段映射（Phase 2 & Phase 3）=====
+        reminderEnabled = reminderEnabled,
+        reminderAt = reminderAt?.let { Instant.fromEpochMilliseconds(it) },
+        reminderMinutesBefore = reminderMinutesBefore,
+        reminderTime = reminderTime
     )
 }

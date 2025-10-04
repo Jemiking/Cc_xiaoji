@@ -60,6 +60,32 @@ git clone https://github.com/Jemiking/Cc_xiaoji.git
 
 4. 运行应用
 
+### 签名配置与构建说明
+
+Release 构建支持两种安全方式配置签名：
+
+- 环境变量（推荐在 CI/临时构建使用）
+  - `KEYSTORE_FILE`：签名文件路径（可为绝对路径或相对仓库根路径）
+  - `KEYSTORE_PASSWORD`：密钥库密码
+  - `KEY_ALIAS`：密钥别名
+  - `KEY_PASSWORD`：密钥密码
+
+- 本地忽略文件（适合个人开发机）
+  - 将 `keystore.properties.example` 复制为 `tools/secrets/keystore.properties`
+  - 将签名文件放在 `tools/secrets/ccxiaoji_release.keystore`
+  - 编辑 `tools/secrets/keystore.properties`：
+    - `storeFile=tools/secrets/ccxiaoji_release.keystore`
+    - `storePassword=...`、`keyAlias=...`、`keyPassword=...`
+  - 注意：`tools/secrets/` 和 `keystore.properties`、`*.keystore` 已在 `.gitignore` 中忽略，请勿提交。
+
+构建命令：
+
+- Debug：`scripts/windows/build_debug.bat`
+- Release：`scripts/windows/build_release.bat`
+  - 若未检测到完整签名配置，将使用 Debug 签名构建 Release（仅供内部验证，不能上架）。
+
+实现说明：`app/build.gradle.kts` 会自动优先读取环境变量，然后读取 `tools/secrets/keystore.properties`（若存在）。
+
 ### Excel功能构建说明
 
 本项目使用 `cn.idev.excel:fastexcel` 处理Excel导入导出功能，采用了POI包名重定位技术来避免依赖冲突：

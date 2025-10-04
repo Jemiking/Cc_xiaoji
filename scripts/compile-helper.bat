@@ -34,7 +34,7 @@ goto end
 
 :check
 echo 检查Gradle环境...
-call gradlew.bat --version
+call "%~dp0..\\gradlew.bat" --version
 echo.
 echo Android SDK路径：
 echo   ANDROID_HOME: %ANDROID_HOME%
@@ -44,7 +44,7 @@ goto end
 :build
 echo 编译整个项目...
 echo 输出日志到: compile_output.log
-call gradlew.bat build -x lint -x processDebugManifest -x processDebugResources -x mergeDebugResources --console=plain > compile_output.log 2>&1
+call "%~dp0..\\gradlew.bat" build -x lint -x processDebugManifest -x processDebugResources -x mergeDebugResources --console=plain > compile_output.log 2>&1
 if %ERRORLEVEL% NEQ 0 (
     echo 编译失败！错误信息已保存到 compile_output.log
     echo.
@@ -62,12 +62,12 @@ if "%2"=="" (
     goto end
 )
 echo 编译模块: %2
-call gradlew.bat :%2:compileDebugKotlin -x lint --console=plain
+call "%~dp0..\\gradlew.bat" :%2:compileDebugKotlin -x lint --console=plain
 goto end
 
 :clean
 echo 清理项目...
-call gradlew.bat clean --console=plain
+call "%~dp0..\\gradlew.bat" clean --console=plain
 goto end
 
 :end

@@ -9,7 +9,7 @@ echo 开始编译app模块...
 echo.
 
 REM 编译app模块并捕获错误
-call gradlew.bat :app:compileDebugKotlin --no-daemon --console=plain 2>app_compile_errors.txt
+call "%~dp0..\\gradlew.bat" :app:compileDebugKotlin --no-daemon --console=plain 2>app_compile_errors.txt
 
 if %ERRORLEVEL% NEQ 0 (
     echo.

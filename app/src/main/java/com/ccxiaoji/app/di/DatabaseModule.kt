@@ -47,6 +47,8 @@ object DatabaseModule {
         // 注册本模块新增的迁移
         builder.addMigrations(com.ccxiaoji.app.data.local.migrations.AppMigrations.MIGRATION_19_20)
         builder.addMigrations(com.ccxiaoji.app.data.local.migrations.AppMigrations.MIGRATION_20_21)
+        builder.addMigrations(com.ccxiaoji.app.data.local.migrations.AppMigrations.MIGRATION_21_22)
+        builder.addMigrations(com.ccxiaoji.app.data.local.migrations.AppMigrations.MIGRATION_22_23)
         // 保留已有的迁移集合
         builder.addMigrations(*com.ccxiaoji.core.database.migrations.DatabaseMigrations.getAllMigrations())
 

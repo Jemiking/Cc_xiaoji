@@ -5,7 +5,7 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.*
 import com.ccxiaoji.common.base.BaseWorker
 import com.ccxiaoji.feature.schedule.domain.usecase.GetScheduleByDateUseCase
-import com.ccxiaoji.shared.notification.data.manager.NotificationManager
+import com.ccxiaoji.shared.notification.api.NotificationApi
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.first
@@ -16,7 +16,7 @@ class ScheduleNotificationWorker @AssistedInject constructor(
     @Assisted context: Context,
     @Assisted workerParams: WorkerParameters,
     private val getScheduleByDateUseCase: GetScheduleByDateUseCase,
-    private val notificationManager: NotificationManager
+    private val notificationApi: NotificationApi
 ) : BaseWorker(context, workerParams) {
 
     companion object {
@@ -38,14 +38,12 @@ class ScheduleNotificationWorker @AssistedInject constructor(
         if (schedule != null && schedule.shift != null) {
             val shift = schedule.shift
             logInfo("Found schedule: ${shift.name} (${shift.startTime} - ${shift.endTime})")
-            
+
             // 发送有排班的通知
-            notificationManager.sendScheduleReminder(
-                hasSchedule = true,
-                shiftName = shift.name,
-                shiftTime = "${shift.startTime} - ${shift.endTime}"
-            )
-            
+            val title = "今日排班提醒"
+            val message = "${shift.name} (${shift.startTime} - ${shift.endTime})"
+            notificationApi.sendGeneralNotification(title, message)
+
             return Result.success(
                 workDataOf(
                     "has_schedule" to true,
@@ -54,12 +52,12 @@ class ScheduleNotificationWorker @AssistedInject constructor(
             )
         } else {
             logInfo("No schedule found for today")
-            
+
             // 发送无排班的通知
-            notificationManager.sendScheduleReminder(
-                hasSchedule = false
-            )
-            
+            val title = "今日排班提醒"
+            val message = "今天没有排班"
+            notificationApi.sendGeneralNotification(title, message)
+
             return Result.success(
                 workDataOf("has_schedule" to false)
             )

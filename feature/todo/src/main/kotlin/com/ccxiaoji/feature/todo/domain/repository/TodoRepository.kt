@@ -95,5 +95,25 @@ interface TodoRepository {
      * @return BaseResult<Task?> 成功返回Task对象或null（如果不存在），失败返回错误信息
      */
     suspend fun getTodoById(todoId: String): BaseResult<Task?>
-    
+
+    /**
+     * 更新任务提醒配置（Phase 3 - 支持固定时间）
+     *
+     * @param todoId 任务ID
+     * @param reminderEnabled 是否启用提醒（null=继承全局配置，true=强制启用，false=强制禁用）
+     * @param reminderAt 绝对提醒时间（null=使用相对时间，非null=使用绝对时间）
+     * @param reminderMinutesBefore 提前提醒分钟数（null=使用全局配置，非null=使用单任务配置）
+     * @param reminderTime 固定时间提醒（null=使用相对时间，非null=使用固定时间，格式："HH:mm"）
+     * @return BaseResult<Unit> 成功返回Unit，失败返回错误信息
+     *
+     * 优先级策略：reminderTime（固定时间） > reminderAt > reminderMinutesBefore > 全局配置
+     */
+    suspend fun updateTaskReminder(
+        todoId: String,
+        reminderEnabled: Boolean? = null,
+        reminderAt: Instant? = null,
+        reminderMinutesBefore: Int? = null,
+        reminderTime: String? = null
+    ): BaseResult<Unit>
+
 }

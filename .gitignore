@@ -121,6 +121,7 @@ keystore.properties
 *.keystore
 *.pem
 *.p12
+tools/secrets/
 
 # Node caches (for tools/scripts)
 node_modules/

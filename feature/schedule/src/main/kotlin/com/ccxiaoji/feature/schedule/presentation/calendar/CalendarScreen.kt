@@ -7,11 +7,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Observer
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.schedule.presentation.components.CustomYearMonthPickerDialog
 import com.ccxiaoji.feature.schedule.presentation.viewmodel.CalendarViewModel
@@ -19,6 +18,9 @@ import com.ccxiaoji.feature.schedule.presentation.viewmodel.CalendarViewMode
 import androidx.compose.ui.res.stringResource
 import com.ccxiaoji.feature.schedule.R
 import com.ccxiaoji.feature.schedule.presentation.navigation.Screen
+import com.ccxiaoji.feature.schedule.presentation.calendar.components.MonthlyStatisticsCard
+import com.ccxiaoji.feature.schedule.presentation.calendar.components.SelectedDateDetailCard
+import com.ccxiaoji.ui.theme.DesignTokens
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.launch
@@ -46,8 +48,7 @@ fun CalendarScreen(
     val selectedDate by viewModel.selectedDate.collectAsState()
     val schedules by viewModel.schedules.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
-    val quickShifts by viewModel.quickShifts.collectAsState()
-    val quickSelectDate by viewModel.quickSelectDate.collectAsState()
+    val statistics by viewModel.monthlyStatistics.collectAsState()
     val weekStartDay by viewModel.weekStartDay.collectAsState()
     val viewMode by viewModel.viewMode.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -58,37 +59,7 @@ fun CalendarScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
-    // 处理快速班次选择结果
-    navController?.currentBackStackEntry?.savedStateHandle?.let { savedStateHandle ->
-        val lifecycleOwner = LocalLifecycleOwner.current
-        DisposableEffect(lifecycleOwner) {
-            val shiftIdObserver = Observer<Long> { shiftId ->
-                quickSelectDate?.let { date ->
-                    val shift = if (shiftId == null || shiftId == 0L) null else quickShifts.find { it.id == shiftId }
-                    viewModel.quickSetSchedule(date, shift)
-                }
-                savedStateHandle.remove<Long>("selected_shift_id")
-            }
-            
-            val navigateToFullObserver = Observer<Boolean> { shouldNavigate ->
-                if (shouldNavigate == true) {
-                    quickSelectDate?.let { date ->
-                        viewModel.hideQuickSelector()
-                        onNavigateToScheduleEdit(date)
-                    }
-                    savedStateHandle.remove<Boolean>("navigate_to_full_selector")
-                }
-            }
-            
-            savedStateHandle.getLiveData<Long>("selected_shift_id").observe(lifecycleOwner, shiftIdObserver)
-            savedStateHandle.getLiveData<Boolean>("navigate_to_full_selector").observe(lifecycleOwner, navigateToFullObserver)
-            
-            onDispose {
-                savedStateHandle.getLiveData<Long>("selected_shift_id").removeObserver(shiftIdObserver)
-                savedStateHandle.getLiveData<Boolean>("navigate_to_full_selector").removeObserver(navigateToFullObserver)
-            }
-        }
-    }
+    // 移除长按快速选择流程：不再监听快速选择返回结果
     
     ModalNavigationDrawer(
         drawerState = drawerState,
@@ -116,6 +87,15 @@ fun CalendarScreen(
                     selected = false,
                     onClick = {
                         viewModel.toggleViewMode()
+                        scope.launch { drawerState.close() }
+                    }
+                )
+                NavigationDrawerItem(
+                    icon = { Icon(Icons.Default.Schedule, null) },
+                    label = { Text(stringResource(R.string.schedule_settings_shift_manage)) },
+                    selected = false,
+                    onClick = {
+                        onNavigateToShiftManage()
                         scope.launch { drawerState.close() }
                     }
                 )
@@ -168,6 +148,26 @@ fun CalendarScreen(
                     }
                 )
             },
+            floatingActionButton = {
+                if (viewMode == CalendarViewMode.COMFORTABLE) {
+                    selectedDate?.let { date ->
+                        FloatingActionButton(
+                            onClick = { onNavigateToScheduleEdit(date) },
+                            containerColor = DesignTokens.BrandColors.Schedule,
+                            elevation = FloatingActionButtonDefaults.elevation(
+                                defaultElevation = 1.dp,
+                                pressedElevation = 2.dp
+                            )
+                        ) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = stringResource(R.string.schedule_calendar_add_schedule),
+                                tint = Color.White
+                            )
+                        }
+                    }
+                }
+            },
             snackbarHost = { SnackbarHost(snackbarHostState) }
         ) { paddingValues ->
             Box(
@@ -182,6 +182,15 @@ fun CalendarScreen(
                 ) {
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // 月度统计卡片
+                    MonthlyStatisticsCard(
+                        statistics = statistics,
+                        modifier = Modifier.padding(
+                            horizontal = DesignTokens.Spacing.medium,
+                            vertical = DesignTokens.Spacing.small
+                        )
+                    )
+
                     // 使用完整的CalendarView组件
                     CalendarView(
                         yearMonth = currentYearMonth,
@@ -190,9 +199,7 @@ fun CalendarScreen(
                         onDateSelected = { date: LocalDate -> 
                             viewModel.selectDate(date)
                         },
-                        onDateLongClick = { date: LocalDate -> 
-                            viewModel.showQuickSelector(date)
-                        },
+                        // 长按不再触发快速选择
                         onMonthNavigate = { isNext ->
                             if (isNext) {
                                 viewModel.navigateToNextMonth()
@@ -203,6 +210,23 @@ fun CalendarScreen(
                         weekStartDay = weekStartDay,
                         viewMode = viewMode
                     )
+
+                    // 紧凑模式：选中日期详情卡片
+                    if (viewMode == CalendarViewMode.COMPACT) {
+                        selectedDate?.let { date ->
+                            val selectedSchedule = schedules.find { it.date == date }
+                            SelectedDateDetailCard(
+                                date = date,
+                                schedule = selectedSchedule,
+                                onEdit = { onNavigateToScheduleEdit(date) },
+                                onDelete = { viewModel.deleteSchedule(date) },
+                                modifier = Modifier.padding(
+                                    horizontal = DesignTokens.Spacing.medium,
+                                    vertical = DesignTokens.Spacing.small
+                                )
+                            )
+                        }
+                    }
                 }
                 
                 // 错误提示
@@ -229,13 +253,7 @@ fun CalendarScreen(
         }
     }
 
-    // 快速选择页面导航
-    LaunchedEffect(quickSelectDate) {
-        quickSelectDate?.let { date ->
-            navController?.navigate(Screen.QuickShiftSelection.createRoute(date.toString()))
-            viewModel.hideQuickSelector()
-        }
-    }
+    // 已移除：长按进入快速班次选择页面的导航
 
     // 年月选择对话框
     if (showYearMonthPicker) {

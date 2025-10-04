@@ -22,6 +22,7 @@ import androidx.navigation.NavController
 import com.ccxiaoji.feature.todo.R
 import com.ccxiaoji.feature.todo.domain.model.Priority
 import com.ccxiaoji.feature.todo.presentation.viewmodel.AddEditTaskViewModel
+import com.ccxiaoji.feature.todo.presentation.component.TaskReminderSettingSection
 import com.ccxiaoji.ui.components.FlatButton
 import com.ccxiaoji.ui.theme.DesignTokens
 import kotlinx.datetime.TimeZone
@@ -231,7 +232,19 @@ fun AddEditTaskScreen(
                         }
                     }
                 }
-                
+
+                // 提醒设置（Phase 3 - 混合模式）
+                if (uiState.dueAt != null) {
+                    TaskReminderSettingSection(
+                        reminderEnabled = uiState.reminderEnabled,
+                        reminderMinutesBefore = uiState.reminderMinutesBefore,
+                        reminderTime = uiState.reminderTime,
+                        onReminderEnabledChange = { viewModel.updateReminderEnabled(it) },
+                        onReminderMinutesChange = { viewModel.updateReminderMinutesBefore(it) },
+                        onReminderTimeChange = { viewModel.updateReminderTime(it) }
+                    )
+                }
+
                 // 保存结果处理
                 LaunchedEffect(uiState.isSaved) {
                     if (uiState.isSaved) {

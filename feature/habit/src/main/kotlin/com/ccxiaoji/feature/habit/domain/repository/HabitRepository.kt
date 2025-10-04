@@ -75,5 +75,23 @@ interface HabitRepository {
      * 根据ID获取习惯
      */
     suspend fun getHabitById(habitId: String): HabitWithStreak?
-    
+
+    /**
+     * 更新习惯提醒配置（Phase 2）
+     *
+     * @param habitId 习惯ID
+     * @param reminderEnabled 是否启用提醒（null=继承全局配置，true=强制启用，false=强制禁用）
+     * @param reminderTime 提醒时间（HH:mm格式，null=使用全局配置时间）
+     * @return BaseResult<Unit> 成功返回Unit，失败返回错误信息
+     *
+     * 示例：
+     * - 晨间跑步：reminderTime = "07:00"
+     * - 睡前阅读：reminderTime = "21:00"
+     */
+    suspend fun updateHabitReminder(
+        habitId: String,
+        reminderEnabled: Boolean? = null,
+        reminderTime: String? = null
+    ): BaseResult<Unit>
+
 }

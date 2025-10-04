@@ -5,6 +5,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -123,7 +126,8 @@ fun NavGraph(
                     navController.navigate(Screen.Home.route) {
                         popUpTo(Screen.Home.route) { inclusive = true }
                     }
-                }
+                },
+                navController = navController
             )
         }
         
@@ -305,11 +309,26 @@ fun NavGraph(
             )
         ) { backStackEntry ->
             val transactionId = backStackEntry.arguments?.getString("transactionId")
-            com.ccxiaoji.feature.ledger.presentation.screen.transaction.AddTransactionScreen(
-                navController = navController,
-                transactionId = transactionId,
-                onNavigateBack = { navController.smartBackToLedger() }
+            // 从"高级设置"读取临时布局开关：启用记一笔 V2 布局
+            val settingsViewModel = androidx.hilt.navigation.compose.hiltViewModel<com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerSettingsViewModel>(backStackEntry)
+            val settingsState by settingsViewModel.settings.collectAsState(
+                initial = com.ccxiaoji.feature.ledger.domain.model.LedgerSettings()
             )
+            val useV2 = settingsState.advancedSettings.useAddTransactionV2
+
+            if (useV2) {
+                com.ccxiaoji.feature.ledger.presentation.screen.v2.AddTransactionV2Screen(
+                    navController = navController,
+                    transactionId = transactionId,
+                    onNavigateBack = { navController.smartBackToLedger() }
+                )
+            } else {
+                com.ccxiaoji.feature.ledger.presentation.screen.transaction.AddTransactionScreen(
+                    navController = navController,
+                    transactionId = transactionId,
+                    onNavigateBack = { navController.smartBackToLedger() }
+                )
+            }
         }
         
         composable(
@@ -580,6 +599,8 @@ fun NavGraph(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
+
+        // 已移除：快速班次选择页面
         
         // 自定义时间选择页面 - 修复EditShiftScreen导航问题
         composable(

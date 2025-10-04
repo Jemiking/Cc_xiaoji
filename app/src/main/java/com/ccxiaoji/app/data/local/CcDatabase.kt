@@ -90,7 +90,7 @@ import com.ccxiaoji.feature.plan.data.local.entity.TemplateEntity
         AppAutoLedgerConfigEntity::class,
         CardEntity::class
     ],
-    version = 21,
+    version = 23,
     exportSchema = true
 )
 @TypeConverters(Converters::class)

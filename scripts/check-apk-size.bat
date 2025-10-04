@@ -8,11 +8,11 @@ cd /d "%PROJECT_DIR%"
 
 REM 清理之前的构建
 echo 清理之前的构建...
-call gradlew clean
+call "%PROJECT_DIR%\\gradlew.bat" clean
 
 REM 构建Release APK
 echo 构建Release APK...
-call gradlew assembleRelease
+call "%PROJECT_DIR%\\gradlew.bat" assembleRelease
 
 REM 获取APK文件路径
 set APK_PATH=app\build\outputs\apk\release\app-release-unsigned.apk
