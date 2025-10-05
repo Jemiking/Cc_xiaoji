@@ -41,27 +41,30 @@ fun AssetPageScreen(navController: NavController) {
     val ctx = LocalContext.current
     val enableInterop = remember(ctx) { DeviceUtils.isLongShotInteropRecommended(ctx) }
 
-    // 使用Box确保背景色正确显示
+    // 使用Box作为背景
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(t.Bg)
     ) {
         if (!enableInterop) {
-            // 修复：添加滚动功能
+            // 主滚动容器
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .statusBarsPadding()
-                    .padding(horizontal = 16.dp) // 调整为16dp
             ) {
-                // 顶部三点图标（单独处理，不受spacedBy影响）
-                TopBarSection(t)
+                // 净资产Header（延伸到顶部和两边，只有底部圆角）
+                OverviewHeader(t)
 
-                // 主内容区（有间距）
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { // 调整间距为12dp
-                    OverviewCard(t)
+                // 其他内容区（有左右边距）
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Spacer(Modifier.height(4.dp))
                     StatsCard(t)
                     CreditSection(t)
                     AssetSection(t)
@@ -99,14 +102,19 @@ fun AssetPageScreen(navController: NavController) {
                                     .background(t.Bg)
                             ) {
                                 Column(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .statusBarsPadding()
-                                        .padding(horizontal = 16.dp)
+                                    modifier = Modifier.fillMaxSize()
                                 ) {
-                                    TopBarSection(t)
-                                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                        OverviewCard(t)
+                                    // 净资产Header
+                                    OverviewHeader(t)
+
+                                    // 其他内容区
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Spacer(Modifier.height(4.dp))
                                         StatsCard(t)
                                         CreditSection(t)
                                         AssetSection(t)
@@ -147,105 +155,115 @@ private object Tokens {
     val RadiusBar = 5.dp
 }
 
-// 新增：顶部三点图标组件
+// 净资产Header（新设计：延伸到顶部和两边，只有底部圆角）
 @Composable
-private fun TopBarSection(t: Tokens) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(44.dp),
-        contentAlignment = Alignment.CenterEnd
+private fun OverviewHeader(t: Tokens) {
+    // 白色背景，底部圆角
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = t.Card,
+        shape = RoundedCornerShape(
+            topStart = 0.dp,
+            topEnd = 0.dp,
+            bottomStart = 30.dp,
+            bottomEnd = 30.dp
+        ),
+        shadowElevation = 0.dp // 无阴影
     ) {
-        IconButton(
-            onClick = { /* TODO: 添加菜单功能 */ },
-            modifier = Modifier.size(44.dp)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .statusBarsPadding() // 避开状态栏
         ) {
-            Icon(
-                Icons.Filled.MoreVert,
-                contentDescription = "更多",
-                tint = t.Text.copy(alpha = 0.72f),
-                modifier = Modifier.size(20.dp)
-            )
-        }
-    }
-}
-
-// 净资产卡片（优化后）
-@Composable
-private fun OverviewCard(t: Tokens) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = t.Card),
-        shape = RoundedCornerShape(Tokens.RadiusCard),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp), // 减小padding到20dp
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                "净资产",
-                color = t.Muted,
-                fontSize = 14.sp, // 减小到14sp
-                fontWeight = FontWeight.Normal // 改为Normal
-            )
-            Spacer(Modifier.height(4.dp)) // 减小间距到4dp
-            Text(
-                text = "-¥2320.49",
-                style = TextStyle(
-                    color = t.Text,
-                    fontSize = 48.sp, // 增大到48sp
-                    fontWeight = FontWeight.Bold, // 改为Bold
-                    fontFeatureSettings = "tnum"
-                )
-            )
-            Spacer(Modifier.height(16.dp)) // 减小间距到16dp
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // 三点图标（右上角）
+            IconButton(
+                onClick = { /* TODO: 添加菜单功能 */ },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 8.dp, end = 8.dp)
+                    .size(44.dp)
             ) {
-                Column {
-                    Text(
-                        "总资产",
-                        color = t.Muted,
-                        fontSize = 12.sp, // 减小到12sp
-                        fontWeight = FontWeight.Normal // 改为Normal
-                    )
-                    Text(
-                        "-¥2140.72",
+                Icon(
+                    Icons.Filled.MoreVert,
+                    contentDescription = "更多",
+                    tint = t.Text.copy(alpha = 0.72f),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            // 净资产内容（居中）
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp, bottom = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    "净资产",
+                    color = t.Muted,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "-¥2320.49",
+                    style = TextStyle(
                         color = t.Text,
-                        fontSize = 14.sp, // 减小到14sp
-                        fontWeight = FontWeight.SemiBold
+                        fontSize = 48.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFeatureSettings = "tnum"
                     )
-                }
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        "总负债",
-                        color = t.Muted,
-                        fontSize = 12.sp, // 减小到12sp
-                        fontWeight = FontWeight.Normal // 改为Normal
-                    )
-                    Text(
-                        "-¥179.77",
-                        color = t.Text,
-                        fontSize = 14.sp, // 减小到14sp
-                        fontWeight = FontWeight.SemiBold
-                    )
+                )
+                Spacer(Modifier.height(16.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 40.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            "总资产",
+                            color = t.Muted,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Normal
+                        )
+                        Text(
+                            "-¥2140.72",
+                            color = t.Text,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            "总负债",
+                            color = t.Muted,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Normal
+                        )
+                        Text(
+                            "-¥179.77",
+                            color = t.Text,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
         }
     }
 }
 
-// 总借入/总借出卡片（保持原样）
+// 总借入/总借出卡片（无阴影）
 @Composable
 private fun StatsCard(t: Tokens) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = t.Card),
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = t.Card,
         shape = RoundedCornerShape(Tokens.RadiusCard),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        modifier = Modifier.fillMaxWidth()
+        shadowElevation = 0.dp // 无阴影
     ) {
         Row(
             modifier = Modifier
@@ -311,14 +329,14 @@ private fun StatCell(
     }
 }
 
-// 修改后的信用卡区域
+// 信用卡区域（无阴影）
 @Composable
 private fun CreditSection(t: Tokens) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = t.Card),
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = t.Card,
         shape = RoundedCornerShape(Tokens.RadiusCard),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        modifier = Modifier.fillMaxWidth()
+        shadowElevation = 0.dp // 无阴影
     ) {
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)) {
             // 标题行
@@ -541,14 +559,14 @@ private fun Pill(text: String, t: Tokens) {
     }
 }
 
-// 修改后的资金区域
+// 资金区域（无阴影）
 @Composable
 private fun AssetSection(t: Tokens) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = t.Card),
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = t.Card,
         shape = RoundedCornerShape(Tokens.RadiusCard),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        modifier = Modifier.fillMaxWidth()
+        shadowElevation = 0.dp // 无阴影
     ) {
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)) {
             // 标题行
