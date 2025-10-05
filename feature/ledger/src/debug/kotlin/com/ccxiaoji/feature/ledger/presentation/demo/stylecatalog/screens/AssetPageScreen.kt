@@ -170,7 +170,7 @@ private fun TopBarSection(t: Tokens) {
     }
 }
 
-// 净资产卡片（保持原样）
+// 净资产卡片（优化后）
 @Composable
 private fun OverviewCard(t: Tokens) {
     Card(
@@ -180,33 +180,58 @@ private fun OverviewCard(t: Tokens) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 30.dp, vertical = 30.dp),
+            modifier = Modifier.padding(20.dp), // 减小padding到20dp
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("净资产", color = t.Muted, fontSize = 22.sp, fontWeight = FontWeight.Medium)
-            Spacer(Modifier.height(8.dp))
+            Text(
+                "净资产",
+                color = t.Muted,
+                fontSize = 14.sp, // 减小到14sp
+                fontWeight = FontWeight.Normal // 改为Normal
+            )
+            Spacer(Modifier.height(4.dp)) // 减小间距到4dp
             Text(
                 text = "-¥2320.49",
                 style = TextStyle(
                     color = t.Text,
-                    fontSize = 46.sp,
-                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 48.sp, // 增大到48sp
+                    fontWeight = FontWeight.Bold, // 改为Bold
                     fontFeatureSettings = "tnum"
                 )
             )
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(16.dp)) // 减小间距到16dp
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
-                    Text("总资产", color = t.Muted, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                    Text("-¥2140.72", color = t.Text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "总资产",
+                        color = t.Muted,
+                        fontSize = 12.sp, // 减小到12sp
+                        fontWeight = FontWeight.Normal // 改为Normal
+                    )
+                    Text(
+                        "-¥2140.72",
+                        color = t.Text,
+                        fontSize = 14.sp, // 减小到14sp
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
                 Column(horizontalAlignment = Alignment.End) {
-                    Text("总负债", color = t.Muted, fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                    Text("-¥179.77", color = t.Text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "总负债",
+                        color = t.Muted,
+                        fontSize = 12.sp, // 减小到12sp
+                        fontWeight = FontWeight.Normal // 改为Normal
+                    )
+                    Text(
+                        "-¥179.77",
+                        color = t.Text,
+                        fontSize = 14.sp, // 减小到14sp
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
         }
