@@ -41,7 +41,12 @@ fun AssetPageScreen(navController: NavController) {
     val ctx = LocalContext.current
     val enableInterop = remember(ctx) { DeviceUtils.isLongShotInteropRecommended(ctx) }
 
-    Surface(color = t.Bg) {
+    // 使用Box确保背景色正确显示
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(t.Bg)
+    ) {
         if (!enableInterop) {
             // 修复：添加滚动功能
             Column(
@@ -49,13 +54,13 @@ fun AssetPageScreen(navController: NavController) {
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
                     .statusBarsPadding()
-                    .padding(horizontal = 30.dp)
+                    .padding(horizontal = 16.dp) // 调整为16dp
             ) {
                 // 顶部三点图标（单独处理，不受spacedBy影响）
                 TopBarSection(t)
 
                 // 主内容区（有间距）
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { // 调整间距为12dp
                     OverviewCard(t)
                     StatsCard(t)
                     CreditSection(t)
@@ -88,19 +93,25 @@ fun AssetPageScreen(navController: NavController) {
                     val compose = host.tag as androidx.compose.ui.platform.ComposeView
                     compose.setContent {
                         MaterialTheme {
-                            Column(
+                            Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .statusBarsPadding()
-                                    .padding(horizontal = 30.dp)
+                                    .background(t.Bg)
                             ) {
-                                TopBarSection(t)
-                                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                                    OverviewCard(t)
-                                    StatsCard(t)
-                                    CreditSection(t)
-                                    AssetSection(t)
-                                    Spacer(Modifier.height(24.dp))
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .statusBarsPadding()
+                                        .padding(horizontal = 16.dp)
+                                ) {
+                                    TopBarSection(t)
+                                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                        OverviewCard(t)
+                                        StatsCard(t)
+                                        CreditSection(t)
+                                        AssetSection(t)
+                                        Spacer(Modifier.height(24.dp))
+                                    }
                                 }
                             }
                         }
@@ -162,10 +173,10 @@ private fun TopBarSection(t: Tokens) {
 // 净资产卡片（保持原样）
 @Composable
 private fun OverviewCard(t: Tokens) {
-    Surface(
-        color = t.Card,
+    Card(
+        colors = CardDefaults.cardColors(containerColor = t.Card),
         shape = RoundedCornerShape(Tokens.RadiusCard),
-        shadowElevation = 8.dp,
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -205,10 +216,10 @@ private fun OverviewCard(t: Tokens) {
 // 总借入/总借出卡片（保持原样）
 @Composable
 private fun StatsCard(t: Tokens) {
-    Surface(
-        color = t.Card,
+    Card(
+        colors = CardDefaults.cardColors(containerColor = t.Card),
         shape = RoundedCornerShape(Tokens.RadiusCard),
-        shadowElevation = 8.dp,
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Row(
@@ -278,10 +289,10 @@ private fun StatCell(
 // 修改后的信用卡区域
 @Composable
 private fun CreditSection(t: Tokens) {
-    Surface(
-        color = t.Card,
+    Card(
+        colors = CardDefaults.cardColors(containerColor = t.Card),
         shape = RoundedCornerShape(Tokens.RadiusCard),
-        shadowElevation = 8.dp,
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)) {
@@ -508,10 +519,10 @@ private fun Pill(text: String, t: Tokens) {
 // 修改后的资金区域
 @Composable
 private fun AssetSection(t: Tokens) {
-    Surface(
-        color = t.Card,
+    Card(
+        colors = CardDefaults.cardColors(containerColor = t.Card),
         shape = RoundedCornerShape(Tokens.RadiusCard),
-        shadowElevation = 8.dp,
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)) {
