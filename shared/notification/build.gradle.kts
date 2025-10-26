@@ -1,8 +1,8 @@
 plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp")
-    id("dagger.hilt.android.plugin")
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -41,6 +41,7 @@ android {
 dependencies {
     // Module dependencies
     implementation(project(":core:common"))
+    implementation(project(":core:database"))
     
     // Core
     implementation(libs.androidx.core.ktx)
@@ -55,11 +56,13 @@ dependencies {
     implementation(libs.kotlinx.datetime)
 
     // DataStore (for configurable listener behavior)
-    implementation(libs.androidx.datastore)
+    implementation(libs.androidx.datastore.preferences)
 
     // Hilt
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
     
     // Testing
     testImplementation(libs.junit)

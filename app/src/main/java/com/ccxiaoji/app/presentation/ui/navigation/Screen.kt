@@ -398,6 +398,11 @@ object AutoLedgerDebugRoute {
     const val route = "auto_ledger_debug"
 }
 
+// Notification routes
+object NotificationHistoryRoute {
+    const val route = "notification_history"
+}
+
 object LedgerUIStyleRoute {
     const val route = "ledger_ui_style"
 }

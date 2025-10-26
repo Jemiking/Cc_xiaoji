@@ -1,8 +1,8 @@
 plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp")
-    id("dagger.hilt.android.plugin")
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -46,13 +46,13 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.ktx)
     
     // Coroutines
-    implementation(libs.kotlin.coroutines)
+    implementation(libs.kotlinx.coroutines.android)
     
     // DateTime
-    implementation(libs.kotlin.datetime)
+    implementation(libs.kotlinx.datetime)
     
     // DataStore for preferences
-    implementation(libs.androidx.datastore)
+    implementation(libs.androidx.datastore.preferences)
     
     // JSON
     implementation(libs.gson)
@@ -62,18 +62,18 @@ dependencies {
     ksp(libs.hilt.compiler)
     
     // WorkManager
-    implementation(libs.androidx.work)
+    implementation(libs.androidx.work.runtime.ktx)
     
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
-    testImplementation(libs.coroutines.test)
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation("androidx.arch.core:core-testing:2.2.0")
     testImplementation(libs.truth)
 
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation("io.mockk:mockk-android:1.13.8")
-    androidTestImplementation("androidx.test:runner:1.5.2")
-    androidTestImplementation("androidx.test:rules:1.5.0")
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.rules)
 }

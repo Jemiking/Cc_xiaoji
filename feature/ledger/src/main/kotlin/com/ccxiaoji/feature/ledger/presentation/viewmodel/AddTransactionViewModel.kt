@@ -45,6 +45,8 @@ data class AddTransactionUiState(
     val fromAccount: Account? = null,      // 转出账户
     val toAccount: Account? = null,        // 转入账户
     val amountText: String = "",
+    // 表达式求值结果（null 表示当前表达式无效或不完整）
+    val evaluatedAmount: Double? = null,
     val note: String = "",
     val selectedDate: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
     val selectedTime: LocalTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).time,
@@ -342,27 +344,16 @@ class AddTransactionViewModel @Inject constructor(
     }
     
     fun updateAmount(amount: String) {
-        val filteredAmount = run {
-            val cleaned = amount.filter { it.isDigit() || it == '.' }
-            val parts = cleaned.split('.')
-            val normalized = when {
-                parts.size > 2 -> parts[0] + "." + parts[1]
-                parts.size == 2 -> parts[0] + "." + parts[1].take(2)
-                else -> cleaned
-            }
-            normalized.trimStart('.')
-        }
-        val error = when {
-            filteredAmount.isEmpty() -> null
-            filteredAmount.toDoubleOrNull() == null -> "请输入有效金额"
-            filteredAmount.toDouble() <= 0 -> "金额必须大于0"
-            else -> null
-        }
-        
+        // 允许输入数字、点、小加号与小减号，按“表达式”解析并评估
+        val cleaned = amount.filter { it.isDigit() || it == '.' || it == '+' || it == '-' }
+
+        val (error, evaluated) = validateAndEval(cleaned)
+
         _uiState.update {
             it.copy(
-                amountText = filteredAmount,
-                amountError = error
+                amountText = cleaned,
+                amountError = error,
+                evaluatedAmount = evaluated
             )
         }
         updateCanSave()
@@ -389,6 +380,112 @@ class AddTransactionViewModel @Inject constructor(
     fun updateLocation(location: com.ccxiaoji.feature.ledger.domain.model.LocationData?) {
         _uiState.update {
             it.copy(selectedLocation = location)
+        }
+    }
+
+    // 解析+校验+计算表达式，仅支持 + 和 -，操作数最多两位小数
+    private fun validateAndEval(expr: String): Pair<String?, Double?> {
+        if (expr.isBlank()) return null to null
+
+        // 扫描生成 token：numbers 与 ops，其中 numbers 允许一元 +/-
+        val ops = mutableListOf<Char>()
+        val nums = mutableListOf<String>()
+        val sb = StringBuilder()
+
+        fun flushNumber() {
+            if (sb.isNotEmpty()) {
+                nums += sb.toString()
+                sb.clear()
+            }
+        }
+
+        var i = 0
+        while (i < expr.length) {
+            val c = expr[i]
+            when (c) {
+                '+', '-' -> {
+                    if (i == 0) {
+                        // 允许一元 +/-
+                        sb.append(c)
+                    } else {
+                        val prev = expr[i - 1]
+                        if (prev == '+' || prev == '-') {
+                            // 连续操作符：仅允许后一元负号（形如 1+-2），不允许一元 +
+                            if (c == '-' && (sb.isEmpty())) {
+                                sb.append(c)
+                            } else {
+                                return "表达式不合法" to null
+                            }
+                        } else {
+                            // 需要前面已有数字（不以点或符号结尾）
+                            if (sb.isEmpty()) return "表达式不合法" to null
+                            if (sb.last() == '.') return "小数点位置不合法" to null
+                            flushNumber()
+                            ops += c
+                        }
+                    }
+                }
+                '.' -> {
+                    // 当前操作数只能有一个 '.'
+                    if (sb.contains('.')) return "每个数最多一个小数点" to null
+                    // '.' 可出现在一元符号之后（例如 -.5）或数字之后
+                    if (sb.isEmpty() || (sb.length == 1 && (sb[0] == '+' || sb[0] == '-'))) {
+                        sb.append('0') // 规范化为 0.x
+                    }
+                    sb.append('.')
+                }
+                in '0'..'9' -> {
+                    // 小数位限制：小数点后最多两位
+                    val dotIdx = sb.indexOf('.')
+                    if (dotIdx != -1 && sb.length - dotIdx - 1 >= 2) {
+                        return "小数位最多两位" to null
+                    }
+                    sb.append(c)
+                }
+                else -> {
+                    return "含有非法字符" to null
+                }
+            }
+            i++
+        }
+
+        // 末尾必须是数字，不能是操作符或裸 '.'
+        if (sb.isEmpty()) return "表达式不完整" to null
+        if (sb.last() == '.') return "小数点位置不合法" to null
+        flushNumber()
+
+        // 计算：从左到右
+        if (nums.isEmpty()) return "请输入金额" to null
+        if (nums.size != ops.size + 1) return "表达式不合法" to null
+
+        fun parseNum(s: String): Double? {
+            return s.toDoubleOrNull()
+        }
+        var acc = parseNum(nums[0]) ?: return "金额格式不正确" to null
+        for (k in ops.indices) {
+            val b = parseNum(nums[k + 1]) ?: return "金额格式不正确" to null
+            when (ops[k]) {
+                '+' -> acc += b
+                '-' -> acc -= b
+            }
+        }
+        if (acc <= 0.0) return "金额必须大于0" to null
+        // 保留两位小数用于展示/入库
+        val rounded = kotlin.math.round(acc * 100.0) / 100.0
+        return null to rounded
+    }
+
+    // 保存成功后：留在当前页并清空部分字段
+    fun resetForNextEntry() {
+        _uiState.update { state ->
+            state.copy(
+                amountText = "",
+                evaluatedAmount = null,
+                amountError = null,
+                canSave = false,
+                isLoading = false,
+                note = ""
+            )
         }
     }
     
@@ -472,10 +569,10 @@ class AddTransactionViewModel @Inject constructor(
     
     private fun updateCanSave() {
         _uiState.update { state ->
+            val amountValid = state.evaluatedAmount != null && state.evaluatedAmount > 0.0
             val baseValid = state.amountText.isNotEmpty() && 
                            state.amountError == null && 
-                           state.amountText.toDoubleOrNull() != null &&
-                           state.amountText.toDouble() > 0 &&
+                           amountValid &&
                            state.selectedLedger != null
             
             val canSave = if (state.transactionType == TransactionType.TRANSFER) {
@@ -527,11 +624,13 @@ class AddTransactionViewModel @Inject constructor(
                     
                     // 更新 UI 状态为编辑模式
                     _uiState.update { state ->
+                        val (_, eval) = validateAndEval(transaction.amountYuan.toString())
                         state.copy(
                             isEditMode = true,
                             editingTransactionId = transactionId,
                             isIncome = transaction.categoryDetails?.type == "INCOME",
                             amountText = transaction.amountYuan.toString(),
+                            evaluatedAmount = eval,
                             note = transaction.note ?: "",
                             selectedDate = transaction.transactionDate?.toLocalDateTime(TimeZone.currentSystemDefault())?.date
                                 ?: transaction.createdAt.toLocalDateTime(TimeZone.currentSystemDefault()).date,
@@ -566,7 +665,8 @@ class AddTransactionViewModel @Inject constructor(
             _uiState.update { it.copy(isLoading = true) }
             try {
                 val state = _uiState.value
-                val amountCents = ((state.amountText.toDoubleOrNull() ?: 0.0) * 100).toInt()
+                val evaluated = state.evaluatedAmount ?: 0.0
+                val amountCents = kotlin.math.round(evaluated * 100.0).toInt()
                 val transactionDateTime = LocalDateTime(state.selectedDate, state.selectedTime)
                     .toInstant(TimeZone.currentSystemDefault())
 

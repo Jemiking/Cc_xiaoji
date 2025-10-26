@@ -57,6 +57,7 @@ import com.ccxiaoji.feature.plan.data.local.dao.TemplateDao
 import com.ccxiaoji.feature.plan.data.local.entity.PlanEntity
 import com.ccxiaoji.feature.plan.data.local.entity.MilestoneEntity
 import com.ccxiaoji.feature.plan.data.local.entity.TemplateEntity
+import com.ccxiaoji.core.database.entity.NotificationQueueEntity
 
 // TODO: 这是临时文件，待所有模块迁移完成后删除
 @Database(
@@ -88,9 +89,10 @@ import com.ccxiaoji.feature.plan.data.local.entity.TemplateEntity
         TemplateEntity::class,
         AutoLedgerDedupEntity::class,
         AppAutoLedgerConfigEntity::class,
-        CardEntity::class
+        CardEntity::class,
+        NotificationQueueEntity::class
     ],
-    version = 23,
+    version = 24,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -120,4 +122,5 @@ abstract class CcDatabase : RoomDatabase() {
     abstract fun autoLedgerDedupDao(): AutoLedgerDedupDao
     abstract fun appAutoLedgerConfigDao(): AppAutoLedgerConfigDao
     abstract fun cardDao(): CardDao
+    abstract fun notificationQueueDao(): com.ccxiaoji.core.database.dao.NotificationQueueDao
 }

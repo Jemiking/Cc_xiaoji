@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ccxiaoji.ui.theme.DesignTokens
 import com.ccxiaoji.feature.todo.R
 import com.ccxiaoji.feature.todo.presentation.viewmodel.TaskFilterOptions
 import com.ccxiaoji.feature.todo.presentation.viewmodel.DateFilter
@@ -24,8 +25,8 @@ fun TodoFilterBar(
 ) {
     LazyRow(
         modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        contentPadding = PaddingValues(horizontal = DesignTokens.Spacing.medium, vertical = DesignTokens.Spacing.small),
+        horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)
     ) {
         // 显示已完成切换
         item {
@@ -75,7 +76,7 @@ private fun DateFilterChips(
     selectedFilter: DateFilter,
     onFilterChange: (DateFilter) -> Unit
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)) {
         // 今天
         FilterChip(
             selected = selectedFilter == DateFilter.TODAY,
@@ -123,7 +124,7 @@ private fun PriorityFilterChips(
     selectedPriorities: Set<Int>,
     onPrioritiesChange: (Set<Int>) -> Unit
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    Row(horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)) {
         listOf(
             0 to stringResource(R.string.todo_priority_low_short),
             1 to stringResource(R.string.todo_priority_medium_short),

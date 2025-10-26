@@ -1,8 +1,8 @@
 plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp")
-    id("dagger.hilt.android.plugin")
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -63,29 +63,29 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     
     // Compose
-    implementation(platform(libs.compose.bom))
-    implementation(libs.compose.ui)
-    implementation(libs.compose.ui.graphics)
-    implementation(libs.compose.ui.tooling.preview)
-    implementation(libs.compose.material3)
-    implementation(libs.compose.material.icons)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
+    implementation(libs.androidx.compose.ui.tooling.preview)
+    implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material.icons.extended)
     
     // Navigation
     implementation(libs.androidx.navigation.compose)
-    implementation(libs.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.activity.compose)
     
     // WorkManager
-    implementation(libs.androidx.work)
-    implementation(libs.hilt.work)
-    ksp(libs.hilt.androidx.compiler)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
     
     // Coroutines
-    implementation(libs.kotlin.coroutines)
+    implementation(libs.kotlinx.coroutines.android)
     
     // DateTime
-    implementation(libs.kotlin.datetime)
-    coreLibraryDesugaring(libs.desugar.jdk.libs)
+    implementation(libs.kotlinx.datetime)
+    coreLibraryDesugaring(libs.android.tools.desugar)
     
     // Gson
     implementation(libs.gson)
@@ -93,12 +93,12 @@ dependencies {
     // 移除Google Play Services依赖，使用Android原生LocationManager
     
     // DataStore
-    implementation(libs.androidx.datastore)
+    implementation(libs.androidx.datastore.preferences)
     
     // Room
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
-    ksp(libs.room.compiler)
+    ksp(libs.androidx.room.compiler)
     
     // Hilt
     implementation(libs.hilt.android)
@@ -107,18 +107,18 @@ dependencies {
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
-    testImplementation(libs.coroutines.test)
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation("androidx.arch.core:core-testing:2.2.0")
     testImplementation(libs.truth)
 
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation(platform(libs.compose.bom))
-    androidTestImplementation(libs.compose.ui.test.junit4)
-    androidTestImplementation("io.mockk:mockk-android:1.13.8")
-    androidTestImplementation("androidx.test:runner:1.5.2")
-    androidTestImplementation("androidx.test:rules:1.5.0")
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.mockk.android)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.rules)
 
-    debugImplementation(libs.compose.ui.tooling)
-    debugImplementation(libs.compose.ui.test.manifest)
+    debugImplementation(libs.androidx.compose.ui.tooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ccxiaoji.ui.theme.DesignTokens
 import com.ccxiaoji.feature.todo.R
 
 /**
@@ -43,7 +44,7 @@ fun TodoSearchBar(
         },
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = DesignTokens.Spacing.medium, vertical = DesignTokens.Spacing.small),
         singleLine = true
     )
 }

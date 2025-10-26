@@ -42,7 +42,6 @@ fun FlatTaskDialog(
     var priorityLevel by remember { mutableStateOf(task?.priorityLevel ?: Priority.MEDIUM) }
     var dueAt by remember { mutableStateOf(task?.dueAt) }
     var showDatePicker by remember { mutableStateOf(false) }
-    var showTimePicker by remember { mutableStateOf(false) }
     
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -213,7 +212,6 @@ fun FlatTaskDialog(
     
     // 日期选择器
     if (showDatePicker) {
-        val datePickerState = rememberDatePickerState()
         DatePickerDialog(
             onDateSelected = { selectedDateMillis ->
                 selectedDateMillis?.let {

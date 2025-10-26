@@ -9,6 +9,8 @@ import com.google.gson.reflect.TypeToken
 import java.time.LocalDate
 import java.time.LocalDateTime
 import kotlinx.datetime.Instant
+import com.ccxiaoji.core.database.entity.NotificationStatus
+import com.ccxiaoji.core.database.entity.NotificationType
 
 class Converters {
     private val gson = Gson()
@@ -112,4 +114,17 @@ class Converters {
             gson.fromJson(it, listType)
         }
     }
+
+    // Notification enums converters
+    @TypeConverter
+    fun fromNotificationType(type: NotificationType?): String? = type?.name
+
+    @TypeConverter
+    fun toNotificationType(value: String?): NotificationType? = value?.let { NotificationType.valueOf(it) }
+
+    @TypeConverter
+    fun fromNotificationStatus(status: NotificationStatus?): String? = status?.name
+
+    @TypeConverter
+    fun toNotificationStatus(value: String?): NotificationStatus? = value?.let { NotificationStatus.valueOf(it) }
 }

@@ -2,11 +2,11 @@ import java.util.Properties
 import java.io.File
 
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp")
-    id("dagger.hilt.android.plugin")
-    id("org.jetbrains.kotlin.plugin.serialization")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 // 读取签名配置（支持 env 与 tools/secrets 位置）
@@ -28,8 +28,9 @@ val vKeyAlias: String? = envOrProp("KEY_ALIAS", "keyAlias")
 val vKeyPassword: String? = envOrProp("KEY_PASSWORD", "keyPassword")
 
 val hasSigning: Boolean = run {
-    val ok = !vStoreFilePath.isNullOrBlank() &&
-            File(vStoreFilePath!!).exists() &&
+    val filePath = vStoreFilePath.orEmpty()
+    val ok = filePath.isNotBlank() &&
+            File(filePath).exists() &&
             !vStorePassword.isNullOrBlank() &&
             !vKeyAlias.isNullOrBlank() &&
             !vKeyPassword.isNullOrBlank()
@@ -73,7 +74,7 @@ android {
             if (hasSigning) {
                 keyAlias = vKeyAlias
                 keyPassword = vKeyPassword
-                storeFile = file(vStoreFilePath!!)
+                storeFile = file(requireNotNull(vStoreFilePath))
                 storePassword = vStorePassword
             }
         }
@@ -113,7 +114,6 @@ android {
             
             // 构建性能优化（加快debug构建速度）
             isJniDebuggable = false
-            isRenderscriptDebuggable = false
         }
     }
     compileOptions {

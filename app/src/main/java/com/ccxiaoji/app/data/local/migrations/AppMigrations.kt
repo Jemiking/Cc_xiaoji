@@ -77,4 +77,33 @@ object AppMigrations {
             db.execSQL("ALTER TABLE tasks ADD COLUMN reminderTime TEXT DEFAULT NULL")
         }
     }
+
+    /**
+     * 23 -> 24
+     * - 新增通知队列表 notification_queue
+     * - 索引：status+scheduledAt、sourceModule+sourceId
+     */
+    val MIGRATION_23_24: Migration = object : Migration(23, 24) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS notification_queue (" +
+                    "id TEXT NOT NULL PRIMARY KEY, " +
+                    "type TEXT NOT NULL, " +
+                    "sourceModule TEXT NOT NULL, " +
+                    "sourceId TEXT, " +
+                    "title TEXT NOT NULL, " +
+                    "message TEXT NOT NULL, " +
+                    "scheduledAt INTEGER NOT NULL, " +
+                    "status TEXT NOT NULL, " +
+                    "workerId TEXT, " +
+                    "attempts INTEGER NOT NULL DEFAULT 0, " +
+                    "createdAt INTEGER NOT NULL, " +
+                    "sentAt INTEGER, " +
+                    "userId TEXT NOT NULL DEFAULT 'local'" +
+                ")"
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_notification_queue_status_scheduledAt ON notification_queue(status, scheduledAt)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_notification_queue_sourceModule_sourceId ON notification_queue(sourceModule, sourceId)")
+        }
+    }
 }

@@ -72,7 +72,12 @@ class TodoRepositoryImpl @Inject constructor(
             priority = priority,
             createdAt = now,
             updatedAt = now,
-            syncStatus = SyncStatus.PENDING_SYNC
+            syncStatus = SyncStatus.PENDING_SYNC,
+            // ===== 提醒相关默认值（Phase 2/3）=====
+            // 显式写入默认值，避免后续读取出现不一致
+            reminderEnabled = null,
+            reminderMinutesBefore = null,
+            reminderTime = null
         )
         
         taskDao.insertTask(entity)

@@ -25,8 +25,10 @@ import com.ccxiaoji.feature.todo.presentation.viewmodel.AddEditTaskViewModel
 import com.ccxiaoji.feature.todo.presentation.component.TaskReminderSettingSection
 import com.ccxiaoji.ui.components.FlatButton
 import com.ccxiaoji.ui.theme.DesignTokens
+import com.ccxiaoji.feature.todo.presentation.theme.TodoGrid
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import androidx.lifecycle.compose.LocalLifecycleOwner
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,10 +41,10 @@ fun AddEditTaskScreen(
     
     // 处理日期选择器返回结果
     navController.currentBackStackEntry?.savedStateHandle?.let { savedStateHandle ->
-        val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+        val lifecycleOwner = LocalLifecycleOwner.current
         androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
             val observer = androidx.lifecycle.Observer<Long> { selectedMillis ->
-                selectedMillis?.let { millis ->
+                val millis = selectedMillis
                     if (millis == 0L) {
                         // 清除日期
                         viewModel.clearDueDate()
@@ -50,7 +52,6 @@ fun AddEditTaskScreen(
                         viewModel.updateDueDate(millis)
                     }
                     savedStateHandle.remove<Long>("selected_date_millis")
-                }
             }
             savedStateHandle.getLiveData<Long>("selected_date_millis").observe(lifecycleOwner, observer)
             onDispose {
@@ -108,7 +109,7 @@ fun AddEditTaskScreen(
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = DesignTokens.BrandColors.Todo)
             }
         } else {
             Column(
@@ -283,8 +284,8 @@ fun PrioritySelector(
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .height(40.dp)
-                    .clip(RoundedCornerShape(DesignTokens.BorderRadius.medium))
+                    .height(TodoGrid.x5)
+                    .clip(RoundedCornerShape(TodoGrid.x1))
                     .background(
                         if (isSelected) backgroundColor.copy(alpha = 0.1f)
                         else MaterialTheme.colorScheme.surface

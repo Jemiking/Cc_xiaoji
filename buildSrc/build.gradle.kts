@@ -19,9 +19,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.android.tools.build:gradle:8.3.0")
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.24")
-    implementation("com.google.dagger:hilt-android-gradle-plugin:2.51.1")
-    implementation("com.google.devtools.ksp:symbol-processing-gradle-plugin:1.9.24-1.0.20")
-    implementation("org.jetbrains.kotlin:kotlin-serialization:1.9.24")
+    // 注意：不要在 buildSrc 中引入 AGP/Kotlin/Hilt/KSP 等插件工件，避免将“未知版本”的插件放入构建类路径，
+    // 造成各模块通过 alias 解析带版本插件时的冲突（AlreadyOnClasspathPluginResolver）。
+    // 如果后续需要为 buildSrc 添加通用库，请仅添加与构建脚本实现相关的普通依赖。
 }

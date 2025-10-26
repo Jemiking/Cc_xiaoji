@@ -145,7 +145,6 @@ class LedgerSettingsViewModel @Inject constructor(
             enableAccountIcons = preferences[PreferencesKeys.ENABLE_ACCOUNT_ICONS] ?: true,
             showDeletedRecords = preferences[PreferencesKeys.SHOW_DELETED_RECORDS] ?: false,
             defaultDateSelection = preferences[PreferencesKeys.DEFAULT_DATE_SELECTION] ?: 0,
-            useAddTransactionV2 = preferences[PreferencesKeys.USE_ADD_TRANSACTION_V2] ?: false
         )
     }
 
@@ -203,7 +202,6 @@ class LedgerSettingsViewModel @Inject constructor(
             preferences[PreferencesKeys.ENABLE_ACCOUNT_ICONS] = advancedSettings.enableAccountIcons
             preferences[PreferencesKeys.SHOW_DELETED_RECORDS] = advancedSettings.showDeletedRecords
             preferences[PreferencesKeys.DEFAULT_DATE_SELECTION] = advancedSettings.defaultDateSelection
-            preferences[PreferencesKeys.USE_ADD_TRANSACTION_V2] = advancedSettings.useAddTransactionV2
         }
     }
 
@@ -264,7 +262,7 @@ class LedgerSettingsViewModel @Inject constructor(
         val ENABLE_ACCOUNT_ICONS = booleanPreferencesKey("ledger_enable_account_icons")
         val SHOW_DELETED_RECORDS = booleanPreferencesKey("ledger_show_deleted_records")
         val DEFAULT_DATE_SELECTION = intPreferencesKey("ledger_default_date_selection")
-        val USE_ADD_TRANSACTION_V2 = booleanPreferencesKey("ledger_use_add_transaction_v2")
+        // removed: USE_ADD_TRANSACTION_V2 toggle
         
         // 自动化设置键
         val ENABLE_SMART_CATEGORIZATION = booleanPreferencesKey("ledger_enable_smart_categorization")

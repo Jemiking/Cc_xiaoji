@@ -15,6 +15,7 @@ import com.ccxiaoji.feature.todo.presentation.component.TodoFilterBar
 import com.ccxiaoji.feature.todo.presentation.component.GroupedTaskList
 import com.ccxiaoji.feature.todo.presentation.viewmodel.TodoViewModel
 import com.ccxiaoji.ui.theme.DesignTokens
+import com.ccxiaoji.feature.todo.presentation.component.LoadingState
 
 /**
  * 待办事项主屏幕
@@ -100,14 +101,7 @@ fun TodoScreen(
             
             // 任务列表
             if (isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = androidx.compose.ui.Alignment.Center
-                ) {
-                    CircularProgressIndicator(
-                        color = DesignTokens.BrandColors.Todo
-                    )
-                }
+                LoadingState(message = "加载中...")
             } else {
                 GroupedTaskList(
                     tasks = uiState.tasks,

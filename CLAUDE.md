@@ -876,10 +876,50 @@ feature-[name]/
    - 移除硬编码的插件ID和版本号
    - 提升构建脚本可维护性
 
-3. **影响范围**
+3. **插件版本管理架构调整** ⭐
+   - **插件版本集中化**：从`libs.versions.toml`迁移到`settings.gradle.kts`
+   - `libs.versions.toml`的`[plugins]`现在只保留ID映射，不包含版本号
+   - `settings.gradle.kts`新增`pluginManagement.plugins`块集中声明所有插件版本
+   - **架构优势**：
+     - 避免版本冲突（单一真实来源）
+     - 插件版本在构建早期确定，避免延迟解析问题
+     - 符合Gradle 8.x最佳实践
+     - 便于CI/CD环境统一管理
+
+   **实施细节**：
+   ```kotlin
+   // settings.gradle.kts - 插件版本统一声明
+   pluginManagement {
+       plugins {
+           id("com.android.application") version "8.3.0"
+           id("org.jetbrains.kotlin.android") version "1.9.24"
+           id("com.google.dagger.hilt.android") version "2.51.1"
+           id("com.google.devtools.ksp") version "1.9.24-1.0.20"
+           id("org.jetbrains.kotlin.plugin.serialization") version "1.9.24"
+       }
+   }
+
+   // gradle/libs.versions.toml - 仅保留ID映射
+   [plugins]
+   android-application = { id = "com.android.application" }
+   kotlin-android = { id = "org.jetbrains.kotlin.android" }
+   hilt = { id = "com.google.dagger.hilt.android" }
+
+   // build.gradle.kts - 模块中使用alias
+   plugins {
+       alias(libs.plugins.android.application)
+       alias(libs.plugins.kotlin.android)
+       alias(libs.plugins.hilt)
+   }
+   ```
+
+4. **影响范围**
    - ✅ app模块: 已迁移
    - ✅ shared/notification模块: 已迁移
-   - ✅ 其他模块: 陆续完成
+   - ✅ core模块: 已迁移（common, ui, database, network）
+   - ✅ feature模块: 已迁移（todo, habit, ledger, schedule, plan）
+   - ✅ shared模块: 已迁移（user, sync, notification）
+   - ✅ buildSrc: 已清理旧的convention plugin
 
 **技术债务改善**:
 - 降低版本管理复杂度
@@ -979,4 +1019,4 @@ feature-[name]/
 - `一键构建APK快速指南.md` - APK构建快速参考
 
 ---
-*Last Updated: 2025-10-05 - 技术栈升级（Kotlin 1.9.24, Compose BOM 2024.10.00, Hilt 2.51.1）；记一笔V2回退到Demo环境；完成依赖管理现代化（Version Catalog统一命名）*
+*Last Updated: 2025-10-05 - 技术栈升级（Kotlin 1.9.24, Compose BOM 2024.10.00, Hilt 2.51.1）；记一笔V2回退到Demo环境；完成依赖管理现代化（Version Catalog统一命名、插件版本管理架构调整）*

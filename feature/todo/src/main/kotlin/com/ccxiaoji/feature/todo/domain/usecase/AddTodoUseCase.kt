@@ -26,7 +26,11 @@ class AddTodoUseCase @Inject constructor(
         title: String,
         description: String? = null,
         dueAt: Instant? = null,
-        priority: Int = 0
+        priority: Int = 0,
+        // ===== 提醒相关（可选）=====
+        reminderEnabled: Boolean? = null,
+        reminderMinutesBefore: Int? = null,
+        reminderTime: String? = null
     ): Task {
         // 验证输入
         if (title.isBlank()) {
@@ -42,7 +46,19 @@ class AddTodoUseCase @Inject constructor(
             dueAt = dueAt,
             priority = priority
         )
-        
-        return result.getOrThrow()
+        val created = result.getOrThrow()
+
+        // 如果携带了提醒字段，先持久化提醒配置（不直接写 reminderAt，由上层按策略计算并调度）
+        if (reminderEnabled != null || reminderMinutesBefore != null || reminderTime != null) {
+            repository.updateTaskReminder(
+                todoId = created.id,
+                reminderEnabled = reminderEnabled,
+                reminderAt = null,
+                reminderMinutesBefore = reminderMinutesBefore,
+                reminderTime = reminderTime
+            )
+        }
+
+        return created
     }
 }

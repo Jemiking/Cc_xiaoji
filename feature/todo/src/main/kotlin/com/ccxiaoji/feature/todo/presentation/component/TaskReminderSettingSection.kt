@@ -172,20 +172,20 @@ private fun ReminderModeSelectionDialog(
         text = {
             Column {
                 Text("请选择提醒模式：")
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
 
                 // 模式1：相对时间（提前N分钟）
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                        .padding(vertical = DesignTokens.Spacing.small),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     RadioButton(
                         selected = selectedMode == "relative",
                         onClick = { selectedMode = "relative" }
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(DesignTokens.Spacing.small))
                     Column {
                         Text(
                             text = "提前N分钟提醒",
@@ -203,14 +203,14 @@ private fun ReminderModeSelectionDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                        .padding(vertical = DesignTokens.Spacing.small),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     RadioButton(
                         selected = selectedMode == "fixed",
                         onClick = { selectedMode = "fixed" }
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(DesignTokens.Spacing.small))
                     Column {
                         Text(
                             text = "固定时间提醒",
@@ -291,7 +291,7 @@ private fun RelativeTimeSelectionDialog(
         text = {
             Column {
                 Text("选择提前提醒的时间：")
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
 
                 // 常用选项
                 val commonOptions = listOf(
@@ -308,7 +308,7 @@ private fun RelativeTimeSelectionDialog(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 4.dp),
+                            .padding(vertical = DesignTokens.Spacing.xs),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(

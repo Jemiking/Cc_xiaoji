@@ -1,70 +1,62 @@
-package com.ccxiaoji.feature.ledger.presentation.demo.stylecatalog.screens
+# 资产页面 AssetPageScreen 1:1 复刻开发方案
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.CloudUpload
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.viewinterop.AndroidView
-import android.view.ViewGroup
-import com.ccxiaoji.common.util.DeviceUtils
+## 📋 概述
 
-/**
- * 资产页面（AssetPageScreen）
- * 1:1 精确还原设计图的 Demo 页面。
- */
+本文档详细记录了资产页面（AssetPageScreen）的像素级复刻开发方案，基于提供的设计图进行1:1还原。
+
+**创建日期**: 2025-10-05
+**目标页面**: AssetPageScreen.kt
+**设计参考**: 理想效果图（包含净资产、信用卡、资金等模块）
+
+---
+
+## 🎯 核心问题分析
+
+### 主要差异点
+
+1. **架构问题**
+   - 缺少滚动功能（当`enableInterop=false`时）
+   - 顶部间距计算错误（spacedBy影响了三点图标）
+
+2. **组件缺失**
+   - "今日免息"缺少红色圆形图标
+   - 信用卡第一项应为红色三角形警告图标
+   - 所有账户图标缺少颜色区分
+
+3. **文字内容错误**
+   - "弹花呗" → "骅-花呗"
+   - "榕花呗" → "榕-花呗"
+   - "骋" → "骅"（4处）
+   - 榕系账户缺少连字符"-"（4处）
+
+---
+
+## 🛠️ 完整开发实现方案
+
+### 0. 整体架构修复
+
+```kotlin
 @Composable
 fun AssetPageScreen(navController: NavController) {
     val t = Tokens
     val ctx = LocalContext.current
     val enableInterop = remember(ctx) { DeviceUtils.isLongShotInteropRecommended(ctx) }
 
-    // 使用Box作为背景
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(t.Bg)
-    ) {
+    Surface(color = t.Bg) {
         if (!enableInterop) {
-            // 主滚动容器
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
+                    .verticalScroll(rememberScrollState()) // ← 添加滚动
+                    .statusBarsPadding()
+                    .padding(horizontal = 30.dp)
             ) {
-                // 净资产Header（延伸到顶部和两边，只有底部圆角）
-                OverviewHeader(t)
+                // 顶部三点图标（单独处理，不受spacedBy影响）
+                TopBarSection(t)
 
-                // 其他内容区（有左右边距）
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Spacer(Modifier.height(4.dp))
+                // 主内容区（有间距）
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    OverviewCard(t)
                     StatsCard(t)
                     CreditSection(t)
                     AssetSection(t)
@@ -72,7 +64,7 @@ fun AssetPageScreen(navController: NavController) {
                 }
             }
         } else {
-            // AndroidView 实现
+            // 保持原有的AndroidView实现
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { context ->
@@ -96,30 +88,19 @@ fun AssetPageScreen(navController: NavController) {
                     val compose = host.tag as androidx.compose.ui.platform.ComposeView
                     compose.setContent {
                         MaterialTheme {
-                            Box(
+                            Column(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(t.Bg)
+                                    .statusBarsPadding()
+                                    .padding(horizontal = 30.dp)
                             ) {
-                                Column(
-                                    modifier = Modifier.fillMaxSize()
-                                ) {
-                                    // 净资产Header
-                                    OverviewHeader(t)
-
-                                    // 其他内容区
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 16.dp),
-                                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        Spacer(Modifier.height(4.dp))
-                                        StatsCard(t)
-                                        CreditSection(t)
-                                        AssetSection(t)
-                                        Spacer(Modifier.height(24.dp))
-                                    }
+                                TopBarSection(t)
+                                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                    OverviewCard(t)
+                                    StatsCard(t)
+                                    CreditSection(t)
+                                    AssetSection(t)
+                                    Spacer(Modifier.height(24.dp))
                                 }
                             }
                         }
@@ -129,146 +110,93 @@ fun AssetPageScreen(navController: NavController) {
         }
     }
 }
+```
 
-// 更新的Tokens定义
-private object Tokens {
-    val Bg = Color(0xFFF6F7F9)
-    val Card = Color(0xFFFFFFFF)
-    val Text = Color(0xFF1A1F24)
-    val Muted = Color(0xFF6B7280)
-    val PillBg = Color(0xFFF2F3F5)
-    val BarTrack = Color(0xFFE8F0FF)
-    val BarFill = Color(0xFF2F6FED)
+### 1. 顶部三点图标组件
 
-    // 新增颜色定义
-    val RedAlert = Color(0xFFEF4444)      // 红色警告/提醒
-    val RedWarning = Color(0xFFDC2626)    // 红色警告图标背景
-    val BlueAlipay = Color(0xFF1677FF)    // 支付宝蓝
-    val RedJD = Color(0xFFE1251B)         // 京东红
-    val GreenWechat = Color(0xFF07C160)   // 微信绿
-    val PurpleSalary = Color(0xFF8B5CF6)  // 工资卡紫色
-    val BlueBank = Color(0xFF3B82F6)      // 银行卡蓝色
-
-    val RadiusCard = 30.dp
-    val RadiusPill = 18.dp
-    val RadiusIcon = 8.dp
-    val RadiusBar = 5.dp
-}
-
-// 净资产Header（新设计：延伸到顶部和两边，只有底部圆角）
+```kotlin
 @Composable
-private fun OverviewHeader(t: Tokens) {
-    // 白色背景，底部圆角
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = t.Card,
-        shape = RoundedCornerShape(
-            topStart = 0.dp,
-            topEnd = 0.dp,
-            bottomStart = 30.dp,
-            bottomEnd = 30.dp
-        ),
-        shadowElevation = 0.dp // 无阴影
+private fun TopBarSection(t: Tokens) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(44.dp), // 固定高度
+        contentAlignment = Alignment.CenterEnd
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding() // 避开状态栏
+        IconButton(
+            onClick = { /* TODO: 添加菜单功能 */ },
+            modifier = Modifier.size(44.dp)
         ) {
-            // 三点图标（右上角）
-            IconButton(
-                onClick = { /* TODO: 添加菜单功能 */ },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 8.dp, end = 8.dp)
-                    .size(44.dp)
-            ) {
-                Icon(
-                    Icons.Filled.MoreVert,
-                    contentDescription = "更多",
-                    tint = t.Text.copy(alpha = 0.72f),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+            Icon(
+                Icons.Filled.MoreVert,
+                contentDescription = "更多",
+                tint = t.Text.copy(alpha = 0.72f),
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+```
 
-            // 净资产内容（居中）
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp, bottom = 20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+### 2. 净资产卡片（保持原样）
+
+```kotlin
+@Composable
+private fun OverviewCard(t: Tokens) {
+    Surface(
+        color = t.Card,
+        shape = RoundedCornerShape(Tokens.RadiusCard),
+        shadowElevation = 8.dp,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 30.dp, vertical = 30.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("净资产", color = t.Muted, fontSize = 22.sp, fontWeight = FontWeight.Medium)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "-¥2320.49",
+                style = TextStyle(
+                    color = t.Text,
+                    fontSize = 46.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    fontFeatureSettings = "tnum"
+                )
+            )
+            Spacer(Modifier.height(20.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "净资产",
-                    color = t.Muted,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Normal
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = "-¥2320.49",
-                    style = TextStyle(
-                        color = t.Text,
-                        fontSize = 48.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFeatureSettings = "tnum"
-                    )
-                )
-                Spacer(Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 40.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            "总资产",
-                            color = t.Muted,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Normal
-                        )
-                        Text(
-                            "-¥2140.72",
-                            color = t.Text,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            "总负债",
-                            color = t.Muted,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Normal
-                        )
-                        Text(
-                            "-¥179.77",
-                            color = t.Text,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+                Column {
+                    Text("总资产", color = t.Muted, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("-¥2140.72", color = t.Text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("总负债", color = t.Muted, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                    Text("-¥179.77", color = t.Text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
     }
 }
+```
 
-// 总借入/总借出卡片（无阴影）
+### 3. 总借入/总借出卡片（保持原样）
+
+```kotlin
 @Composable
 private fun StatsCard(t: Tokens) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
         color = t.Card,
         shape = RoundedCornerShape(Tokens.RadiusCard),
-        shadowElevation = 0.dp // 无阴影
+        shadowElevation = 8.dp,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             StatCell(
@@ -328,15 +256,18 @@ private fun StatCell(
         }
     }
 }
+```
 
-// 信用卡区域（无阴影）
+### 4. 信用卡区域（重大修改）
+
+```kotlin
 @Composable
 private fun CreditSection(t: Tokens) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
         color = t.Card,
         shape = RoundedCornerShape(Tokens.RadiusCard),
-        shadowElevation = 0.dp // 无阴影
+        shadowElevation = 8.dp,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)) {
             // 标题行
@@ -360,7 +291,7 @@ private fun CreditSection(t: Tokens) {
 
             Spacer(Modifier.height(12.dp))
 
-            // 修复："今日免息"行添加图标
+            // "今日免息"行 - 添加红色图标
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -377,7 +308,7 @@ private fun CreditSection(t: Tokens) {
                         modifier = Modifier
                             .size(32.dp)
                             .clip(CircleShape)
-                            .background(Tokens.RedAlert),
+                            .background(Color(0xFFEF4444)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -389,10 +320,10 @@ private fun CreditSection(t: Tokens) {
                     }
                     Text("今日免息", color = t.Text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
-                Text("骅-花呗 37天", color = t.Muted, fontSize = 14.sp) // 修正文字
+                Text("骅-花呗 37天", color = t.Muted, fontSize = 14.sp)
             }
 
-            Spacer(Modifier.height(12.dp)) // 修正间距
+            Spacer(Modifier.height(12.dp))
 
             // 信用卡列表
             val items = listOf(
@@ -448,7 +379,7 @@ private fun DebtItemV2(vm: DebtVM, t: Tokens) {
             verticalAlignment = Alignment.Top
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // 实现彩色图标
+                // 彩色图标
                 DebtIcon(vm.iconType)
 
                 Spacer(Modifier.width(12.dp))
@@ -494,7 +425,7 @@ private fun DebtIcon(type: DebtIconType) {
                 modifier = Modifier
                     .size(56.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Tokens.RedWarning),
+                    .background(Color(0xFFDC2626)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -511,7 +442,7 @@ private fun DebtIcon(type: DebtIconType) {
                 modifier = Modifier
                     .size(56.dp)
                     .clip(CircleShape)
-                    .background(Tokens.BlueAlipay),
+                    .background(Color(0xFF1677FF)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -528,7 +459,7 @@ private fun DebtIcon(type: DebtIconType) {
                 modifier = Modifier
                     .size(56.dp)
                     .clip(CircleShape)
-                    .background(Tokens.RedJD),
+                    .background(Color(0xFFE1251B)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -558,15 +489,18 @@ private fun Pill(text: String, t: Tokens) {
         )
     }
 }
+```
 
-// 资金区域（无阴影）
+### 5. 资金区域（添加彩色图标）
+
+```kotlin
 @Composable
 private fun AssetSection(t: Tokens) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
         color = t.Card,
         shape = RoundedCornerShape(Tokens.RadiusCard),
-        shadowElevation = 0.dp // 无阴影
+        shadowElevation = 8.dp,
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)) {
             // 标题行
@@ -628,10 +562,10 @@ data class AccountInfo(
 // 获取账户颜色
 private fun getAccountColor(type: AccountType): Color {
     return when (type) {
-        AccountType.BANK -> Tokens.BlueBank      // 蓝色
-        AccountType.SALARY -> Tokens.PurpleSalary // 紫色
-        AccountType.ALIPAY -> Tokens.BlueAlipay  // 支付宝蓝
-        AccountType.WECHAT -> Tokens.GreenWechat // 微信绿
+        AccountType.BANK -> Color(0xFF3B82F6)    // 蓝色
+        AccountType.SALARY -> Color(0xFF8B5CF6)  // 紫色
+        AccountType.ALIPAY -> Color(0xFF1677FF)  // 支付宝蓝
+        AccountType.WECHAT -> Color(0xFF07C160)  // 微信绿
     }
 }
 
@@ -677,3 +611,141 @@ private fun AccountRowV2(info: AccountInfo, t: Tokens) {
         )
     }
 }
+```
+
+### 6. 颜色Token定义
+
+```kotlin
+private object Tokens {
+    val Bg = Color(0xFFF6F7F9)
+    val Card = Color(0xFFFFFFFF)
+    val Text = Color(0xFF1A1F24)
+    val Muted = Color(0xFF6B7280)
+    val PillBg = Color(0xFFF2F3F5)
+    val BarTrack = Color(0xFFE8F0FF)
+    val BarFill = Color(0xFF2F6FED)
+
+    // 新增颜色定义
+    val RedAlert = Color(0xFFEF4444)      // 红色警告/提醒
+    val RedWarning = Color(0xFFDC2626)    // 红色警告图标背景
+    val BlueAlipay = Color(0xFF1677FF)    // 支付宝蓝
+    val RedJD = Color(0xFFE1251B)         // 京东红
+    val GreenWechat = Color(0xFF07C160)   // 微信绿
+    val PurpleSalary = Color(0xFF8B5CF6)  // 工资卡紫色
+    val BlueBank = Color(0xFF3B82F6)      // 银行卡蓝色
+
+    val RadiusCard = 30.dp
+    val RadiusPill = 18.dp
+    val RadiusIcon = 8.dp
+    val RadiusBar = 5.dp
+}
+```
+
+---
+
+## 📊 设计规格对照表
+
+### 颜色系统
+
+| 用途 | 色值 | 说明 |
+|-----|------|-----|
+| 页面背景 | `#F6F7F9` | 浅灰色背景 |
+| 卡片背景 | `#FFFFFF` | 纯白色 |
+| 主文字 | `#1A1F24` | 深黑色 |
+| 次要文字 | `#6B7280` | 中灰色 |
+| Pills背景 | `#F2F3F5` | 浅灰色 |
+| 进度条轨道 | `#E8F0FF` | 浅蓝色 |
+| 进度条填充 | `#2F6FED` | 深蓝色 |
+| 警告红色 | `#EF4444` | 提醒图标 |
+| 支付宝蓝 | `#1677FF` | 品牌色 |
+| 京东红 | `#E1251B` | 品牌色 |
+| 微信绿 | `#07C160` | 品牌色 |
+
+### 尺寸规格
+
+| 组件 | 尺寸 | 说明 |
+|-----|------|-----|
+| 页面水平内边距 | 30dp | 两侧留白 |
+| 卡片间距 | 16dp | 卡片之间的垂直间距 |
+| 卡片圆角 | 30dp | 大卡片的圆角 |
+| Pills圆角 | 18dp | 标签的圆角 |
+| 图标圆角 | 8dp | 方形图标的圆角 |
+| 进度条圆角 | 5dp | 进度条的圆角 |
+| 信用卡图标 | 56dp × 56dp | 大图标 |
+| 账户图标 | 28dp × 28dp | 小图标 |
+| 今日免息图标 | 32dp × 32dp | 中等图标 |
+
+### 字体规格
+
+| 用途 | 字号 | 字重 |
+|-----|------|-----|
+| 净资产标题 | 22sp | Medium |
+| 净资产金额 | 46sp | SemiBold |
+| 卡片标题 | 18sp | SemiBold |
+| 普通文字 | 16sp | Normal/SemiBold |
+| 次要文字 | 14sp | Normal |
+| 小标题 | 13sp | Normal |
+
+---
+
+## ✅ 实施步骤
+
+1. **备份现有代码**
+   ```bash
+   git add .
+   git commit -m "备份：AssetPageScreen原始实现"
+   ```
+
+2. **更新Tokens定义**
+   - 添加新的颜色定义
+   - 确保所有颜色值正确
+
+3. **修改整体架构**
+   - 添加滚动功能
+   - 调整布局结构
+
+4. **逐个更新组件**
+   - TopBarSection（分离三点图标）
+   - CreditSection（添加图标和修正文字）
+   - AssetSection（添加彩色图标）
+
+5. **测试验证**
+   - 检查滚动是否正常
+   - 验证所有颜色显示
+   - 确认文字内容正确
+
+---
+
+## 📝 注意事项
+
+1. **图标选择**
+   - 今日免息图标可以使用 `Icons.Filled.Notifications` 或 `Icons.Filled.Schedule`
+   - 警告图标使用 `Icons.Filled.Warning`
+   - 如需更精确的图标，可以导入自定义SVG
+
+2. **颜色精确性**
+   - 品牌色（支付宝、京东、微信）建议使用官方色值
+   - 可以根据实际效果微调
+
+3. **性能优化**
+   - 考虑使用 `remember` 缓存颜色计算
+   - 图标组件可以提取为独立文件
+
+4. **可维护性**
+   - 使用枚举管理图标类型和账户类型
+   - 保持组件的单一职责原则
+
+---
+
+## 🔄 更新记录
+
+- **2025-10-05**: 初始版本，完成1:1复刻方案
+- 待更新：添加点击交互、动画效果
+
+---
+
+## 📚 参考资料
+
+- Material Design 3 指南
+- Compose 官方文档
+- 原设计图（已归档）

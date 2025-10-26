@@ -10,7 +10,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkManager
-import com.ccxiaoji.app.notification.NotificationScheduler
+import com.ccxiaoji.shared.notification.api.NotificationApi
+import com.ccxiaoji.feature.todo.domain.usecase.TodoNotificationUseCase
 import com.ccxiaoji.feature.todo.domain.repository.TodoRepository
 import com.ccxiaoji.feature.habit.domain.repository.HabitRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -24,7 +25,8 @@ import android.util.Log
 @HiltViewModel
 class NotificationSettingsViewModel @Inject constructor(
     private val dataStore: DataStore<Preferences>,
-    private val notificationScheduler: NotificationScheduler,
+    private val notificationApi: NotificationApi,
+    private val todoNotificationUseCase: TodoNotificationUseCase,
     private val todoRepository: TodoRepository,
     private val habitRepository: HabitRepository,
     @ApplicationContext private val context: Context
@@ -52,7 +54,7 @@ class NotificationSettingsViewModel @Inject constructor(
 
     init {
         Log.d(TAG, "ViewModel created successfully")
-        Log.d(TAG, "NotificationScheduler: ${notificationScheduler.javaClass.simpleName}")
+        Log.d(TAG, "NotificationApi: ${notificationApi.javaClass.simpleName}")
         Log.d(TAG, "TodoRepository: ${todoRepository.javaClass.simpleName}")
         Log.d(TAG, "HabitRepository: ${habitRepository.javaClass.simpleName}")
         loadSettings()
@@ -98,20 +100,28 @@ class NotificationSettingsViewModel @Inject constructor(
 
                 if (enabled) {
                     // 查询所有未完成且有截止时间的任务
-                    Log.d(TAG, "Scheduling task reminders...")
+                    Log.d(TAG, "Scheduling task reminders via NotificationApi...")
                     val reminderMinutes = dataStore.data.first()[KEY_TASK_REMINDER_MINUTES] ?: 30
+                    val advanceMillis = reminderMinutes.toLong() * 60_000L
                     todoRepository.getAllTodos().first()
                         .filter { !it.completed && it.dueAt != null }
                         .forEach { task ->
-                            Log.d(TAG, "Scheduling reminder for task: ${task.title}, dueAt: ${task.dueAt}, reminderMinutes: $reminderMinutes")
-                            notificationScheduler.scheduleTaskReminder(task.id, task.title, task.dueAt!!, reminderMinutes)
+                            val dueAt = task.dueAt!!
+                            val remindAt = Instant.fromEpochMilliseconds(
+                                (dueAt.toEpochMilliseconds() - advanceMillis).coerceAtLeast(0L)
+                            )
+                            Log.d(TAG, "Scheduling reminder for task: ${task.title}, remindAt: $remindAt (dueAt: $dueAt, advance: ${reminderMinutes}m)")
+                            todoNotificationUseCase.scheduleTaskReminder(task.id, task.title, remindAt)
                         }
                     Log.d(TAG, "Task reminders scheduled")
                 } else {
-                    // 取消所有任务提醒
-                    Log.d(TAG, "Cancelling all task reminders")
-                    WorkManager.getInstance(context)
-                        .cancelAllWorkByTag(NotificationScheduler.TASK_REMINDER_WORK_TAG)
+                    // 取消所有任务提醒（逐条取消）
+                    Log.d(TAG, "Cancelling all task reminders via NotificationApi")
+                    todoRepository.getAllTodos().first()
+                        .filter { it.dueAt != null }
+                        .forEach { task ->
+                            todoNotificationUseCase.cancelTaskReminder(task.id)
+                        }
                     Log.d(TAG, "All task reminders cancelled")
                 }
             } catch (e: Exception) {
@@ -153,16 +163,18 @@ class NotificationSettingsViewModel @Inject constructor(
                     habitRepository.getHabits().first()
                         .forEach { habit ->
                             Log.d(TAG, "Scheduling reminder for habit: ${habit.title}")
-                            notificationScheduler.scheduleDailyHabitReminder(
+                            notificationApi.scheduleDailyHabitReminder(
                                 habit.id, habit.title, hour, minute
                             )
                         }
                     Log.d(TAG, "Habit reminders scheduled")
                 } else {
-                    // 取消所有习惯提醒
-                    Log.d(TAG, "Cancelling all habit reminders")
-                    WorkManager.getInstance(context)
-                        .cancelAllWorkByTag(NotificationScheduler.HABIT_REMINDER_WORK_TAG)
+                    // 取消所有习惯提醒（逐条取消）
+                    Log.d(TAG, "Cancelling all habit reminders via NotificationApi")
+                    habitRepository.getHabits().first()
+                        .forEach { habit ->
+                            notificationApi.cancelHabitReminder(habit.id)
+                        }
                     Log.d(TAG, "All habit reminders cancelled")
                 }
             } catch (e: Exception) {

@@ -21,6 +21,7 @@ import com.ccxiaoji.core.database.dao.AppAutoLedgerConfigDao
 import com.ccxiaoji.shared.user.data.local.dao.UserDao
 import com.ccxiaoji.core.database.migrations.DatabaseMigrations
 import com.ccxiaoji.core.database.DatabaseModuleDebugHelper
+import com.ccxiaoji.core.database.dao.NotificationQueueDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -49,6 +50,7 @@ object DatabaseModule {
         builder.addMigrations(com.ccxiaoji.app.data.local.migrations.AppMigrations.MIGRATION_20_21)
         builder.addMigrations(com.ccxiaoji.app.data.local.migrations.AppMigrations.MIGRATION_21_22)
         builder.addMigrations(com.ccxiaoji.app.data.local.migrations.AppMigrations.MIGRATION_22_23)
+        builder.addMigrations(com.ccxiaoji.app.data.local.migrations.AppMigrations.MIGRATION_23_24)
         // 保留已有的迁移集合
         builder.addMigrations(*com.ccxiaoji.core.database.migrations.DatabaseMigrations.getAllMigrations())
 
@@ -129,4 +131,7 @@ object DatabaseModule {
 
     @Provides
     fun provideCardDao(database: CcDatabase): CardDao = database.cardDao()
+
+    @Provides
+    fun provideNotificationQueueDao(database: CcDatabase): NotificationQueueDao = database.notificationQueueDao()
 }

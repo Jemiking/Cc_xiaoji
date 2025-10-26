@@ -23,6 +23,7 @@ import com.ccxiaoji.ui.theme.DesignTokens
 @Composable
 fun NotificationSettingsScreen(
     onNavigateBack: () -> Unit,
+    onNavigateToHistory: () -> Unit = {},
     viewModel: NotificationSettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -152,6 +153,20 @@ fun NotificationSettingsScreen(
             }
             
             Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
+
+            // 历史与诊断
+            NotificationSection(
+                title = "历史与诊断",
+                icon = Icons.Default.History,
+                settings = listOf(
+                    NotificationSetting(
+                        title = "查看通知历史",
+                        description = "查看入队、发送与状态变化记录",
+                        enabled = true,
+                        onClick = onNavigateToHistory
+                    )
+                )
+            )
         }
     }
 }

@@ -170,16 +170,6 @@ fun AdvancedSettingsSection(
             )
 
             Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
-
-            // 布局开关：记一笔 V2（临时灰度开关）
-            SwitchSettingItem(
-                icon = Icons.Default.NewReleases,
-                title = "启用记一笔 V2 布局（试用）",
-                checked = advancedSettings.useAddTransactionV2,
-                onCheckedChange = { checked ->
-                    onUpdateAdvancedSettings(advancedSettings.copy(useAddTransactionV2 = checked))
-                }
-            )
         }
     }
 }

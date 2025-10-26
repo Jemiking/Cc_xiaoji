@@ -23,6 +23,7 @@ import com.ccxiaoji.feature.habit.presentation.screen.HabitScreen
 import com.ccxiaoji.app.presentation.ui.profile.ProfileScreen
 import com.ccxiaoji.app.presentation.ui.profile.ThemeSettingsScreen
 import com.ccxiaoji.app.presentation.ui.profile.NotificationSettingsScreen
+import com.ccxiaoji.app.presentation.notification.NotificationHistoryScreen
 import com.ccxiaoji.feature.ledger.api.LedgerApi
 import com.ccxiaoji.feature.ledger.presentation.screen.import.LedgerImportScreen
 import com.ccxiaoji.feature.ledger.presentation.screen.import.QianjiImportScreen
@@ -309,26 +310,11 @@ fun NavGraph(
             )
         ) { backStackEntry ->
             val transactionId = backStackEntry.arguments?.getString("transactionId")
-            // 从"高级设置"读取临时布局开关：启用记一笔 V2 布局
-            val settingsViewModel = androidx.hilt.navigation.compose.hiltViewModel<com.ccxiaoji.feature.ledger.presentation.viewmodel.LedgerSettingsViewModel>(backStackEntry)
-            val settingsState by settingsViewModel.settings.collectAsState(
-                initial = com.ccxiaoji.feature.ledger.domain.model.LedgerSettings()
+            com.ccxiaoji.feature.ledger.presentation.screen.transaction.AddTransactionScreen(
+                navController = navController,
+                transactionId = transactionId,
+                onNavigateBack = { navController.smartBackToLedger() }
             )
-            val useV2 = settingsState.advancedSettings.useAddTransactionV2
-
-            if (useV2) {
-                com.ccxiaoji.feature.ledger.presentation.screen.v2.AddTransactionV2Screen(
-                    navController = navController,
-                    transactionId = transactionId,
-                    onNavigateBack = { navController.smartBackToLedger() }
-                )
-            } else {
-                com.ccxiaoji.feature.ledger.presentation.screen.transaction.AddTransactionScreen(
-                    navController = navController,
-                    transactionId = transactionId,
-                    onNavigateBack = { navController.smartBackToLedger() }
-                )
-            }
         }
         
         composable(
@@ -534,7 +520,8 @@ fun NavGraph(
         
         composable(NotificationSettingsRoute.route) {
             NotificationSettingsScreen(
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToHistory = { navController.navigate(NotificationHistoryRoute.route) }
             )
         }
 
@@ -548,6 +535,11 @@ fun NavGraph(
             com.ccxiaoji.app.presentation.ui.profile.PermissionManagementScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
+        }
+
+        // Notification routes
+        composable(NotificationHistoryRoute.route) {
+            NotificationHistoryScreen()
         }
 
         // Schedule module routes

@@ -8,6 +8,7 @@ import com.ccxiaoji.feature.todo.domain.usecase.AddTodoUseCase
 import com.ccxiaoji.feature.todo.domain.usecase.UpdateTodoUseCase
 import com.ccxiaoji.feature.todo.domain.usecase.GetTaskByIdUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import com.ccxiaoji.feature.todo.domain.usecase.TodoNotificationUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +26,8 @@ class AddEditTaskViewModel @Inject constructor(
     private val addTodoUseCase: AddTodoUseCase,
     private val updateTodoUseCase: UpdateTodoUseCase,
     private val getTaskByIdUseCase: GetTaskByIdUseCase,
-    private val todoRepository: com.ccxiaoji.feature.todo.domain.repository.TodoRepository
+    private val todoRepository: com.ccxiaoji.feature.todo.domain.repository.TodoRepository,
+    private val todoNotificationUseCase: TodoNotificationUseCase
 ) : ViewModel() {
 
     data class AddEditTaskUiState(
@@ -34,6 +36,8 @@ class AddEditTaskViewModel @Inject constructor(
         val description: String = "",
         val priority: Priority = Priority.MEDIUM,
         val dueAt: Instant? = null,
+        // 编辑态用于对比是否更改了截止时间
+        val originalDueAt: Instant? = null,
         val titleError: String? = null,
         val isSaved: Boolean = false,
         val taskId: String? = null,
@@ -59,6 +63,7 @@ class AddEditTaskViewModel @Inject constructor(
                         description = task.description ?: "",
                         priority = task.priorityLevel,
                         dueAt = task.dueAt,
+                        originalDueAt = task.dueAt,
                         taskId = taskId,
                         reminderEnabled = task.reminderEnabled,
                         reminderMinutesBefore = task.reminderMinutesBefore,
@@ -123,6 +128,9 @@ class AddEditTaskViewModel @Inject constructor(
 
             try {
                 val savedTaskId: String
+                val dueAtBefore = state.originalDueAt?.toEpochMilliseconds()
+                val dueAtAfter = state.dueAt?.toEpochMilliseconds()
+                val dueAtChanged = state.taskId != null && dueAtBefore != dueAtAfter
                 if (state.taskId != null) {
                     // 编辑模式
                     updateTodoUseCase(
@@ -139,27 +147,56 @@ class AddEditTaskViewModel @Inject constructor(
                         title = state.title,
                         description = state.description.ifEmpty { null },
                         dueAt = state.dueAt,
-                        priority = state.priority.ordinal
+                        priority = state.priority.ordinal,
+                        reminderEnabled = state.reminderEnabled,
+                        reminderMinutesBefore = state.reminderMinutesBefore,
+                        reminderTime = state.reminderTime
                     )
                     savedTaskId = newTask.id
                 }
 
-                // 保存提醒设置（如果有自定义配置）
-                if (state.reminderEnabled != null || state.reminderMinutesBefore != null || state.reminderTime != null) {
+                // 保存提醒设置（若有自定义配置），或在仅修改截止时间时进行必要的调度维护
+                val hasCustomReminderConfig =
+                    state.reminderEnabled != null || state.reminderMinutesBefore != null || state.reminderTime != null
+
+                if (hasCustomReminderConfig) {
                     // 计算reminderAt：如果用户设置了固定时间，需要转换为Instant
-                    val reminderAt: Instant? = if (state.reminderTime != null && state.dueAt != null) {
-                        calculateFixedReminderTime(state.reminderTime, state.dueAt)
-                    } else {
-                        null
+                    val calculatedReminderTime: Instant? = when {
+                        state.reminderTime != null && state.dueAt != null -> {
+                            calculateFixedReminderTime(state.reminderTime, state.dueAt)
+                        }
+                        state.reminderMinutesBefore != null && state.dueAt != null -> {
+                            val ms = state.dueAt.toEpochMilliseconds() - (state.reminderMinutesBefore.toLong() * 60_000L)
+                            if (ms > 0) Instant.fromEpochMilliseconds(ms) else null
+                        }
+                        else -> null
                     }
 
                     todoRepository.updateTaskReminder(
                         todoId = savedTaskId,
                         reminderEnabled = state.reminderEnabled,
-                        reminderAt = reminderAt,  // 直接传递Instant?类型
+                        reminderAt = calculatedReminderTime,
                         reminderMinutesBefore = state.reminderMinutesBefore,
                         reminderTime = state.reminderTime
                     )
+
+                    if (state.reminderEnabled == true && calculatedReminderTime != null) {
+                        // 先取消，避免重复调度
+                        todoNotificationUseCase.cancelTaskReminder(savedTaskId)
+                        todoNotificationUseCase.scheduleTaskReminder(
+                            taskId = savedTaskId,
+                            taskTitle = state.title,
+                            remindAt = calculatedReminderTime
+                        )
+                    }
+                    if (state.reminderEnabled == false) {
+                        // 显式关闭提醒则取消已存在的调度
+                        todoNotificationUseCase.cancelTaskReminder(savedTaskId)
+                    }
+                } else if (dueAtChanged) {
+                    // 继承全局配置(null)且仅修改了截止时间：此处不直接计算全局提醒分钟数
+                    // 为避免旧调度误触发，先取消旧调度；新调度可由上层全局策略触发
+                    todoNotificationUseCase.cancelTaskReminder(savedTaskId)
                 }
 
                 _uiState.value = state.copy(

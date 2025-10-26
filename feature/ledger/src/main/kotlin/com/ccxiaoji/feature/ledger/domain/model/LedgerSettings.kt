@@ -79,9 +79,7 @@ data class AdvancedSettings(
     // 是否显示已删除记录
     val showDeletedRecords: Boolean = false,
     // 默认日期选择（0: 今天, 1: 昨天, 2: 自定义）
-    val defaultDateSelection: Int = 0,
-    // 布局开关：启用“记一笔 V2”布局（临时开关，灰度使用）
-    val useAddTransactionV2: Boolean = false
+    val defaultDateSelection: Int = 0
 )
 
 /**

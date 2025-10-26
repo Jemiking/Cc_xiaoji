@@ -1,8 +1,8 @@
 plugins {
-    id("com.android.library")
-    id("org.jetbrains.kotlin.android")
-    id("com.google.devtools.ksp")
-    id("dagger.hilt.android.plugin")
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 android {
@@ -54,10 +54,10 @@ dependencies {
     // Room
     api(libs.room.runtime)
     api(libs.room.ktx)
-    ksp(libs.room.compiler)
+    ksp(libs.androidx.room.compiler)
     
     // Coroutines
-    implementation(libs.kotlin.coroutines)
+    implementation(libs.kotlinx.coroutines.android)
     
     // Hilt
     implementation(libs.hilt.android)
@@ -65,15 +65,15 @@ dependencies {
     
     // Serialization
     implementation(libs.gson)
-    implementation(libs.kotlin.datetime)
+    implementation(libs.kotlinx.datetime)
     
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
-    testImplementation(libs.coroutines.test)
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation("androidx.arch.core:core-testing:2.2.0")
     testImplementation(libs.truth)
-    testImplementation(libs.kotlin.datetime)
+    testImplementation(libs.kotlinx.datetime)
 
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")

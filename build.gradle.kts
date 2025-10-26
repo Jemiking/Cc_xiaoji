@@ -1,3 +1,13 @@
+// 顶层构建文件：统一声明插件版本（apply false），避免 Kotlin 插件在多个子模块重复加载告警
+plugins {
+    alias(libs.plugins.kotlin.android) apply false
+    alias(libs.plugins.android.application) apply false
+    alias(libs.plugins.android.library) apply false
+    alias(libs.plugins.ksp) apply false
+    alias(libs.plugins.hilt) apply false
+    alias(libs.plugins.kotlin.serialization) apply false
+}
+
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 // Top-level build file configuration
 // 仓库配置已移至 settings.gradle.kts 中集中管理

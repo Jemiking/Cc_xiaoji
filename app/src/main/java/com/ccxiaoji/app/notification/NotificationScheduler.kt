@@ -36,6 +36,7 @@ class NotificationScheduler @Inject constructor(
     }
     
     // 安排任务提醒
+    @Deprecated("已迁移到队列架构，请使用 NotificationApi.scheduleTaskReminder")
     fun scheduleTaskReminder(
         taskId: String,
         taskTitle: String,
@@ -84,6 +85,7 @@ class NotificationScheduler @Inject constructor(
     }
     
     // 取消任务提醒
+    @Deprecated("已迁移到队列架构，请使用 NotificationApi.cancelTaskReminder")
     fun cancelTaskReminder(taskId: String) {
         Log.d(TAG, "Cancelling task reminder: taskId=$taskId")
         try {
@@ -96,6 +98,7 @@ class NotificationScheduler @Inject constructor(
     }
     
     // 安排每日习惯提醒
+    @Deprecated("已迁移到队列架构，请使用 NotificationApi.scheduleDailyHabitReminder")
     fun scheduleDailyHabitReminder(habitId: String, habitTitle: String, reminderHour: Int, reminderMinute: Int) {
         Log.d(TAG, "Scheduling daily habit reminder: habitId=$habitId, title=$habitTitle, time=$reminderHour:$reminderMinute")
         try {
@@ -147,6 +150,7 @@ class NotificationScheduler @Inject constructor(
     }
     
     // 取消习惯提醒
+    @Deprecated("已迁移到队列架构，请使用 NotificationApi.cancelHabitReminder")
     fun cancelHabitReminder(habitId: String) {
         Log.d(TAG, "Cancelling habit reminder: habitId=$habitId")
         try {
