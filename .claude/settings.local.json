@@ -21,7 +21,9 @@
       "Bash(git check-ignore:*)",
       "Bash(git rm:*)",
       "Bash(.gradlew :feature:ledger:compileDebugKotlin)",
-      "Bash(rename:*)"
+      "Bash(rename:*)",
+      "Bash(__NEW_LINE__ echo \"=== Repository Interface Files ===\" ls -1 \"D:\\kotlin\\Cc_xiaoji\\feature\\ledger\\src\\main\\kotlin\\com\\ccxiaoji\\feature\\ledger\\domain\\repository\")",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": [],
