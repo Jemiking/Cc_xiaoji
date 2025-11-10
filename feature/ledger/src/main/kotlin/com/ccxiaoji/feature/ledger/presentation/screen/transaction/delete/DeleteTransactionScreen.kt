@@ -1,23 +1,36 @@
 package com.ccxiaoji.feature.ledger.presentation.screen.transaction.delete
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
-import com.ccxiaoji.ui.theme.DesignTokens
-import com.ccxiaoji.ui.components.FlatButton
+import com.ccxiaoji.feature.ledger.R
+import com.ccxiaoji.feature.ledger.presentation.component.DeleteConfirmDialog
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.DeleteTransactionViewModel
+import com.ccxiaoji.ui.theme.DesignTokens
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * 删除交易确认页面
+ *
+ * 使用Dialog形式替代全屏页面，减少页面数量，提升用户体验。
+ * 保持原有的ViewModel和导航逻辑不变。
+ */
 @Composable
 fun DeleteTransactionScreen(
     transactionId: String,
@@ -25,136 +38,69 @@ fun DeleteTransactionScreen(
     viewModel: DeleteTransactionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    
+    var showDialog by remember { mutableStateOf(true) }
+
+    // 加载交易数据
     LaunchedEffect(transactionId) {
         viewModel.loadTransaction(transactionId)
     }
-    
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("确认删除") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            Icons.Default.ArrowBack,
-                            contentDescription = "返回"
-                        )
-                    }
-                }
-            )
+
+    // 使用通用删除确认弹窗
+    DeleteConfirmDialog(
+        visible = showDialog,
+        itemCount = 1,
+        title = "确认删除交易",
+        message = "此操作无法撤销，删除后交易记录将永久丢失。",
+        isDeleting = uiState.isDeleting,
+        onDismiss = {
+            showDialog = false
+            navController.popBackStack()
+        },
+        onConfirm = {
+            viewModel.deleteTransaction()
+            navController.previousBackStackEntry
+                ?.savedStateHandle
+                ?.set("transaction_deleted", true)
+            showDialog = false
+            navController.popBackStack()
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(DesignTokens.Spacing.large),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            // 警告图标
-            Icon(
-                imageVector = Icons.Default.Warning,
-                contentDescription = null,
-                modifier = Modifier.size(72.dp),
-                tint = DesignTokens.BrandColors.Error
-            )
-            
-            Spacer(modifier = Modifier.height(DesignTokens.Spacing.large))
-            
-            // 标题
-            Text(
-                text = "确认删除交易",
-                style = MaterialTheme.typography.headlineSmall,
-                textAlign = TextAlign.Center
-            )
-            
-            Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
-            
-            // 交易信息
-            uiState.transaction?.let { transaction ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        // 交易详情预览
+        uiState.transaction?.let { transaction ->
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Column(modifier = Modifier.padding(DesignTokens.Spacing.medium)) {
+                    // 分类名称
+                    Text(
+                        text = transaction.categoryDetails?.name ?: "其他",
+                        style = MaterialTheme.typography.bodyLarge
                     )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(DesignTokens.Spacing.medium)
-                    ) {
-                        Text(
-                            text = transaction.categoryDetails?.name ?: "其他",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+
+                    Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
+
+                    // 金额显示
+                    val isIncome = transaction.categoryDetails?.type == "INCOME"
+                    Text(
+                        text = "${if (isIncome) "+" else "-"}¥${transaction.amountYuan}",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (isIncome)
+                            DesignTokens.BrandColors.Success
+                        else
+                            DesignTokens.BrandColors.Error
+                    )
+
+                    // 备注（如果有）
+                    if (!transaction.note.isNullOrBlank()) {
                         Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
                         Text(
-                            text = "${if (transaction.categoryDetails?.type == "INCOME") "+" else "-"}¥${transaction.amountYuan}",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = if (transaction.categoryDetails?.type == "INCOME") 
-                                DesignTokens.BrandColors.Success 
-                            else 
-                                DesignTokens.BrandColors.Error
+                            text = transaction.note,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        if (!transaction.note.isNullOrBlank()) {
-                            Spacer(modifier = Modifier.height(DesignTokens.Spacing.small))
-                            Text(
-                                text = transaction.note,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(DesignTokens.Spacing.large))
-            
-            // 警告信息
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Text(
-                    text = "此操作无法撤销，删除后交易记录将永久丢失。",
-                    modifier = Modifier.padding(DesignTokens.Spacing.medium),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    textAlign = TextAlign.Center
-                )
-            }
-            
-            Spacer(modifier = Modifier.weight(1f))
-            
-            // 按钮
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.medium)
-            ) {
-                FlatButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier.weight(1f),
-                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                ) {
-                    Text("取消")
-                }
-                
-                FlatButton(
-                    onClick = { 
-                        viewModel.deleteTransaction()
-                        navController.previousBackStackEntry
-                            ?.savedStateHandle
-                            ?.set("transaction_deleted", true)
-                        navController.popBackStack()
-                    },
-                    modifier = Modifier.weight(1f),
-                    backgroundColor = DesignTokens.BrandColors.Error,
-                    contentColor = MaterialTheme.colorScheme.onError
-                ) {
-                    Text("删除")
                 }
             }
         }

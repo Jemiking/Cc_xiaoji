@@ -1,144 +1,79 @@
 package com.ccxiaoji.feature.ledger.presentation.screen.batch
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.ledger.R
+import com.ccxiaoji.feature.ledger.presentation.component.DeleteConfirmDialog
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.BatchDeleteViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * 批量删除确认页面
+ *
+ * 使用Dialog形式替代全屏页面，支持批量删除确认。
+ * 根据选中数量自动调整显示文案。
+ */
 @Composable
 fun BatchDeleteScreen(
     navController: NavController,
     viewModel: BatchDeleteViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.batch_delete)) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back)
-                        )
-                    }
-                }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var showDialog by remember { mutableStateOf(true) }
+
+    // 使用通用删除确认弹窗
+    DeleteConfirmDialog(
+        visible = showDialog,
+        itemCount = uiState.selectedCount,
+        title = stringResource(R.string.batch_delete_confirm_title),
+        message = stringResource(
+            R.string.batch_delete_confirm_message,
+            uiState.selectedCount
+        ),
+        isDeleting = uiState.isDeleting,
+        onDismiss = {
+            showDialog = false
+            navController.popBackStack()
+        },
+        onConfirm = {
+            // 设置返回结果并返回
+            navController.previousBackStackEntry?.savedStateHandle?.set(
+                "batch_delete_confirmed",
+                true
             )
+            showDialog = false
+            navController.popBackStack()
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+    ) {
+        // 批量删除警告信息
+        Card(
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.errorContainer
+            ),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            // 警告图标
-            Icon(
-                Icons.Default.Warning,
-                contentDescription = null,
-                modifier = Modifier.size(80.dp),
-                tint = MaterialTheme.colorScheme.error
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // 标题
             Text(
-                text = stringResource(R.string.batch_delete_confirm_title),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
+                text = stringResource(R.string.batch_delete_warning),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.padding(16.dp),
                 textAlign = TextAlign.Center
             )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // 确认消息
-            Text(
-                text = stringResource(
-                    R.string.batch_delete_confirm_message, 
-                    uiState.selectedCount
-                ),
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // 警告提示
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = stringResource(R.string.batch_delete_warning),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.padding(16.dp),
-                    textAlign = TextAlign.Center
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            // 操作按钮
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // 取消按钮
-                OutlinedButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(stringResource(R.string.cancel))
-                }
-                
-                // 删除按钮
-                Button(
-                    onClick = {
-                        // 设置返回结果并返回
-                        navController.previousBackStackEntry?.savedStateHandle?.set(
-                            "batch_delete_confirmed",
-                            true
-                        )
-                        navController.popBackStack()
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    ),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(
-                        text = stringResource(R.string.delete),
-                        color = MaterialTheme.colorScheme.onError
-                    )
-                }
-            }
-            
-            // 加载状态
-            if (uiState.isDeleting) {
-                Spacer(modifier = Modifier.height(16.dp))
-                CircularProgressIndicator()
-            }
         }
     }
 }
