@@ -1,4 +1,4 @@
-﻿package com.ccxiaoji.feature.ledger.presentation.screen.transaction
+﻿package com.ccxiaoji.feature.ledger.presentation.screen.transaction.legacy
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.verticalScroll
@@ -64,6 +64,11 @@ import kotlinx.coroutines.launch
 import androidx.compose.foundation.ExperimentalFoundationApi
 import kotlinx.coroutines.Dispatchers
 
+@Deprecated(
+    message = "使用TransactionEditorScreen替代。此文件作为参考保留，将在后续版本中删除。",
+    replaceWith = ReplaceWith("TransactionEditorScreen"),
+    level = DeprecationLevel.WARNING
+)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddTransactionScreen(

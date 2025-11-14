@@ -34,7 +34,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.*
 import javax.inject.Inject
 
-data class AddTransactionUiState(
+// 临时兼容数据类，仅供legacy代码使用
+@Deprecated("仅供legacy代码使用", level = DeprecationLevel.WARNING)
+data class LegacyUiState(
     val accounts: List<Account> = emptyList(),
     val selectedAccount: Account? = null,
     val ledgers: List<Ledger> = emptyList(),
@@ -43,12 +45,10 @@ data class AddTransactionUiState(
     val frequentCategories: List<Category> = emptyList(),
     val selectedCategoryInfo: SelectedCategoryInfo? = null,
     val isIncome: Boolean = false,
-    // 转账相关状态
     val transactionType: TransactionType = TransactionType.EXPENSE,
-    val fromAccount: Account? = null,      // 转出账户
-    val toAccount: Account? = null,        // 转入账户
+    val fromAccount: Account? = null,
+    val toAccount: Account? = null,
     val amountText: String = "",
-    // 表达式求值结果（null 表示当前表达式无效或不完整）
     val evaluatedAmount: Double? = null,
     val note: String = "",
     val selectedDate: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
@@ -60,33 +60,15 @@ data class AddTransactionUiState(
     val showCategoryPicker: Boolean = false,
     val showLedgerSelector: Boolean = false,
     val showDateTimePicker: Boolean = false,
-    val showFromAccountPicker: Boolean = false,     // 转出账户选择器
-    val showToAccountPicker: Boolean = false,       // 转入账户选择器
-    // 编辑模式相关状态
+    val showFromAccountPicker: Boolean = false,
+    val showToAccountPicker: Boolean = false,
     val isEditMode: Boolean = false,
     val editingTransactionId: String? = null,
-    // 联动功能相关状态
     val availableLinkTargets: List<Ledger> = emptyList(),
     val selectedSyncTargets: Set<String> = emptySet(),
     val showLinkTargetSelector: Boolean = false,
     val hasLinkOptions: Boolean = false,
-    // 时间记录设置
     val enableTimeRecording: Boolean = false
-)
-
-// 用于脏值判断的快照数据类
-private data class TransactionFormSnapshot(
-    val type: TransactionType,
-    val ledgerId: String?,
-    val accountId: String?,       // 普通交易
-    val fromAccountId: String?,   // 转账模式
-    val toAccountId: String?,     // 转账模式
-    val categoryId: String?,      // 普通交易
-    val amountText: String,
-    val date: LocalDate,
-    val time: LocalTime,
-    val note: String,
-    val selectedTargets: Set<String>
 )
 
 /**
@@ -123,13 +105,11 @@ class AddTransactionViewModel @Inject constructor(
     private val _editorState = MutableStateFlow(EntityEditorState())
     val editorState: StateFlow<EntityEditorState> = _editorState.asStateFlow()
 
-    // 兼容性：提供旧的uiState以减少修改范围（后续可以逐步移除）
-    @Deprecated("使用formState和editorState替代", ReplaceWith("formState"))
-    val uiState: StateFlow<AddTransactionUiState> = combine(
-        formState,
-        editorState
-    ) { form, editor ->
-        AddTransactionUiState(
+    // 最小兼容层：仅供legacy/AddTransactionScreen使用
+    // 将在完全移除legacy代码时删除
+    @Deprecated("仅供legacy代码使用，请使用formState和editorState", level = DeprecationLevel.WARNING)
+    val uiState: StateFlow<LegacyUiState> = combine(formState, editorState) { form, editor ->
+        LegacyUiState(
             accounts = form.accounts,
             selectedAccount = form.selectedAccount,
             ledgers = form.ledgers,
@@ -163,7 +143,7 @@ class AddTransactionViewModel @Inject constructor(
             hasLinkOptions = form.hasLinkOptions,
             enableTimeRecording = form.enableTimeRecording
         )
-    }.stateIn(viewModelScope, SharingStarted.Lazily, AddTransactionUiState())
+    }.stateIn(viewModelScope, SharingStarted.Lazily, LegacyUiState())
 
     private val currentUserId = userApi.getCurrentUserId()
     private val preselectedAccountId: String? = savedStateHandle["accountId"]
@@ -176,10 +156,6 @@ class AddTransactionViewModel @Inject constructor(
     private val _saveSuccessEvent = MutableSharedFlow<Unit>()
     val saveSuccessEvent: SharedFlow<Unit> = _saveSuccessEvent.asSharedFlow()
 
-    // 兼容性：分离的保存状态（后续可以移除，使用editorState.isSaving）
-    @Deprecated("使用editorState.isSaving替代", ReplaceWith("editorState.map { it.isSaving }"))
-    val isSaving: StateFlow<Boolean> = editorState.map { it.isSaving }
-        .stateIn(viewModelScope, SharingStarted.Lazily, false)
     // 自动记账预填参数（DeepLink）
     // IntType 不支持可空：NavGraph 使用 Int.MIN_VALUE 作为哨兵，这里映射为 null
     private val prefillAmountCents: Int? = savedStateHandle.get<Int>("amountCents")?.takeIf { it != Int.MIN_VALUE }
