@@ -106,7 +106,7 @@ fun AccountManagementContent(
                             onClick = {
                                 Log.d(TAG, "收到点击请求，账户: ${account.name}")
                                 // Navigate to account detail or transaction list
-                                navController?.navigate("ledger?accountId=${account.id}")
+                                navController?.navigate(LedgerNavigation.ledgerWithAccountRoute(account.id))
                             }
                         )
                     }

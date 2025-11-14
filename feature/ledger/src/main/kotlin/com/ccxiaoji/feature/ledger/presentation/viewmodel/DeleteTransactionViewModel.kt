@@ -32,14 +32,20 @@ class DeleteTransactionViewModel @Inject constructor(
     
     fun deleteTransaction() {
         val transactionId = _uiState.value.transactionId ?: return
-        
+
         viewModelScope.launch {
-            transactionRepository.deleteTransaction(transactionId)
+            _uiState.value = _uiState.value.copy(isDeleting = true)
+            try {
+                transactionRepository.deleteTransaction(transactionId)
+            } finally {
+                _uiState.value = _uiState.value.copy(isDeleting = false)
+            }
         }
     }
 }
 
 data class DeleteTransactionUiState(
     val transaction: Transaction? = null,
-    val transactionId: String? = null
+    val transactionId: String? = null,
+    val isDeleting: Boolean = false
 )

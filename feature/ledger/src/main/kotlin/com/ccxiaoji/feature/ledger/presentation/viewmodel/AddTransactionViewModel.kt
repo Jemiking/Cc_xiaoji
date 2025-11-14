@@ -24,6 +24,9 @@ import com.ccxiaoji.feature.ledger.domain.usecase.CreateLinkedTransactionUseCase
 import com.ccxiaoji.feature.ledger.domain.usecase.CreateTransferUseCase
 import com.ccxiaoji.shared.user.api.UserApi
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.TransactionType
+import com.ccxiaoji.feature.ledger.presentation.component.EntityEditorState
+import com.ccxiaoji.feature.ledger.presentation.screen.transaction.TransactionFormState
+import com.ccxiaoji.feature.ledger.presentation.screen.transaction.TransactionSnapshot
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -71,6 +74,30 @@ data class AddTransactionUiState(
     val enableTimeRecording: Boolean = false
 )
 
+// 用于脏值判断的快照数据类
+private data class TransactionFormSnapshot(
+    val type: TransactionType,
+    val ledgerId: String?,
+    val accountId: String?,       // 普通交易
+    val fromAccountId: String?,   // 转账模式
+    val toAccountId: String?,     // 转账模式
+    val categoryId: String?,      // 普通交易
+    val amountText: String,
+    val date: LocalDate,
+    val time: LocalTime,
+    val note: String,
+    val selectedTargets: Set<String>
+)
+
+/**
+ * 交易编辑器 ViewModel
+ *
+ * 采用状态分离模式：
+ * - formState: 业务数据状态（TransactionFormState）
+ * - editorState: UI元状态（EntityEditorState）
+ *
+ * 支持新增和编辑两种模式，以及转账功能
+ */
 @HiltViewModel
 class AddTransactionViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
@@ -87,12 +114,72 @@ class AddTransactionViewModel @Inject constructor(
     private val userApi: UserApi,
     private val dataStore: DataStore<Preferences>
 ) : ViewModel() {
-    
-    private val _uiState = MutableStateFlow(AddTransactionUiState())
-    val uiState: StateFlow<AddTransactionUiState> = _uiState.asStateFlow()
+
+    // 业务数据状态
+    private val _formState = MutableStateFlow(TransactionFormState())
+    val formState: StateFlow<TransactionFormState> = _formState.asStateFlow()
+
+    // UI元状态
+    private val _editorState = MutableStateFlow(EntityEditorState())
+    val editorState: StateFlow<EntityEditorState> = _editorState.asStateFlow()
+
+    // 兼容性：提供旧的uiState以减少修改范围（后续可以逐步移除）
+    @Deprecated("使用formState和editorState替代", ReplaceWith("formState"))
+    val uiState: StateFlow<AddTransactionUiState> = combine(
+        formState,
+        editorState
+    ) { form, editor ->
+        AddTransactionUiState(
+            accounts = form.accounts,
+            selectedAccount = form.selectedAccount,
+            ledgers = form.ledgers,
+            selectedLedger = form.selectedLedger,
+            categoryGroups = form.categoryGroups,
+            frequentCategories = form.frequentCategories,
+            selectedCategoryInfo = form.selectedCategoryInfo,
+            isIncome = form.isIncome,
+            transactionType = form.transactionType,
+            fromAccount = form.fromAccount,
+            toAccount = form.toAccount,
+            amountText = form.amountText,
+            evaluatedAmount = form.evaluatedAmount,
+            note = form.note,
+            selectedDate = form.selectedDate,
+            selectedTime = form.selectedTime,
+            selectedLocation = form.selectedLocation,
+            isLoading = editor.isLoading,
+            amountError = form.amountError,
+            canSave = editor.saveEnabled,
+            showCategoryPicker = form.showCategoryPicker,
+            showLedgerSelector = form.showLedgerSelector,
+            showDateTimePicker = form.showDateTimePicker,
+            showFromAccountPicker = form.showFromAccountPicker,
+            showToAccountPicker = form.showToAccountPicker,
+            isEditMode = editor.isEditMode,
+            editingTransactionId = form.editingTransactionId,
+            availableLinkTargets = form.availableLinkTargets,
+            selectedSyncTargets = form.selectedSyncTargets,
+            showLinkTargetSelector = form.showLinkTargetSelector,
+            hasLinkOptions = form.hasLinkOptions,
+            enableTimeRecording = form.enableTimeRecording
+        )
+    }.stateIn(viewModelScope, SharingStarted.Lazily, AddTransactionUiState())
+
     private val currentUserId = userApi.getCurrentUserId()
     private val preselectedAccountId: String? = savedStateHandle["accountId"]
     private val transactionId: String? = savedStateHandle["transactionId"]
+
+    // 用于脏值判断的初始快照
+    private var initialSnapshot: TransactionSnapshot? = null
+
+    // 保存成功事件（用于UI层监听）
+    private val _saveSuccessEvent = MutableSharedFlow<Unit>()
+    val saveSuccessEvent: SharedFlow<Unit> = _saveSuccessEvent.asSharedFlow()
+
+    // 兼容性：分离的保存状态（后续可以移除，使用editorState.isSaving）
+    @Deprecated("使用editorState.isSaving替代", ReplaceWith("editorState.map { it.isSaving }"))
+    val isSaving: StateFlow<Boolean> = editorState.map { it.isSaving }
+        .stateIn(viewModelScope, SharingStarted.Lazily, false)
     // 自动记账预填参数（DeepLink）
     // IntType 不支持可空：NavGraph 使用 Int.MIN_VALUE 作为哨兵，这里映射为 null
     private val prefillAmountCents: Int? = savedStateHandle.get<Int>("amountCents")?.takeIf { it != Int.MIN_VALUE }
@@ -102,18 +189,37 @@ class AddTransactionViewModel @Inject constructor(
     private val prefillNote: String? = savedStateHandle["note"]
     
     init {
-        
+        // 监听表单状态变化，自动更新编辑器状态
+        viewModelScope.launch {
+            formState.collect { form ->
+                updateEditorStateFromForm(form)
+            }
+        }
+
         checkAndInitializeCategories()
         loadData()
         loadSettings()
 
-        
         // 应用自动预填
         applyAutoLedgerPrefill()
         // 如果有 transactionId，则进入编辑模式并加载交易数据
         transactionId?.let { id ->
+            _editorState.value.isEditMode = true
             loadTransactionForEdit(id)
         }
+    }
+
+    // 更新初始快照（在数据加载完成后调用）
+    private fun updateInitialSnapshot() {
+        if (initialSnapshot == null) {
+            initialSnapshot = _formState.value.createSnapshot()
+        }
+    }
+
+    // 判断是否有未保存的更改
+    fun hasUnsavedChanges(): Boolean {
+        val currentSnapshot = _formState.value.createSnapshot()
+        return initialSnapshot?.let { it != currentSnapshot } ?: false
     }
     private fun applyAutoLedgerPrefill() {
         viewModelScope.launch(Dispatchers.Default) {
@@ -140,7 +246,7 @@ class AddTransactionViewModel @Inject constructor(
                     try {
                         val info = categoryRepository.getCategoryFullInfo(cid)
                         if (info != null) {
-                            _uiState.update { it.copy(selectedCategoryInfo = info) }
+                            _formState.update { it.copy(selectedCategoryInfo = info) }
                         }
                     } catch (_: Exception) { }
                 }
@@ -162,12 +268,16 @@ class AddTransactionViewModel @Inject constructor(
                 } else {
                     accounts.firstOrNull()
                 }
-                
-                _uiState.update {
+
+                _formState.update {
                     it.copy(
                         accounts = accounts,
                         selectedAccount = selectedAccount
                     )
+                }
+                // 新增模式下，设置初始快照
+                if (!_editorState.value.isEditMode) {
+                    updateInitialSnapshot()
                 }
             }
         }
@@ -175,13 +285,17 @@ class AddTransactionViewModel @Inject constructor(
             // 加载账本
             manageLedgerUseCase.getUserLedgers(currentUserId).collect { ledgers ->
                 val defaultLedger = ledgers.find { it.isDefault } ?: ledgers.firstOrNull()
-                _uiState.update {
+                _formState.update {
                     it.copy(
                         ledgers = ledgers,
                         selectedLedger = defaultLedger
                     )
                 }
                 updateCanSave()
+                // 新增模式下，设置初始快照
+                if (!_editorState.value.isEditMode) {
+                    updateInitialSnapshot()
+                }
             }
         }
         
@@ -192,14 +306,14 @@ class AddTransactionViewModel @Inject constructor(
     }
     
     fun selectAccount(account: Account) {
-        _uiState.update {
+        _formState.update {
             it.copy(selectedAccount = account)
         }
         updateCanSave()
     }
-    
+
     fun selectLedger(ledger: Ledger) {
-        _uiState.update {
+        _formState.update {
             it.copy(
                 selectedLedger = ledger,
                 showLedgerSelector = false
@@ -209,23 +323,23 @@ class AddTransactionViewModel @Inject constructor(
         // 当选择账本时，加载可用的联动目标
         loadLinkTargets(ledger.id)
     }
-    
+
     fun showLedgerSelector() {
-        _uiState.update {
+        _formState.update {
             it.copy(showLedgerSelector = true)
         }
     }
-    
+
     fun hideLedgerSelector() {
-        _uiState.update {
+        _formState.update {
             it.copy(showLedgerSelector = false)
         }
     }
     
     fun setIncomeType(isIncome: Boolean) {
-        _uiState.update {
+        _formState.update {
             it.copy(
-                isIncome = isIncome,
+                transactionType = if (isIncome) TransactionType.INCOME else TransactionType.EXPENSE,
                 selectedCategoryInfo = null // 重置分类选择
             )
         }
@@ -233,13 +347,12 @@ class AddTransactionViewModel @Inject constructor(
             loadCategories()
         }
     }
-    
+
     // 设置交易类型（新方法）
     fun setTransactionType(type: TransactionType) {
-        _uiState.update {
+        _formState.update {
             it.copy(
                 transactionType = type,
-                isIncome = type == TransactionType.INCOME,
                 selectedCategoryInfo = if (type == TransactionType.TRANSFER) null else it.selectedCategoryInfo,
                 // 转账模式下重置账户选择
                 fromAccount = if (type == TransactionType.TRANSFER) it.selectedAccount else null,
@@ -256,7 +369,7 @@ class AddTransactionViewModel @Inject constructor(
     
     // 设置转出账户
     fun setFromAccount(account: Account) {
-        _uiState.update {
+        _formState.update {
             it.copy(
                 fromAccount = account,
                 showFromAccountPicker = false
@@ -264,10 +377,10 @@ class AddTransactionViewModel @Inject constructor(
         }
         updateCanSave()
     }
-    
+
     // 设置转入账户
     fun setToAccount(account: Account) {
-        _uiState.update {
+        _formState.update {
             it.copy(
                 toAccount = account,
                 showToAccountPicker = false
@@ -275,16 +388,16 @@ class AddTransactionViewModel @Inject constructor(
         }
         updateCanSave()
     }
-    
+
     fun selectCategory(category: Category) {
         viewModelScope.launch {
             // 记录使用频率
             getFrequentCategories.recordCategoryUsage(category.id)
-            
+
             // 获取完整的分类信息（包含父分类路径）
             val categoryInfo = categoryRepository.getCategoryFullInfo(category.id)
-            
-            _uiState.update {
+
+            _formState.update {
                 it.copy(
                     selectedCategoryInfo = categoryInfo,
                     showCategoryPicker = false
@@ -293,63 +406,63 @@ class AddTransactionViewModel @Inject constructor(
             updateCanSave()
         }
     }
-    
+
     fun showCategoryPicker() {
-        _uiState.update {
+        _formState.update {
             it.copy(showCategoryPicker = true)
         }
     }
-    
+
     fun hideCategoryPicker() {
-        _uiState.update {
+        _formState.update {
             it.copy(showCategoryPicker = false)
         }
     }
-    
+
     // 显示转出账户选择器
     fun showFromAccountPicker() {
-        _uiState.update {
+        _formState.update {
             it.copy(showFromAccountPicker = true)
         }
     }
-    
+
     fun hideFromAccountPicker() {
-        _uiState.update {
+        _formState.update {
             it.copy(showFromAccountPicker = false)
         }
     }
-    
+
     fun showToAccountPicker() {
-        _uiState.update {
+        _formState.update {
             it.copy(showToAccountPicker = true)
         }
     }
-    
+
     fun hideToAccountPicker() {
-        _uiState.update {
+        _formState.update {
             it.copy(showToAccountPicker = false)
         }
     }
-    
+
     fun showDateTimePicker() {
-        _uiState.update {
+        _formState.update {
             it.copy(showDateTimePicker = true)
         }
     }
-    
+
     fun hideDateTimePicker() {
-        _uiState.update {
+        _formState.update {
             it.copy(showDateTimePicker = false)
         }
     }
     
     fun updateAmount(amount: String) {
-        // 允许输入数字、点、小加号与小减号，按“表达式”解析并评估
+        // 允许输入数字、点、小加号与小减号，按"表达式"解析并评估
         val cleaned = amount.filter { it.isDigit() || it == '.' || it == '+' || it == '-' }
 
         val (error, evaluated) = validateAndEval(cleaned)
 
-        _uiState.update {
+        _formState.update {
             it.copy(
                 amountText = cleaned,
                 amountError = error,
@@ -358,27 +471,27 @@ class AddTransactionViewModel @Inject constructor(
         }
         updateCanSave()
     }
-    
+
     fun updateNote(note: String) {
-        _uiState.update {
+        _formState.update {
             it.copy(note = note)
         }
     }
-    
+
     fun updateDate(date: LocalDate) {
-        _uiState.update {
+        _formState.update {
             it.copy(selectedDate = date)
         }
     }
-    
+
     fun updateTime(time: LocalTime) {
-        _uiState.update {
+        _formState.update {
             it.copy(selectedTime = time)
         }
     }
-    
+
     fun updateLocation(location: com.ccxiaoji.feature.ledger.domain.model.LocationData?) {
-        _uiState.update {
+        _formState.update {
             it.copy(selectedLocation = location)
         }
     }
@@ -477,22 +590,22 @@ class AddTransactionViewModel @Inject constructor(
 
     // 保存成功后：留在当前页并清空部分字段
     fun resetForNextEntry() {
-        _uiState.update { state ->
+        _formState.update { state ->
             state.copy(
                 amountText = "",
                 evaluatedAmount = null,
                 amountError = null,
-                canSave = false,
-                isLoading = false,
                 note = ""
             )
         }
+        _editorState.value.saveEnabled = false
+        _editorState.value.isLoading = false
     }
     
     private suspend fun loadCategories() {
         val userId = currentUserId
-        val type = if (_uiState.value.isIncome) "INCOME" else "EXPENSE"
-        
+        val type = if (_formState.value.isIncome) "INCOME" else "EXPENSE"
+
         // 加载分类树
         val categoryGroups = getCategoryTree(userId, type)
         android.util.Log.d("AddTxn_DefaultSelection", "加载分类树 ${categoryGroups.size} 组，当前类型=$type")
@@ -502,13 +615,13 @@ class AddTransactionViewModel @Inject constructor(
                 "组$idx: parent='${g.parent.name}' (id=${g.parent.id}, children=${g.children.size}, order=${g.parent.displayOrder})"
             )
         }
-        
+
         // 鍔犺浇甯哥敤鍒嗙被
         // 加载常用分类
         val frequentCategories = getFrequentCategories(userId, type, 5)
         android.util.Log.d("AddTxn_DefaultSelection", "常用分类数量=${frequentCategories.size}")
-        
-        val selectedInfo = _uiState.value.selectedCategoryInfo
+
+        val selectedInfo = _formState.value.selectedCategoryInfo
         val newSelectedInfo = if (selectedInfo == null || selectedInfo.categoryId.isEmpty()) {
             // 优先从常用分类中选择（跳过“其他/未分类”等兜底项），并优先选择父分类
             var picked: SelectedCategoryInfo? = null
@@ -548,8 +661,8 @@ class AddTransactionViewModel @Inject constructor(
         } else {
             selectedInfo
         }
-        
-        _uiState.update {
+
+        _formState.update {
             it.copy(
                 categoryGroups = categoryGroups,
                 frequentCategories = frequentCategories,
@@ -567,37 +680,47 @@ class AddTransactionViewModel @Inject constructor(
         updateCanSave()
     }
     
-    private fun updateCanSave() {
-        _uiState.update { state ->
-            val amountValid = state.evaluatedAmount != null && state.evaluatedAmount > 0.0
-            val baseValid = state.amountText.isNotEmpty() && 
-                           state.amountError == null && 
-                           amountValid &&
-                           state.selectedLedger != null
-            
-            val canSave = if (state.transactionType == TransactionType.TRANSFER) {
-                // 转账模式：需要转出账户与转入账户，不需要分类
-                baseValid &&
-                state.fromAccount != null &&
-                state.toAccount != null &&
-                 state.fromAccount != state.toAccount // 转出与转入账户不能相同
-            } else {
-                // 普通模式：需要分类与账户
-                baseValid &&
-                state.selectedCategoryInfo != null &&
-                state.selectedAccount != null
-            }
-            
-            state.copy(canSave = canSave)
+    /**
+     * 根据表单状态更新编辑器状态
+     */
+    private fun updateEditorStateFromForm(form: TransactionFormState) {
+        val hasChanges = hasUnsavedChanges()
+
+        val amountValid = form.evaluatedAmount != null && form.evaluatedAmount > 0.0
+        val baseValid = form.amountText.isNotEmpty() &&
+                       form.amountError == null &&
+                       amountValid &&
+                       form.selectedLedger != null
+
+        val canSave = if (form.transactionType == TransactionType.TRANSFER) {
+            // 转账模式：需要转出账户与转入账户，不需要分类
+            baseValid &&
+            form.fromAccount != null &&
+            form.toAccount != null &&
+            form.fromAccount != form.toAccount // 转出与转入账户不能相同
+        } else {
+            // 普通模式：需要分类与账户
+            baseValid &&
+            form.selectedCategoryInfo != null &&
+            form.selectedAccount != null
         }
+
+        _editorState.value.hasUnsavedChanges = hasChanges
+        _editorState.value.saveEnabled = canSave
+    }
+
+    // 兼容性方法，后续可以移除
+    @Deprecated("使用updateEditorStateFromForm替代")
+    private fun updateCanSave() {
+        updateEditorStateFromForm(_formState.value)
     }
     
     private fun loadTransactionForEdit(transactionId: String) {
-        
+
         viewModelScope.launch {
             try {
-                _uiState.update { it.copy(isLoading = true) }
-                
+                _editorState.value.isLoading = true
+
                 // 根据ID获取交易数据
                 val transaction = transactionRepository.getTransactionById(transactionId)
                 if (transaction != null) {
@@ -621,14 +744,16 @@ class AddTransactionViewModel @Inject constructor(
                             color = cat.color
                         )
                     }
-                    
-                    // 更新 UI 状态为编辑模式
-                    _uiState.update { state ->
-                        val (_, eval) = validateAndEval(transaction.amountYuan.toString())
+
+                    // 更新表单状态
+                    val (_, eval) = validateAndEval(transaction.amountYuan.toString())
+                    _formState.update { state ->
                         state.copy(
-                            isEditMode = true,
                             editingTransactionId = transactionId,
-                            isIncome = transaction.categoryDetails?.type == "INCOME",
+                            transactionType = when (transaction.categoryDetails?.type) {
+                                "INCOME" -> TransactionType.INCOME
+                                else -> TransactionType.EXPENSE
+                            },
                             amountText = transaction.amountYuan.toString(),
                             evaluatedAmount = eval,
                             note = transaction.note ?: "",
@@ -637,55 +762,61 @@ class AddTransactionViewModel @Inject constructor(
                             selectedTime = transaction.transactionDate?.toLocalDateTime(TimeZone.currentSystemDefault())?.time
                                 ?: transaction.createdAt.toLocalDateTime(TimeZone.currentSystemDefault()).time,
                             selectedCategoryInfo = selectedCategoryInfo,
-                            selectedAccount = state.accounts.find { it.id == transaction.accountId },
-                            isLoading = false
+                            selectedAccount = state.accounts.find { it.id == transaction.accountId }
                         )
                     }
-                    
-                    // 閲嶆柊璁＄畻canSave鐘舵€?                    updateCanSave()
+
+                    // 更新编辑器状态
+                    _editorState.value.isEditMode = true
+                    _editorState.value.isLoading = false
+
+                    // 重新计算canSave状态
+                    updateCanSave()
+                    // 编辑模式下，设置初始快照
+                    updateInitialSnapshot()
                 } else {
-                    _uiState.update { it.copy(isLoading = false) }
+                    _editorState.value.isLoading = false
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(isLoading = false) }
+                _editorState.value.isLoading = false
             }
         }
     }
     
     fun saveTransaction(onSuccess: () -> Unit) {
-        val canSave = _uiState.value.canSave
+        val canSave = _editorState.value.saveEnabled
         if (!canSave) {
-            if (_uiState.value.selectedCategoryInfo == null && _uiState.value.transactionType != TransactionType.TRANSFER) {
-                _uiState.update { it.copy(showCategoryPicker = true) }
+            if (_formState.value.selectedCategoryInfo == null && _formState.value.transactionType != TransactionType.TRANSFER) {
+                _formState.update { it.copy(showCategoryPicker = true) }
             }
             return
         }
 
         viewModelScope.launch(Dispatchers.IO) {
-            _uiState.update { it.copy(isLoading = true) }
+            _editorState.value.isSaving = true
             try {
-                val state = _uiState.value
+                val state = _formState.value
                 val evaluated = state.evaluatedAmount ?: 0.0
                 val amountCents = kotlin.math.round(evaluated * 100.0).toInt()
                 val transactionDateTime = LocalDateTime(state.selectedDate, state.selectedTime)
                     .toInstant(TimeZone.currentSystemDefault())
 
                 if (state.selectedLedger == null) {
-                    _uiState.update { it.copy(showLedgerSelector = true, amountError = "Please select a ledger") }
-                    _uiState.update { it.copy(isLoading = false) }
+                    _formState.update { it.copy(showLedgerSelector = true, amountError = "Please select a ledger") }
+                    _editorState.value.isLoading = false
                     return@launch
                 }
                 if (amountCents <= 0) throw IllegalStateException("Amount must be greater than 0")
 
                 if (state.transactionType == TransactionType.TRANSFER) {
                     if (state.fromAccount == null) {
-                        _uiState.update { it.copy(showFromAccountPicker = true, amountError = "Please select a source account") }
-                        _uiState.update { it.copy(isLoading = false) }
+                        _formState.update { it.copy(showFromAccountPicker = true, amountError = "Please select a source account") }
+                        _editorState.value.isLoading = false
                         return@launch
                     }
                     if (state.toAccount == null) {
-                        _uiState.update { it.copy(showToAccountPicker = true, amountError = "Please select a destination account") }
-                        _uiState.update { it.copy(isLoading = false) }
+                        _formState.update { it.copy(showToAccountPicker = true, amountError = "Please select a destination account") }
+                        _editorState.value.isLoading = false
                         return@launch
                     }
                     if (state.fromAccount == state.toAccount) {
@@ -696,7 +827,7 @@ class AddTransactionViewModel @Inject constructor(
                     if (state.selectedCategoryInfo == null) throw IllegalStateException("未选择分类")
                 }
 
-                if (state.isEditMode && state.editingTransactionId != null) {
+                if (_editorState.value.isEditMode && state.editingTransactionId != null) {
                     val updated = com.ccxiaoji.feature.ledger.domain.model.Transaction(
                         id = state.editingTransactionId!!,
                         accountId = state.selectedAccount!!.id,
@@ -712,6 +843,7 @@ class AddTransactionViewModel @Inject constructor(
                     )
                     transactionRepository.updateTransaction(updated)
                     onSuccess()
+                    _saveSuccessEvent.emit(Unit)
                 } else {
                     if (state.transactionType == TransactionType.TRANSFER) {
                         val result = createTransferUseCase.createTransfer(
@@ -725,7 +857,10 @@ class AddTransactionViewModel @Inject constructor(
                             checkBalance = false
                         )
                         when (result) {
-                            is com.ccxiaoji.common.base.BaseResult.Success -> onSuccess()
+                            is com.ccxiaoji.common.base.BaseResult.Success -> {
+                                onSuccess()
+                                _saveSuccessEvent.emit(Unit)
+                            }
                             is com.ccxiaoji.common.base.BaseResult.Error -> throw result.exception
                         }
                     } else {
@@ -755,16 +890,19 @@ class AddTransactionViewModel @Inject constructor(
                             )
                         }
                         when (result) {
-                            is com.ccxiaoji.common.base.BaseResult.Success -> onSuccess()
+                            is com.ccxiaoji.common.base.BaseResult.Success -> {
+                                onSuccess()
+                                _saveSuccessEvent.emit(Unit)
+                            }
                             is com.ccxiaoji.common.base.BaseResult.Error -> throw result.exception
                         }
                     }
                 }
             } catch (e: Exception) {
                 android.util.Log.e("AddTransactionViewModel", "保存交易失败", e)
-                _uiState.update { it.copy(amountError = e.message) }
+                _formState.update { it.copy(amountError = e.message) }
             } finally {
-                _uiState.update { it.copy(isLoading = false) }
+                _editorState.value.isSaving = false
             }
         }
     }
@@ -793,12 +931,12 @@ class AddTransactionViewModel @Inject constructor(
             try {
                 // 获取该账本的联动关系
                 val linksFlow = manageLedgerLinkUseCase.getLedgerLinks(ledgerId)
-                
+
                 linksFlow.collect { links ->
                     // 根据联动关系确定可用的目标账本
-                    val currentLedgers = _uiState.value.ledgers
+                    val currentLedgers = _formState.value.ledgers
                     val availableTargets = mutableListOf<Ledger>()
-                    
+
                     for (link in links) {
                         val targetLedgerId = link.getOtherLedgerId(ledgerId)
                         val targetLedger = currentLedgers.find { it.id == targetLedgerId }
@@ -806,8 +944,8 @@ class AddTransactionViewModel @Inject constructor(
                             availableTargets.add(targetLedger)
                         }
                     }
-                    
-                    _uiState.update {
+
+                    _formState.update {
                         it.copy(
                             availableLinkTargets = availableTargets,
                             hasLinkOptions = availableTargets.isNotEmpty(),
@@ -818,7 +956,7 @@ class AddTransactionViewModel @Inject constructor(
             } catch (e: Exception) {
                 android.util.Log.e("AddTransactionViewModel", "加载联动目标失败", e)
                 // 出错时清空联动选项
-                _uiState.update {
+                _formState.update {
                     it.copy(
                         availableLinkTargets = emptyList(),
                         hasLinkOptions = false,
@@ -828,30 +966,30 @@ class AddTransactionViewModel @Inject constructor(
             }
         }
     }
-    
+
     /**
      * 显示联动目标选择器
      */
     fun showLinkTargetSelector() {
-        _uiState.update {
+        _formState.update {
             it.copy(showLinkTargetSelector = true)
         }
     }
-    
+
     /**
      * 隐藏联动目标选择器
      */
     fun hideLinkTargetSelector() {
-        _uiState.update {
+        _formState.update {
             it.copy(showLinkTargetSelector = false)
         }
     }
-    
+
     /**
      * 切换联动目标的选择状态
      */
     fun toggleSyncTarget(ledgerId: String) {
-        _uiState.update { state ->
+        _formState.update { state ->
             val currentTargets = state.selectedSyncTargets.toMutableSet()
             if (currentTargets.contains(ledgerId)) {
                 currentTargets.remove(ledgerId)
@@ -861,21 +999,21 @@ class AddTransactionViewModel @Inject constructor(
             state.copy(selectedSyncTargets = currentTargets)
         }
     }
-    
+
     /**
      * 清除所有联动目标选择
      */
     fun clearAllSyncTargets() {
-        _uiState.update {
+        _formState.update {
             it.copy(selectedSyncTargets = emptySet())
         }
     }
-    
+
     /**
      * 选择所有可用的联动目标
      */
     fun selectAllSyncTargets() {
-        _uiState.update { state ->
+        _formState.update { state ->
             val allTargetIds = state.availableLinkTargets.map { it.id }.toSet()
             state.copy(selectedSyncTargets = allTargetIds)
         }
@@ -888,7 +1026,7 @@ class AddTransactionViewModel @Inject constructor(
         viewModelScope.launch {
             dataStore.data.collect { preferences ->
                 val enableTimeRecording = preferences[ENABLE_TIME_RECORDING_KEY] ?: false
-                _uiState.update { it.copy(enableTimeRecording = enableTimeRecording) }
+                _formState.update { it.copy(enableTimeRecording = enableTimeRecording) }
             }
         }
     }

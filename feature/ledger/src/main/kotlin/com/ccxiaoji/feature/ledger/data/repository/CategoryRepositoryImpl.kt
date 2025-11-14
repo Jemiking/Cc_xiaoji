@@ -119,9 +119,23 @@ class CategoryRepositoryImpl @Inject constructor(
             syncStatus = SyncStatus.PENDING_SYNC
         )
         
-        categoryDao.insertCategory(category)
-        println("🔧 [CategoryRepositoryImpl.createCategory] 分类创建成功: $name (ID: $categoryId, 层级: $level, 路径: $path)")
-        return 1L // TODO: 返回实际的ID
+        try {
+            categoryDao.insertCategory(category)
+            println("🔧 [CategoryRepositoryImpl.createCategory] 分类创建成功: $name (ID: $categoryId, 层级: $level, 路径: $path)")
+            return 1L // TODO: 返回实际的ID
+        } catch (e: android.database.sqlite.SQLiteConstraintException) {
+            println("❌ [CategoryRepositoryImpl.createCategory] 插入失败: ${e.message}")
+            // 转换为用户友好的错误信息
+            when {
+                e.message?.contains("UNIQUE constraint failed") == true -> {
+                    throw IllegalArgumentException("分类名称已存在")
+                }
+                e.message?.contains("FOREIGN KEY constraint failed") == true -> {
+                    throw IllegalArgumentException("父分类不存在或无效")
+                }
+                else -> throw e
+            }
+        }
     }
     
     override suspend fun updateCategory(category: Category) {
@@ -495,9 +509,23 @@ class CategoryRepositoryImpl @Inject constructor(
             syncStatus = SyncStatus.PENDING_SYNC
         )
         
-        categoryDao.insertCategory(subcategory)
-        println("🔧 [CategoryRepositoryImpl.createSubcategory] 子分类创建成功: $name (ID: $categoryId, 路径: ${parent.name}/$name)")
-        return categoryId
+        try {
+            categoryDao.insertCategory(subcategory)
+            println("🔧 [CategoryRepositoryImpl.createSubcategory] 子分类创建成功: $name (ID: $categoryId, 路径: ${parent.name}/$name)")
+            return categoryId
+        } catch (e: android.database.sqlite.SQLiteConstraintException) {
+            println("❌ [CategoryRepositoryImpl.createSubcategory] 插入失败: ${e.message}")
+            // 转换为用户友好的错误信息
+            when {
+                e.message?.contains("UNIQUE constraint failed") == true -> {
+                    throw IllegalArgumentException("该子分类名称已存在")
+                }
+                e.message?.contains("FOREIGN KEY constraint failed") == true -> {
+                    throw IllegalArgumentException("父分类不存在或无效")
+                }
+                else -> throw e
+            }
+        }
     }
     
     override suspend fun getFrequentCategories(
@@ -579,10 +607,19 @@ class CategoryRepositoryImpl @Inject constructor(
             syncStatus = SyncStatus.SYNCED
         )
         
-        categoryDao.insertCategory(otherCategory)
-        println("🔧 [CategoryRepositoryImpl.getOrCreateDefaultOtherCategory] 创建'其他'分类成功: $categoryId")
-        
-        return categoryId
+        try {
+            categoryDao.insertCategory(otherCategory)
+            println("🔧 [CategoryRepositoryImpl.getOrCreateDefaultOtherCategory] 创建'其他'分类成功: $categoryId")
+            return categoryId
+        } catch (e: android.database.sqlite.SQLiteConstraintException) {
+            println("❌ [CategoryRepositoryImpl.getOrCreateDefaultOtherCategory] 插入失败: ${e.message}")
+            // 对于默认分类，如果已存在则返回已存在的
+            val existingCategory = categoryDao.findByNameAndType("其他", "EXPENSE", userId)
+            if (existingCategory != null) {
+                return existingCategory.id
+            }
+            throw e
+        }
     }
 }
 

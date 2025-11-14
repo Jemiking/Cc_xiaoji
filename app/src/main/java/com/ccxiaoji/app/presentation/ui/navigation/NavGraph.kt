@@ -76,7 +76,7 @@ fun NavGraph(
             ledgerApi.getLedgerScreen(
                 navController = navController,
                 accountId = accountId,
-                onBack = { navController.smartBackToHome() }
+                onBack = { navController.popBackStack() }
             )
         }
         
@@ -310,7 +310,7 @@ fun NavGraph(
             )
         ) { backStackEntry ->
             val transactionId = backStackEntry.arguments?.getString("transactionId")
-            com.ccxiaoji.feature.ledger.presentation.screen.transaction.AddTransactionScreen(
+            com.ccxiaoji.feature.ledger.presentation.screen.transaction.TransactionEditorScreen(
                 navController = navController,
                 transactionId = transactionId,
                 onNavigateBack = { navController.smartBackToLedger() }
@@ -334,9 +334,9 @@ fun NavGraph(
             println("🔍 [NavGraph] EditTransactionRoute 被导航！")
             println("   - 接收到的transactionId: '$transactionId'")
             println("   - backStackEntry: $backStackEntry")
-            println("   - 准备启动AddTransactionScreen编辑模式")
-            
-            com.ccxiaoji.feature.ledger.presentation.screen.transaction.AddTransactionScreen(
+            println("   - 准备启动TransactionEditorScreen编辑模式")
+
+            com.ccxiaoji.feature.ledger.presentation.screen.transaction.TransactionEditorScreen(
                 transactionId = transactionId,
                 navController = navController,
                 onNavigateBack = { navController.smartBackToLedger() }
@@ -344,8 +344,9 @@ fun NavGraph(
         }
         
         composable(AddAccountRoute.route) {
-            com.ccxiaoji.feature.ledger.presentation.screen.account.AddAccountScreen(
+            com.ccxiaoji.feature.ledger.presentation.screen.account.AccountEditorScreen(
                 navController = navController,
+                accountId = null,  // 新增模式
                 onNavigateBack = { navController.smartBackToLedger() }
             )
         }
@@ -359,8 +360,8 @@ fun NavGraph(
             )
         ) { backStackEntry ->
             val accountId = backStackEntry.arguments?.getString("accountId") ?: ""
-            com.ccxiaoji.feature.ledger.presentation.screen.account.EditAccountScreen(
-                accountId = accountId,
+            com.ccxiaoji.feature.ledger.presentation.screen.account.AccountEditorScreen(
+                accountId = accountId,  // 编辑模式
                 navController = navController,
                 onNavigateBack = { navController.smartBackToLedger() }
             )
@@ -684,29 +685,33 @@ fun NavGraph(
         composable(
             route = AddCategoryRoute.route,
             arguments = listOf(
-                androidx.navigation.navArgument("categoryType") { 
-                    type = androidx.navigation.NavType.StringType 
+                androidx.navigation.navArgument("categoryType") {
+                    type = androidx.navigation.NavType.StringType
                 }
             )
         ) { backStackEntry ->
             val categoryType = backStackEntry.arguments?.getString("categoryType") ?: "EXPENSE"
-            com.ccxiaoji.feature.ledger.presentation.screen.category.AddCategoryScreen(
+            // 使用统一的 CategoryEditorScreen，categoryId 为 null 表示新增模式
+            com.ccxiaoji.feature.ledger.presentation.screen.category.CategoryEditorScreen(
+                categoryId = null,
                 categoryType = categoryType,
                 navController = navController
             )
         }
-        
+
         composable(
             route = EditCategoryRoute.route,
             arguments = listOf(
-                androidx.navigation.navArgument("categoryId") { 
-                    type = androidx.navigation.NavType.StringType 
+                androidx.navigation.navArgument("categoryId") {
+                    type = androidx.navigation.NavType.StringType
                 }
             )
         ) { backStackEntry ->
             val categoryId = backStackEntry.arguments?.getString("categoryId") ?: ""
-            com.ccxiaoji.feature.ledger.presentation.screen.category.EditCategoryScreen(
+            // 使用统一的 CategoryEditorScreen，有 categoryId 表示编辑模式
+            com.ccxiaoji.feature.ledger.presentation.screen.category.CategoryEditorScreen(
                 categoryId = categoryId,
+                categoryType = null,
                 navController = navController
             )
         }

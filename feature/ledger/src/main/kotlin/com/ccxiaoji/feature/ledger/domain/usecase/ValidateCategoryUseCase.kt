@@ -14,29 +14,30 @@ class ValidateCategoryUseCase @Inject constructor(
     /**
      * 验证分类是否可以被删除
      * @param categoryId 分类ID
+     * @param userId 用户ID
      * @return 验证结果
      */
-    suspend fun canDeleteCategory(categoryId: String): ValidationResult {
+    suspend fun canDeleteCategory(categoryId: String, userId: String): ValidationResult {
         val category = categoryRepository.getCategoryById(categoryId)
             ?: return ValidationResult.Error("分类不存在")
-        
+
         // 系统分类不能删除
         if (category.isSystem) {
             return ValidationResult.Error("系统分类不能删除")
         }
-        
+
         // 检查是否有子分类（如果是父分类）
         if (category.level == 1) {
-            val tree = categoryRepository.getCategoryTree(category.id, category.type.name)
+            val tree = categoryRepository.getCategoryTree(userId, category.type.name)
             val hasChildren = tree.any { it.parent.id == categoryId && it.children.isNotEmpty() }
             if (hasChildren) {
                 return ValidationResult.Error("该分类下还有子分类，请先删除子分类")
             }
         }
-        
+
         // TODO: 检查是否有关联的交易记录
         // 这部分需要TransactionRepository支持，暂时跳过
-        
+
         return ValidationResult.Success
     }
     

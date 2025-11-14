@@ -16,7 +16,8 @@ data class DeleteGoalUiState(
     val goalId: Long = 0L,
     val goalName: String = "",
     val hasContributions: Boolean = false,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val isDeleting: Boolean = false
 )
 
 @HiltViewModel

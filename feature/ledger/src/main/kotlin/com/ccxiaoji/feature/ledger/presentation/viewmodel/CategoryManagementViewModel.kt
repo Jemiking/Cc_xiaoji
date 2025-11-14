@@ -245,12 +245,13 @@ class CategoryManagementViewModel @Inject constructor(
                     
                     DialogMode.ADD_CHILD -> {
                         if (state.dialogParentId == null) return@launch
-                        
+
                         val finalIcon = state.dialogIcon.ifEmpty { "📝" }
                         val finalColor = state.dialogColor.ifEmpty { null }
-                        
-                        
+                        val userId = userApi.getCurrentUserId()
+
                         manageCategory.createSubcategory(
+                            userId = userId,
                             parentId = state.dialogParentId,
                             name = state.dialogName,
                             icon = finalIcon,
@@ -294,8 +295,9 @@ class CategoryManagementViewModel @Inject constructor(
     fun deleteCategory(categoryId: String) {
         viewModelScope.launch {
             try {
+                val userId = userApi.getCurrentUserId()
                 // 验证是否可以删除
-                val validation = validateCategory.canDeleteCategory(categoryId)
+                val validation = validateCategory.canDeleteCategory(categoryId, userId)
                 
                 if (!validation.isValid) {
                     _uiState.update {

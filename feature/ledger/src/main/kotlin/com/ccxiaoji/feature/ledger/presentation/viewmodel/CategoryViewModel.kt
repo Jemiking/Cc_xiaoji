@@ -117,17 +117,19 @@ class CategoryViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             try {
+                val userId = userApi.getCurrentUserId()
                 manageCategory.createSubcategory(
+                    userId = userId,
                     parentId = parentId,
                     name = name,
                     icon = icon,
                     color = color
                 )
-                
+
                 // 刷新分类列表
                 loadCategories()
             } catch (e: Exception) {
-                _uiState.update { 
+                _uiState.update {
                     it.copy(errorMessage = e.message ?: "创建子分类失败")
                 }
             }
@@ -164,9 +166,10 @@ class CategoryViewModel @Inject constructor(
     fun deleteCategory(categoryId: String) {
         viewModelScope.launch {
             try {
+                val userId = userApi.getCurrentUserId()
                 // 验证是否可以删除
-                val validation = validateCategory.canDeleteCategory(categoryId)
-                
+                val validation = validateCategory.canDeleteCategory(categoryId, userId)
+
                 if (!validation.isValid) {
                     _uiState.update { 
                         it.copy(errorMessage = validation.errorMessage)

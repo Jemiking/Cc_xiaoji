@@ -14,6 +14,7 @@ object LedgerNavigation {
     const val CreditCardRoute = "credit_card"
     const val AssetOverviewRoute = "asset_overview"
     const val TransactionDetailRoute = "transaction_detail/{transactionId}"
+    const val LedgerWithAccountRoute = "ledger_with_account/{accountId}"
     const val AddTransactionRoute = "add_transaction?accountId={accountId}"
     const val EditTransactionRoute = "edit_transaction/{transactionId}"
     const val AddAccountRoute = "add_account"
@@ -48,6 +49,7 @@ object LedgerNavigation {
     const val LedgerUIStyleRoute = "ledger_ui_style"
     
     fun transactionDetailRoute(transactionId: String) = "transaction_detail/$transactionId"
+    fun ledgerWithAccountRoute(accountId: String) = "ledger_with_account/$accountId"
     fun deleteTransaction(transactionId: String) = "delete_transaction/$transactionId"
     fun editTransactionRoute(transactionId: String) = "edit_transaction/$transactionId"
     fun addAccountRoute() = "add_account"

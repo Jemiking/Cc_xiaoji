@@ -95,6 +95,7 @@ room-compiler = { group = "androidx.room", name = "room-compiler", version.ref =
 
 # Room - app模块完整命名
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
 
 # Network - 保持原有命名
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }

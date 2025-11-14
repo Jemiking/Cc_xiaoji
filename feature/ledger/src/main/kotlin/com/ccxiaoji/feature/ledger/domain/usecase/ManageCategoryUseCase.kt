@@ -79,6 +79,7 @@ class ManageCategoryUseCase @Inject constructor(
      * 创建子分类（二级分类）
      */
     suspend fun createSubcategory(
+        userId: String,
         parentId: String,
         name: String,
         icon: String,
@@ -87,14 +88,14 @@ class ManageCategoryUseCase @Inject constructor(
         // 验证父分类存在
         val parent = categoryRepository.getCategoryById(parentId)
             ?: throw IllegalArgumentException("父分类不存在")
-        
+
         // 验证子分类名称在同一父分类下不重复
-        val parentTree = categoryRepository.getCategoryTree(parent.id, parent.type.name)
+        val parentTree = categoryRepository.getCategoryTree(userId, parent.type.name)
         val parentGroup = parentTree.find { it.parent.id == parentId }
         if (parentGroup?.children?.any { it.name == name } == true) {
             throw IllegalArgumentException("该子分类名称已存在")
         }
-        
+
         return categoryRepository.createSubcategory(parentId, name, icon, color)
     }
     

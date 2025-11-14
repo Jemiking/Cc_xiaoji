@@ -47,10 +47,10 @@ interface CategoryDao {
     @Query("UPDATE categories SET isActive = :isActive, updatedAt = :timestamp WHERE id = :categoryId")
     suspend fun updateCategoryStatus(categoryId: String, isActive: Boolean, timestamp: Long)
     
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertCategory(category: CategoryEntity)
-    
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertCategories(categories: List<CategoryEntity>)
     
     @Update
@@ -94,7 +94,7 @@ interface CategoryDao {
     @Query("SELECT * FROM categories WHERE name = :name AND parentId = :parentId AND userId = :userId AND isDeleted = 0 LIMIT 1")
     suspend fun findByNameAndParent(name: String, parentId: String, userId: String): CategoryEntity?
     
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insert(category: CategoryEntity)
     
     @Query("SELECT COUNT(*) > 0 FROM transactions WHERE userId = :userId AND isDeleted = 0")
