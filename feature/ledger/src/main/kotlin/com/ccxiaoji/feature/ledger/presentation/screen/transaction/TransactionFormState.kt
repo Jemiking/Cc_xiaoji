@@ -48,6 +48,7 @@ data class TransactionFormState(
 
     // 对话框显示状态
     val showCategoryPicker: Boolean = false,
+    val showAccountPicker: Boolean = false,    // 普通交易的账户选择器
     val showLedgerSelector: Boolean = false,
     val showDateTimePicker: Boolean = false,
     val showFromAccountPicker: Boolean = false,

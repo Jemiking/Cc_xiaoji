@@ -173,25 +173,6 @@ fun AccountEditorScreen(
     }
 }
 
-/**
- * 账户编辑模式枚举
- */
-enum class AccountEditorMode {
-    ADD,    // 新增模式
-    EDIT    // 编辑模式
-}
-
-/**
- * 账户编辑器配置
- */
-data class AccountEditorConfig(
-    val mode: AccountEditorMode = AccountEditorMode.ADD,
-    val typeReadOnly: Boolean = false,              // 编辑模式下是否允许修改类型
-    val showCreditCardFields: Boolean = false,      // 是否显示信用卡特殊字段
-    val showInitialBalance: Boolean = true,         // 是否显示初始余额
-    val showAccountOrder: Boolean = false,          // 是否显示账户排序
-    val allowDelete: Boolean = true                 // 是否允许删除
-)
 
 /**
  * 账户表单标签配置
