@@ -12,28 +12,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.ccxiaoji.feature.schedule.R
-import com.ccxiaoji.ui.components.FlatButton
+import com.ccxiaoji.feature.schedule.presentation.uikit.ActionConfig
+import com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleBottomActions
+import com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleCard
+import com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleSimpleScaffold
 import com.ccxiaoji.ui.theme.DesignTokens
 
 /**
- * 清除数据确认页面 - 替代原ClearDataDialog
+ * 清除数据确认页面 - 使用 Schedule UI Kit 组件
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClearDataScreen(
     navController: NavController
 ) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Text(stringResource(R.string.schedule_settings_confirm_clear_title))
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        }
+    ScheduleSimpleScaffold(
+        title = stringResource(R.string.schedule_settings_confirm_clear_title),
+        onNavigateBack = { navController.popBackStack() }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -50,66 +44,50 @@ fun ClearDataScreen(
                 modifier = Modifier.size(72.dp),
                 tint = MaterialTheme.colorScheme.error
             )
-            
+
             Spacer(modifier = Modifier.height(DesignTokens.Spacing.large))
-            
+
             // 标题
             Text(
                 text = stringResource(R.string.schedule_settings_confirm_clear_title),
                 style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center
             )
-            
+
             Spacer(modifier = Modifier.height(DesignTokens.Spacing.medium))
-            
+
             // 警告消息卡片
-            Card(
+            ScheduleCard(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
+                containerColor = MaterialTheme.colorScheme.errorContainer
             ) {
                 Text(
                     text = stringResource(R.string.schedule_settings_confirm_clear_message),
-                    modifier = Modifier.padding(DesignTokens.Spacing.medium),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onErrorContainer,
                     textAlign = TextAlign.Center
                 )
             }
-            
+
             Spacer(modifier = Modifier.weight(1f))
-            
-            // 按钮
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.medium)
-            ) {
-                FlatButton(
-                    onClick = { 
-                        navController.popBackStack()
-                    },
-                    modifier = Modifier.weight(1f),
-                    backgroundColor = MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                ) {
-                    Text(stringResource(R.string.schedule_cancel))
-                }
-                
-                FlatButton(
-                    onClick = { 
+
+            // 底部操作栏 - 危险操作使用错误色
+            ScheduleBottomActions(
+                primaryAction = ActionConfig(
+                    text = stringResource(R.string.schedule_confirm),
+                    onClick = {
                         navController.previousBackStackEntry
                             ?.savedStateHandle
                             ?.set("data_cleared", true)
                         navController.popBackStack()
-                    },
-                    modifier = Modifier.weight(1f),
-                    backgroundColor = MaterialTheme.colorScheme.error,
-                    contentColor = MaterialTheme.colorScheme.onError
-                ) {
-                    Text(stringResource(R.string.schedule_confirm))
-                }
-            }
+                    }
+                ),
+                secondaryAction = ActionConfig(
+                    text = stringResource(R.string.schedule_cancel),
+                    onClick = { navController.popBackStack() }
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

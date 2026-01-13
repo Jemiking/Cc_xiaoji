@@ -8,7 +8,17 @@ import com.ccxiaoji.ui.components.FlatAlertDialog
 
 /**
  * 清除数据确认对话框 - 扁平化设计
+ *
+ * @deprecated 请使用 [com.ccxiaoji.feature.schedule.presentation.screen.ClearDataScreen] 替代。
+ * 新的全屏页面提供更好的用户体验和一致的 UI Kit 风格。
  */
+@Deprecated(
+    message = "Use ClearDataScreen instead",
+    replaceWith = ReplaceWith(
+        "ClearDataScreen(navController)",
+        "com.ccxiaoji.feature.schedule.presentation.screen.ClearDataScreen"
+    )
+)
 @Composable
 fun ClearDataDialog(
     showDialog: Boolean,

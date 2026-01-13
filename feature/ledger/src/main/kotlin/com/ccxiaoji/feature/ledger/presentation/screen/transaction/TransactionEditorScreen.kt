@@ -14,8 +14,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.ccxiaoji.feature.ledger.presentation.component.CategoryPicker
 import com.ccxiaoji.feature.ledger.presentation.component.EntityEditorScaffold
 import com.ccxiaoji.feature.ledger.presentation.component.EntityEditorState
+import com.ccxiaoji.feature.ledger.presentation.component.LedgerSelectorDialog
 import com.ccxiaoji.feature.ledger.presentation.component.transaction.AccountSelectionSection
 import com.ccxiaoji.feature.ledger.presentation.component.transaction.TransferAccountSection
 import com.ccxiaoji.feature.ledger.presentation.component.transaction.AmountInputSection
@@ -25,6 +27,7 @@ import com.ccxiaoji.feature.ledger.presentation.component.transaction.LedgerSele
 import com.ccxiaoji.feature.ledger.presentation.component.transaction.LinkTargetsSection
 import com.ccxiaoji.feature.ledger.presentation.component.transaction.NoteInputSection
 import com.ccxiaoji.feature.ledger.presentation.component.transaction.TransactionTypeSelector
+import com.ccxiaoji.feature.ledger.presentation.screen.transaction.legacy.SimpleDateTimePickerDialog
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.AddTransactionViewModel
 import com.ccxiaoji.feature.ledger.presentation.viewmodel.TransactionType
 
@@ -199,6 +202,67 @@ private fun TransactionEditorContent(
             selectedAccount = formState.selectedAccount,
             onAccountSelected = viewModel::selectAccount,
             onDismiss = { viewModel.hideAccountPicker() }
+        )
+    }
+
+    // 显示分类选择对话框
+    if (formState.showCategoryPicker) {
+        CategoryPicker(
+            isVisible = true,
+            categoryGroups = formState.categoryGroups,
+            selectedCategoryId = formState.selectedCategoryInfo?.categoryId,
+            onCategorySelected = viewModel::selectCategory,
+            onDismiss = viewModel::hideCategoryPicker,
+            title = when (formState.transactionType) {
+                TransactionType.INCOME -> "选择收入分类"
+                TransactionType.EXPENSE -> "选择支出分类"
+                else -> "选择分类"
+            }
+        )
+    }
+
+    // 显示日期时间选择对话框
+    if (formState.showDateTimePicker) {
+        SimpleDateTimePickerDialog(
+            selectedDate = formState.selectedDate,
+            selectedTime = formState.selectedTime,
+            onDateSelected = viewModel::updateDate,
+            onTimeSelected = viewModel::updateTime,
+            onDismiss = viewModel::hideDateTimePicker,
+            enableTimeSelection = formState.enableTimeRecording
+        )
+    }
+
+    // 显示账本选择对话框
+    if (formState.showLedgerSelector) {
+        LedgerSelectorDialog(
+            isVisible = true,
+            ledgers = formState.ledgers,
+            selectedLedgerId = formState.selectedLedger?.id,
+            onLedgerSelected = viewModel::selectLedger,
+            onDismiss = viewModel::hideLedgerSelector
+        )
+    }
+
+    // 显示转出账户选择对话框（转账模式）
+    if (formState.showFromAccountPicker) {
+        com.ccxiaoji.feature.ledger.presentation.component.AccountPickerDialog(
+            title = "选择转出账户",
+            accounts = formState.accounts,
+            selectedAccount = formState.fromAccount,
+            onAccountSelected = viewModel::setFromAccount,
+            onDismiss = viewModel::hideFromAccountPicker
+        )
+    }
+
+    // 显示转入账户选择对话框（转账模式）
+    if (formState.showToAccountPicker) {
+        com.ccxiaoji.feature.ledger.presentation.component.AccountPickerDialog(
+            title = "选择转入账户",
+            accounts = formState.accounts.filter { it.id != formState.fromAccount?.id }, // 过滤掉转出账户
+            selectedAccount = formState.toAccount,
+            onAccountSelected = viewModel::setToAccount,
+            onDismiss = viewModel::hideToAccountPicker
         )
     }
 }

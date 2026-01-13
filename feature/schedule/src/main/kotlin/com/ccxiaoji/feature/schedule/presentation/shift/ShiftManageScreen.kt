@@ -4,8 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,6 +15,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ccxiaoji.feature.schedule.R
 import com.ccxiaoji.feature.schedule.presentation.viewmodel.ShiftViewModel
 import com.ccxiaoji.feature.schedule.presentation.shift.components.*
+import com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleTopAppBar
+import com.ccxiaoji.feature.schedule.presentation.uikit.ShiftRow
+import com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleCard
 import com.ccxiaoji.ui.components.FlatFAB
 import com.ccxiaoji.ui.theme.DesignTokens
 import kotlinx.coroutines.launch
@@ -31,7 +34,6 @@ fun ShiftManageScreen(
 ) {
     val shifts by viewModel.shifts.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
-    val editingShift by viewModel.editingShift.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     
@@ -59,21 +61,9 @@ fun ShiftManageScreen(
     
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.schedule_shift_manage_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.schedule_back)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
-                )
+            ScheduleTopAppBar(
+                title = stringResource(R.string.schedule_shift_manage_title),
+                onNavigationClick = onNavigateBack
             )
         },
         floatingActionButton = {
@@ -107,12 +97,26 @@ fun ShiftManageScreen(
                     contentPadding = PaddingValues(DesignTokens.Spacing.medium),
                     verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)
                 ) {
-                    items(shifts) { shift ->
-                        ShiftCard(
-                            shift = shift,
-                            onEdit = { onNavigateToEditShift(shift.id) },
-                            onDelete = { viewModel.deleteShift(shift) }
-                        )
+                    items(shifts, key = { it.id }) { shift ->
+                        ScheduleCard {
+                            ShiftRow(
+                                shift = shift,
+                                selected = false,
+                                onClick = { onNavigateToEditShift(shift.id) },
+                                trailing = {
+                                    // 仅保留删除按钮，点击行本身即可编辑
+                                    IconButton(
+                                        onClick = { viewModel.deleteShift(shift) }
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = stringResource(R.string.schedule_delete),
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                }
+                            )
+                        }
                     }
                 }
             }

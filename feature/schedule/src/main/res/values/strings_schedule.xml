@@ -27,6 +27,8 @@
     <string name="schedule_calendar_delete_schedule">删除排班</string>
     <string name="schedule_calendar_edit_schedule">编辑排班</string>
     <string name="schedule_calendar_no_schedule">当日无排班</string>
+    <string name="schedule_empty_no_schedule_title">本月暂无排班</string>
+    <string name="schedule_empty_no_schedule_desc">点选日期并选择班次，或使用"批量排班"快速生成</string>
     <string name="schedule_calendar_work_days">工作天数</string>
     <string name="schedule_calendar_rest_days">休息天数</string>
     <string name="schedule_calendar_total_hours">总工时</string>

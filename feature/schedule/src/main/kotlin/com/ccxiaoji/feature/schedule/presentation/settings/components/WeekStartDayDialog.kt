@@ -15,7 +15,17 @@ import java.time.DayOfWeek
 
 /**
  * 一周起始日选择对话框 - 扁平化设计
+ *
+ * @deprecated 请使用 [com.ccxiaoji.feature.schedule.presentation.screen.WeekStartDayScreen] 替代。
+ * 新的全屏页面提供更好的用户体验和一致的 UI Kit 风格。
  */
+@Deprecated(
+    message = "Use WeekStartDayScreen instead",
+    replaceWith = ReplaceWith(
+        "WeekStartDayScreen(currentWeekStartDay, navController)",
+        "com.ccxiaoji.feature.schedule.presentation.screen.WeekStartDayScreen"
+    )
+)
 @Composable
 fun WeekStartDayDialog(
     showDialog: Boolean,

@@ -35,7 +35,9 @@
       "Bash(unset:*)",
       "Bash(ln:*)",
       "Bash(readlink:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Skill(collaborating-with-codex)",
+      "Skill(collaborating-with-gemini)"
     ],
     "deny": [],
     "ask": [],

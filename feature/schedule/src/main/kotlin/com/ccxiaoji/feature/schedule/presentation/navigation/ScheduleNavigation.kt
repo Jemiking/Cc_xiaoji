@@ -1,9 +1,13 @@
 package com.ccxiaoji.feature.schedule.presentation.navigation
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.ccxiaoji.feature.schedule.presentation.calendar.CalendarScreen
 import com.ccxiaoji.feature.schedule.presentation.shift.ShiftManageScreen
 import com.ccxiaoji.feature.schedule.presentation.pattern.SchedulePatternScreen
@@ -12,6 +16,7 @@ import com.ccxiaoji.feature.schedule.presentation.statistics.ScheduleStatisticsS
 import com.ccxiaoji.feature.schedule.presentation.settings.SettingsScreen
 import com.ccxiaoji.feature.schedule.presentation.settings.AboutScreen
 import com.ccxiaoji.feature.schedule.presentation.screen.ErrorScreen
+import com.ccxiaoji.feature.schedule.presentation.screen.EditShiftScreen
 import com.ccxiaoji.feature.schedule.presentation.screen.ClearDataScreen
 import com.ccxiaoji.feature.schedule.presentation.screen.BackupLocationScreen
 import com.ccxiaoji.feature.schedule.presentation.screen.WeekStartDayScreen
@@ -19,6 +24,8 @@ import com.ccxiaoji.feature.schedule.presentation.screen.TimePickerScreen
 import com.ccxiaoji.feature.schedule.presentation.screen.CustomTimePickerScreen
 import com.ccxiaoji.feature.schedule.presentation.screen.DatePickerScreen
 import com.ccxiaoji.feature.schedule.presentation.debug.CalendarDebugScreen
+import com.ccxiaoji.feature.schedule.presentation.uikit.LocalAnimatedVisibilityScope
+import com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleSharedTransitionLayout
 
 /**
  * 导航路由定义
@@ -26,6 +33,10 @@ import com.ccxiaoji.feature.schedule.presentation.debug.CalendarDebugScreen
 sealed class Screen(val route: String) {
     object Calendar : Screen("calendar")
     object ShiftManage : Screen("shift_manage")
+    object EditShift : Screen("edit_shift?shiftId={shiftId}") {
+        fun createRoute(shiftId: Long? = null): String =
+            if (shiftId != null) "edit_shift?shiftId=$shiftId" else "edit_shift"
+    }
     object ScheduleEdit : Screen("schedule_edit/{date}") {
         fun createRoute(date: String) = "schedule_edit/$date"
     }
@@ -65,84 +76,112 @@ sealed class Screen(val route: String) {
 /**
  * 排班模块导航主机
  */
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ScheduleNavHost(
     navController: NavHostController,
     startDestination: String = Screen.Calendar.route
 ) {
     android.util.Log.d("ScheduleNavHost", "ScheduleNavHost called with startDestination: $startDestination")
-    NavHost(
-        navController = navController,
-        startDestination = startDestination
-    ) {
-        // 日历主界面
-        composable(Screen.Calendar.route) {
-            android.util.Log.d("ScheduleNavHost", "Navigating to Calendar screen")
-            CalendarScreen(
-                onNavigateToShiftManage = {
-                    android.util.Log.d("ScheduleNavHost", "Navigate to ShiftManage")
-                    navController.navigate(Screen.ShiftManage.route)
-                },
-                onNavigateToScheduleEdit = { date ->
-                    android.util.Log.d("ScheduleNavHost", "Navigate to ScheduleEdit: $date")
-                    navController.navigate(Screen.ScheduleEdit.createRoute(date.toString()))
-                },
-                onNavigateToSchedulePattern = {
-                    android.util.Log.d("ScheduleNavHost", "Navigate to SchedulePattern")
-                    navController.navigate(Screen.SchedulePattern.route)
-                },
-                onNavigateToStatistics = {
-                    android.util.Log.d("ScheduleNavHost", "Navigate to ScheduleStatistics")
-                    navController.navigate(Screen.ScheduleStatistics.route)
-                },
-                onNavigateToSettings = {
-                    android.util.Log.d("ScheduleNavHost", "Navigate to Settings")
-                    navController.navigate(Screen.Settings.route)
-                },
-                onNavigateToDebug = {
-                    android.util.Log.d("ScheduleNavHost", "Navigate to CalendarDebug")
-                    navController.navigate(Screen.CalendarDebug.route)
-                },
-                onNavigateToFlatDemo = {
-                    android.util.Log.d("ScheduleNavHost", "Navigate to CalendarFlatDemo")
-                    navController.navigate(Screen.CalendarFlatDemo.route)
-                },
-                onNavigateToStyleDemo = {
-                    android.util.Log.d("ScheduleNavHost", "Navigate to StyleDemo - function called")
-                    try {
-                        navController.navigate(Screen.StyleDemo.route)
-                        android.util.Log.d("ScheduleNavHost", "Navigate to StyleDemo - navigate call completed")
-                    } catch (e: Exception) {
-                        android.util.Log.e("ScheduleNavHost", "Navigate to StyleDemo - error: ${e.message}")
-                    }
-                },
-                onNavigateToHomeRedesignA3Demo = {
-                    android.util.Log.d("ScheduleNavHost", "Navigate to HomeRedesignA3Demo")
-                    navController.navigate(Screen.HomeRedesignA3Demo.route)
-                },
-                navController = navController
-            )
-        }
+    ScheduleSharedTransitionLayout {
+        NavHost(
+            navController = navController,
+            startDestination = startDestination
+        ) {
+            // 日历主界面
+            composable(Screen.Calendar.route) {
+                android.util.Log.d("ScheduleNavHost", "Navigating to Calendar screen")
+                CompositionLocalProvider(LocalAnimatedVisibilityScope provides this@composable) {
+                    CalendarScreen(
+                        onNavigateToShiftManage = {
+                            android.util.Log.d("ScheduleNavHost", "Navigate to ShiftManage")
+                            navController.navigate(Screen.ShiftManage.route)
+                        },
+                        onNavigateToScheduleEdit = { date ->
+                            android.util.Log.d("ScheduleNavHost", "Navigate to ScheduleEdit: $date")
+                            navController.navigate(Screen.ScheduleEdit.createRoute(date.toString()))
+                        },
+                        onNavigateToSchedulePattern = {
+                            android.util.Log.d("ScheduleNavHost", "Navigate to SchedulePattern")
+                            navController.navigate(Screen.SchedulePattern.route)
+                        },
+                        onNavigateToStatistics = {
+                            android.util.Log.d("ScheduleNavHost", "Navigate to ScheduleStatistics")
+                            navController.navigate(Screen.ScheduleStatistics.route)
+                        },
+                        onNavigateToSettings = {
+                            android.util.Log.d("ScheduleNavHost", "Navigate to Settings")
+                            navController.navigate(Screen.Settings.route)
+                        },
+                        onNavigateToDebug = {
+                            android.util.Log.d("ScheduleNavHost", "Navigate to CalendarDebug")
+                            navController.navigate(Screen.CalendarDebug.route)
+                        },
+                        onNavigateToFlatDemo = {
+                            android.util.Log.d("ScheduleNavHost", "Navigate to CalendarFlatDemo")
+                            navController.navigate(Screen.CalendarFlatDemo.route)
+                        },
+                        onNavigateToStyleDemo = {
+                            android.util.Log.d("ScheduleNavHost", "Navigate to StyleDemo - function called")
+                            try {
+                                navController.navigate(Screen.StyleDemo.route)
+                                android.util.Log.d("ScheduleNavHost", "Navigate to StyleDemo - navigate call completed")
+                            } catch (e: Exception) {
+                                android.util.Log.e("ScheduleNavHost", "Navigate to StyleDemo - error: ${e.message}")
+                            }
+                        },
+                        onNavigateToHomeRedesignA3Demo = {
+                            android.util.Log.d("ScheduleNavHost", "Navigate to HomeRedesignA3Demo")
+                            navController.navigate(Screen.HomeRedesignA3Demo.route)
+                        },
+                        navController = navController
+                    )
+                }
+            }
         
         // 班次管理界面
         composable(Screen.ShiftManage.route) {
             ShiftManageScreen(
                 onNavigateBack = {
                     navController.popBackStack()
+                },
+                onNavigateToEditShift = { shiftId ->
+                    navController.navigate(Screen.EditShift.createRoute(shiftId))
                 }
             )
         }
-        
+
+        // 班次编辑界面
+        composable(
+            route = Screen.EditShift.route,
+            arguments = listOf(
+                navArgument("shiftId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val shiftIdStr = backStackEntry.arguments?.getString("shiftId")
+            val shiftId = shiftIdStr?.toLongOrNull()
+            EditShiftScreen(
+                shiftId = shiftId,
+                navController = navController
+            )
+        }
+
         // 排班编辑界面
         composable(Screen.ScheduleEdit.route) { backStackEntry ->
             val date = backStackEntry.arguments?.getString("date")
             android.util.Log.d("ScheduleNavHost", "Navigating to ScheduleEdit screen with date: $date")
-            ScheduleEditScreen(
-                date = date,
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
-            )
+            CompositionLocalProvider(LocalAnimatedVisibilityScope provides this@composable) {
+                ScheduleEditScreen(
+                    date = date,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
         }
         
         
@@ -300,5 +339,6 @@ fun ScheduleNavHost(
             )
         }
 
+        }
     }
 }

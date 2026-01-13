@@ -11,21 +11,18 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.ccxiaoji.feature.schedule.R
-import com.ccxiaoji.ui.components.ModernCard
+import com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleCard
 import com.ccxiaoji.ui.theme.DesignTokens
 
 /**
- * 空状态 - 扁平化设计
+ * 空状态 - 使用 UI Kit 组件
  */
 @Composable
 fun EmptyStatisticsState(
     modifier: Modifier = Modifier
 ) {
-    ModernCard(
-        modifier = modifier.fillMaxWidth(),
-        backgroundColor = MaterialTheme.colorScheme.surface,
-        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ScheduleCard(
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier

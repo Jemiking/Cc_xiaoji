@@ -17,7 +17,17 @@ import com.ccxiaoji.ui.theme.DesignTokens
 
 /**
  * 班次选择卡片 - 扁平化设计
+ *
+ * @deprecated 使用 [com.ccxiaoji.feature.schedule.presentation.uikit.ShiftRadioRow] 替代。
+ * 该组件将在 Phase 3 结束后移除。
  */
+@Deprecated(
+    message = "Use ShiftRadioRow from UI Kit instead",
+    replaceWith = ReplaceWith(
+        "ShiftRadioRow(shift = shift, selected = isSelected, onSelect = onClick)",
+        "com.ccxiaoji.feature.schedule.presentation.uikit.ShiftRadioRow"
+    )
+)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShiftSelectCard(

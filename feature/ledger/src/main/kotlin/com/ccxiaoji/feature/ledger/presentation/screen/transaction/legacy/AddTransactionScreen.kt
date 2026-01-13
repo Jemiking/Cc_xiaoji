@@ -1060,7 +1060,7 @@ private fun ProductionKeypadIconButton(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SimpleDateTimePickerDialog(
+internal fun SimpleDateTimePickerDialog(
     selectedDate: LocalDate,
     selectedTime: LocalTime,
     onDateSelected: (LocalDate) -> Unit,
@@ -1170,12 +1170,12 @@ private fun SimpleDateTimePickerDialog(
 }
 
 // 閫夋嫨鍣ㄦā寮忔灇涓撅紙鍙繚鐣?绉嶆ā寮忥級
-private enum class DatePickerMode {
+internal enum class DatePickerMode {
     CALENDAR, DROPDOWN
 }
 
 @Composable
-private fun DatePickerModeTab(
+internal fun DatePickerModeTab(
     text: String,
     isSelected: Boolean,
     onClick: () -> Unit,
@@ -1207,7 +1207,7 @@ private fun DatePickerModeTab(
 
 // 鏈堝巻妯″紡鍐呭锛氶泦鎴愬揩鎹烽€夋嫨鍜屾棩鍘嗙綉鏍?
 @Composable
-private fun CalendarModeContent(
+internal fun CalendarModeContent(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit
 ) {
@@ -1318,7 +1318,7 @@ private fun CalendarModeContent(
 }
 
 @Composable
-private fun DropdownDateSelector(
+internal fun DropdownDateSelector(
     selectedDate: LocalDate,
     onDateSelected: (LocalDate) -> Unit
 ) {
@@ -1520,7 +1520,7 @@ private fun DropdownDateSelector(
 }
 
 @Composable
-private fun TimeSelector(
+internal fun TimeSelector(
     selectedTime: LocalTime,
     onShowTimePicker: () -> Unit
 ) {
@@ -1744,7 +1744,7 @@ private fun SelectedDateTimePreview(
 // 澧炲己鍨嬫椂闂撮€夋嫨鍣ㄥ璇濇
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EnhancedTimePickerDialog(
+internal fun EnhancedTimePickerDialog(
     selectedTime: LocalTime,
     onTimeSelected: (LocalTime) -> Unit,
     onDismiss: () -> Unit

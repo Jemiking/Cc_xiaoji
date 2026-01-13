@@ -2,25 +2,22 @@ package com.ccxiaoji.feature.schedule.presentation.statistics
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ccxiaoji.feature.schedule.R
 import com.ccxiaoji.feature.schedule.presentation.components.CustomDateRangePickerDialog
 import com.ccxiaoji.feature.schedule.presentation.statistics.components.*
+import com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleTopAppBar
 import com.ccxiaoji.ui.theme.DesignTokens
 
 /**
- * 排班统计界面 - 扁平化设计
+ * 排班统计界面 - 使用 UI Kit 组件
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScheduleStatisticsScreen(
     onNavigateBack: () -> Unit,
@@ -48,22 +45,9 @@ fun ScheduleStatisticsScreen(
     
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.schedule_statistics_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack, 
-                            contentDescription = stringResource(R.string.schedule_back)
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
-                    actionIconContentColor = MaterialTheme.colorScheme.onSurface
-                )
+            ScheduleTopAppBar(
+                title = stringResource(R.string.schedule_statistics_title),
+                onNavigationClick = onNavigateBack
             )
         }
     ) { paddingValues ->

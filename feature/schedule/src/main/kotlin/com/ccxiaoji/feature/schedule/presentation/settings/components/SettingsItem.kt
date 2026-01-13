@@ -15,7 +15,17 @@ import com.ccxiaoji.ui.theme.DesignTokens
 
 /**
  * 设置项 - 扁平化设计
+ *
+ * @deprecated 请使用 [com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleNavigationRow] 替代。
+ * ScheduleNavigationRow 提供了统一的 UI Kit 风格，更好的无障碍支持，以及可选的 leadingIcon。
  */
+@Deprecated(
+    message = "Use ScheduleNavigationRow from UI Kit instead",
+    replaceWith = ReplaceWith(
+        "ScheduleNavigationRow(title = title, onClick = onClick, subtitle = subtitle, leadingIcon = icon, enabled = enabled)",
+        "com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleNavigationRow"
+    )
+)
 @Composable
 fun SettingsItem(
     icon: ImageVector,

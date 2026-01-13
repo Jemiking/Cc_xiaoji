@@ -8,7 +8,17 @@ import com.ccxiaoji.ui.components.FlatAlertDialog
 
 /**
  * 错误消息对话框 - 扁平化设计
+ *
+ * @deprecated 请使用 [com.ccxiaoji.feature.schedule.presentation.screen.ErrorScreen] 替代。
+ * 新的全屏页面提供更好的用户体验和一致的 UI Kit 风格。
  */
+@Deprecated(
+    message = "Use ErrorScreen instead",
+    replaceWith = ReplaceWith(
+        "ErrorScreen(errorMessage, navController)",
+        "com.ccxiaoji.feature.schedule.presentation.screen.ErrorScreen"
+    )
+)
 @Composable
 fun ErrorDialog(
     errorMessage: String?,

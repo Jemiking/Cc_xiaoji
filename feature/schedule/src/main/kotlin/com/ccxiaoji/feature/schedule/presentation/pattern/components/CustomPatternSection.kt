@@ -11,7 +11,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ccxiaoji.feature.schedule.R
 import com.ccxiaoji.feature.schedule.domain.model.Shift
-import com.ccxiaoji.ui.components.ModernCard
+import com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleSectionCard
 import com.ccxiaoji.ui.theme.DesignTokens
 import java.time.LocalDate
 
@@ -26,45 +26,29 @@ fun CustomPatternSection(
     onPatternChange: (Int, Long?) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    ModernCard(
-        modifier = modifier.fillMaxWidth(),
-        backgroundColor = MaterialTheme.colorScheme.surface,
-        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ScheduleSectionCard(
+        title = stringResource(R.string.schedule_pattern_custom_mode),
+        modifier = modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(DesignTokens.Spacing.medium),
-            verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.medium)
-        ) {
+        if (customPattern.isEmpty()) {
             Text(
-                stringResource(R.string.schedule_pattern_custom_mode),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
+                stringResource(R.string.schedule_pattern_custom_empty_hint),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            
-            if (customPattern.isEmpty()) {
-                Text(
-                    stringResource(R.string.schedule_pattern_custom_empty_hint),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.heightIn(max = 400.dp),
-                    verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)
-                ) {
-                    itemsIndexed(customPattern) { index, shiftId ->
-                        val date = startDate.plusDays(index.toLong())
-                        CustomDayShiftSelector(
-                            date = date,
-                            shifts = shifts,
-                            selectedShiftId = shiftId,
-                            onShiftSelect = { id -> onPatternChange(index, id) }
-                        )
-                    }
+        } else {
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 400.dp),
+                verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.small)
+            ) {
+                itemsIndexed(customPattern) { index, shiftId ->
+                    val date = startDate.plusDays(index.toLong())
+                    CustomDayShiftSelector(
+                        date = date,
+                        shifts = shifts,
+                        selectedShiftId = shiftId,
+                        onShiftSelect = { id -> onPatternChange(index, id) }
+                    )
                 }
             }
         }

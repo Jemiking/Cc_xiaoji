@@ -2,8 +2,6 @@ package com.ccxiaoji.feature.schedule.presentation.pattern
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,6 +11,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.ccxiaoji.feature.schedule.R
 import com.ccxiaoji.feature.schedule.presentation.components.CustomDatePickerDialog
 import com.ccxiaoji.feature.schedule.presentation.pattern.components.*
+import com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleTopAppBar
 import com.ccxiaoji.ui.components.FlatButton
 import com.ccxiaoji.ui.theme.DesignTokens
 
@@ -35,16 +34,9 @@ fun SchedulePatternScreen(
     
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.schedule_pattern_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.schedule_back)
-                        )
-                    }
-                },
+            ScheduleTopAppBar(
+                title = stringResource(R.string.schedule_pattern_title),
+                onNavigationClick = onBack,
                 actions = {
                     // 创建按钮
                     Button(
@@ -58,12 +50,7 @@ fun SchedulePatternScreen(
                     ) {
                         Text(stringResource(R.string.schedule_pattern_create))
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                }
             )
         }
     ) { paddingValues ->

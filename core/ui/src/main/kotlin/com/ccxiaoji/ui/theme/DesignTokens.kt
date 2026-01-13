@@ -12,7 +12,7 @@ import androidx.compose.ui.geometry.Offset
  * 统一管理设计规范，确保全应用的视觉一致性
  */
 object DesignTokens {
-    
+
     /**
      * 品牌颜色系统 - 极简柔和色调
      */
@@ -22,7 +22,7 @@ object DesignTokens {
         val PrimaryLight = Color(0xFF8FA3E8)      // 柔和浅蓝
         val PrimaryDark = Color(0xFF4A63B8)       // 柔和深蓝
         val PrimaryContainer = Color(0xFFF0F4FF)  // 极浅蓝容器
-        
+
         // 功能色彩 - 降低饱和度
         val Success = Color(0xFF66BB6A)           // 柔和绿(记账收入)
         val SuccessLight = Color(0xFF90C891)      // 柔和浅绿
@@ -32,10 +32,10 @@ object DesignTokens {
         val ErrorLight = Color(0xFFFF867C)        // 柔和浅红
         val Info = Color(0xFF42A5F5)              // 柔和蓝(信息)
         val InfoLight = Color(0xFF90CAF9)         // 柔和浅蓝
-        
+
         // 模块主题色 - 扁平化色调
         val Ledger = Color(0xFF66BB6A)            // 记账 - 柔和绿
-        val LedgerLight = Color(0xFF90C891)       
+        val LedgerLight = Color(0xFF90C891)
         val Todo = Color(0xFF5E7CE0)              // 待办 - 柔和蓝
         val TodoLight = Color(0xFF8FA3E8)
         val Habit = Color(0xFFAB47BC)             // 习惯 - 柔和紫
@@ -44,6 +44,42 @@ object DesignTokens {
         val ScheduleLight = Color(0xFFFFCC80)
         val Plan = Color(0xFF8D6E63)              // 计划 - 柔和棕
         val PlanLight = Color(0xFFBCAAA4)
+    }
+
+    /**
+     * 班次语义色系统 - 固定不变，确保认知惯性
+     *
+     * 设计原则：
+     * - 语义层颜色不跟随 Dynamic Color
+     * - 浅色/深色模式有对应的色值
+     * - 配合图标形成双重识别
+     *
+     * @see com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleDesignSpecs 完整规范
+     */
+    object ShiftSemanticColors {
+        // 早班 - 绿色系 (阳光、活力)
+        val MorningLight = Color(0xFF4CAF50)      // Green 500
+        val MorningDark = Color(0xFF81C784)       // Green 300
+
+        // 中班 - 蓝色系 (天空、平静)
+        val AfternoonLight = Color(0xFF2196F3)    // Blue 500
+        val AfternoonDark = Color(0xFF64B5F6)     // Blue 300
+
+        // 晚班 - 紫色系 (夜晚、宁静)
+        val NightLight = Color(0xFF9C27B0)        // Purple 500
+        val NightDark = Color(0xFFBA68C8)         // Purple 300
+
+        // 特殊班 - 橙色系 (注意、特别)
+        val SpecialLight = Color(0xFFFF9800)      // Orange 500
+        val SpecialDark = Color(0xFFFFB74D)       // Orange 300
+
+        // 加班 - 红色系 (紧急、额外)
+        val OvertimeLight = Color(0xFFF44336)     // Red 500
+        val OvertimeDark = Color(0xFFE57373)      // Red 300
+
+        // 休息 - 灰色系 (放松、休闲)
+        val RestLight = Color(0xFF9E9E9E)         // Grey 500
+        val RestDark = Color(0xFFBDBDBD)          // Grey 400
     }
     
     /**

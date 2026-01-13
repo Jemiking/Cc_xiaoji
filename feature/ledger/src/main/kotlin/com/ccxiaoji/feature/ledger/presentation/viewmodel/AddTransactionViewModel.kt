@@ -453,20 +453,24 @@ class AddTransactionViewModel @Inject constructor(
     }
 
     fun selectCategory(category: Category) {
+        android.util.Log.d("AddTransactionVM", "selectCategory called with: ${category.id}, ${category.name}")
         supervisorScope.launch(Dispatchers.IO) {
             // 记录使用频率
             getFrequentCategories.recordCategoryUsage(category.id)
 
             // 获取完整的分类信息（包含父分类路径）
             val categoryInfo = categoryRepository.getCategoryFullInfo(category.id)
+            android.util.Log.d("AddTransactionVM", "getCategoryFullInfo returned: $categoryInfo")
 
             withContext(Dispatchers.Main.immediate) {
                 _formState.update {
+                    android.util.Log.d("AddTransactionVM", "Updating formState with categoryInfo: $categoryInfo")
                     it.copy(
                         selectedCategoryInfo = categoryInfo,
                         showCategoryPicker = false
                     )
                 }
+                android.util.Log.d("AddTransactionVM", "formState updated, selectedCategoryInfo: ${_formState.value.selectedCategoryInfo}")
                 updateCanSave()
             }
         }

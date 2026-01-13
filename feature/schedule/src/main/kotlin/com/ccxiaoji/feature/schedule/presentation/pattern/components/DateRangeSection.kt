@@ -6,9 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import com.ccxiaoji.feature.schedule.R
-import com.ccxiaoji.ui.components.ModernCard
+import com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleSectionCard
 import androidx.compose.ui.unit.dp
 import com.ccxiaoji.ui.theme.DesignTokens
 import java.time.LocalDate
@@ -25,50 +24,34 @@ fun DateRangeSection(
     onEndDateClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    ModernCard(
-        modifier = modifier.fillMaxWidth(),
-        backgroundColor = MaterialTheme.colorScheme.surface,
-        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ScheduleSectionCard(
+        title = stringResource(R.string.schedule_pattern_date_range),
+        modifier = modifier.fillMaxWidth()
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(DesignTokens.Spacing.medium),
-            verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.medium)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.medium),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                stringResource(R.string.schedule_pattern_date_range),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
+            DateSelector(
+                label = stringResource(R.string.schedule_pattern_start_date),
+                date = startDate,
+                onClick = onStartDateClick,
+                modifier = Modifier.weight(1f)
             )
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.medium),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                DateSelector(
-                    label = stringResource(R.string.schedule_pattern_start_date),
-                    date = startDate,
-                    onClick = onStartDateClick,
-                    modifier = Modifier.weight(1f)
-                )
-                
-                Text(
-                    stringResource(R.string.schedule_pattern_to),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                
-                DateSelector(
-                    label = stringResource(R.string.schedule_pattern_end_date),
-                    date = endDate,
-                    onClick = onEndDateClick,
-                    modifier = Modifier.weight(1f)
-                )
-            }
+
+            Text(
+                stringResource(R.string.schedule_pattern_to),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            DateSelector(
+                label = stringResource(R.string.schedule_pattern_end_date),
+                date = endDate,
+                onClick = onEndDateClick,
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }

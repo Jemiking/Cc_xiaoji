@@ -8,42 +8,33 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import com.ccxiaoji.feature.schedule.R
 import com.ccxiaoji.feature.schedule.presentation.pattern.PatternType
-import com.ccxiaoji.ui.components.ModernCard
-import androidx.compose.ui.unit.dp
+import com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleSectionCard
+import com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleSelectableCard
 import com.ccxiaoji.ui.theme.DesignTokens
 
 /**
- * 排班模式选择部分 - 扁平化设计
+ * 排班模式选择部分 - 使用 Schedule UI Kit 组件
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PatternTypeSection(
     selectedType: PatternType,
     onTypeChange: (PatternType) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    ModernCard(
-        modifier = modifier.fillMaxWidth(),
-        backgroundColor = MaterialTheme.colorScheme.surface,
-        borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ScheduleSectionCard(
+        title = stringResource(R.string.schedule_pattern_mode),
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(DesignTokens.Spacing.medium),
             verticalArrangement = Arrangement.spacedBy(DesignTokens.Spacing.medium)
         ) {
-            Text(
-                stringResource(R.string.schedule_pattern_mode),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            
             PatternType.values().forEach { type ->
                 val typeName = when (type) {
                     PatternType.SINGLE -> stringResource(R.string.schedule_pattern_single)
@@ -51,45 +42,33 @@ fun PatternTypeSection(
                     PatternType.ROTATION -> stringResource(R.string.schedule_pattern_rotation)
                     PatternType.CUSTOM -> stringResource(R.string.schedule_pattern_custom)
                 }
-                
-                Surface(
+                val isSelected = selectedType == type
+
+                ScheduleSelectableCard(
+                    selected = isSelected,
                     onClick = { onTypeChange(type) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.small,
-                    color = if (selectedType == type) {
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
-                    } else {
-                        MaterialTheme.colorScheme.surface
-                    },
-                    border = CardDefaults.outlinedCardBorder().copy(
-                        width = if (selectedType == type) {
-                            2.dp
-                        } else {
-                            1.dp
-                        },
-                        brush = androidx.compose.ui.graphics.SolidColor(
-                            if (selectedType == type) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)
-                            }
-                        )
-                    )
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics {
+                            role = Role.RadioButton
+                            selected = isSelected
+                        }
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(DesignTokens.Spacing.medium),
+                        modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             typeName,
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = if (selectedType == type) FontWeight.Medium else FontWeight.Normal,
-                            color = MaterialTheme.colorScheme.onSurface
+                            fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal,
+                            color = if (isSelected)
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            else
+                                MaterialTheme.colorScheme.onSurface
                         )
-                        if (selectedType == type) {
+                        if (isSelected) {
                             Icon(
                                 Icons.Default.Check,
                                 contentDescription = stringResource(R.string.schedule_pattern_selected),

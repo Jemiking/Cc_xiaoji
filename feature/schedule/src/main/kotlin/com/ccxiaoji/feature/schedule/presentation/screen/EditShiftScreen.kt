@@ -1,11 +1,6 @@
 package com.ccxiaoji.feature.schedule.presentation.screen
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Schedule
@@ -13,7 +8,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -21,6 +15,8 @@ import androidx.navigation.NavController
 import com.ccxiaoji.feature.schedule.R
 import com.ccxiaoji.feature.schedule.domain.model.Shift
 import com.ccxiaoji.feature.schedule.presentation.navigation.Screen
+import com.ccxiaoji.feature.schedule.presentation.uikit.ScheduleTopAppBar
+import com.ccxiaoji.feature.schedule.presentation.uikit.ShiftColorSelector
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.runtime.DisposableEffect
 import com.ccxiaoji.feature.schedule.presentation.viewmodel.EditShiftViewModel
@@ -74,24 +70,13 @@ fun EditShiftScreen(
     
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        text = if (shiftId == null) {
-                            stringResource(R.string.schedule_shift_new)
-                        } else {
-                            stringResource(R.string.schedule_shift_edit)
-                        }
-                    )
+            ScheduleTopAppBar(
+                title = if (shiftId == null) {
+                    stringResource(R.string.schedule_shift_new)
+                } else {
+                    stringResource(R.string.schedule_shift_edit)
                 },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = stringResource(R.string.schedule_back)
-                        )
-                    }
-                },
+                onNavigationClick = { navController.popBackStack() },
                 actions = {
                     TextButton(
                         onClick = { viewModel.saveShift() },
@@ -174,37 +159,12 @@ fun EditShiftScreen(
             }
             
             // 颜色选择
-            Column {
-                Text(
-                    text = stringResource(R.string.schedule_shift_select_color),
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(Shift.PRESET_COLORS) { color ->
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .background(
-                                    color = Color(color),
-                                    shape = MaterialTheme.shapes.small
-                                )
-                                .clickable { viewModel.updateColor(color) }
-                                .then(
-                                    if (uiState.selectedColor == color) {
-                                        Modifier.border(
-                                            width = 2.dp,
-                                            color = MaterialTheme.colorScheme.primary,
-                                            shape = MaterialTheme.shapes.small
-                                        )
-                                    } else Modifier
-                                )
-                        )
-                    }
-                }
-            }
+            ShiftColorSelector(
+                colors = Shift.PRESET_COLORS,
+                selectedColor = uiState.selectedColor,
+                onColorSelected = { viewModel.updateColor(it) },
+                label = stringResource(R.string.schedule_shift_select_color)
+            )
             
             // 描述
             OutlinedTextField(
